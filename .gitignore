@@ -12,6 +12,10 @@ __pycache__/
 *.rdb
 *.log
 
+# conversations mirror — local aggregation/search ONLY.
+# transcripts contain real secrets (tokens printed to logs); never push.
+conversations/
+
 # secrets — never commit
 .env
 *.key
