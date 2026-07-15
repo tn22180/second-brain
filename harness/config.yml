@@ -1,0 +1,39 @@
+# second-brain harness config
+paths:
+  repo:        ~/second-brain
+  skills_src:  ~/.claude/skills
+  memory_src:  ~/.claude/projects/-Users-nguyentuan/memory
+  history:     ~/.claude/history.jsonl
+  sessions:    ~/.claude/sessions
+  daily_manager: ~/.claude/skills/daily-manager
+  daily_html:  ~/daily.html
+  workspace:   ~/Documents/Falcon workspace
+
+# real binary, NOT the `cc` shell alias (launchd is headless)
+claude_bin: ~/.local/bin/claude
+
+git:
+  remote: origin
+  branch: main
+
+# which learn sources run
+sources:
+  sessions: true
+  gitlog:   true
+  daily:    true
+  inbox:    true
+
+# repos scanned by gitlog (relative to workspace); commits filtered to repo's own user.email
+repos:
+  - seo
+  - blogs
+  - ai-product-copy
+  - llm-ai-search-seo
+  - avada-image-optimizer
+  - avachat
+  - avada-apps-cdn
+  - joy
+  - worker-sdk
+  - team-ops
+
+schedule: "20:00"

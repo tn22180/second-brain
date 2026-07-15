@@ -1,0 +1,10 @@
+{
+  "_comment": "Tunables for the report. budgetTarget is the monthly GCP spend target (USD) used in the budget lines and the final 🎯 target section. reportLagDays is how many days behind 'today' the default report covers (2 because the GCP billing export lags ~1-2 days; the most recent day's data is usually incomplete). Apps with Rolling-30 cost below otherThreshold are rolled into a compact 'Other apps' table instead of a full section. Projects whose name matches a marketplacePattern (regex) are grouped under marketplaceLabel, not treated as apps. defaultEmoji is used for production apps absent from apps.json.",
+  "budgetTarget": 3500,
+  "reportLagDays": 2,
+  "otherThreshold": 5.0,
+  "defaultEmoji": "📦",
+  "marketplaceLabel": "Third-party / Marketplace (GCP)",
+  "marketplacePatterns": ["^Use of "],
+  "reportTimezoneDisplay": "Asia/Ho_Chi_Minh"
+}

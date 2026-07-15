@@ -1,0 +1,59 @@
+{
+  "_comment": "Curated metadata per GCP project (= app). project_id -> display info. Apps not listed here still appear (auto-fallback) using project_name + the defaultEmoji from settings.json. 'functionsRepo' (optional) is an absolute path whose function exports are read to recover camelCase function names for that app; only avada-seo's repo is available locally.",
+  "avada-seo": {
+    "emoji": "🔍",
+    "name": "Avada SEO",
+    "description": "Shopify SEO app — image optimize, speed up, audit, Google Search Console",
+    "functionsRepo": "/Users/nguyentuan/Documents/SEO-BLOG/seo/packages/functions/src"
+  },
+  "app-plaza-image-optimizer": {
+    "emoji": "🖼️",
+    "name": "App Plaza Image Optimizer",
+    "description": "Shopify image optimization app"
+  },
+  "avada-blog-app": {
+    "emoji": "📝",
+    "name": "Avada Blog",
+    "description": "Shopify blog writing assistant app"
+  },
+  "ai-product-copy": {
+    "emoji": "✍️",
+    "name": "AI Product Copy",
+    "description": "AI product description copy generator"
+  },
+  "seo-on-aeo": {
+    "emoji": "🤖",
+    "name": "SEO On AEO",
+    "description": "Answer Engine Optimization app"
+  },
+  "seoon-image-optimizer": {
+    "emoji": "🗜️",
+    "name": "SEOon Image Optimizer",
+    "description": "Image optimization app"
+  },
+  "avada-ai-section": {
+    "emoji": "🧩",
+    "name": "Avada AI Section",
+    "description": "AI section builder app"
+  },
+  "seoon-llm-ai-search": {
+    "emoji": "🔎",
+    "name": "SEO On LLM AI Search",
+    "description": "LLM / AI search app"
+  },
+  "seo-chat-bot-99cc0": {
+    "emoji": "💬",
+    "name": "AvaChat - SEO Chat bot",
+    "description": "SEO chatbot app"
+  },
+  "avada-ts-2": {
+    "emoji": "📚",
+    "name": "Avada CS Knowledge base",
+    "description": "CS internal knowledge base"
+  },
+  "falcon-manager": {
+    "emoji": "🦅",
+    "name": "Falcon Manager",
+    "description": "Internal management service"
+  }
+}

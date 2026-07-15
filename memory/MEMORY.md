@@ -1,0 +1,8 @@
+- [User profile](user-profile.md) — Tuan, Avada engineer; Vietnamese, terse, caveman mode default
+- [Permission allowlist rewrite](permission-allowlist-rewrite.md) — 2026-07-09: exact-command entries replaced with prefix patterns; node/python3 broadly allowed
+- [Avada repo map](avada-repo-map.md) — repos under ~/Documents/SEO-BLOG; project-id table lives in ~/.claude/CLAUDE.md
+- [Daily manager page](daily-manager-page.md) — ~/daily.html built by daily-manager/build.py; open loops hand-kept in open-loops.yml
+- [Credits, not tokens](credit-not-tokens.md) — Avada AI usage is credits per feature; no token data exists upstream
+- [Credit report BigQuery cost](credit-report-bigquery-cost.md) — never join shops_raw_* (139 GB/run); use Firestore batchGet
+- [UTC cron offset](utc-cron-offset.md) — "yesterday UTC" jobs must run after 07:00 Saigon or they report two days late
+- [Firestore purge cost](firestore-purge-cost.md) — purge spikes are reads (76%), not deletes; dodCauses is top-N movers, not a breakdown

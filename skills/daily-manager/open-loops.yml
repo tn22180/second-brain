@@ -1,0 +1,64 @@
+# Việc đang mở. Sửa tay: đổi done: true khi xong, thêm mục mới vào cuối.
+# pri: critical | high | medium | low
+# Seed 2026-07-09 từ 112 session (2026-06-05 .. 2026-07-08).
+
+- id: redis-pw-rotate
+  pri: critical
+  what: "Rotate Redis password — chuỗi lọt vào git history của origin qua CI canary tạm"
+  note: "Gỡ code không xoá history. Ai đọc được repo là đọc được password."
+  since: 2026-07-01
+
+- id: slack-token-transcript
+  pri: high
+  what: "SLACK_BOT_TOKEN bị in ra transcript log trên đĩa máy này"
+  note: "Lộ local, không lộ remote. Rotate khi tiện."
+  since: 2026-06-18
+
+- id: mr-1822
+  pri: high
+  what: "MR !1822 (cleanup uninstalled shops) — review tìm 3 bug nghiêm trọng + 1 lỗ bảo mật, chưa sửa"
+  since: 2026-06-12
+
+- id: purge-wave3
+  pri: medium
+  what: "Wave3 purge — wave2 xong nhưng còn ~8.5k shop đủ điều kiện (job cap limit=50000)"
+  note: "wave2 finishedAt 2026-07-09T01:55Z, docsDeleted 39,999,765, failed 0"
+  since: 2026-07-09
+
+- id: fleet-push
+  pri: medium
+  what: "Commit worker fleet chưa push lên origin (Phase 4 + queue-trends)"
+  note: "Đã push 2026-07-09 10:28, HEAD=35794b0ef8d8"
+  since: 2026-07-03
+  done: true
+
+- id: liveness-53b
+  pri: medium
+  what: "5.3-B external liveness probe — code xong, kẹt vì thiếu host thứ 2 always-on (Mac ngủ)"
+  since: 2026-07-08
+
+- id: review-0626-uncommitted
+  pri: medium
+  what: "10 finding của code review 26-06 đã sửa nhưng chưa commit"
+  note: "Kẹt vì Claude-for-Chrome không kết nối được để smoke test"
+  since: 2026-06-26
+
+- id: feature-skills-track
+  pri: low
+  what: "18 feature-skill trong seo/.claude/skills/ chưa commit — .claude/ bị gitignore, chưa quyết force-track"
+  since: 2026-07-02
+
+- id: refractor-merge
+  pri: low
+  what: "Merge refractor/refractor-frontend — 17 conflict, bỏ dở"
+  since: 2026-06-26
+
+- id: sitemap-cache
+  pri: low
+  what: "Cache getSubSitemap / getStorefrontSitemaps — hoãn, kẹt ở thiết kế invalidation"
+  since: 2026-06-23
+
+- id: prompt-audit-token
+  pri: low
+  what: "Token prompt-audit MCP vẫn là placeholder trong ~/.claude.json"
+  since: 2026-07-06

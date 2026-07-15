@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+"""Credit history report — queries the BigQuery mirror of Firestore
+`shops/{shopId}/creditHistories` (view `creditHistories_daily_long` in dataset
+`avada-seo.firestore_export`). Uses the local `bq` CLI (gcloud auth — no
+service-account JSON).
+
+CLI is the same as the previous (Firestore/Node) version:
+
+  Single shop:
+    query.py --shop <id> --date YYYY-MM-DD
+    query.py --shop <id> --week YYYY-Www
+    query.py --shop <id> --from YYYY-MM-DD --to YYYY-MM-DD
+
+  Aggregate (all shops):
+    query.py --all --date YYYY-MM-DD
+    query.py --all --week YYYY-Www
+    query.py --all --from YYYY-MM-DD --to YYYY-MM-DD [--top 20]
+
+Output: markdown to stdout · JSON + CSV in reports/.
+"""
+import argparse
+import csv
+import datetime
+import json
+import os
+import re
+import subprocess
+import sys
+from collections import defaultdict
+from datetime import date as Date, timedelta
+
+SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPORTS = os.path.join(SKILL, "reports")
+PROJECT = os.environ.get("BQ_PROJECT", "avada-seo")
+VIEW = os.environ.get("BQ_VIEW", "avada-seo.firestore_export.creditHistories_daily_long")
+SHOPS_RAW = os.environ.get("BQ_SHOPS_TABLE", "avada-seo.firestore_export.shops_raw_changelog")
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    target = p.add_mutually_exclusive_group(required=True)
+    target.add_argument("--shop", help="single shop mode — shop document id")
+    target.add_argument("--all", action="store_true", help="aggregate across all shops")
+    rng = p.add_mutually_exclusive_group(required=True)
+    rng.add_argument("--date", help="single day YYYY-MM-DD")
+    rng.add_argument("--week", help="ISO week YYYY-Www (Mon..Sun, UTC)")
+    rng.add_argument("--from", dest="date_from", help="range start YYYY-MM-DD (use with --to)")
+    p.add_argument("--to", dest="date_to", help="range end YYYY-MM-DD (use with --from)")
+    p.add_argument("--top", type=int, default=20, help="top N shops (aggregate mode, default 20)")
+    return p.parse_args()
+
+
+def resolve_range(args):
+    if args.date:
+        d = Date.fromisoformat(args.date)
+        return d, d, args.date
+    if args.week:
+        m = re.match(r"^(\d{4})-W(\d{1,2})$", args.week)
+        if not m:
+            sys.exit(f"Bad --week '{args.week}' (want YYYY-Www)")
+        year, wk = int(m.group(1)), int(m.group(2))
+        start = Date.fromisocalendar(year, wk, 1)  # Monday
+        end = start + timedelta(days=6)
+        return start, end, args.week
+    if args.date_from:
+        if not args.date_to:
+            sys.exit("--from requires --to")
+        a, b = Date.fromisoformat(args.date_from), Date.fromisoformat(args.date_to)
+        if a > b:
+            sys.exit("--from is after --to")
+        return a, b, f"{a.isoformat()}_{b.isoformat()}"
+    sys.exit("Must specify --date, --week, or --from/--to")
+
+
+def run_bq(sql, params):
+    cmd = ["bq", f"--project_id={PROJECT}", "query", "--quiet",
+           "--use_legacy_sql=false", "--format=json", "--max_rows=10000000"]
+    for k, t, v in params:
+        cmd.append(f"--parameter={k}:{t}:{v}")
+    cmd.append(sql)
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.stderr.write(f"bq failed:\n{proc.stdout}\n{proc.stderr}\n")
+        sys.exit(1)
+    return json.loads(proc.stdout) if proc.stdout.strip() else []
+
+
+SQL_SINGLE_SHOP = """
+WITH credits AS (
+  SELECT event_date, action, usage, total_usage
+  FROM `{view}`
+  WHERE shop_id = @shop_id AND event_date BETWEEN @date_from AND @date_to
+),
+domain AS (
+  SELECT JSON_VALUE(data, '$.shopifyDomain') AS shopify_domain
+  FROM `{shops_raw}`
+  WHERE REGEXP_EXTRACT(document_name, r'/shops/([^/]+)$') = @shop_id
+    AND operation != 'DELETE'
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY document_name ORDER BY timestamp DESC) = 1
+)
+SELECT c.event_date, c.action, c.usage, c.total_usage,
+       (SELECT shopify_domain FROM domain LIMIT 1) AS shopify_domain
+FROM credits c
+ORDER BY c.event_date, c.usage DESC
+"""
+
+SQL_ALL_SHOPS = """
+WITH agg AS (
+  SELECT shop_id, action, SUM(usage) AS usage
+  FROM `{view}`
+  WHERE event_date BETWEEN @date_from AND @date_to
+  GROUP BY shop_id, action
+),
+top_shops AS (
+  SELECT shop_id, SUM(usage) AS total_usage
+  FROM agg GROUP BY shop_id
+  ORDER BY total_usage DESC LIMIT @top
+),
+domains AS (
+  SELECT REGEXP_EXTRACT(document_name, r'/shops/([^/]+)$') AS shop_id,
+         JSON_VALUE(data, '$.shopifyDomain') AS shopify_domain
+  FROM `{shops_raw}`
+  WHERE REGEXP_EXTRACT(document_name, r'/shops/([^/]+)$') IN (SELECT shop_id FROM top_shops)
+    AND operation != 'DELETE'
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY document_name ORDER BY timestamp DESC) = 1
+)
+SELECT t.shop_id, d.shopify_domain, a.action, a.usage, t.total_usage
+FROM top_shops t
+JOIN agg a USING (shop_id)
+LEFT JOIN domains d USING (shop_id)
+ORDER BY t.total_usage DESC, t.shop_id, a.usage DESC
+"""
+
+
+def pivot(rows, key, value, secondary):
+    """[{key, action, value}] → {key: {action: value, ...}}, plus the
+    set of action names seen."""
+    out = defaultdict(dict)
+    actions = set()
+    for r in rows:
+        out[r[key]][r["action"]] = int(r[value] or 0)
+        if secondary in r and r[secondary] is not None and secondary not in out[r[key]]:
+            out[r[key]][secondary] = r[secondary]
+        actions.add(r["action"])
+    return out, sorted(actions)
+
+
+def fmt(n):
+    return f"{int(n):,}" if n else "—"
+
+
+def report_single_shop(args, d_from, d_to, slug):
+    rows = run_bq(
+        SQL_SINGLE_SHOP.format(view=VIEW, shops_raw=SHOPS_RAW),
+        [("shop_id", "STRING", args.shop),
+         ("date_from", "DATE", d_from.isoformat()),
+         ("date_to", "DATE", d_to.isoformat())])
+
+    domain = rows[0].get("shopify_domain") if rows else None
+    by_date = defaultdict(dict)
+    actions = set()
+    for r in rows:
+        by_date[r["event_date"]][r["action"]] = int(r["usage"] or 0)
+        by_date[r["event_date"]]["__total"] = int(r["total_usage"] or 0)
+        actions.add(r["action"])
+    actions = sorted(actions)
+    dates = sorted(by_date.keys())
+
+    L = [f"# Credit history — shop `{args.shop}` · {d_from} → {d_to}",
+         f"shopify_domain: **{domain or '(unknown)'}**", ""]
+    if not dates:
+        L.append("_No credit usage in this range._")
+    else:
+        header = ["date", "total"] + actions
+        L.append("| " + " | ".join(header) + " |")
+        L.append("|" + "---|" * len(header))
+        totals = {a: 0 for a in actions}; t_total = 0
+        for d in dates:
+            row = by_date[d]
+            cells = [d, fmt(row.get("__total", 0))] + [fmt(row.get(a, 0)) for a in actions]
+            L.append("| " + " | ".join(cells) + " |")
+            for a in actions: totals[a] += row.get(a, 0)
+            t_total += row.get("__total", 0)
+        L.append("| **TOTAL** | **" + fmt(t_total) + "** | " +
+                 " | ".join("**" + fmt(totals[a]) + "**" for a in actions) + " |")
+    print("\n".join(L))
+
+    payload = {"shop_id": args.shop, "shopify_domain": domain,
+               "range": {"from": d_from.isoformat(), "to": d_to.isoformat()},
+               "actions": actions, "days": [
+                   {"date": d, "total": by_date[d].get("__total", 0),
+                    **{a: by_date[d].get(a, 0) for a in actions}}
+                   for d in dates]}
+    base = os.path.join(REPORTS, f"shop-{args.shop}-{slug}")
+    write_outputs(base, payload, ["date", "total"] + actions,
+                  [[d["date"], d["total"]] + [d.get(a, 0) for a in actions]
+                   for d in payload["days"]])
+
+
+def report_all_shops(args, d_from, d_to, slug):
+    rows = run_bq(
+        SQL_ALL_SHOPS.format(view=VIEW, shops_raw=SHOPS_RAW),
+        [("date_from", "DATE", d_from.isoformat()),
+         ("date_to", "DATE", d_to.isoformat()),
+         ("top", "INT64", str(args.top))])
+
+    by_shop = {}
+    actions = set()
+    for r in rows:
+        sid = r["shop_id"]
+        if sid not in by_shop:
+            by_shop[sid] = {"shopify_domain": r.get("shopify_domain"),
+                            "total": int(r["total_usage"] or 0),
+                            "actions": {}}
+        by_shop[sid]["actions"][r["action"]] = int(r["usage"] or 0)
+        actions.add(r["action"])
+    actions = sorted(actions)
+    ranked = sorted(by_shop.items(), key=lambda kv: kv[1]["total"], reverse=True)
+
+    L = [f"# Credit history — all shops · {d_from} → {d_to}",
+         f"Top {len(ranked)} of {args.top} requested, by totalUsage.", ""]
+    if not ranked:
+        L.append("_No credit usage in this range._")
+    else:
+        header = ["#", "shop_id", "shopify_domain", "total"] + actions
+        L.append("| " + " | ".join(header) + " |")
+        L.append("|" + "---|" * len(header))
+        sum_total = 0; sum_actions = {a: 0 for a in actions}
+        for i, (sid, d) in enumerate(ranked, 1):
+            cells = [str(i), f"`{sid}`", d["shopify_domain"] or "—", fmt(d["total"])] \
+                    + [fmt(d["actions"].get(a, 0)) for a in actions]
+            L.append("| " + " | ".join(cells) + " |")
+            sum_total += d["total"]
+            for a in actions: sum_actions[a] += d["actions"].get(a, 0)
+        L.append("| | **TOTAL** | | **" + fmt(sum_total) + "** | " +
+                 " | ".join("**" + fmt(sum_actions[a]) + "**" for a in actions) + " |")
+    print("\n".join(L))
+
+    payload = {"range": {"from": d_from.isoformat(), "to": d_to.isoformat()},
+               "top": args.top, "actions": actions, "shops": [
+                   {"rank": i, "shop_id": sid,
+                    "shopify_domain": d["shopify_domain"], "total": d["total"],
+                    **{a: d["actions"].get(a, 0) for a in actions}}
+                   for i, (sid, d) in enumerate(ranked, 1)]}
+    base = os.path.join(REPORTS, f"all-shops-{slug}")
+    write_outputs(base, payload,
+                  ["rank", "shop_id", "shopify_domain", "total"] + actions,
+                  [[s["rank"], s["shop_id"], s["shopify_domain"] or "", s["total"]]
+                   + [s.get(a, 0) for a in actions] for s in payload["shops"]])
+
+
+def write_outputs(base, payload, csv_header, csv_rows):
+    os.makedirs(REPORTS, exist_ok=True)
+    with open(base + ".json", "w") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    with open(base + ".csv", "w", newline="") as f:
+        w = csv.writer(f); w.writerow(csv_header)
+        for r in csv_rows: w.writerow(r)
+    sys.stderr.write(f"\nWrote {base}.json and {base}.csv\n")
+
+
+def main():
+    args = parse_args()
+    d_from, d_to, slug = resolve_range(args)
+    if args.shop:
+        report_single_shop(args, d_from, d_to, slug)
+    else:
+        report_all_shops(args, d_from, d_to, slug)
+
+
+if __name__ == "__main__":
+    main()

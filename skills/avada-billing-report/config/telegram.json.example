@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy this file to telegram.json (gitignored) and fill in real values. Bot must be a member of the target chat. For groups, chatId is negative (often starts with -100). messageThreadId is OPTIONAL — only needed when posting into a forum-topic inside a supergroup; otherwise leave null.",
+  "botToken": "1234567890:AA...your-bot-token",
+  "chatId": "-1001234567890",
+  "messageThreadId": null
+}

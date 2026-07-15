@@ -1,0 +1,210 @@
+{
+  "mode": "aggregate",
+  "range": {
+    "from": "2026-05-12",
+    "to": "2026-05-12",
+    "label": "2026-05-12"
+  },
+  "summary": {
+    "shopsWithActivity": 18,
+    "totalUsage": 14234,
+    "byAction": {
+      "generateProductSeoDescription": 6227,
+      "generateProductDescription": 7713,
+      "generateCollectionDescription": 177,
+      "generateCollectionSeoDescription": 117
+    }
+  },
+  "shops": [
+    {
+      "shopId": "zHMV6gqXK7puMrkKgHF4",
+      "shopifyDomain": "yfcca0-2f.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 5236,
+      "byAction": {
+        "generateProductSeoDescription": 5236
+      }
+    },
+    {
+      "shopId": "dK55jKHcLyWRIteTVuqY",
+      "shopifyDomain": "luxperfume-269.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 4770,
+      "byAction": {
+        "generateProductDescription": 4770
+      }
+    },
+    {
+      "shopId": "6YAdUsOWvZKR87yVFrGB",
+      "shopifyDomain": "b2k181-um.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 1754,
+      "byAction": {
+        "generateCollectionDescription": 53,
+        "generateCollectionSeoDescription": 115,
+        "generateProductDescription": 818,
+        "generateProductSeoDescription": 768
+      }
+    },
+    {
+      "shopId": "jUzBaehZSEfsfSLWzVzs",
+      "shopifyDomain": "4y119r-y1.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 1574,
+      "byAction": {
+        "generateCollectionDescription": 84,
+        "generateProductDescription": 1302,
+        "generateProductSeoDescription": 188
+      }
+    },
+    {
+      "shopId": "yIGIatvjAfUxpNR89ZDk",
+      "shopifyDomain": "derimod.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 350,
+      "byAction": {
+        "generateProductDescription": 350
+      }
+    },
+    {
+      "shopId": "wCZEdUrUT1lzfwB662qX",
+      "shopifyDomain": "le-style-parfait.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 150,
+      "byAction": {
+        "generateProductDescription": 110,
+        "generateCollectionDescription": 40
+      }
+    },
+    {
+      "shopId": "TXQngGItXxLen1F0APcq",
+      "shopifyDomain": "e7w0v1-ud.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 145,
+      "byAction": {
+        "generateProductDescription": 145
+      }
+    },
+    {
+      "shopId": "yBh8huTE7WoydweydLmC",
+      "shopifyDomain": "13h173-d1.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 125,
+      "byAction": {
+        "generateProductDescription": 125
+      }
+    },
+    {
+      "shopId": "sI0IEcf6zKmSUYY9WPWx",
+      "shopifyDomain": "4vci6z-u5.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 105,
+      "byAction": {
+        "generateProductSeoDescription": 30,
+        "generateProductDescription": 75
+      }
+    },
+    {
+      "shopId": "9vSOBfnH09mmimMBpTio",
+      "shopifyDomain": "a1eba4-01.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 8,
+      "byAction": {
+        "generateProductDescription": 4,
+        "generateProductSeoDescription": 4
+      }
+    },
+    {
+      "shopId": "F0fb1cGyogir6qUqMyn3",
+      "shopifyDomain": "windsor-wholesale.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 5,
+      "byAction": {
+        "generateProductDescription": 5
+      }
+    },
+    {
+      "shopId": "4LBnuYtpHfwT5whYRqfm",
+      "shopifyDomain": "embark-travel-store.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 2,
+      "byAction": {
+        "generateProductDescription": 2
+      }
+    },
+    {
+      "shopId": "ZqLgEHrGizXNgR5LZn1H",
+      "shopifyDomain": "retourify.myshopify.com",
+      "plan": "pro",
+      "isOnTrial": false,
+      "totalUsage": 2,
+      "byAction": {
+        "generateProductDescription": 1,
+        "generateProductSeoDescription": 1
+      }
+    },
+    {
+      "shopId": "iKPK9UHv9xGnV98siqzy",
+      "shopifyDomain": "yfdqke-na.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 2,
+      "byAction": {
+        "generateProductDescription": 2
+      }
+    },
+    {
+      "shopId": "jOoxDl2fUhe9x9ndlTke",
+      "shopifyDomain": "dropscribe-test-store.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 2,
+      "byAction": {
+        "generateCollectionSeoDescription": 1,
+        "generateProductDescription": 1
+      }
+    },
+    {
+      "shopId": "yjO6U3NXF852rtXEJ7ie",
+      "shopifyDomain": "cherry-tree-tools.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 2,
+      "byAction": {
+        "generateProductDescription": 2
+      }
+    },
+    {
+      "shopId": "1C4K9jPDmpryVw6hT4du",
+      "shopifyDomain": "3v51ad-gt.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 1,
+      "byAction": {
+        "generateProductDescription": 1
+      }
+    },
+    {
+      "shopId": "aLeFUCc4pNRNXoiX91KW",
+      "shopifyDomain": "bc4ff3-1b.myshopify.com",
+      "plan": "free",
+      "isOnTrial": false,
+      "totalUsage": 1,
+      "byAction": {
+        "generateCollectionSeoDescription": 1
+      }
+    }
+  ]
+}

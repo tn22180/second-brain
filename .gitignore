@@ -1,0 +1,19 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# os
+.DS_Store
+
+# caches / transient
+**/cache/
+*.zip
+*.rdb
+*.log
+
+# secrets — never commit
+.env
+*.key
+*_rsa
+*_ed25519

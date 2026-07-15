@@ -1,0 +1,64 @@
+You are an expert Avada developer working on {{APP_NAME}}, focused on producing clean,
+maintainable code. This file mirrors `.agent/rules/` for the Cursor harness — the same
+rules Claude Code reads from `.claude/workflows/`.
+
+## Tech Stack
+- Node.js + React (frontend/backend)
+- Firebase / Google Cloud Platform (serverless: Cloud Functions, Pub/Sub, Cloud Tasks)
+- Firestore (multi-tenant NoSQL, scoped by `shopId`)
+- Shopify Admin API (GraphQL) + App Bridge + Polaris v12 (embedded admin)
+- GCP project: {{PROD_PROJECT}} (prod). Packages: {{PACKAGES}}.
+
+## Project Structure
+```
+packages/
+  functions/src/
+    handlers/      orchestrate ONLY — no business logic
+    controllers/   HTTP adapter: validate → service → presenter → response
+    services/      business logic; combine multiple repos; 3rd-party APIs
+    repositories/  ONE Firestore collection each — NEVER mix collections
+    presenters/    format output data
+    helpers/       pure single-purpose utilities (no DB, no API)
+    const/         constants grouped by feature
+    config/        configuration
+  assets/src/      React admin (Polaris pages, hooks, contexts, loadables)
+  scripttag/       storefront script injection (lightweight)
+```
+
+## Core Rules (apply everywhere)
+- **Layers, one-way imports:** handlers/controllers → services → repositories. Never
+  repo→service, repo→repo, or business logic in a handler/repo.
+- **Multi-tenant:** every Firestore query/mutation scoped by `shopId` (first param).
+- **Repository = one collection.** Collection name inline as `const COLLECTION_NAME`.
+- **Response format:** `{success: true, data}` or `{success: false, error}`.
+- **Request body:** `ctx.req.body` (NOT `ctx.request.body`).
+- **Webhooks respond < 5s** — queue heavy work (Cloud Tasks / Pub/Sub), never inline.
+  `await publishTopic` for reliability — no fire-and-forget.
+- **Firestore:** batch ≤ 500, `in` ≤ 30, `.empty` not `.size`, filter early with `where`,
+  select only needed fields, aggregates for count/sum/avg. Compound queries need an index
+  in `firestore-indexes/{collection}.json` (`yarn firestore:build`).
+- **Async:** `Promise.all` for independent ops; never `await` in a loop.
+
+## Naming & Style
+- `camelCase` vars/functions/props · `PascalCase` classes/React components ·
+  `UPPER_SNAKE_CASE` constants.
+- Functions start with verbs; booleans prefix `is/has`.
+- Prefer `const`; `===`; async/await; early return (minimize `else`); single responsibility.
+- Functions with >3 params take a destructured object.
+- Keep files under ~200 lines; JSDoc on public service/handler functions.
+
+## Frontend (React / Polaris)
+- One component per file (PascalCase filename), functional components only.
+- Polaris v12+ components; navigation via `url` prop (NOT `onClick` + `window.open`).
+- React Context over prop drilling; custom hooks for reusable logic; BEM CSS classes.
+- Lazy-load pages via loadables.
+
+## Security
+- Never commit credentials/secrets or a `*.trycloudflare.com` dev tunnel URL.
+- Ownership check before any resource mutation (`if (resource.shopID !== shopID) throw 403`).
+- Verify webhook HMAC. Sanitize/parameterize all inputs and DB/BigQuery queries.
+- `target="_blank"` always needs `rel="noopener noreferrer"`.
+
+## Pre-commit
+- `yarn lint` before commit, `yarn test` before push. Never ignore failing tests.
+- Conventional commit messages; focused, atomic commits.

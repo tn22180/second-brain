@@ -1,0 +1,23 @@
+{
+  "_comment": "Optimization-suggestion templates (Vietnamese), used to render the '💡 Gợi ý Optimize' section. functionRules: ordered list — match the source-cased function name case-insensitively against `pattern` (Python regex), FIRST match wins; fall back to `functionDefault`. serviceBullets: keyed by the friendly service bucket. These are heuristics — adjust freely.",
+  "functionRules": [
+    { "pattern": "(webhook|webhook|handlehook|webhookhandler|hookhandler)", "text": "Verify HMAC signature · Respond 200 → async Pub/Sub · Dedup bằng idempotency key" },
+    { "pattern": "(optimizeimage|previewimage|countimage|handleoptimize)", "text": "Batch nhiều ảnh/req · Cloud Tasks queue · Cache ảnh đã xử lý" },
+    { "pattern": "(lighthouse|scanspeedscore|scanissues|audit)", "text": "Cache kết quả 24h · Queue + rate limit · Dùng LH/PageSpeed API thay tự chạy" },
+    { "pattern": "(schedule|publisher|daily|weekly|weekyly|monthly|cron)", "text": "Check frequency · Merge jobs nhỏ · Cloud Scheduler + Pub/Sub" },
+    { "pattern": "(auth)", "text": "Tăng session TTL · Cache token validation · Giảm memory alloc" },
+    { "pattern": "(subscriber|recursive|handlebulk|matchreviews)", "text": "Idempotency key · Circuit breaker · Check memory alloc vs p95" },
+    { "pattern": "(onupdate|onupdateshop|updatedesc|handleproductupdate|onaisummary|^update|sync|debounce)", "text": "Debounce/throttle invocations" },
+    { "pattern": "(proxy|^api|apisa|apiv2|apisav2|extension|endpoint|aiapi|knowledgebase|getthirdparty|publishall|chatbot)", "text": "Cache response · Connection pooling · Timeout hợp lý" }
+  ],
+  "functionDefault": "Review memory alloc vs p95 · Giảm cold start · Audit invocations/ngày",
+  "serviceBullets": {
+    "Logging": "retention 7 ngày · filter DEBUG/INFO · structured logging",
+    "Firestore / Storage": "cleanup unused indexes · cache frequent reads · batch writes · TTL cho data tạm",
+    "Firebase Hosting": "Cache-Control headers · gzip/brotli · review rewrites → fn calls",
+    "Artifact Registry": "cleanup policy · giữ N versions gần nhất",
+    "Cloud Run": "check min-instances · tăng concurrency · review timeout + CPU throttle",
+    "BigQuery": "partition + cluster bảng · query chỉ cột cần · cache kết quả",
+    "Pub/Sub": "batch messages · giảm payload · dedup bằng idempotency key"
+  }
+}
