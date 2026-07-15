@@ -16,6 +16,9 @@ mirror_conversations: true
 # repos now live physically under projects/Falcon/, no symlinking needed
 link_projects: false
 
+# aggregate all projects' sessions so `brain` -> /resume lists every conversation
+resume_all: true
+
 # real binary, NOT the `cc` shell alias (launchd is headless)
 claude_bin: ~/.local/bin/claude
 

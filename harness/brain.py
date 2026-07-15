@@ -66,6 +66,11 @@ def cmd_mirror(cfg, args):
     mirror.run(cfg)
 
 
+def cmd_resume(cfg, args):
+    import resume
+    resume.sync(cfg)
+
+
 def cmd_learn(cfg, args):
     import learn
     signal = learn.collect(cfg, today_str(cfg))
@@ -92,16 +97,20 @@ def cmd_sync(cfg, args):
     import summarize
     import gitutil
     date = today_str(cfg)
-    print("[1/4] mirror");    mirror.run(cfg)
-    print("[2/4] learn");     signal = learn.collect(cfg, date)
-    print("[3/4] summarize"); summarize.run(cfg, date, signal)
-    print("[4/4] push");      gitutil.commit_push(cfg, f"brain: sync {date}")
+    print("[1/5] mirror");    mirror.run(cfg)
+    if cfg.get("resume_all"):
+        import resume
+        print("[2/5] resume");  resume.sync(cfg)
+    print("[3/5] learn");     signal = learn.collect(cfg, date)
+    print("[4/5] summarize"); summarize.run(cfg, date, signal)
+    print("[5/5] push");      gitutil.commit_push(cfg, f"brain: sync {date}")
     print("done")
 
 
 HANDLERS = {
     "status": cmd_status,
     "mirror": cmd_mirror,
+    "resume": cmd_resume,
     "learn": cmd_learn,
     "summarize": cmd_summarize,
     "push": cmd_push,
