@@ -6,3 +6,4 @@
 - [Credit report BigQuery cost](credit-report-bigquery-cost.md) — never join shops_raw_* (139 GB/run); use Firestore batchGet
 - [UTC cron offset](utc-cron-offset.md) — "yesterday UTC" jobs must run after 07:00 Saigon or they report two days late
 - [Firestore purge cost](firestore-purge-cost.md) — purge spikes are reads (76%), not deletes; dodCauses is top-N movers, not a breakdown
+- [speed-up-report repo](speed-up-report-repo.md) — lives at second-brain/projects/Falcon/speed-up-report; gitlab remote; harness moves keep gutting local tree — push promptly

@@ -11,3 +11,7 @@ move real ones into `~/.claude` memory yourself; delete the rest.
 
 ### memory candidates 2026-07-15
 - [ ] Khi agent vào project mới, cần doc onboarding "app làm gì / đọc gì đầu tiên" sẵn trong repo — pattern muốn áp cho mọi Avada app
+
+### memory candidates 2026-07-15
+- [ ] seo image width trong url bắt buộc = 600
+- [ ] Project ngoài nằm trong `projects/Falcon/` của second-brain, gitignore, chỉ chạy local
