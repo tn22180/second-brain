@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tn22180.secondbrain</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/nguyentuan/second-brain/harness/brain.py</string>
+        <string>sync</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/nguyentuan/second-brain</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/nguyentuan</string>
+        <key>PATH</key>
+        <string>/Users/nguyentuan/.local/bin:/opt/homebrew/bin:/Users/nguyentuan/.nvm/versions/node/v22.22.0/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- daily at 20:00 local -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>20</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nguyentuan/second-brain/launchd/sync.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nguyentuan/second-brain/launchd/sync.err.log</string>
+</dict>
+</plist>
