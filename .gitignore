@@ -16,6 +16,11 @@ __pycache__/
 # transcripts contain real secrets (tokens printed to logs); never push.
 conversations/
 
+# projects/ = symlinks to real repos (each has its own git). Local-only.
+# keep the tracked index.md; ignore everything else (the symlinks).
+/projects/*
+!/projects/index.md
+
 # secrets — never commit
 .env
 *.key

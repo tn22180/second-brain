@@ -7,11 +7,14 @@ paths:
   sessions:    ~/.claude/sessions
   daily_manager: ~/.claude/skills/daily-manager
   daily_html:  ~/daily.html
-  workspace:   ~/Documents/Falcon workspace
+  workspace:   ~/Documents/Falcon
   projects_src: ~/.claude/projects   # Claude Code conversation transcripts, per-repo
 
 # gather all conversation transcripts into conversations/ (gitignored, local only)
 mirror_conversations: true
+
+# symlink every git repo in workspace into projects/ (gitignored, local only)
+link_projects: true
 
 # real binary, NOT the `cc` shell alias (launchd is headless)
 claude_bin: ~/.local/bin/claude
