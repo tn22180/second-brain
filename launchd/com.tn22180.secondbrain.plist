@@ -8,12 +8,12 @@
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/python3</string>
-        <string>/Users/nguyentuan/second-brain/harness/brain.py</string>
+        <string>/Users/nguyentuan/Documents/second-brain/harness/brain.py</string>
         <string>sync</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/nguyentuan/second-brain</string>
+    <string>/Users/nguyentuan/Documents/second-brain</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -36,8 +36,8 @@
     <false/>
 
     <key>StandardOutPath</key>
-    <string>/Users/nguyentuan/second-brain/launchd/sync.log</string>
+    <string>/Users/nguyentuan/Documents/second-brain/launchd/sync.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/nguyentuan/second-brain/launchd/sync.err.log</string>
+    <string>/Users/nguyentuan/Documents/second-brain/launchd/sync.err.log</string>
 </dict>
 </plist>

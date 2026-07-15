@@ -1,6 +1,6 @@
 # second-brain harness config
 paths:
-  repo:        ~/second-brain
+  repo:        ~/Documents/second-brain
   skills_src:  ~/.claude/skills
   memory_src:  ~/.claude/projects/-Users-nguyentuan/memory
   history:     ~/.claude/history.jsonl
