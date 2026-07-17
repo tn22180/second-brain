@@ -1,0 +1,22 @@
+# Append to .gitlab-ci.yml. Also add `check` as the FIRST entry of the top-level `stages:` list.
+#
+# Why each line:
+#   rules            only on MR pipelines — pushing a branch costs no CI.
+#   GIT_DEPTH: '0'   full clone. The default shallow clone has no merge-base with the target
+#                    branch, so diffBase() silently degrades and the gate checks the wrong range.
+#   before_script:[] the repo-wide before_script installs deps. This job needs node + git only.
+#   cache: {}        nothing to restore; skipping it is most of the job's runtime.
+#
+# REQUIRED after merge: open an MR and confirm the job actually appears in the pipeline.
+# If merge-request pipelines are disabled in project settings, this job NEVER runs and the
+# gate is theater — every MR stays green while nothing is checked.
+docs_gate:
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    GIT_DEPTH: '0'
+  before_script: []
+  cache: {}
+  script:
+    - node scripts/docs-gate/index.js

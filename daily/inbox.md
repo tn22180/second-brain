@@ -22,3 +22,10 @@ move real ones into `~/.claude` memory yourself; delete the rest.
 - [ ] Worker fleet tự spill sang GCF khi worker unhealthy → không cần external liveness probe riêng
 - [ ] Fleet worker test box = 192.168.2.184, join qua Tailscale, staging4
 - [ ] Prod không set `APP_IS_LOCAL` (mặc định false)
+
+### memory candidates 2026-07-17
+- [ ] Docs-gate design law — citation anchor về repo root, cấm suffix matching, gate fail closed khi không xác định được branch hoặc scan rỗng
+- [ ] Docs/skills gen order — lớp chung trước, per-domain sau (đã đóng thành skill `docs-from-code` + `docs-gate`, port sang blog)
+- [ ] Firestore `409 index already exists` khi redeploy index = no-op, không phải lỗi
+- [ ] Máy .50 và .184 nối qua Tailscale bằng IP, không dùng domain
+- [ ] `internalGen2` env chỉ set từ CI, không có ở local
