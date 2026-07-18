@@ -29,3 +29,6 @@ move real ones into `~/.claude` memory yourself; delete the rest.
 - [ ] Firestore `409 index already exists` khi redeploy index = no-op, không phải lỗi
 - [ ] Máy .50 và .184 nối qua Tailscale bằng IP, không dùng domain
 - [ ] `internalGen2` env chỉ set từ CI, không có ở local
+
+### memory candidates 2026-07-18
+- [ ] Worker fleet tự spill sang GCF khi worker unhealthy → không cần external liveness probe riêng (mâu thuẫn open loop liveness-53b)
