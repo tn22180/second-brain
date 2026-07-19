@@ -32,3 +32,7 @@ move real ones into `~/.claude` memory yourself; delete the rest.
 
 ### memory candidates 2026-07-18
 - [ ] Worker fleet tự spill sang GCF khi worker unhealthy → không cần external liveness probe riêng (mâu thuẫn open loop liveness-53b)
+
+### memory candidates 2026-07-19
+- [ ] Worker fleet tự spill sang GCF khi worker unhealthy → không cần external liveness probe riêng (mâu thuẫn open loop liveness-53b — cần resolve)
+- [ ] Docs-gate design law — citation anchor về repo root, cấm suffix matching, gate fail closed khi branch không xác định hoặc scan rỗng
