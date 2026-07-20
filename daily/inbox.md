@@ -36,3 +36,8 @@ move real ones into `~/.claude` memory yourself; delete the rest.
 ### memory candidates 2026-07-19
 - [ ] Worker fleet tự spill sang GCF khi worker unhealthy → không cần external liveness probe riêng (mâu thuẫn open loop liveness-53b — cần resolve)
 - [ ] Docs-gate design law — citation anchor về repo root, cấm suffix matching, gate fail closed khi branch không xác định hoặc scan rỗng
+
+### memory candidates 2026-07-20
+- [ ] liveness-53b mâu thuẫn với "worker fleet tự spill sang GCF khi unhealthy" — candidate lặp 3 ngày (07-16/18/19), cần resolve dứt: nếu spill đủ thì đóng open loop liveness-53b
+- [ ] docs-from-code pattern giờ chuẩn hóa qua 3 app (BLOG → APC → AEO): CLAUDE.md common layer trước, per-domain skills sau, + firestore/security generic từ joy, + docs gate
+- [ ] firestore.rules + firestore.indexes hợp lệ làm gate anchor roots
