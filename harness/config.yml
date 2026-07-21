@@ -2,7 +2,7 @@
 paths:
   repo:        ~/Documents/second-brain
   skills_src:  ~/.claude/skills
-  memory_src:  ~/.claude/projects/-Users-nguyentuan/memory
+  memory_src:  ~/.claude/projects/-Users-nguyentuan-Documents-second-brain/memory
   history:     ~/.claude/history.jsonl
   sessions:    ~/.claude/sessions
   daily_manager: ~/.claude/skills/daily-manager
@@ -47,3 +47,9 @@ repos:
   - team-ops
 
 schedule: "20:00"
+
+# read-loop: matured inbox candidates surface at session start (via SessionStart hook).
+# A candidate "matures" once it has recurred on >= maturity_days distinct daily runs
+# (tracked by a (×N) counter on its inbox line). Held (#hold) and promoted ([x]) skip.
+read_loop:
+  maturity_days: 2

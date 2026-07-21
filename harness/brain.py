@@ -6,6 +6,7 @@ Subcommands:
   mirror   rsync ~/.claude/skills + memory dir into the repo (copies)
   learn    collect today's raw signal from all enabled sources (prints)
   summarize  run the LLM summary over today's signal -> daily/<date>.md
+  surface  print matured inbox candidates (--json for SessionStart hook)
   sync     mirror -> learn -> summarize -> commit -> push
   push     git add/commit/push (used by sync; standalone for manual)
 """
@@ -86,6 +87,16 @@ def cmd_summarize(cfg, args):
     print(f"wrote {path}")
 
 
+def cmd_surface(cfg, args):
+    import surface
+    if getattr(args, "json", False):
+        out = surface.render_hook(cfg)
+        if out:
+            print(out)
+    else:
+        print(surface.render_text(cfg))
+
+
 def cmd_push(cfg, args):
     import gitutil
     gitutil.commit_push(cfg, args.message or f"brain: sync {today_str(cfg)}")
@@ -113,6 +124,7 @@ HANDLERS = {
     "resume": cmd_resume,
     "learn": cmd_learn,
     "summarize": cmd_summarize,
+    "surface": cmd_surface,
     "push": cmd_push,
     "sync": cmd_sync,
 }
@@ -125,6 +137,9 @@ def main():
         p = sub.add_parser(name)
         if name == "push":
             p.add_argument("-m", "--message")
+        if name == "surface":
+            p.add_argument("--json", action="store_true",
+                           help="emit SessionStart-hook JSON envelope")
     args = ap.parse_args()
     cfg = load_config()
     HANDLERS[args.cmd](cfg, args)
