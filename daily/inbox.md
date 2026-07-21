@@ -19,3 +19,11 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 
 ### OPEN — cần Tony quyết (2026-07-21 hold)
 - [ ] Worker fleet tự spill sang GCF khi worker unhealthy → khỏi external liveness probe. **Mâu thuẫn open-loop `liveness-53b`.** Chốt: nếu spill đủ thay probe → đóng liveness-53b + promote fact. Chưa chốt → để nguyên. (candidate lặp 07-16/18/19/20) #hold
+
+### TEST read-loop (2026-07-21) — xoá sau khi verify
+- [ ] (×2) TEST read-loop hoạt động — nếu session mới thấy dòng này tức hook OK
+
+### memory candidates 2026-07-21
+- [ ] (×1) docs_gate phải chỉ chạy trên MR target master — trên staging branch nó deploy prod (bug đã fix, image-optimizer)
+- [ ] (×1) /arena AI-token leaderboard (nguyentuan) đã deploy prod nhưng backend chưa feed data → rỗng
+- [ ] (×1) seo GSD Card job chạy trong container riêng ở dev_zone để dễ theo dõi; pilot trước khi chốt
