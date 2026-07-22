@@ -27,3 +27,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) docs_gate phải chỉ chạy trên MR target master — trên staging branch nó deploy prod (bug đã fix, image-optimizer)
 - [ ] (×1) /arena AI-token leaderboard (nguyentuan) đã deploy prod nhưng backend chưa feed data → rỗng
 - [ ] (×1) seo GSD Card job chạy trong container riêng ở dev_zone để dễ theo dõi; pilot trước khi chốt
+
+### memory candidates 2026-07-22
+- [ ] (×1) SEO prod-error alerts giờ route qua shared lib `@avada/prod-error-alert`; bespoke `prodErrorAlertService`/`errorAlertRepository` đã xoá, sink bắt cả `cloud_run_job` → `seo-prod-error-slack-pipeline` (update: root fix đã ship 07-22).
+- [ ] (×1) OpenRouter là integration layer cho các app tích hợp AI — cost + token + model + API key đều lấy được từ API của nó; report tách menu riêng sau AI Credit.
+- [ ] (×1) isActiveInstall pilot đã rollout toàn bộ ~100k shop (chỉ set status), scan nốt 6,261 shop rồi chuẩn bị purge.
