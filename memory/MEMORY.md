@@ -3,6 +3,7 @@
 - [Verify skill citations against disk](verify-skill-citations-against-disk.md) — Avada skills get copied between apps and cite code that doesn't exist; grep every symbol, "0 occurrences" is the finding.
 - [seo image 600 defaults](seo-image-600-defaults.md) — 600×600 is the page-loader/og/overlay gen default, NOT a mandatory image-url width; real urls use the [100…1600] ladder.
 - [seo webhookLogs TTL](seo-webhooklogs-ttl.md) — internal webhook-dedup ledger, 30-day TTL (ttlPolicies.js:29-31); log absence ≠ webhook never arrived.
+- [seo prod-error → Slack pipeline](seo-prod-error-slack-pipeline.md) — errorHandler didn't log uncaught → alerts showed [no message]; temp fixes shipped 07-22, root fixes (real throw in count/preview, pageSpeed→async) pending.
 - [seo APP_IS_LOCAL](seo-app-is-local.md) — prod leaves it unset → isLocal falsy; only staging4 sets true. Assume prod is non-local.
 - [seo shopify.app.*.toml per-dev](seo-shopify-toml-per-dev.md) — many per-dev tomls, each → own dev store, no canonical pair; don't normalize.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
