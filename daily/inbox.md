@@ -32,3 +32,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) SEO prod-error alerts giờ route qua shared lib `@avada/prod-error-alert`; bespoke `prodErrorAlertService`/`errorAlertRepository` đã xoá, sink bắt cả `cloud_run_job` → `seo-prod-error-slack-pipeline` (update: root fix đã ship 07-22).
 - [ ] (×1) OpenRouter là integration layer cho các app tích hợp AI — cost + token + model + API key đều lấy được từ API của nó; report tách menu riêng sau AI Credit.
 - [ ] (×1) isActiveInstall pilot đã rollout toàn bộ ~100k shop (chỉ set status), scan nốt 6,261 shop rồi chuẩn bị purge.
+
+### memory candidates 2026-07-23
+- [ ] (×1) Shared prod-error lib publish public npm tên `avada-prod-error-alert` (unscoped, KHÔNG `@avada/prod-error-alert`) — sửa lại ref trong `seo-prod-error-slack-pipeline`
+- [ ] (×1) Log sink prod-error đã tạo cho tất cả project prod, không chỉ seo
+- [ ] (×1) CI các app dùng immutable install → mọi MR thêm dep phải commit `yarn.lock` kèm, nếu không fail
+- [ ] (×1) MR cho repo `blogs` phải base từ `master`
