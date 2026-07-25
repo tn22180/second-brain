@@ -34,10 +34,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) isActiveInstall pilot đã rollout toàn bộ ~100k shop (chỉ set status), scan nốt 6,261 shop rồi chuẩn bị purge.
 
 ### memory candidates 2026-07-23
-- [ ] (×2) Shared prod-error lib publish public npm tên `avada-prod-error-alert` (unscoped, KHÔNG `@avada/prod-error-alert`) — sửa lại ref trong `seo-prod-error-slack-pipeline`
-- [ ] (×2) Log sink prod-error đã tạo cho tất cả project prod, không chỉ seo
-- [ ] (×2) CI các app dùng immutable install → mọi MR thêm dep phải commit `yarn.lock` kèm, nếu không fail
-- [ ] (×2) MR cho repo `blogs` phải base từ `master`
+- [ ] (×3) Shared prod-error lib publish public npm tên `avada-prod-error-alert` (unscoped, KHÔNG `@avada/prod-error-alert`) — sửa lại ref trong `seo-prod-error-slack-pipeline`
+- [ ] (×3) Log sink prod-error đã tạo cho tất cả project prod, không chỉ seo
+- [ ] (×3) CI các app dùng immutable install → mọi MR thêm dep phải commit `yarn.lock` kèm, nếu không fail
+- [ ] (×3) MR cho repo `blogs` phải base từ `master`
 
 ### memory candidates 2026-07-24
 - [ ] (×1) Job stuck (self-chaining Pub/Sub fan-out) resume được bằng skill `resume-stuck-job` — CS tự chạy, recipe registry theo app
