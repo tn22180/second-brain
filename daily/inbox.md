@@ -41,3 +41,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 
 ### memory candidates 2026-07-24
 - [ ] (×1) Job stuck (self-chaining Pub/Sub fan-out) resume được bằng skill `resume-stuck-job` — CS tự chạy, recipe registry theo app
+
+### memory candidates 2026-07-27
+- [ ] (×1) Mọi app Avada gọi OpenRouter phải set `X-Title` + `HTTP-Referer` (referral link), mẫu ở blogs `packages/functions/src/config/openRouter.js` — thiếu thì dashboard OpenRouter hiện `unknown`
+- [ ] (×1) OpenRouter prompt caching đã bật cho AI feature ở SEO (auditAgent, meta/FAQ), BLOG (blog gen, genClaude), APC — cache prefix, không phải full prompt
+- [ ] (×1) Lỗi `Stream isn't writeable and enableOfflineQueue options is false` = ioredis reconnect window, không phải Redis quá tải; cùng họ với `seo-redis-command-timeout-noise`
+- [ ] (×1) Tailscale auth key phải do admin tenant tạo — dev không self-serve được, chặn setup fleet trước live prod
+- [ ] (×1) Billing/credit report auto (6h/ngày) im lặng chết khi gcloud auth hết hạn — không có alert, phải login lại + chạy bù thủ công
