@@ -1,0 +1,72 @@
+{
+  "_comment": "Project layer. Generic dev + GCP read perms live in ~/.claude/settings.json. This file only adds what is specific to Falcon/second-brain work: worker-fleet SSH, Redis, docker exec/build, harness scripts. Regenerate candidates: python3 harness/permissions/mine_permissions.py",
+  "permissions": {
+    "allow": [
+      "Bash(/opt/homebrew/bin/python3:*)",
+      "Bash(python3 /Users/nguyentuan/Documents/second-brain/harness/:*)",
+
+      "Bash(ssh -n:*)",
+      "Bash(ssh -o:*)",
+      "Bash(ssh -i:*)",
+      "Bash(sshpass -e ssh:*)",
+      "Bash(sshpass -e scp:*)",
+      "Bash(sshpass -f:*)",
+      "Bash(gcloud compute ssh:*)",
+
+      "Bash(redis-cli -h:*)",
+      "Bash(redis-cli -p:*)",
+      "Bash(redis-cli --tls:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(redis-cli info:*)",
+      "Bash(redis-cli config get:*)",
+      "Bash(redis-cli llen:*)",
+      "Bash(redis-cli keys:*)",
+
+      "Bash(docker exec:*)",
+      "Bash(docker build:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker run --rm:*)",
+
+      "Bash(git worktree:*)",
+      "Bash(ln -s:*)",
+      "Bash(./node_modules/.bin/jest:*)",
+      "Bash(./node_modules/.bin/eslint:*)",
+      "Bash(./node_modules/.bin/biome:*)",
+      "Bash(./node_modules/.bin/firebase emulators:*)",
+      "Bash(glab:*)",
+      "Bash(ss -tlnp:*)",
+      "Bash(pkill -f:*)",
+
+      "Skill(fewer-permission-prompts)",
+      "Skill(avada-billing-report)",
+      "Skill(credit-history-report)",
+      "Skill(resume-stuck-job)",
+      "Skill(docs-from-code)",
+      "Skill(docs-gate)"
+    ],
+    "ask": [
+      "Bash(redis-cli flushall:*)",
+      "Bash(redis-cli flushdb:*)",
+      "Bash(docker compose down:*)",
+      "Bash(sudo -S systemctl:*)",
+      "Bash(sudo systemctl:*)"
+    ],
+    "deny": [
+      "Bash(sshpass -p:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/python3 /Users/nguyentuan/Documents/second-brain/harness/brain.py surface --json",
+            "timeout": 5,
+            "statusMessage": "second-brain read-loop..."
+          }
+        ]
+      }
+    ]
+  }
+}

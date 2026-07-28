@@ -48,3 +48,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Lỗi `Stream isn't writeable and enableOfflineQueue options is false` = ioredis reconnect window, không phải Redis quá tải; cùng họ với `seo-redis-command-timeout-noise`
 - [ ] (×1) Tailscale auth key phải do admin tenant tạo — dev không self-serve được, chặn setup fleet trước live prod
 - [ ] (×1) Billing/credit report auto (6h/ngày) im lặng chết khi gcloud auth hết hạn — không có alert, phải login lại + chạy bù thủ công
+
+### memory candidates 2026-07-28
+- [ ] (×1) SEO checklist read API cho CS tooling gọi trực tiếp, không qua app proxy — auth bằng token trong env test
+- [ ] (×1) Contact us CTA trong checklist chỉ hiện trên store có `avada` (internal dev store) — store dev thường không thấy nút
+- [ ] (×1) Lighthouse scan skip được khi mọi issue lighthouse của shop đã nằm trong exclude/`shop.issueFixed` — rẻ hơn nâng timeout `lightHouseService.js`
+- [ ] (×1) Permission entry trong settings.json là prefix pattern; entry chứa query/date/path cụ thể là dead weight, phải generalize
+- [ ] (×1) Git identity Avada = `tuannv@avada.email`, tách khỏi Claude account `seomduc@gmail.com`
