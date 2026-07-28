@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud auth print-access-token)",
+      "Bash(gcloud auth list)",
+      "Bash(gcloud logging read *)",
+      "Bash(gcloud logging sinks describe *)",
+      "Bash(gcloud logging sinks list *)",
+      "Bash(gcloud functions describe *)",
+      "Bash(gcloud functions list *)",
+      "Bash(gcloud config get-value *)",
+      "Bash(gcloud pubsub topics list *)",
+      "Bash(gcloud firestore indexes composite list *)",
+      "Bash(docker info)",
+      "Bash(git fetch *)",
+      "Skill(fewer-permission-prompts)",
+      "Bash(/opt/homebrew/bin/python3 *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/python3 /Users/nguyentuan/Documents/second-brain/harness/brain.py surface --json",
+            "timeout": 5,
+            "statusMessage": "second-brain read-loop..."
+          }
+        ]
+      }
+    ]
+  }
+}
