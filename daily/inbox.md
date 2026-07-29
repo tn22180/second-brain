@@ -55,3 +55,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Lighthouse scan skip được khi mọi issue lighthouse của shop đã nằm trong exclude/`shop.issueFixed` — rẻ hơn nâng timeout `lightHouseService.js`
 - [ ] (×1) Permission entry trong settings.json là prefix pattern; entry chứa query/date/path cụ thể là dead weight, phải generalize
 - [ ] (×1) Git identity Avada = `tuannv@avada.email`, tách khỏi Claude account `seomduc@gmail.com`
+
+### memory candidates 2026-07-29
+- [ ] (×1) Point sprint FAL tính từ cột Waiting to test → Done; DungTT (tester) tính theo points tester, không phải points dev
+- [ ] (×1) Board FAL có 2 techlead (t + Lâm) — mỗi task chỉ 1 trong 2 assign, đừng gom cả hai khi lọc "task của mình"
+- [ ] (×1) Traffic index avada-seo không break down được theo từng index — chỉ có số tổng
+- [ ] (×1) jest ở repo seo phải ignore `.claude/worktrees`, không thì scan test của worktree cũ
+- [ ] (×1) E2 (chèn internal reasoning vào product description) thuộc app APC, không phải SEO
