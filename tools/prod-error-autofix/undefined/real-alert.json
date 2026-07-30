@@ -1,0 +1,34 @@
+{
+  "text": ":red_circle: [BLOG] [getCrmWidgets] uQjKioPw1h8iZk2i0PUV Request failed with status code 400",
+  "blocks": [
+    {
+      "type": "section",
+      "block_id": "OUk2O",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":red_circle: *[BLOG] api*  ·  `ERROR`  ·  _app error_",
+        "verbatim": false
+      }
+    },
+    {
+      "type": "section",
+      "block_id": "CNzNS",
+      "text": {
+        "type": "mrkdwn",
+        "text": "```[getCrmWidgets] uQjKioPw1h8iZk2i0PUV Request failed with status code 400```",
+        "verbatim": false
+      }
+    },
+    {
+      "type": "context",
+      "block_id": "EfRez",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "*×11* total · 2 suppressed since last alert  ·  first seen 321m ago  ·  window 10m  ·  <https://console.cloud.google.com/logs/query;query=resource.labels.service_name%3D%22api%22%0Aseverity%3E%3DERROR?project=avada-blog-app|Logs Explorer>",
+          "verbatim": false
+        }
+      ]
+    }
+  ]
+}
