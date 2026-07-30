@@ -241,8 +241,17 @@ xác định trạng thái merge/deploy **không cần GitLab token**:
 
 - **Đã merge chưa:** `git fetch origin` rồi `git merge-base --is-ancestor <fix_sha> origin/<base>`.
   Chạy qua SSH, không cần PAT.
-- **Đã deploy chưa:** `deployed_at` = thời điểm revision mới nhất của service đó trên prod project
-  (`gcloud run revisions list` / `gcloud functions describe`), lấy qua gcloud auth sẵn có.
+- **Đã deploy chưa:** `gcloud functions describe <svc> --format=value(updateTime)` — kiểm thật
+  2026-07-30, **một lệnh này chạy cho cả gen1 và gen2** (`avada-blog-app/api` = GEN_2 →
+  `2026-07-30T08:42:36Z`; `seo-on-aeo/proxy` = gen1 → `2026-07-28T07:49:57Z`). Service Cloud Run
+  thuần thì fallback `gcloud run revisions list --limit=1`.
+
+**Giới hạn đã biết — Cloud Run job không có timestamp deploy.** `gcloud run jobs describe` chỉ có
+`metadata.creationTimestamp` (lúc tạo job, `avada-seo-optimize-image-job` = 2026-05-03) và
+`generation` (=12); **không có** `lastModifiedAt`. Nên với service dạng `job:*`, probe trả
+`deployedAtMs: undefined` → fingerprint đứng ở `awaiting_deploy`, **không bao giờ** tự lên
+`fix_failed`. Nghĩa là fix cho lỗi Cloud Run job không tự escalate attempt 2, phải người xem. Chọn
+vậy có ý thức: lấy thời điểm *execution* làm thời điểm *deploy* sẽ sai ngữ nghĩa và gây rerun oan.
 
 | State | Alert trùng fingerprint bắn lại | Hành động |
 |---|---|---|
