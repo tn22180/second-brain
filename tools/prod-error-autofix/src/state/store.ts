@@ -316,6 +316,25 @@ export class Store {
       .run(channel, lastTs, nowMs);
   }
 
+  /**
+   * Remembers a reply this daemon posted.
+   *
+   * Needed because the alerting app and this daemon are the **same** Slack app —
+   * verified 2026-07-30: alerts in the channel carry `user: U0ANC8JQ3AL`, which is
+   * this bot's own user id. So "is it from us" cannot be answered by comparing user
+   * ids; the ts of what we wrote is the only reliable signal.
+   */
+  markOwnReply(channel: string, ts: string, nowMs: number): void {
+    this.markEventSeen(`reply:${channel}:${ts}`, nowMs);
+  }
+
+  isOwnReply(channel: string, ts: string): boolean {
+    const row = this.db.query('SELECT 1 AS hit FROM seen_events WHERE event_id = ?').get(`reply:${channel}:${ts}`) as
+      | {hit: number}
+      | null;
+    return row !== null;
+  }
+
   /** True the first time an event id is seen. Socket Mode redelivers on missed acks. */
   markEventSeen(eventId: string, nowMs: number): boolean {
     const changes = this.db
