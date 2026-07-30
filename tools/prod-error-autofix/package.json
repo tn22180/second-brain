@@ -1,0 +1,21 @@
+{
+  "name": "prod-error-autofix",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Slack #prod-errors alert -> triage -> fix -> MR, for the 5 Avada prod apps.",
+  "scripts": {
+    "daemon": "bun run bin/autofix.ts daemon",
+    "autofix": "bun run bin/autofix.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@slack/socket-mode": "^2.0.2",
+    "@slack/web-api": "^7.8.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}
