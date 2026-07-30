@@ -13,10 +13,19 @@ export interface RunResult {
   timedOut: boolean;
 }
 
-export type Runner = (args: string[], timeoutMs: number) => Promise<RunResult>;
+export interface RunOptions {
+  /**
+   * Working directory. Needed because macOS `env` has no `-C` — the BSD build
+   * rejects it outright — so a command that must run inside a repo cannot be
+   * wrapped, it has to be spawned there.
+   */
+  cwd?: string;
+}
 
-export const spawnRunner: Runner = async (args, timeoutMs) => {
-  const proc = Bun.spawn(args, {stdout: 'pipe', stderr: 'pipe'});
+export type Runner = (args: string[], timeoutMs: number, opts?: RunOptions) => Promise<RunResult>;
+
+export const spawnRunner: Runner = async (args, timeoutMs, opts) => {
+  const proc = Bun.spawn(args, {stdout: 'pipe', stderr: 'pipe', ...(opts?.cwd ? {cwd: opts.cwd} : {})});
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
