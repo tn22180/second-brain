@@ -31,8 +31,13 @@ numbers**. Cite `src/`.
   `ai-product-copy-staging`. Confirm the id on any GCP read.
 - This app is AI-generation heavy, so **P1 (truncated completion surfacing as a JSON parse error)** is
   the first pattern to test against the logs, not the last.
-- 5 test files total. The baseline diff gate is weak here by construction: a reproduce test that
-  fails before the fix and passes after is doing most of the work.
+- 5 test files total (106 tests, ~15s). The baseline diff gate is weak here by construction: a
+  reproduce test that fails before the fix and passes after is doing most of the work.
+- The root jest run picks up `scripts/docs-gate/__tests__/`, and one of those tests —
+  `gitContext.test.js` `changedFiles ... against the real repo` — shells out to git and asserts on
+  the working tree. It fails on a clean checkout as of 2026-07-30 and its result moves with the state
+  of the repo, so the baseline for this app is not stable across commits. Do not read it as a
+  regression, and do not try to fix it as part of a prod-error MR.
 
 ## Incident history
 
