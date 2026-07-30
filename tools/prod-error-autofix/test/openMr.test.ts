@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
-import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, type OpenMrInput} from '../src/git/openMr';
+import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, singleLine, type OpenMrInput} from '../src/git/openMr';
 import {branchNameFor, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
@@ -99,12 +99,17 @@ describe('openMr', () => {
   function gitRunner(over: {staged?: string; commitCode?: number; pushCode?: number; pushOutput?: string} = {}): {
     runner: Runner;
     pushArgs: () => string[];
+    commitArgs: () => string[];
   } {
     let pushArgs: string[] = [];
+    let commitArgs: string[] = [];
     const runner: Runner = async args => {
       const joined = args.join(' ');
       if (joined.includes('diff --cached')) return ok({stdout: over.staged ?? 'packages/functions/src/x.js\n'});
-      if (joined.includes(' commit ')) return ok({code: over.commitCode ?? 0});
+      if (joined.includes(' commit ')) {
+        commitArgs = args;
+        return ok({code: over.commitCode ?? 0});
+      }
       if (joined.includes('rev-parse HEAD')) return ok({stdout: 'cafe1234\n'});
       if (joined.includes(' push ')) {
         pushArgs = args;
@@ -112,7 +117,7 @@ describe('openMr', () => {
       }
       return ok();
     };
-    return {runner, pushArgs: () => pushArgs};
+    return {runner, pushArgs: () => pushArgs, commitArgs: () => commitArgs};
   }
 
   test('a successful push returns the MR url and the fix sha', async () => {
@@ -172,11 +177,34 @@ describe('openMr', () => {
     expect(res.failure).toBe('refused');
   });
 
-  test('a long description is truncated rather than rejected by GitLab', async () => {
+  /**
+   * The live failure on 2026-07-30: git rejected the whole push with
+   * "fatal: push options must not have new line characters" because the MR body was
+   * passed as `merge_request.description`. Every real MR body is multi-line, so the
+   * only push that could ever have worked was the single-line one in the old test.
+   */
+  test('no push option carries a line break', async () => {
     const {runner, pushArgs} = gitRunner();
-    await openMr(input({description: 'x'.repeat(9000)}), runner);
-    const descArg = pushArgs().find(a => a.startsWith('merge_request.description='))!;
-    expect(descArg.length).toBeLessThan(4200);
+    const body = ['## Why', '', 'Production error on **BLOG**.', '', '- one', '- two'].join('\n');
+    await openMr(input({description: body, title: 'fix(prod): [BLOG] a\nb'}), runner);
+    const options = pushArgs().filter((a, i) => pushArgs()[i - 1] === '-o');
+    expect(options.length).toBeGreaterThan(0);
+    for (const o of options) expect(o).not.toContain('\n');
+    // The body is not shortened or reshaped, it just travels in the commit instead.
+    expect(pushArgs().join(' ')).not.toContain('merge_request.description');
+  });
+
+  test('the full multi-line body reaches the commit message', async () => {
+    const {runner, commitArgs} = gitRunner();
+    const body = 'line one\n\nline two';
+    await openMr(input({description: body}), runner);
+    expect(commitArgs()).toContain(body);
+  });
+
+  test('singleLine folds a multi-line value and truncates it', () => {
+    expect(singleLine('a\n\n  b\nc', 100)).toBe('a b c');
+    expect(singleLine('x'.repeat(500), 300)).toHaveLength(300);
+    expect(singleLine('  spaced  ', 100)).toBe('spaced');
   });
 });
 

@@ -326,7 +326,7 @@ Ngoài session (Tuan làm tay): tạo Slack app + 3 token, `gcloud auth login` n
 → `6b171da` smoke → `41311bf` worktree+MR → `d04e1de` Slack → `94176b4` pipeline+LEARN
 → `05535fe` CLI → `6602c00` launchd+README.
 
-### 4 bug thật bắt được nhờ verify (không phải suy đoán)
+### 6 bug thật bắt được nhờ verify (không phải suy đoán)
 1. **AEO base branch là `main`**, không phải `master` — mọi MR cho `llm-ai-search-seo` sẽ trỏ branch
    không tồn tại. Có test derive từ `git symbolic-ref` nên không tái diễn.
 2. **`env -C` không có trên macOS** (`illegal option -- C`) — mọi lần chạy jest sẽ bị đọc thành "jest
@@ -335,6 +335,18 @@ Ngoài session (Tuan làm tay): tạo Slack app + 3 token, `gcloud auth login` n
    alert, daemon sẽ bỏ hết. Đổi sang nhận diện bằng threaded + ghi `ts` reply.
 4. **Cloud Run job không có timestamp deploy** — nên `job:*` không bao giờ tự lên `fix_failed`;
    ghi rõ là giới hạn thay vì lấy thời điểm execution làm deploy (sẽ gây rerun oan).
+5. **Worktree không có `node_modules`** (job `1xqxz29`) — `npx jest` tải jest mới, jest mới từ chối
+   `blogs` vì có cả `jest.config.js` lẫn key `jest` trong `package.json` → baseline fail →
+   `smoke no_baseline` chặn MR sau khi đã tiêu $4.43. Fix: `linkNodeModules` (symlink, không install)
+   + `resolveTestCmd` (jest local + `--config` tường minh). Khe hở giữa 2 loại test: unit stub
+   `Runner` nên jest "chạy" không cần dep; integration chạy jest ở **main repo** nơi dep có sẵn —
+   không test nào chạy jest **trong worktree**.
+6. **git chặn push option có newline** (job `1ph12wf`): `fatal: push options must not have new line
+   characters`. `merge_request.description` là MR body multi-line → git chết **trước khi** kết nối
+   remote, mất cả cú push. Test cũ dùng description 1 dòng (`'x'.repeat(9000)`) nên luôn pass —
+   đúng cú push duy nhất có thể chạy được. Fix: bỏ hẳn `merge_request.description`, body đi trong
+   commit message; thêm `singleLine()` cho mọi push option còn lại + test assert không option nào
+   chứa `\n`.
 
 ### Tuan cần làm để bật thật
 1. Thêm `SLACK_APP_TOKEN=xapp-...` (scope `connections:write` + subscribe `message.channels`) vào

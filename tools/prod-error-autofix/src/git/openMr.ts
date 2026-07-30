@@ -33,8 +33,24 @@ export interface OpenMrResult {
   detail: string | undefined;
 }
 
-/** GitLab truncates long push-option values; the full write-up goes in the thread. */
-const MAX_DESCRIPTION = 4000;
+/** Push-option values stay well short of the shell's argv limits. */
+const MAX_TITLE = 300;
+
+/**
+ * git refuses to send a push option containing a line break:
+ *
+ *   fatal: push options must not have new line characters
+ *
+ * It fails before contacting the remote, so the whole push is lost. Seen live on
+ * 2026-07-30 with a multi-line `merge_request.description`, which is why the
+ * description is no longer passed this way at all — it goes in the commit body,
+ * which GitLab shows on the MR, and in full in the Slack thread.
+ *
+ * Everything that still goes over a push option runs through here.
+ */
+export function singleLine(value: string, max: number): string {
+  return value.replace(/\s*\r?\n\s*/g, ' ').trim().slice(0, max);
+}
 
 /**
  * On a successful push with `merge_request.create`, GitLab answers:
@@ -162,11 +178,9 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     '-o',
     'merge_request.create',
     '-o',
-    `merge_request.target=${input.baseBranch}`,
+    `merge_request.target=${singleLine(input.baseBranch, 200)}`,
     '-o',
-    `merge_request.title=${input.title}`,
-    '-o',
-    `merge_request.description=${input.description.slice(0, MAX_DESCRIPTION)}`,
+    `merge_request.title=${singleLine(input.title, MAX_TITLE)}`,
     '-o',
     'merge_request.remove_source_branch',
     '--set-upstream',
