@@ -48,11 +48,26 @@ Không có mục tiêu: thay CI, thay review của người, tự merge, tự de
 | `SEO` | `seo` | `avada-seo` | `master` |
 | `BLOG` | `blogs` | `avada-blog-app` | `master` |
 | `APC` | `ai-product-copy` | `ai-product-copy` | `master` |
-| `AEO` | `llm-ai-search-seo` | `seo-on-aeo` | `master` |
+| `AEO` | `llm-ai-search-seo` | `seo-on-aeo` | **`main`** |
 | `IMG-OPT` | `avada-image-optimizer` | `app-plaza-image-optimizer` | `master` |
 
 `appName` lấy nguyên từ alert (`[BLOG]`), không suy diễn từ nội dung message. App không có trong
 registry → reply vào thread nói rõ, không crash, không đoán repo.
+
+Mọi giá trị trong bảng đọc từ repo, không giả định — `appName` và prod project lấy từ
+`packages/functions/src/handlers/pubsub/handleProdErrorAlert.js` trên chính default branch của từng
+repo (wiring alert đã merge cả 5 app, kiểm 2026-07-30), branch lấy từ
+`git symbolic-ref refs/remotes/origin/HEAD`. **`AEO` là `main`, bốn app còn lại `master`** — cắt fix
+từ `master` ở AEO sẽ tạo MR vào branch không tồn tại. `test/registry.disk.test.ts` derive lại từ
+repo và fail khi drift.
+
+Test command: cả 5 repo đều có `jest.config.js` ở root và jest ở root `devDependencies`, nhưng chỉ
+vài repo khai `test` script — `npx jest --ci` ở repo root là lệnh duy nhất chạy được cho cả 5
+(đếm bằng `--listTests`: seo 97, blogs 23, APC 5, AEO 5, IMG-OPT 60).
+
+`seo/jest.config.js` ignore `<rootDir>/.claude/worktrees/` vì worktree là checkout đầy đủ nên jest
+gom trùng test. Worktree của project này nằm ở `~/.cache/prod-autofix/wt/`, ngoài `rootDir` — không
+đụng vấn đề đó, và đó là lý do không được đặt worktree trong repo.
 
 ## Vị trí và runtime
 
