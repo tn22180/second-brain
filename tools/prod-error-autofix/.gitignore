@@ -1,0 +1,7 @@
+# secrets — Slack tokens. second-brain syncs nightly and pushes; these must never leave the disk.
+.env
+.env.*
+!.env.example
+
+node_modules/
+*.tsbuildinfo
