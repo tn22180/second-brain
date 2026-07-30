@@ -28,6 +28,7 @@ const USAGE = `autofix — prod error → MR
   daemon                      nghe #prod-errors và chạy pipeline (launchd chạy lệnh này)
   status                      queue, cap còn lại, 10 incident gần nhất
   dry-run <file> [--prompt]   feed alert giả: in registry + fingerprint + brain slice, KHÔNG gọi model
+  run <ts|slack-url>          chạy pipeline trên đúng 1 message trong channel (CÓ thể mở MR thật)
   replay <fingerprint>        chạy lại pipeline trên một incident đã lưu (không post Slack trừ --post)
   incidents                   liệt kê fingerprint đã lưu
   brain budget                đo token slice từng app, exit 1 nếu vượt
@@ -75,6 +76,43 @@ async function main(argv: string[]): Promise<void> {
 
     case 'incidents': {
       console.log(listIncidents(cfg));
+      return;
+    }
+
+    case 'run': {
+      const arg = args[1];
+      if (!arg) fail('dùng: autofix run <ts|slack-url> [--no-post]');
+      // Accepts a raw ts, or a Slack permalink: .../p1785408826442739
+      const fromUrl = /\/p(\d{10})(\d{6})/.exec(arg);
+      const ts = fromUrl ? `${fromUrl[1]}.${fromUrl[2]}` : arg;
+      const slack = createSlackApi(cfg.slackBotToken);
+      // conversations.history with `oldest` is exclusive, so step back a tick to
+      // include the message itself.
+      const oldest = (Number(ts) - 0.000001).toFixed(6);
+      const found = (await slack.history({channel: cfg.errorChannelId, oldestTs: oldest, limit: 20})).find(
+        m => m.ts === ts
+      );
+      if (!found) fail(`không tìm thấy message ts ${ts} trong ${cfg.errorChannelId}`);
+      const post = !args.includes('--no-post');
+      const api = post
+        ? slack
+        : {
+            ...slack,
+            postThreadReply: async ({text}: {text: string}) => {
+              console.log('\n--- reply (không post) ---\n' + text + '\n');
+              return {ts: undefined};
+            }
+          };
+      console.log(`run ts ${ts}${post ? ' · POST reply thật vào thread · CÓ THỂ MỞ MR THẬT' : ' · không post'}`);
+      console.log(`text: ${(found.text ?? '').slice(0, 160)}`);
+      const res = await runPipeline({cfg, store, slack: api, now, log: line => console.log(line)}, {
+        ...found,
+        channel: cfg.errorChannelId,
+        eventId: undefined
+      });
+      console.log(
+        `\n→ status ${res.status} · ${res.detail} · $${res.costUsd.toFixed(2)}${res.mrUrl ? ` · ${res.mrUrl}` : ''}`
+      );
       return;
     }
 

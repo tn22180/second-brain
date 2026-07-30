@@ -99,6 +99,46 @@ export function replyInfra(input: ReplyBase & {analysis: Analysis | undefined; d
     .join('\n');
 }
 
+/**
+ * The branch is on the remote but no MR exists — the push option did not take.
+ *
+ * The work is not lost and must not read as lost: the reply leads with a one-click
+ * create link and carries the MR body verbatim for pasting. This is the same manual
+ * step the `jobs/bugprod.md` triage ended on when there was no token.
+ */
+export function replyPushedNoMr(input: ReplyBase & {
+  analysis: Analysis;
+  smoke: SmokeOutcome;
+  branch: string;
+  createMrUrl: string | undefined;
+  mrTitle: string;
+  mrBody: string;
+  detail: string;
+}): string {
+  return [
+    input.createMrUrl
+      ? `📝 *Push xong, MR chưa tự tạo — bấm đây để tạo:* ${input.createMrUrl}`
+      : '📝 *Push xong nhưng MR chưa tự tạo, và cũng không dựng được link tạo.*',
+    `Branch đã lên remote: \`${input.branch}\`. Code không mất.`,
+    `Lý do: ${input.detail}`,
+    '',
+    `*Root cause.* ${input.analysis.rootCause}`,
+    citations(input.analysis),
+    '',
+    `*Test.* ${describeSmoke(input.smoke)}`,
+    '',
+    `*Title:* \`${input.mrTitle}\``,
+    '*Body để paste:*',
+    '```',
+    input.mrBody.slice(0, 2500),
+    '```',
+    '',
+    `_${footer(input)}_`
+  ]
+    .filter(l => l !== '')
+    .join('\n');
+}
+
 /** The fix stage or the smoke gate refused. */
 export function replyGateFailed(input: ReplyBase & {analysis: Analysis; gate: string; detail: string; smoke: SmokeOutcome | undefined; worktreeKept: string | undefined}): string {
   return [

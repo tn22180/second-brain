@@ -461,27 +461,29 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   }
 
   const threadUrl = await deps.slack.permalink({channel: input.message.channel, ts: input.message.ts}).catch(() => undefined);
+  const mrBody = buildMrBody({
+    appName: alert.appName,
+    service: alert.service,
+    fingerprint,
+    rootCause: verified.rootCause,
+    mechanism: verified.mechanism,
+    citations: verified.citations,
+    evidence: verified.evidence,
+    agentSummary: fixed.summary,
+    risks: fixed.risks,
+    smokeLine: describeSmoke(smoke),
+    logsUrl: alert.logsUrl,
+    threadUrl,
+    attempt
+  });
+
   const mr = await openMr(
     {
       worktreeDir: worktree.value.dir,
       branch: worktree.value.branch,
       baseBranch: app.defaultBranch,
       title: fixed.mrTitle,
-      description: buildMrBody({
-        appName: alert.appName,
-        service: alert.service,
-        fingerprint,
-        rootCause: verified.rootCause,
-        mechanism: verified.mechanism,
-        citations: verified.citations,
-        evidence: verified.evidence,
-        agentSummary: fixed.summary,
-        risks: fixed.risks,
-        smokeLine: describeSmoke(smoke),
-        logsUrl: alert.logsUrl,
-        threadUrl,
-        attempt
-      }),
+      description: mrBody,
       timeoutMs: cfg.timeouts.gcloudMs
     },
     deps.runner
@@ -489,19 +491,38 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
 
   if (!mr.ok) {
     keepWorktree = true;
+    // A pushed branch with no MR is a click away from done, so it gets its own
+    // reply carrying the create link and the body — not a generic gate failure.
     const replied = await say(
-      reply.replyGateFailed({
-        fingerprint,
-        appName: alert.appName,
-        attempt,
-        analysis: verified,
-        gate: mr.failure ?? 'open_mr',
-        detail: `${mr.detail ?? ''}${mr.pushed ? ' (branch đã push, chỉ thiếu MR)' : ''}`,
-        smoke,
-        worktreeKept: worktreeDir
-      })
+      mr.pushed
+        ? reply.replyPushedNoMr({
+            fingerprint,
+            appName: alert.appName,
+            attempt,
+            analysis: verified,
+            smoke,
+            branch: worktree.value.branch,
+            createMrUrl: mr.createMrUrl,
+            mrTitle: fixed.mrTitle,
+            mrBody,
+            detail: mr.detail ?? ''
+          })
+        : reply.replyGateFailed({
+            fingerprint,
+            appName: alert.appName,
+            attempt,
+            analysis: verified,
+            gate: mr.failure ?? 'open_mr',
+            detail: mr.detail ?? '',
+            smoke,
+            worktreeKept: worktreeDir
+          })
     );
-    store.patchAlert(fingerprint, {fixSha: mr.fixSha});
+    store.patchAlert(fingerprint, {
+      fixSha: mr.fixSha,
+      branch: worktree.value.branch,
+      note: mr.createMrUrl ? `pushed, create MR by hand: ${mr.createMrUrl}` : undefined
+    });
     await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'inconclusive', outcome: `MR not opened: ${mr.failure}`, rounds: analysis.rounds.length, costUsd, message: input.message, diffStat: fixed.diffStat, smokeLine: describeSmoke(smoke), fixSha: mr.fixSha});
     return await finish('inconclusive', `open_mr ${mr.failure}: ${mr.detail}`, {replied});
   }

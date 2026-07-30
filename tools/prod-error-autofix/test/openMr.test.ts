@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
-import {buildMrBody, isCreateLinkOnly, openMr, parseMrUrl, type OpenMrInput} from '../src/git/openMr';
+import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, type OpenMrInput} from '../src/git/openMr';
 import {branchNameFor, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
@@ -226,5 +226,82 @@ describe('buildMrBody', () => {
     });
     expect(retry).toContain('attempt 2');
     expect(retry).toContain('survived it');
+  });
+});
+
+describe('create-by-hand link', () => {
+  test('the link GitLab printed is preferred', () => {
+    expect(parseCreateLink(PUSH_CREATE_LINK)).toBe(
+      'https://gitlab.com/avada/blogs/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Fprod-blog-1a2b3c'
+    );
+  });
+
+  test('a push that created an MR has no create link', () => {
+    expect(parseCreateLink(PUSH_CREATED)).toBeUndefined();
+  });
+
+  test('remote urls of every shape map to a web url', () => {
+    expect(remoteToWebUrl('git@gitlab.com:avada/blogs.git')).toBe('https://gitlab.com/avada/blogs');
+    expect(remoteToWebUrl('ssh://git@gitlab.com:2222/avada/blogs.git')).toBe('https://gitlab.com/avada/blogs');
+    expect(remoteToWebUrl('https://gitlab.com/avada/blogs.git')).toBe('https://gitlab.com/avada/blogs');
+    expect(remoteToWebUrl('https://oauth2:tok@gitlab.com/avada/blogs.git')).toBe('https://gitlab.com/avada/blogs');
+    expect(remoteToWebUrl('git@gitlab.com:avada/seoon-team/falcon.git')).toBe('https://gitlab.com/avada/seoon-team/falcon');
+  });
+
+  test('a built link prefills source, target and title', () => {
+    const url = buildCreateMrUrl('https://gitlab.com/avada/blogs', 'fix/prod-blog-1a2b', 'master', 'fix(prod): x');
+    const params = new URL(url).searchParams;
+    expect(url.startsWith('https://gitlab.com/avada/blogs/-/merge_requests/new?')).toBe(true);
+    expect(params.get('merge_request[source_branch]')).toBe('fix/prod-blog-1a2b');
+    expect(params.get('merge_request[target_branch]')).toBe('master');
+    expect(params.get('merge_request[title]')).toBe('fix(prod): x');
+    // The description is left out on purpose — it goes in the thread, not a URL.
+    expect(params.get('merge_request[description]')).toBeNull();
+  });
+
+  test('openMr falls back to building the link when GitLab printed none', async () => {
+    let pushArgs: string[] = [];
+    const runner: Runner = async args => {
+      const joined = args.join(' ');
+      if (joined.includes('diff --cached')) return ok({stdout: 'a.js\n'});
+      if (joined.includes('rev-parse HEAD')) return ok({stdout: 'cafe1234\n'});
+      if (joined.includes('remote get-url')) return ok({stdout: 'git@gitlab.com:avada/blogs.git\n'});
+      if (joined.includes(' push ')) {
+        pushArgs = args;
+        return ok({stderr: 'To gitlab.com:avada/blogs.git\n * [new branch] HEAD -> fix/prod-blog-1a2b'});
+      }
+      return ok();
+    };
+    const res = await openMr(
+      {
+        worktreeDir: '/wt',
+        branch: 'fix/prod-blog-1a2b',
+        baseBranch: 'master',
+        title: 'fix(prod): x',
+        description: 'body',
+        timeoutMs: 1000
+      },
+      runner
+    );
+    expect(res.ok).toBe(false);
+    expect(res.pushed).toBe(true);
+    expect(res.createMrUrl).toContain('/-/merge_requests/new?');
+    expect(res.createMrUrl).toContain('fix%2Fprod-blog-1a2b');
+    expect(pushArgs.join(' ')).toContain('merge_request.create');
+  });
+
+  test('a failed push has no create link — there is no branch to open one for', async () => {
+    const runner: Runner = async args => {
+      const joined = args.join(' ');
+      if (joined.includes('diff --cached')) return ok({stdout: 'a.js\n'});
+      if (joined.includes(' push ')) return ok({code: 1, stderr: 'remote: GitLab: You are not allowed to push code'});
+      return ok();
+    };
+    const res = await openMr(
+      {worktreeDir: '/wt', branch: 'fix/prod-blog-1a2b', baseBranch: 'master', title: 't', description: 'b', timeoutMs: 1000},
+      runner
+    );
+    expect(res.failure).toBe('push_failed');
+    expect(res.createMrUrl).toBeUndefined();
   });
 });

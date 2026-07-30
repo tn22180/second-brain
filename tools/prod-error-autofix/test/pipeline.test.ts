@@ -372,7 +372,7 @@ describe('paths that must not open an MR', () => {
     expect(posted[0]).toContain('không mở MR');
   });
 
-  test('a push that yields no MR url says the branch was pushed anyway', async () => {
+  test('a push that yields no MR url hands over the create link and the body', async () => {
     const res = await runPipeline(
       deps({
         runner: script({
@@ -382,7 +382,15 @@ describe('paths that must not open an MR', () => {
       alertMessage()
     );
     expect(res.detail).toContain('no_mr_url');
-    expect(posted[0]).toContain('branch đã push');
+    // The branch is on the remote, so this is one click from done — the reply leads
+    // with the link and carries the MR body for pasting.
+    expect(posted[0]).toContain('bấm đây để tạo');
+    expect(posted[0]).toContain('/-/merge_requests/new?x=1');
+    expect(posted[0]).toContain('Code không mất');
+    expect(posted[0]).toContain('Body để paste');
+    expect(posted[0]).toContain('## Why');
+    // And the branch is recorded so the next alert can find it.
+    expect(store.getAlert(res.fingerprint!)!.branch).toMatch(/^fix\/prod-blog-/);
   });
 });
 
