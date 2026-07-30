@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tn22180.prod-error-autofix</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/nguyentuan/.bun/bin/bun</string>
+        <string>run</string>
+        <string>/Users/nguyentuan/Documents/second-brain/tools/prod-error-autofix/bin/autofix.ts</string>
+        <string>daemon</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/nguyentuan/Documents/second-brain/tools/prod-error-autofix</string>
+
+    <!--
+      PATH has to carry git, gcloud, npx and claude explicitly: launchd starts with a
+      minimal environment, and every one of those is spawned by the pipeline.
+      ~/.local/bin is where `claude` lives on this machine.
+    -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/nguyentuan</string>
+        <key>PATH</key>
+        <string>/Users/nguyentuan/.local/bin:/Users/nguyentuan/.bun/bin:/opt/homebrew/bin:/Users/nguyentuan/.nvm/versions/node/v22.22.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- A long-running listener: start at load and restart if it dies. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Do not hammer the API if it is crash-looping on a bad config. -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nguyentuan/.cache/prod-autofix/daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nguyentuan/.cache/prod-autofix/daemon.err.log</string>
+</dict>
+</plist>

@@ -99,3 +99,24 @@ it inside whichever handler happened to be running.
 `llm-ai-search-seo` and `avada-image-optimizer` still have the bare-`console` logger, so their sinks
 are still blind to application errors. For those four, an empty `errors` read is the expected state,
 not a finding — read `stderr`.
+
+**What that looks like in the channel.** Observed live on 2026-07-30: an `SEO`/`apigen2` alert whose
+entire message was
+
+```
+HTTP 500 POST /api/historyAudit
+```
+
+No error text, no stack, no tag. That is the `httpRequest` fallback in the sender's `extractMessage`
+firing because the only thing the sink matched was a **request log**, not an application error line.
+So on those four apps:
+
+- the endpoint and status in the alert are all you are given up front
+- the actual error message and stack are in the `stderr` read, matched by service and time window,
+  **not** by anything in the alert text
+- the fingerprint is derived from `HTTP <status> <method> <path>`, so two unrelated causes behind the
+  same endpoint share one fingerprint. Say so if the logs show more than one cause; do not pick one
+  and present it as the cause of the alert.
+
+On `blogs` the same alert carries the real message — `[getPreview] … Cannot read properties of
+undefined` — because its logger emits `severity`.
