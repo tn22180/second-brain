@@ -2,27 +2,75 @@ lọc tất cả các function dùng activity collection firestore cho t, và đ
 
 Scope chốt: repo `seo`, branch `master` (2b0a1f2803b, sync origin). Deliverable = report + khuyến nghị, không sửa code, không query prod (code-only).
 
+**Cập nhật 2026-07-30 (Tuan chốt): tính năng email đã sunset.** Mọi đường đi qua `renderTemplate` /
+`getOptimizeReport` / `notifyOptimize` / `POST /email/test` coi như chết. Reader sống duy nhất của
+collection `activity` còn lại là **`countImageOTM` gọi từ `shopController.js:115`**. Report bên dưới
+đã điều chỉnh theo. Lưu ý về mặt code hai trigger vẫn còn wire ở FE — DevZone
+`DTToolsContainer.js:539` (`/dev?x=weeklyScanSeo`) và `Email/SendTest.js:40` (`POST /email/test`) —
+nên nếu ai bấm thì code vẫn chạy; sunset ở đây là quyết định product, không phải code đã gỡ.
+
+**Cập nhật 2026-07-30 (b) — sửa lại 2 chỗ sai, verify trên `origin/master` = `2047de0d8a3`.**
+Report bên dưới viết trên `2b0a1f2803b`; tree đã đi trước 38 commit (không commit nào chạm
+`activity`). Hai claim bên dưới **sai về mặt code** và bị block này override:
+
+1. **"9/10 type write-only" — sai.** `alt` và `filename` vẫn có reader sống: `POST /email/test`
+   (`api.js:381`, FE `pages/Email/SendTest.js:40`) → case `report` → `renderTemplate` →
+   `getOptimizeReport` (`mailService.js:243`) → `countImageOTM` ×3 cho `image`/`alt`/`filename`;
+   case `optimize` → `getActivityByType` ×3 (`emailController.js:49-53`). Chỉ **7/10** type
+   (`meta`,`rule`,`structured`,`redirect`,`site`,`social`,`sitemap`) là write-only.
+2. **`getActivityByType` / `createActivity` / `deleteOptimizeActivities` không phải Tier 0** —
+   đều còn caller sống: `emailController.js:50-52`; nội bộ `updateActivity:91` → `:123`;
+   `seoController.resetHistory:593` + `handlers/reset.js:24`.
+
+**Cơ chế sunset đúng ra là:** cron `resetOptimize()` (`handlers/cron/resetOptimize.js:14-17`) chỉ
+gọi `resetOptStatus()`, **không gọi `sendEmails()`**. `sendEmails()` (`:19-26`) có đúng 1 caller —
+`devController.js:514` (dev-zone `weeklyScanSeo`). Tức là email report **theo lịch** đã chết, còn
+nút test email của merchant thì sống.
+
+**Đã thi hành (branch `chore/remove-dead-activity-code` off `2047de0d8a3`, chưa commit):** Tier 0
+thu hẹp lại còn phần chết theo wiring — `calculateSavings` (0 caller), comment `getGridActivity`,
+`mailService.notifyOptimize:43-95` (0 caller external), FE page `ActivityDetails` (+ loadable,
+route, key i18n ở 14 locale), 2 dòng route đã comment ở `api.js`, index `activity`
+`shopID+type+updatedAt` trong `firestore.indexes.json`. Kèm P0: `console.log('data', data)` ở
+`activityController.js:48`. `console.log` đó đọc BigQuery `activity_events`, **không** liên quan
+collection Firestore `activity`.
+
 ---
 
 # Report — Firestore collection `activity` (repo `seo`)
 
 ## Kết luận
 
-**Bỏ được. Nên bỏ.** Không phải "dọn cho gọn" — nó đang ghi dữ liệu không ai đọc và có một read path
-chi phí tăng tuyến tính theo tuổi shop, chạy trên **mỗi lần mở app**.
+**Bỏ được. Nên bỏ.** Sau khi email sunset, cả collection chỉ còn **đúng một reader sống**:
+`countImageOTM(shopId)` gọi từ `shopController.js:115`, trả về một con số duy nhất, dùng cho
+**banner upsell**. Mọi thứ còn lại là write không ai đọc.
 
-Ba sự thật quyết định:
+Bốn sự thật quyết định:
 
-1. **Docs của mọi type ngoài `image`/`alt`/`filename` là write-only.** `updateSeoActivity` (3 call
-   site) ghi type `meta`/`rule`/`structured`/`redirect`/`site`/`social`/`sitemap`. Reader duy nhất
-   của các type đó là `calculateSavings` — **0 call site**. Ghi xong không ai đọc.
+1. **Chỉ type `image` được đọc. `alt`, `filename` và 7 type còn lại là write-only.**
+   Reader sống duy nhất là `countImageOTM(shopId)` — `type` default `'image'`
+   (`activityRepository.js:199`). Vậy:
+   - `updateSeoActivity` (3 call site) ghi `meta`/`rule`/`structured`/`redirect`/`site`/`social`/`sitemap` → không ai đọc.
+   - `updateActivity` cho `alt` và `filename` → không ai đọc (reader cũ là email, đã sunset).
+   - `bulkCreateActivity` tạo 3 type/ngày, chỉ 1 type có nghĩa.
 2. **Collection append-only, không TTL, không compaction.** Cron `resetOptimizeScheduleGen2`
    (`cronFunctions.js:19-22`, schedule `1 1 * * *` = **hằng ngày**) bulk-create **3 doc/shop/ngày**
-   vĩnh viễn. `S` shop installed → `1095 × S` doc/năm, không bao giờ xóa.
+   vĩnh viễn. `S` shop installed → `1095 × S` doc/năm, không bao giờ xóa. 2/3 số doc đó vô nghĩa.
 3. **`countImageOTM` không có `limit`, chạy trên `/shop/appStatus`** — hook `useGetAppStatus` gắn ở
    `MainFrame.js:54`, tức **mọi lần merchant mở app**. Query đọc *tất cả* doc `count > 0` của shop
    đó. Số doc này tăng thêm 1 mỗi ngày shop có optimize. Chi phí mỗi lần mở app tăng đơn điệu,
    không có trần.
+4. **Con số duy nhất đó gần như chắc chắn đang không hiện.** Banner code sống và gate là plan logic
+   thật (FREE / trial), nhưng cả 3 gate đều nhân với `getTotalImageNotOptimized(shop) > 0`, mà hàm
+   đó đọc `shop.totalProductImageCount` — **không có write site nào trên `master`** (nhánh
+   `ReadyBanner` còn cần `shop.totalProductCount`, cũng không có). Thiếu field → hàm trả 0 → **cả 4
+   banner tắt bất kể plan** (§5). Xác nhận bằng 1 lần đọc 2 shop doc FREE trên prod (§7 bước 0).
+   **Nếu đúng thì `activity` có 0 reader sống → xóa thẳng, không migrate gì cả.**
+
+Và nó **đã bị thay thế rồi, chỉ là chưa ai gỡ**: collection `optimizeReport` (1 doc/shop) đang giữ
+cùng những con số đó, recompute từ `history` ở cuối mỗi optimize run
+(`recountOptimizedImages.js:20`), có trừ ảnh đã revert, idempotent. Chi tiết §4. Nghĩa là migration
+không cần dual-write hay backfill — chỉ đổi đầu đọc từ `A` read xuống **1 read**.
 
 Đây là collection đã bị audit một lần rồi: `const/shopProbe.js:158-167` ghi rõ `activity` bị loại
 khỏi `CORROBORATION_SOURCES` vì nó đo cron của chính mình chứ không đo merchant (25/25 shop SUSPECT
@@ -39,26 +87,30 @@ nguyên nhân.
 | Fn | Loại | Call site | Runtime |
 |---|---|---|---|
 | `updateActivity` | 1 read + 1 write | `productService.js:449,930,1013,1152,1235,1299`<br>`collectionService.js:319,650,705,753,836`<br>`articleService.js:267,677,746,827`<br>`fileImageService.js:292,656,790` | **GCF + fleet** — `optimizeImage`, `optimizeImageV2`, `recursive` đều nằm trong `MIGRATED_TOPICS` (`dispatchWork.js:23-33`) và `worker.config.yml jobs:` |
-| `getActivityByType` | 1 read, **write nếu miss** | `emailController.js:50-52` (live, `POST /email/test`)<br>`mailService.js:53-55` (**trong `notifyOptimize` — 0 caller, chết**) | GCF |
-| `countImageOTM` | **N read, không limit** | `shopController.js:115` (live, mỗi lần mở app)<br>`mailService.js:246-248` (email, trigger thủ công) | GCF |
+| `getActivityByType` | 1 read, **write nếu miss** | `emailController.js:50-52` (**email sunset**)<br>`mailService.js:53-55` (trong `notifyOptimize` — 0 caller) | — **chết** |
+| `countImageOTM` | **N read, không limit** | `shopController.js:115` — **reader sống duy nhất của cả collection**<br>`mailService.js:246-248` (**email sunset**) | GCF |
 | `updateSeoActivity` | k×(read+write) | `ruleController.js:74,107`, `subscriptionService.js:506` | GCF |
 | `deleteOptimizeActivities` | N read + N delete | `seoController.js:593`, `handlers/reset.js:24` | GCF |
 | `bulkCreateActivity` | 3×S write | `shopRepository.js:271` (`resetOptStatus`) | GCF cron |
-| `createActivity` | 1 write | nội bộ (`getActivityByType:123`) | — |
+| `createActivity` | 1 write | nội bộ (`getActivityByType:123`) | — **chết theo** |
 | **`calculateSavings`** | N read + 1 write | **0** | — |
 | `getGridActivity` | — | comment out `:131-146` | — |
 
 Route: `api.js:162-163` — `/activity` và `/estimated` **đã comment out**. `activityController` hiện
 tại đọc collection khác hẳn (`activityEventsRepository` → **BigQuery**, không phải Firestore).
 
-### Đường đi thật của 2 read path còn sống
+### Đường đi thật của read path còn sống — chỉ còn 1
 
 ```
 FE MainFrame.js:54 useGetAppStatus()
   → GET /shop/appStatus            (api.js:70)
   → shopController.getShopStatus   (:112-118)
   → countImageOTM(shopId)          → activity: shopID== , type=='image', count>0   [KHÔNG LIMIT]
+```
 
+Đường email dưới đây **đã sunset**, giữ lại để biết code còn wire ở đâu nếu cần gỡ:
+
+```
 devController:514 (thủ công) → sendEmails() → dispatchWork('sendEmails')
   → sendEmailsSubscriberGen2 (pubsubFunctions.js:285)   [không migrate fleet → luôn Pub/Sub]
   → subscribeSendEmails.js:31  for (const email of emails)
@@ -164,23 +216,62 @@ lặp per-recipient). Hiện chỉ trigger thủ công nên chưa đau; bật cr
 
 ---
 
-## 4. Không có nguồn thay thế sẵn — nhưng cũng không cần
+## 4. Nguồn thay thế: `optimizeReport` — đã tồn tại và tốt hơn
 
-Kiểm `activityEventsRepository` (cái mà `activityController` dùng bây giờ): đó là **BigQuery**,
-bảng `activity_events` partition theo ngày, ghi qua `middleware/trackActivity.js:33`,
-`auditAgentController.js:157`, `doneOptimize.js:169`.
+### Loại trừ trước
 
-Nó ghi **một event mỗi lần xảy ra hành động** (`feature:action`), **không ghi số ảnh**.
-`doneOptimize.js:169` ghi `IMAGE_OPTIMIZE:COMPLETE` một dòng cho cả run. → **Không thay thế được
-counter.** Đừng nhầm hai hệ này.
+- **`activityEventsRepository` là BigQuery**, bảng `activity_events` partition theo ngày, ghi qua
+  `middleware/trackActivity.js:33`, `auditAgentController.js:157`, `doneOptimize.js:169`. Ghi **một
+  event mỗi lần xảy ra hành động** (`feature:action`), **không ghi số ảnh** —
+  `doneOptimize.js:169` ghi `IMAGE_OPTIMIZE:COMPLETE` một dòng cho cả run. Không thay thế được
+  counter. Đừng nhầm hai hệ này chỉ vì trùng tên.
+- **`historyOptimize.countAll`** (`historyOptimizeRepository.js:182-193`) là per-run. Cộng dồn nó
+  cũng là quét unbounded → đổi query xấu lấy query xấu khác.
 
-`historyOptimize` có `countAll` per-run (`historyOptimizeRepository.js:182-193`) — thay thế được về
-mặt dữ liệu, nhưng cộng dồn nó cũng là quét unbounded → đổi một query xấu lấy một query xấu khác.
+### Đích đúng: collection `optimizeReport`
 
-**Đích đúng: counter trên chính shop doc.** `pickFields.js:110` đã có `totalImageOptimized` trong
-danh sách field của shop. FE (`toolCompressImage.js:97`) đọc `shop.totalImageOptimized` — nó **đã**
-mong đợi field nằm trên shop. Hiện `shopController.js:117` vá bằng cách nhét kết quả `countImageOTM`
-vào response. Chỉ cần biến nó thành field thật.
+`optimizeReportRepository.js:11-13` — `collection.doc(shopId).set(data, {merge: true})`. **Một doc
+mỗi shop.** Đang giữ đúng những con số mà `activity` đang cố giữ:
+
+| Field | Nghĩa |
+|---|---|
+| `countImageFile` / `countImageProduct` | tổng ảnh đã optimize, theo source |
+| `countAltFile` / `countAltProduct` | tổng alt đã optimize |
+| `imageOldSize*` / `imageNewSize*` | size trước/sau (image only) |
+| `syncTotalImagesCount`, `missingAltCount`, `syncTotalImagesStatus` | trạng thái sync |
+
+Ai ghi:
+
+1. **`recountOptimizedImages`** (`services/optimize/recountOptimizedImages.js:20`) — chạy **cuối mỗi
+   lần optimize**: `finalizeJobDone.js:24`, `finalizeWriteFlow.js:220` (và `doneOptimize.js:153` cho
+   nhánh Cloud Run finalize). Quét `history` rồi ghi lại tổng.
+2. **`RECURSIVE_COUNT_OPTIMIZED_IMAGES`** (`subscribeRecursive.js:655-703`) — bản Pub/Sub self-chaining
+   của cùng logic, kích bởi `historyOptimizeController.getTotalImages:261` (`POST /image-optimization/total-images`).
+
+Nguồn sự thật là `countOptimizedImages` (`historyRepository.js:901-948`): đếm log trong `history` với
+`status === COMPLETED && !isReverted`.
+
+**Vì sao tốt hơn `activity` ở mọi chiều:**
+
+| | `activity` | `optimizeReport` |
+|---|---|---|
+| Read để lấy tổng | `A` doc, tăng mỗi ngày | **1 doc** |
+| Cách tính | tích lũy increment | **recompute từ `history`** |
+| Idempotent | không — retry là double count | **có** — rescan cho cùng kết quả |
+| Trừ ảnh đã revert | **không** | có (`!l.isReverted`) |
+| Drift | có (`deleteOptimizeActivities` xoá, increment mất khi lỗi) | tự chữa ở lần optimize sau |
+| Doc/shop | `3 × số ngày`, vô hạn | 1, cố định |
+
+### Đây là hai source-of-truth song song cho cùng một con số
+
+`historyOptimizeController.getCountData:77-84` (`GET /history-optimize/count`) đã trả
+`totalOptimizedImages = optimizeReport.countImage${suffix}` cho report card trên trang Image, với
+`suffix = shop.useOptImageV25 ? 'File' : 'Product'` (`:78`).
+
+Cùng lúc đó `countImageOTM` trả một con số khác cho cùng khái niệm "tổng ảnh đã optimize", đi vào
+banner upsell. Hai số này **không có gì bảo đảm khớp nhau** — một cái trừ revert, một cái không.
+Đây không phải "activity thiếu nguồn thay thế", mà là **activity là bản cũ đã bị thay thế mà chưa
+ai gỡ**.
 
 ---
 
@@ -227,6 +318,9 @@ bán hàng hay không**, và hiện một con số xấp xỉ có dấu `+`.
 - **`totalProductImageCount` cũng không có write site nào trên `master`.** Grep toàn `packages/` (trừ
   `lib/`, worktree): chỉ có đọc (`seoController.js:1021`, FE) và `pickFields.js:17`. Không có
   `updateShop({totalProductImageCount})` ở đâu cả.
+- **`totalProductCount` — cũng không.** Chỉ `pickFields.js:111`, một accumulator cục bộ trong
+  response (`historyOptimizeController.js:224`) và một default của `DEFAULT_ANALYSIS`
+  (`const/optimize/compressImage.js:16` — đó là shape của analysis response, **không phải shop doc**).
 
 Hệ quả theo `toolCompressImage.js:98-99`:
 
@@ -236,33 +330,59 @@ if (isUndefined(totalProductImageCount)) {
 }                    // → cả 4 banner tắt
 ```
 
-**Nếu shop doc không có `totalProductImageCount`, toàn bộ 4 UI đó không bao giờ hiện** — và
-`countImageOTM` vẫn chạy đủ `A` read trên mỗi lần mở app để nuôi một phép trừ bị vứt đi.
+### Banner còn được dùng không — kiểm tra riêng
 
-Field này gần như chắc là **legacy**: code ghi nó đã bị xóa, giá trị còn sót trên shop doc cũ. Shop
-mới cài sẽ không có. Không xác nhận được bằng code-only — **cần spot-check 1 shop mới + 1 shop cũ
-trên prod trước khi kết luận UI đó sống hay chết**. Đây là kiểm tra đáng làm đầu tiên: nếu nó chết,
-`countImageOTM` bỏ thẳng, không cần migrate gì.
+Code **sống hết**, và gate là plan logic thật, không phải flag chết:
 
-Thứ tự trả về cũng có race: `getTotalImageNotOptimized` chạy trước khi `/shop/appStatus` resolve thì
-`totalImageOptimized` là `undefined` → `totalProductImageCount - undefined` = `NaN` → `NaN > 0`
-false → banner tắt. Sau khi response về mới bật. Banner nhấp nháy vào.
+| Render site | Điều kiện |
+|---|---|
+| `Steps.js:447` → `<ReadyBanner />` | `isShowBannerUpgrade` = `getTotalImageNotOptimized(shop) > 0 && ((isLimitFreeNew && shop.totalProductCount > limitProductImages(shop)) \|\| isLimitTrial(shop))` (`:254-255`) |
+| `StepsV25.js:543` → `<ReadyBanner />` | y hệt (`:278-279`) |
+| `ImageCompress.js:579` | `getTotalImageNotOptimized(shop) > 0 && isLimitNew` |
 
-### Đường 2 — email
+Cả hai nhánh `Steps` / `StepsV25` đều sống — `pages/Image/index.js:8` chọn theo
+`!!activeShop?.useOptImageV25`. `ReadyBanner` lấy shop qua `connect` (`ReadyBanner.js:53-57`), không
+phải prop, nên không có chuyện thiếu prop.
+`isLimitFreeNew` = `isShopLimit(shop, true, [FREE])` (`pricingReducer.js:31`) → shop plan FREE;
+`isLimitNew` = `isShopLimit(shop, true)` (`:29`). Đây là điều kiện sản phẩm bình thường, đang dùng.
 
-`getOptimizeReport` (`mailService.js:243-268`) trả 4 dòng, template render vào email:
+**Nhưng cả 3 gate đều nhân với `getTotalImageNotOptimized(shop) > 0`, và hàm đó phụ thuộc
+`shop.totalProductImageCount` — field không có writer.** Nhánh `ReadyBanner` còn phụ thuộc thêm
+`shop.totalProductCount` — cũng không có writer (`undefined > n` = `false`).
+
+→ Trên `master`, với shop doc không mang hai field legacy đó, **cả 4 banner tắt vĩnh viễn bất kể
+plan**. `countImageOTM` vẫn chạy đủ `A` read mỗi lần mở app để nuôi một phép trừ bị vứt đi.
+
+Đây là **giới hạn của code-only**: không loại trừ được khả năng giá trị cũ còn sót trên shop doc của
+shop cài lâu. Kiểm tra dứt điểm rất rẻ — đọc 2 shop doc plan FREE trên prod (1 mới cài, 1 cũ), xem
+có `totalProductImageCount` / `totalProductCount` không. Xem §7 bước 0.
+
+Thêm một race nữa dù field có tồn tại: `getTotalImageNotOptimized` chạy trước khi `/shop/appStatus`
+resolve thì `totalImageOptimized` là `undefined` → `totalProductImageCount - undefined` = `NaN` →
+`NaN > 0` false → banner tắt, rồi bật sau khi response về. Banner nhấp nháy vào.
+
+### Đường 2 — email (SUNSET)
+
+Giữ lại để biết phải gỡ ở đâu. `getOptimizeReport` (`mailService.js:243-268`) trả 4 dòng cho template:
 
 | Nhánh | Dòng |
 |---|---|
 | mặc định | `Total compressed` = countImage · `Total alt optimized` = countAlt · **`Week optimized` = `0` hardcode** · `Renamed images` = countFileName |
 | `isAutoOptimize && autoOptimize` | `<Type> optimized` = `historyOptimize.countAll` · `Total alt optimized` · `Total compressed` · `Renamed images` |
 
-Vào qua `renderTemplate:169`, gọi từ `subscribeSendEmails.js:31` (fan-out `sendEmails()` — **chỉ
-trigger thủ công** từ DevZone `devController.js:514`) và `emailController.sendTest` (`POST /email/test`).
+Vào qua `renderTemplate:169`, gọi từ `subscribeSendEmails.js:31` (fan-out `sendEmails()`, trigger duy
+nhất là DevZone `devController.js:514` ← FE `DTToolsContainer.js:539`) và `emailController.sendTest`
+(`POST /email/test` ← FE `Email/SendTest.js:40`).
 
-`getActivityByType` thì chỉ còn **1 caller sống**: `emailController.js:50-52`, case `type === 'optimize'`
-của endpoint test email. Caller còn lại (`mailService.js:53-55`) nằm trong `notifyOptimize` —
-hàm này **0 caller**, đã chết.
+**Hệ quả của sunset — đây là phần quan trọng:**
+
+- `getActivityByType` mất caller sống cuối cùng (`emailController.js:50-52`) → **chết**. `mailService.js:53-55`
+  vốn đã nằm trong `notifyOptimize` (0 caller).
+- `createActivity` chỉ được gọi từ `getActivityByType:123` → **chết theo**.
+- `countImageOTM` mất 3 trong 4 call site (`mailService.js:246-248`) → còn đúng `shopController.js:115`.
+- Và vì reader duy nhất đó dùng `type` default `'image'` (`activityRepository.js:199`): **doc type
+  `alt` và `filename` cũng thành write-only**. Cộng với 7 type của `updateSeoActivity`, tổng cộng
+  **9/10 type trong `config/activities.js` không có ai đọc**.
 
 ---
 
@@ -270,11 +390,17 @@ hàm này **0 caller**, đã chết.
 
 ### Tier 0 — chết hẳn, xóa được ngay, 0 rủi ro
 
+Sau khi email sunset, Tier 0 nở ra đáng kể — thêm 3 hàm và toàn bộ nhánh non-`image`.
+
 | Mục | Vì sao |
 |---|---|
 | `calculateSavings` (`:155-179`) | 0 call site; nhánh non-limit còn thiếu index → chưa từng chạy được |
 | `getGridActivity` (`:131-146`) | đã comment |
-| `notifyOptimize` (`mailService.js:43-95`) | 0 caller. Kéo theo `getActivityByType` chỉ còn 1 caller sống (`POST /email/test`) |
+| `notifyOptimize` (`mailService.js:43-95`) | 0 caller |
+| **`getActivityByType`** (`:110-129`) | caller sống cuối cùng là email (`emailController.js:50-52`) → **email sunset ⇒ hàm chết** |
+| **`createActivity`** (`:39-60`) | chỉ được gọi từ `getActivityByType:123` → chết theo |
+| **`updateActivity` cho type `alt` + `filename`** | reader cũ là email. Reader còn lại `countImageOTM` chỉ đọc `type='image'` (`:199`) |
+| **`deleteOptimizeActivities`** (`:181-191`) | chỉ xoá 3 type image; sau khi 2/3 thành write-only và `image` chuyển sang `optimizeReport` thì không còn gì cần xoá |
 | `api.js:162-163` | route đã comment |
 | **Index #2** `shopID+type+updatedAt` | chỉ phục vụ 2 mục trên |
 | `updateSeoActivity` + `updateActivity` cho type non-image | **write-only**: `meta`/`rule`/`structured`/`redirect`/`site`/`social`/`sitemap` không có reader nào còn sống |
@@ -288,11 +414,11 @@ Sau Tier 0: `config/activities.js` chỉ còn `activities`, `optimizeImageActivi
 
 | Mục | Thay bằng |
 |---|---|
-| `updateActivity` (image/alt/filename) | `FieldValue.increment` trên shop doc → **1 write, 0 read** (đang là 1 read + 1 write) |
-| `getActivityByType` | đọc field shop doc |
-| `countImageOTM` | đọc field shop doc → **0 read phụ** (`getAppStatus:158` đã `getShopById` trong cùng request). **Hoặc xóa thẳng** nếu spot-check §7 bước 0 cho thấy UI đã chết |
-| `bulkCreateActivity` + `resetOptStatus` | **xóa** — counter cộng dồn không cần reset theo ngày |
-| `deleteOptimizeActivities` | set 3 field về 0 → **1 write**, thay `3A read + 3A delete` |
+| `updateActivity` (image/alt/filename) | **xóa** — `recountOptimizedImages` đã ghi `optimizeReport` ở cuối mỗi optimize run (`finalizeJobDone.js:24`, `finalizeWriteFlow.js:220`). Không cần counter thứ hai |
+| `getActivityByType` | đọc `optimizeReport.doc(shopId)` |
+| `countImageOTM` | `getOptimizeReport(shopId)` → `countImage${suffix}` → **1 read** thay `A` read. **Hoặc xóa thẳng** nếu spot-check §7 bước 0 cho thấy UI đã chết |
+| `bulkCreateActivity` + `resetOptStatus` | **xóa** — `optimizeReport` là recompute, không cần reset theo ngày |
+| `deleteOptimizeActivities` | **xóa** — reset-history không cần zero counter; lần optimize sau `recountOptimizedImages` tự quét lại `history` và ghi đúng |
 | Index #1, #3 | xóa nốt |
 | Cron `resetOptimizeScheduleGen2` | rỗng sau khi bỏ `resetOptStatus()` → xóa export luôn |
 
@@ -304,36 +430,47 @@ Không có. Sau Tier 1, `activity` không còn reader nào.
 
 ## 7. Migration path
 
-Đề xuất: 3 field trên shop doc — `totalImageOptimized`, `totalAltOptimized`, `totalFilenameOptimized`.
+Vì `optimizeReport` (§4) đã có sẵn số đúng và đã được maintain, **không cần dual-write, không cần
+backfill, không cần field mới.** Chỉ là đổi đầu đọc.
 
-0. **Spot-check trước tiên (rẻ, có thể đổi cả kế hoạch).** Đọc 2 shop doc trên `avada-seo`: 1 shop
-   cài gần đây, 1 shop cũ. Kiểm field `totalProductImageCount` có tồn tại không.
-   → Nếu shop mới **không** có field này thì 4 banner ở §5 đã chết sẵn với mọi shop mới, và
-   `countImageOTM` không cần migrate — xóa thẳng cùng Tier 0, bỏ luôn bước 1-4 cho nhánh image.
-   Đây là read-only, nhưng là ghi vào prod-project scope → xác nhận project id `avada-seo` trước khi chạy.
-1. **Dual-write.** Mọi call site `updateActivity` ghi thêm `FieldValue.increment` lên shop doc. Vẫn
-   giữ ghi `activity`. Deploy, chạy 1 tuần.
-   → Chú ý: `updateActivity` có 18 call site nằm ở **cả GCF lẫn worker fleet** (`optimizeImage`,
-   `optimizeImageV2`, `recursive`). Hai runtime deploy riêng — `firebase deploy` không cập nhật
-   worker box. Phải ship kèm `[deploy-worker]`, nếu không một nửa call site vẫn ghi kiểu cũ.
-2. **Backfill.** Script one-off: mỗi shop, sum `count` theo type trên `activity`, ghi vào shop doc.
-   Đây là lần quét toàn bộ collection duy nhất — chi phí = tổng số doc. Chạy 1 lần, chấp nhận được.
-3. **Cắt read.** `countImageOTM` → đọc field. `getActivityByType` → đọc field. Deploy, verify
-   `totalImageOptimized` trên `/shop/appStatus` khớp trước/sau.
-4. **Cắt write.** Bỏ `bulkCreateActivity`, `resetOptStatus`, cron; bỏ ghi `activity` trong
-   `updateActivity`.
-5. **Dọn.** Xóa `activityRepository.js`, 3 index, entry `shopDataCollections.js:113`. Dữ liệu cũ:
-   purge một lần bằng bulk-delete (`gcloud firestore bulk-delete`, rẻ hơn đọc-rồi-xóa) — hoặc để
-   nguyên, không tốn read nữa, chỉ tốn storage.
+0. **Spot-check trước tiên (rẻ, quyết định luôn có cần bước 1-2 hay không).** Đọc 2 shop doc plan
+   **FREE** trên `avada-seo`: 1 cài gần đây, 1 cũ. Kiểm 2 field: `totalProductImageCount` và
+   `totalProductCount`.
+   → Thiếu → 4 banner ở §5 đã tắt sẵn → `activity` có **0 reader sống** → xóa thẳng `countImageOTM` +
+   `shopController.js:113-117` cùng Tier 0, bỏ hẳn bước 1-2.
+   → Có → làm bước 1-2 để giữ banner nhưng hạ `A` read xuống 1 read. Đồng thời báo lại: hai field này
+   không có writer nên giá trị đang là ảnh chụp đông cứng từ lúc code ghi bị xóa, tức banner đang hiện
+   số sai — đó là bug riêng, sửa ngoài scope này.
+   Read-only, nhưng là prod scope → xác nhận project id `avada-seo` trước khi chạy.
+1. **Đổi `countImageOTM` sang đọc `optimizeReport`.** Thay thân hàm bằng `getOptimizeReport(shopId)`
+   rồi lấy `countImage${suffix}` / `countAlt${suffix}` với
+   `suffix = shop.useOptImageV25 ? 'File' : 'Product'` — **copy đúng logic
+   `historyOptimizeController.js:78`**, đừng cộng File + Product (chỉ một nhánh được ghi tuỳ flow →
+   cộng cả hai là double count).
+   → `A` read thành **1 read**. `getShopStatus` đã có `shop` trong tay (`getAppStatus:158`) nên
+   không phát sinh read phụ để biết `useOptImageV25`.
+2. **Verify số trước/sau.** So `/shop/appStatus`.`totalImageOptimized` với
+   `/history-optimize/count`.`totalOptimizedImages` trên vài shop staging. **Hai số này vốn đã lệch**
+   (activity không trừ ảnh đã revert) → chốt với product rằng lấy số của `optimizeReport` là đúng, vì
+   nó mới là số đang hiện trên report card.
+3. **Cắt write.** Bỏ `bulkCreateActivity`, `resetOptStatus`, cron `resetOptimizeScheduleGen2`; bỏ
+   `updateActivity` ở cả 18 call site.
+   → `updateActivity` nằm ở **cả GCF lẫn worker fleet** (`optimizeImage`, `optimizeImageV2`,
+   `recursive` ∈ `MIGRATED_TOPICS`). Hai runtime deploy riêng — `firebase deploy` **không** cập nhật
+   worker box. Ship kèm `[deploy-worker]`, nếu không một nửa call site vẫn ghi vào collection đã bỏ.
+4. **Dọn.** Xóa `activityRepository.js`, `notifyOptimize`, 3 index, entry `shopDataCollections.js:113`,
+   `pickFields.js:110`. Dữ liệu cũ: bulk-delete một lần (`gcloud firestore bulk-delete` — rẻ hơn
+   đọc-rồi-xóa) hoặc để nguyên; sau bước 3 nó không tốn read nữa, chỉ tốn storage.
 
 ### Rủi ro
 
 | Rủi ro | Xử lý |
 |---|---|
-| Số liệu lệch sau migrate (counter cộng dồn vs reset-theo-ngày) | Semantics `countImageOTM` vốn đã là cộng dồn toàn thời gian → **không đổi**. Chỉ `getActivityByType` đang là "đếm trong ngày" và bị gắn nhãn 7 ngày (xem §8.6) — migrate sang cộng dồn là **sửa** một bug sẵn có, không phải tạo bug mới. Caller sống duy nhất của nó là endpoint test email nên rủi ro gần bằng 0. |
-| Race trên shop doc | `FieldValue.increment` là atomic server-side — an toàn hơn `getActivityByType` + `update` hiện tại (read-then-write, mất update khi 2 job song song) |
-| Shop doc phình | 3 số nguyên. Không đáng kể |
-| Fleet lệch pha GCF | Ship dual-write kèm `[deploy-worker]`, xác nhận cả hai runtime trước khi sang bước 3 |
+| Số hiển thị đổi sau migrate | **Sẽ đổi**, và đổi theo hướng đúng: `optimizeReport` trừ ảnh đã revert, `activity` không. Bước 2 là để chốt điều này với product, không phải để làm hai số khớp nhau |
+| Chọn sai suffix → double count hoặc ra 0 | Dùng nguyên `shop.useOptImageV25 ? 'File' : 'Product'` như `historyOptimizeController.js:78`. Không tự cộng hai nhánh |
+| `optimizeReport` chưa có doc cho shop chưa optimize lần nào | `countImage${suffix}` là `undefined` → xử như 0 (`getCountData:80` đã dùng pattern `!= null`) |
+| `getActivityByType` (email test) lệch semantics | Đang là "đếm trong ngày" nhưng nhãn 7 ngày (§8.6). Caller sống duy nhất là `POST /email/test` → rủi ro gần 0 |
+| Fleet lệch pha GCF | Bước 3 ship kèm `[deploy-worker]`; xác nhận cả hai runtime trước khi dọn |
 
 ---
 
@@ -368,10 +505,21 @@ Không có. Sau Tier 1, `activity` không còn reader nào.
     (`:13`): `savedTime` chỉ được ghi bởi `calculateSavings` — đã chết; `hasNewAct` vẫn được ghi
     (`optimizeImg.js:403,517`) nhưng reader duy nhất cũng là `calculateSavings`. Thêm một cặp
     write-only nữa.
-11. **`totalProductImageCount` không còn write site nào trên `master`.** Chỉ còn đọc. Nếu đúng là
-    legacy thì 4 banner ở §5 đã chết với mọi shop cài mới. Cần spot-check prod (§7 bước 0).
+11. **`totalProductImageCount` và `totalProductCount` đều không còn write site nào trên `master`.**
+    Chỉ còn đọc. Cả 4 banner ở §5 phụ thuộc chúng → nếu đúng là legacy thì banner đã chết với mọi shop
+    cài mới, và giá trị trên shop cũ là ảnh chụp đông cứng → banner hiện **số sai**. Cần spot-check
+    prod (§7 bước 0).
 12. **`getOptimizeReport` có dòng `{label: 'Week optimized', value: 0}` hardcode** (`mailService.js:265`).
     Email luôn báo 0 cho dòng đó.
+13. **Hai source-of-truth song song cho "tổng ảnh đã optimize", cho ra hai số khác nhau.**
+    `optimizeReport.countImage${suffix}` (trừ ảnh revert, recompute từ `history`) hiện trên report
+    card qua `GET /history-optimize/count`; `countImageOTM` (không trừ revert, tích lũy increment)
+    hiện trên banner upsell. Merchant có thể thấy hai con số lệch nhau trên cùng trang Image. Migrate
+    theo §7 khép luôn cái này.
+14. **Tên hàm dễ gây nhầm.** `getOptimizeReport` có **hai** hàm khác nhau: một export ở
+    `repositories/optimizeReportRepository.js:6` (đọc collection `optimizeReport`), một private ở
+    `mailService.js:243` (dựng 4 dòng cho email từ `countImageOTM`). Cùng tên, khác hẳn nhau —
+    giống cặp bẫy `formatDateFields` đã ghi trong `packages/functions/CLAUDE.md`.
 
 ---
 
@@ -379,10 +527,10 @@ Không có. Sau Tier 1, `activity` không còn reader nào.
 
 | Ưu tiên | Việc | Rủi ro | Lợi |
 |---|---|---|---|
-| P0 | **Spot-check `totalProductImageCount` trên 2 shop prod** (§7 bước 0) | 0, read-only | Quyết định luôn: migrate hay xóa thẳng `countImageOTM` |
-| P0 | Xóa Tier 0 (dead code + `notifyOptimize` + index #2 + write-only path + FE page mồ côi) | 0 | Bớt 1/3 index, bớt write vô nghĩa ở 3 call site |
+| P0 | **Spot-check `totalProductImageCount` + `totalProductCount` trên 2 shop FREE prod** (§7 bước 0) | 0, read-only | Quyết định luôn: migrate hay xóa thẳng `countImageOTM`. Nếu thiếu → `activity` có 0 reader sống |
+| P0 | Xóa Tier 0 — giờ gồm cả `getActivityByType`, `createActivity`, nhánh `alt`/`filename`, `deleteOptimizeActivities` (email sunset) | 0 | Bớt 1/3 index; **9/10 type** trong `config/activities.js` là write-only, cắt hết |
 | P0 | Sửa `console.log` `activityController.js:48` | 0 | Rule vi phạm, đang live |
-| P1 | Migrate counter sang shop doc (§7) | thấp, có dual-write | Bỏ read tăng-theo-tuổi ở đường nóng nhất của app |
+| P1 | Trỏ `countImageOTM` sang `optimizeReport` (§7) | thấp — không dual-write, không backfill | `A` read → **1 read** ở đường nóng nhất của app; khép luôn 2-source-of-truth |
 | P2 | Sửa nhãn 7-ngày của email + hoist `renderTemplate` khỏi vòng lặp + `Week optimized` hardcode | thấp | Số liệu email đúng, bớt N× read |
 
 ---
@@ -396,10 +544,11 @@ Started: 2026-07-29 · **COMPLETE**
 | 1 | Inventory: mọi export activityRepository + call site | ✅ | 9 export, 12 file import, 34 call site ngoài repo. 2 export đã chết |
 | 2 | Data model: doc shape, cardinality, index, TTL, uninstall | ✅ | Append-only, không TTL, `del: true` khi purge. 1/3 index chỉ phục vụ code chết |
 | 3 | Cost shape: read/write ops mỗi luồng | ✅ | Write rẻ (~$20/năm @10k shop). Read `O(tuổi shop)` trên mỗi lần mở app — đây mới là vấn đề |
-| 4 | Overlap với activityDaily / activityEventsRepository | ✅ | `activityEventsRepository` là **BigQuery**, ghi event chứ không ghi count → không thay thế được. Đích đúng là field trên shop doc |
+| 4 | Overlap với activityDaily / activityEventsRepository | ✅ | `activityEventsRepository` là **BigQuery**, ghi event chứ không ghi count → không thay thế được. **Đích đúng là collection `optimizeReport`** — đã tồn tại, đã maintain, 1 doc/shop |
 | 5 | Verdict per-function + migration path | ✅ | Tier 0 xóa ngay / Tier 1 sau dual-write / Tier 2 rỗng |
 | 6 | Findings phụ + viết report | ✅ | 12 finding phụ, 1 cái blocking (`console.log` live ở prod endpoint) |
 | 7 | Bổ sung: `countImageOTM` hiển thị ở đâu | ✅ | 4 banner upsell + 3 dòng email. Cả 2 field nó nuôi (`totalImageOptimized`, `totalProductImageCount`) đều không có write site → UI có thể đã chết sẵn |
+| 8 | Bổ sung: email sunset + banner còn dùng không | ✅ | Reader sống của `activity` còn **1** (`shopController.js:115`). 9/10 type là write-only. Banner code sống, gate plan thật, nhưng phụ thuộc 2 field không có writer → tắt bất kể plan |
 
 ### Log
 
@@ -417,7 +566,11 @@ Started: 2026-07-29 · **COMPLETE**
 
 #### ✅ Task 4: Overlap
 - `activity_events` = BigQuery, partition theo ngày, ghi `feature:action` — không có số ảnh.
-- `pickFields.js:110` + `toolCompressImage.js:97` cho thấy FE vốn đã mong `totalImageOptimized` nằm trên shop doc.
+- **Sửa lại kết luận ban đầu**: đích migration không phải shop doc mà là collection `optimizeReport`
+  (`doc(shopId)`), phát hiện qua `historyOptimizeController.getTotalImages` →
+  `RECURSIVE_COUNT_OPTIMIZED_IMAGES` → `recountOptimizedImages`. Nó đã maintain sẵn
+  `countImage{File,Product}` / `countAlt{...}`, recompute từ `history`, trừ ảnh revert, idempotent.
+  → bỏ được dual-write + backfill khỏi migration path.
 
 #### ✅ Task 5: Verdict + migration
 - Điểm mạnh nhất: type non-image là write-only, reader duy nhất đã chết.
@@ -425,6 +578,17 @@ Started: 2026-07-29 · **COMPLETE**
 
 #### ✅ Task 6: Findings phụ + report
 - 12 finding. Blocking: `activityController.js:48` raw `console.log` trên endpoint live.
+
+#### ✅ Task 8: Email sunset + banner còn dùng không (2026-07-30)
+- Tuan chốt email đã sunset → `getActivityByType` + `createActivity` chết; `countImageOTM` mất 3/4
+  call site, còn `shopController.js:115`. Reader sống của cả collection: **1**.
+- Vì reader đó dùng `type` default `'image'` → doc `alt` + `filename` cũng thành write-only.
+  Tổng **9/10 type** trong `config/activities.js` không ai đọc.
+- Banner: code sống, gate là plan logic thật (`isLimitFreeNew` = FREE, `isLimitTrial`), cả
+  `Steps.js:447` lẫn `StepsV25.js:543` đều reachable qua `pages/Image/index.js:8`. Nhưng cả 3 gate
+  nhân với `getTotalImageNotOptimized(shop) > 0`, mà hàm đó cần `shop.totalProductImageCount` —
+  không writer. Nhánh ReadyBanner cần thêm `shop.totalProductCount` — cũng không writer.
+  → banner tắt bất kể plan, trừ khi shop doc còn giá trị legacy. Spot-check §7 bước 0 chốt việc này.
 
 #### ✅ Task 7: `countImageOTM` hiển thị ở đâu (bổ sung theo yêu cầu)
 - Không hiện trực tiếp ở đâu cả — chỉ là số bị trừ trong `totalProductImageCount - totalImageOptimized`.
