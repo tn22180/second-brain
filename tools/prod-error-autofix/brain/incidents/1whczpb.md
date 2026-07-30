@@ -1,0 +1,23 @@
+fingerprint: 1whczpb
+service: api
+message: [getCrmWidgets] QEhUeGaEGbLtSiQ0PCJa Request failed with status code 400
+app: BLOG
+repo: blogs
+date: 2026-07-30T12:16:24.556Z
+status: inconclusive
+attempt: 1
+
+# BLOG · api · 1whczpb
+
+**Outcome.** timeout: killed after 480000ms
+
+No analysis survived verification.
+
+## Job
+- analyze rounds: 1
+- cost: $0.00
+
+## Verdict
+
+_Filled in by hand once the MR is reviewed. A rejected fix recorded here is what stops the
+next job proposing it again._

@@ -62,3 +62,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Traffic index avada-seo không break down được theo từng index — chỉ có số tổng
 - [ ] (×1) jest ở repo seo phải ignore `.claude/worktrees`, không thì scan test của worktree cũ
 - [ ] (×1) E2 (chèn internal reasoning vào product description) thuộc app APC, không phải SEO
+
+### memory candidates 2026-07-30
+- [ ] (×1) Docs-first workflow là chuẩn mới cho repo Avada — task mới/fix bug phải đọc CLAUDE.md + feature doc trước khi sửa, update doc trong cùng session; không auto-gen lúc deploy
+- [ ] (×1) `docs_gate` chỉ chạy trên MR target master — chạy trên staging branch nó deploy prod (đã fix ở image-optimizer)
+- [ ] (×1) SEO không còn ghi Firestore collection `activity` theo lịch — dead code đã xoá, đừng đọc collection đó làm nguồn dữ liệu
+- [ ] (×1) prod-error-autofix có second-brain riêng ở `tools/prod-error-autofix/brain/` (incidents + index) — context tách khỏi second-brain chính
+- [ ] (×1) Google Sheet point sprint chỉ edit được bằng service account chỉ định; script `tools/jira-point-sync/sync-sheet.mjs`

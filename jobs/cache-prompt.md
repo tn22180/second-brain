@@ -34,7 +34,18 @@ Plan: `seo/docs/superpowers/plans/2026-07-27-openrouter-prompt-caching.md`
 
 ## COMPLETE — 2026-07-27
 
-Both branches `feat/openrouter-prompt-cache` (SEO + BLOG). Not committed, not deployed (per repo rule).
+Both branches `feat/openrouter-prompt-cache` (SEO + BLOG). Committed, not deployed (per repo rule).
+
+### MR — 2026-07-30
+
+Rebase lên `origin/master` (SEO chậm 123 commit, BLOG 30), mỗi repo 1 conflict:
+
+| Repo | Commit sau rebase | MR | Conflict đã giải |
+|---|---|---|---|
+| `seo` | `d372cdcf031` | https://gitlab.com/avada/seo/-/merge_requests/2082 | `openAI/index.js` import block — giữ cả `safeParseFaqJson` (master) + `cacheableSystem`/`cachedTokensOf` (branch) |
+| `blogs` | `b7b14d76f` | https://gitlab.com/avada/blogs/-/merge_requests/788 | `openAi.service.js` — giữ vòng retry `finish_reason=length` của master, chèn log cached token sau vòng lặp |
+
+Test sau rebase: SEO `npx jest packages/functions` 611 pass (4 suite fail có sẵn trên master, đã đối chiếu baseline; `detect-changed-functions` fail chỉ vì branch chưa push lúc test). BLOG 181 pass (1 fail môi trường: `removeRecipeMetafields` cần `firebase-sa.json`).
 
 **Delivered (high-ROI, verified):**
 - SEO auditAgent (meta/url/keyword/faq/related/description) — the bulk-cost path: static system prefix + page context moved to user.
