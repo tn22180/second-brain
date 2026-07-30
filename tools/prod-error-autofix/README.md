@@ -20,20 +20,28 @@ Design: `docs/specs/2026-07-30-prod-error-autofix-design.md`. Brief: `../../jobs
 
 Two things are needed before `daemon` does anything useful.
 
-**1. Slack app.** Bot scopes `channels:history`, `channels:read`, `chat:write`. For Socket Mode
-also an app-level token with `connections:write` and `message.channels` subscribed under Event
-Subscriptions. For a private channel add `groups:history` and `groups:read`.
+**1. Slack app.** Bot scopes `channels:history`, `channels:read`, `chat:write`. For a private
+channel add `groups:history` and `groups:read`.
 
 **2. `.env`** in this directory — gitignored, `chmod 600`:
 
 ```
 SLACK_ERROR_CHANNEL_ID=C...
 SLACK_BOT_TOKEN=xoxb-...
-SLACK_APP_TOKEN=xapp-...       # optional; without it the daemon polls instead
 ```
 
-Without `SLACK_APP_TOKEN` the transport falls back to polling `conversations.history` every 60s.
-That is a supported mode, not a degraded one — the backfill path uses the same API either way.
+**Polling is the chosen transport; there is no app-level token and none is wanted.** Socket Mode
+would need one — a bot token gets `not_allowed_token_type` from `apps.connections.open`, checked
+2026-07-30 — but it buys nothing here:
+
+- a job takes minutes (log fetch, up to five analysis rounds, a fix, two full jest runs), so 60s of
+  polling latency is noise
+- polling has fewer failure modes. A dropped socket loses events, which is why the cursor backfill
+  exists at all; with polling the cursor *is* the mechanism
+- 1 call/60s is 1440/day against a Tier 3 method that allows 50+/minute
+
+If Socket Mode is ever wanted, adding `SLACK_APP_TOKEN=xapp-...` (scope `connections:write`, with
+`message.channels` subscribed) switches the transport with no code change. Both paths are tested.
 
 **3. gcloud.** `gcloud auth login`, with read access to all five prod projects. A job that hits an
 auth error is parked as `blocked` and replies without spending a model call.
@@ -51,15 +59,29 @@ bun run bin/autofix.ts brain budget           # token size of each app's brain s
 bun run bin/autofix.ts daemon                 # the listener
 ```
 
-As a service:
+As a service — installed and running as of 2026-07-30:
 
 ```
 cp launchd/com.tn22180.prod-error-autofix.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.tn22180.prod-error-autofix.plist
 tail -f ~/.cache/prod-autofix/daemon.log
+launchctl unload ~/Library/LaunchAgents/com.tn22180.prod-error-autofix.plist   # stop
 ```
 
-`launchctl unload` to stop. The plist sets `KeepAlive`, so a crash restarts after 60s.
+`KeepAlive` is set, so a crash restarts after 60s. **While loaded the daemon opens real merge
+requests** on the next alert it does not already know about.
+
+**On a first start, set the cursor** or it will replay the whole channel history — with ~20 alerts an
+hour that is a dozen or more full pipeline runs on the strong model before it catches up. To start
+from now instead:
+
+```
+bun -e 'import {buildConfig} from "./src/config"; import {Store} from "./src/state/store";
+const c = buildConfig(); const s = new Store(c.paths.stateDb);
+s.setCursor(c.errorChannelId, String(Date.now()/1000), Date.now()); s.close()'
+```
+
+That was done at install. Deleting the `cursor` row makes it process the backlog on next start.
 
 ## What a job does
 
