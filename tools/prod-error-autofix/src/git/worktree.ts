@@ -1,4 +1,4 @@
-import {existsSync} from 'node:fs';
+import {existsSync, symlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {spawnRunner, type Runner} from '../gcloud/run';
 
@@ -71,6 +71,49 @@ export async function createWorktree(
   }
 
   return {ok: true, value: {dir: input.dir, branch: input.branch, baseSha}};
+}
+
+/**
+ * Symlinks the main checkout's `node_modules` into a fresh worktree.
+ *
+ * `git worktree add` gives a clean checkout with no dependencies installed, and
+ * without this the jest baseline cannot run at all: `npx jest` finds no local jest,
+ * fetches a current one, and a current jest refuses `blogs` outright —
+ * "Multiple configurations found" — because that repo has both a `jest.config.js`
+ * and a `jest` key in `package.json`. The pinned jest 24 in the repo tolerates it.
+ * Observed live on 2026-07-30 as a failed baseline, which then blocks the MR.
+ *
+ * A symlink rather than an install: `yarn install` per job would cost minutes, and
+ * CI installs immutably anyway, so the resolved tree is the same one the repo uses.
+ */
+export async function linkNodeModules(
+  input: {repoPath: string; worktreeDir: string},
+  fs: {existsSync: (p: string) => boolean; symlinkSync: (a: string, b: string) => void} = {
+    existsSync,
+    symlinkSync
+  }
+): Promise<{linked: string[]; missing: string[]}> {
+  const linked: string[] = [];
+  const missing: string[] = [];
+  // Root plus the workspace packages, which have their own trees in some repos.
+  const candidates = [
+    'node_modules',
+    'packages/functions/node_modules',
+    'packages/assets/node_modules'
+  ];
+  for (const rel of candidates) {
+    const source = join(input.repoPath, rel);
+    const target = join(input.worktreeDir, rel);
+    if (!fs.existsSync(source)) continue;
+    if (fs.existsSync(target)) continue;
+    try {
+      fs.symlinkSync(source, target);
+      linked.push(rel);
+    } catch {
+      missing.push(rel);
+    }
+  }
+  return {linked, missing};
 }
 
 export async function removeWorktree(

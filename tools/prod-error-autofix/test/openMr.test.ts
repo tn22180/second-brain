@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, type OpenMrInput} from '../src/git/openMr';
-import {branchNameFor, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
+import {branchNameFor, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
 
@@ -303,5 +303,45 @@ describe('create-by-hand link', () => {
     );
     expect(res.failure).toBe('push_failed');
     expect(res.createMrUrl).toBeUndefined();
+  });
+});
+
+describe('linkNodeModules', () => {
+  test('links the trees the worktree is missing', async () => {
+    const present = new Set(['/repo/node_modules', '/repo/packages/functions/node_modules']);
+    const made: [string, string][] = [];
+    const res = await linkNodeModules(
+      {repoPath: '/repo', worktreeDir: '/wt'},
+      {
+        existsSync: (p: string) => present.has(p),
+        symlinkSync: (a: string, b: string) => {
+          made.push([a, b]);
+        }
+      }
+    );
+    expect(res.linked).toEqual(['node_modules', 'packages/functions/node_modules']);
+    expect(made[0]).toEqual(['/repo/node_modules', '/wt/node_modules']);
+  });
+
+  test('a tree already present in the worktree is left alone', async () => {
+    const res = await linkNodeModules(
+      {repoPath: '/repo', worktreeDir: '/wt'},
+      {existsSync: () => true, symlinkSync: () => {}}
+    );
+    expect(res.linked).toEqual([]);
+  });
+
+  test('a symlink that cannot be made is reported, not thrown', async () => {
+    const res = await linkNodeModules(
+      {repoPath: '/repo', worktreeDir: '/wt'},
+      {
+        existsSync: (p: string) => p.startsWith('/repo'),
+        symlinkSync: () => {
+          throw new Error('EPERM');
+        }
+      }
+    );
+    expect(res.linked).toEqual([]);
+    expect(res.missing.length).toBeGreaterThan(0);
   });
 });
