@@ -12,7 +12,7 @@ import {probeDeploy} from './gcloud/deploy';
 import type {Runner} from './gcloud/run';
 import {buildMrBody, openMr} from './git/openMr';
 import {probeMerge} from './git/mergeProbe';
-import {branchNameFor, createWorktree, removeWorktree, worktreeDirFor} from './git/worktree';
+import {branchNameFor, createWorktree, linkNodeModules, removeWorktree, worktreeDirFor} from './git/worktree';
 import {fingerprintOf} from './fingerprint';
 import {parseAlert, type ParsedAlert} from './parseAlert';
 import {appNames, resolveApp, type App} from './registry';
@@ -312,6 +312,11 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   }
   worktreeDir = worktree.value.dir;
   store.patchAlert(fingerprint, {branch: worktree.value.branch});
+
+  // A fresh worktree has no dependencies, and without them the jest baseline cannot
+  // run — which blocks the MR for a reason unrelated to the fix.
+  const linked = await linkNodeModules({repoPath: app.repoPath, worktreeDir: worktree.value.dir});
+  log(`${fingerprint} node_modules linked: ${linked.linked.join(', ') || 'none'}${linked.missing.length ? ` (failed: ${linked.missing.join(', ')})` : ''}`);
 
   const slice = buildSlice({
     brainRoot: cfg.paths.brainRoot,

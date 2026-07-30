@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
-import {parseJestJson, runJest} from '../src/verify/jest';
+import {parseJestJson, resolveTestCmd, runJest} from '../src/verify/jest';
 import {describeSmoke, measureBaseline, reproduceCheck, smokeGate} from '../src/verify/smoke';
 
 const REPO = '/wt/blogs';
@@ -323,5 +323,38 @@ describe('smokeGate', () => {
       runnerFor(after, repro)
     );
     expect(describeSmoke(out)).toBe('164 tests, 0 failing · baseline 1 failing · reproduce test fails without the fix');
+  });
+});
+
+describe('resolveTestCmd', () => {
+  const has = (...paths: string[]) => ({existsSync: (p: string) => paths.some(x => p.endsWith(x))});
+
+  test('prefers the repo-pinned jest over npx', () => {
+    const cmd = resolveTestCmd('/wt', ['npx', 'jest', '--ci'], has('node_modules/.bin/jest'));
+    expect(cmd[0]).toBe('/wt/node_modules/.bin/jest');
+    expect(cmd).toContain('--ci');
+    expect(cmd).not.toContain('npx');
+  });
+
+  test('passes --config explicitly, which is what unblocks blogs', () => {
+    // blogs has both a jest.config.js and a `jest` key in package.json; a current
+    // jest refuses that combination outright.
+    const cmd = resolveTestCmd('/wt', ['npx', 'jest', '--ci'], has('jest.config.js'));
+    expect(cmd.join(' ')).toContain('--config /wt/jest.config.js');
+  });
+
+  test('falls back to npx when the worktree has no local jest', () => {
+    const cmd = resolveTestCmd('/wt', ['npx', 'jest', '--ci'], has('jest.config.js'));
+    expect(cmd[0]).toBe('npx');
+  });
+
+  test('no config file means no --config flag invented', () => {
+    const cmd = resolveTestCmd('/wt', ['npx', 'jest', '--ci'], has('node_modules/.bin/jest'));
+    expect(cmd).not.toContain('--config');
+  });
+
+  test('an existing --config is respected', () => {
+    const cmd = resolveTestCmd('/wt', ['npx', 'jest', '--ci', '--config=custom.js'], has('jest.config.js'));
+    expect(cmd.filter(a => a.startsWith('--config')).length).toBe(1);
   });
 });

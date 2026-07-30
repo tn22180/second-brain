@@ -1,4 +1,5 @@
-import {relative} from 'node:path';
+import {existsSync} from 'node:fs';
+import {join, relative} from 'node:path';
 import {spawnRunner, type Runner} from '../gcloud/run';
 
 /**
@@ -75,6 +76,31 @@ export interface JestRunInput {
   timeoutMs: number;
 }
 
+/**
+ * Pins the jest that runs and the config it uses.
+ *
+ * Two problems this solves, both seen live on 2026-07-30:
+ *
+ *  - `npx jest` in a worktree with no local jest fetches a *current* jest, whose
+ *    behaviour differs from the version the repo pins (24.9.0 across all five apps).
+ *  - `blogs` carries both a `jest.config.js` and a `jest` key in `package.json`.
+ *    A current jest refuses that outright — "Implicit config resolution does not
+ *    allow multiple configuration files" — and the baseline run fails, which blocks
+ *    the MR for a reason that has nothing to do with the fix. An explicit `--config`
+ *    removes the ambiguity for every version.
+ */
+export function resolveTestCmd(
+  dir: string,
+  testCmd: string[],
+  fs: {existsSync: (p: string) => boolean} = {existsSync}
+): string[] {
+  const localJest = join(dir, 'node_modules', '.bin', 'jest');
+  const cmd = fs.existsSync(localJest) ? [localJest, ...testCmd.slice(2)] : [...testCmd];
+  const config = join(dir, 'jest.config.js');
+  if (fs.existsSync(config) && !cmd.some(a => a.startsWith('--config'))) cmd.push('--config', config);
+  return cmd;
+}
+
 export interface JestRun {
   summary: JestSummary | undefined;
   timedOut: boolean;
@@ -84,7 +110,7 @@ export interface JestRun {
 
 export async function runJest(input: JestRunInput, runner: Runner = spawnRunner): Promise<JestRun> {
   // Spawned with cwd rather than wrapped in `env -C`: macOS `env` rejects -C.
-  const args = [...input.testCmd, '--json', '--silent', ...input.extraArgs];
+  const args = [...resolveTestCmd(input.repoPath, input.testCmd), '--json', '--silent', ...input.extraArgs];
   const res = await runner(args, input.timeoutMs, {cwd: input.repoPath});
   if (res.timedOut) {
     return {summary: undefined, timedOut: true, detail: `jest timed out after ${input.timeoutMs}ms`};
