@@ -22,6 +22,11 @@ export interface OpenMrInput {
 export interface OpenMrResult {
   ok: boolean;
   mrUrl: string | undefined;
+  /**
+   * Link to open the MR by hand. Set whenever the branch reached the remote but no
+   * MR was created — the work is on GitLab, so one click still finishes the job.
+   */
+  createMrUrl: string | undefined;
   fixSha: string | undefined;
   pushed: boolean;
   failure: 'nothing_to_commit' | 'commit_failed' | 'push_failed' | 'no_mr_url' | 'refused' | undefined;
@@ -50,6 +55,41 @@ export function isCreateLinkOnly(output: string): boolean {
   return /\/-\/merge_requests\/new\b/.test(output) && parseMrUrl(output) === undefined;
 }
 
+/** The create-by-hand link GitLab prints when the push option did not take. */
+export function parseCreateLink(output: string): string | undefined {
+  const match = /https?:\/\/\S*?\/-\/merge_requests\/new\S*/.exec(output);
+  return match ? match[0]!.replace(/[).,;'"]+$/, '') : undefined;
+}
+
+/**
+ * `git@gitlab.com:avada/blogs.git` → `https://gitlab.com/avada/blogs`.
+ * Handles the scp-like form, `ssh://` with a port, and plain https.
+ */
+export function remoteToWebUrl(remote: string): string | undefined {
+  const url = remote.trim().replace(/\.git$/, '');
+  const scp = /^[\w.-]+@([^:]+):(.+)$/.exec(url);
+  if (scp) return `https://${scp[1]}/${scp[2]}`;
+  const ssh = /^ssh:\/\/(?:[\w.-]+@)?([^:/]+)(?::\d+)?\/(.+)$/.exec(url);
+  if (ssh) return `https://${ssh[1]}/${ssh[2]}`;
+  const https = /^https?:\/\/(?:[^@/]+@)?(.+)$/.exec(url);
+  if (https) return `https://${https[1]}`;
+  return undefined;
+}
+
+/**
+ * Prefills source, target and title so the page opens ready to submit. The
+ * description is deliberately left out — it belongs in the thread where it can be
+ * read, not in a URL that browsers and proxies will truncate.
+ */
+export function buildCreateMrUrl(webUrl: string, branch: string, baseBranch: string, title: string): string {
+  const q = new URLSearchParams({
+    'merge_request[source_branch]': branch,
+    'merge_request[target_branch]': baseBranch,
+    'merge_request[title]': title
+  });
+  return `${webUrl}/-/merge_requests/new?${q.toString()}`;
+}
+
 export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): Promise<OpenMrResult> {
   const git = (args: string[]) => runner(['git', '-C', input.worktreeDir, ...args], input.timeoutMs);
 
@@ -57,6 +97,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl: undefined,
       fixSha: undefined,
       pushed: false,
       failure: 'refused',
@@ -67,6 +108,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl: undefined,
       fixSha: undefined,
       pushed: false,
       failure: 'refused',
@@ -79,6 +121,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl: undefined,
       fixSha: undefined,
       pushed: false,
       failure: 'commit_failed',
@@ -91,6 +134,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl: undefined,
       fixSha: undefined,
       pushed: false,
       failure: 'nothing_to_commit',
@@ -103,6 +147,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl: undefined,
       fixSha: undefined,
       pushed: false,
       failure: 'commit_failed',
@@ -135,6 +180,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     return {
       ok: false,
       mrUrl: parseMrUrl(output),
+      createMrUrl: undefined,
       fixSha,
       pushed: false,
       failure: 'push_failed',
@@ -144,10 +190,18 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
 
   const mrUrl = parseMrUrl(output);
   if (!mrUrl) {
-    // The branch is on the remote either way; say so, so the work is not lost.
+    // The branch is on the remote, so a one-click create link finishes the job by
+    // hand. Prefer the link GitLab printed; build one from the remote otherwise.
+    let createMrUrl = parseCreateLink(output);
+    if (!createMrUrl) {
+      const remote = await git(['remote', 'get-url', 'origin']);
+      const webUrl = remote.code === 0 ? remoteToWebUrl(remote.stdout) : undefined;
+      if (webUrl) createMrUrl = buildCreateMrUrl(webUrl, input.branch, input.baseBranch, input.title);
+    }
     return {
       ok: false,
       mrUrl: undefined,
+      createMrUrl,
       fixSha,
       pushed: true,
       failure: 'no_mr_url',
@@ -157,7 +211,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
     };
   }
 
-  return {ok: true, mrUrl, fixSha, pushed: true, failure: undefined, detail: undefined};
+  return {ok: true, mrUrl, createMrUrl: undefined, fixSha, pushed: true, failure: undefined, detail: undefined};
 }
 
 export interface MrBodyInput {
