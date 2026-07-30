@@ -165,7 +165,8 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     },
     paths: {
       projectRoot: PROJECT_ROOT,
-      brainRoot: join(PROJECT_ROOT, 'brain'),
+      // Overridable so a test can let LEARN write somewhere other than the real brain.
+      brainRoot: env.AUTOFIX_BRAIN_ROOT || join(PROJECT_ROOT, 'brain'),
       cacheRoot,
       stateDb: env.AUTOFIX_STATE_DB || join(cacheRoot, 'state.db'),
       worktreeRoot: join(cacheRoot, 'wt'),
