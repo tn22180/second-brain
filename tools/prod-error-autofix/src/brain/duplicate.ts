@@ -28,11 +28,24 @@ import {join} from 'node:path';
  * from racing each other into a conflict.
  */
 
+/** A cited location. Deduped by file: the first line the analysis gave for that file. */
+export interface CiteSite {
+  file: string;
+  line: number;
+}
+
 export interface PriorFix {
   fingerprint: string;
   mrUrl: string;
-  /** Cited files, in the order the analysis ranked them, deduped. */
-  files: string[];
+  /** Cited sites, in the order the analysis ranked them, one per file. */
+  sites: CiteSite[];
+}
+
+/** One entry per file, keeping the first (highest-ranked) line the analysis gave for it. */
+export function dedupeSites(sites: CiteSite[]): CiteSite[] {
+  const out: CiteSite[] = [];
+  for (const s of sites) if (!out.some(o => o.file === s.file)) out.push(s);
+  return out;
 }
 
 /**
@@ -43,8 +56,8 @@ export interface PriorFix {
  * Z in the prose — `isZodV4` on the very first citation line of `1ce20uv`, which cut 7
  * citations down to 1 while still looking like it worked.
  */
-export function citedFiles(incidentText: string): string[] {
-  const out: string[] = [];
+export function citedSites(incidentText: string): CiteSite[] {
+  const out: CiteSite[] = [];
   let inSection = false;
   for (const raw of incidentText.split('\n')) {
     const line = raw.trim();
@@ -54,9 +67,9 @@ export function citedFiles(incidentText: string): string[] {
     }
     if (!inSection) continue;
     const m = /^-\s+`([^`]+):(\d+)`/.exec(line);
-    if (m && !out.includes(m[1]!)) out.push(m[1]!);
+    if (m) out.push({file: m[1]!, line: Number(m[2])});
   }
-  return out;
+  return dedupeSites(out);
 }
 
 function mrOf(incidentText: string): string | undefined {
@@ -84,8 +97,8 @@ export function loadPriorFixes(
     const text = readFileSync(join(dir, file), 'utf8');
     const mrUrl = mrOf(text);
     if (!mrUrl || !stillOpen(fingerprint)) continue;
-    const files = citedFiles(text);
-    if (files.length) out.push({fingerprint, mrUrl, files});
+    const sites = citedSites(text);
+    if (sites.length) out.push({fingerprint, mrUrl, sites});
   }
   return out;
 }
@@ -98,20 +111,37 @@ export function loadPriorFixes(
  */
 export const OVERLAP_THRESHOLD = 0.5;
 
+/**
+ * Same file is not the same defect. `j3krke` was blocked against `se28ls` because both
+ * ranked `genAIBlogController.js` first — but at :513 (`genIdeas`, sending a plain-text
+ * completion with no schema) versus :337 (`genSuggested`, truncated JSON). Two functions
+ * 176 lines apart in a ~900-line controller, and the MR it was folded into fixed neither.
+ *
+ * Two analyses of one defect land on the same function, so the window is a function's
+ * worth of lines, not a file's.
+ */
+export const PRIMARY_LINE_WINDOW = 40;
+
 export interface DuplicateVerdict {
   prior: PriorFix;
   overlap: number;
   sharedFiles: string[];
 }
 
-export function duplicateOf(citedNow: string[], priors: PriorFix[]): DuplicateVerdict | undefined {
-  const top = citedNow[0];
+export function duplicateOf(citedNow: CiteSite[], priors: PriorFix[]): DuplicateVerdict | undefined {
+  // Deduped first: the caller passes raw citations, and several citations in one file used
+  // to be counted once each against a set-sized union, which put `overlap` above 1.0.
+  const now = dedupeSites(citedNow);
+  const top = now[0];
   if (!top) return undefined;
   let best: DuplicateVerdict | undefined;
   for (const prior of priors) {
-    if (prior.files[0] !== top) continue;
-    const shared = citedNow.filter(f => prior.files.includes(f));
-    const overlap = shared.length / new Set([...citedNow, ...prior.files]).size;
+    const priorTop = prior.sites[0];
+    if (!priorTop || priorTop.file !== top.file) continue;
+    if (Math.abs(priorTop.line - top.line) > PRIMARY_LINE_WINDOW) continue;
+    const priorFiles = prior.sites.map(s => s.file);
+    const shared = now.map(s => s.file).filter(f => priorFiles.includes(f));
+    const overlap = shared.length / new Set([...now.map(s => s.file), ...priorFiles]).size;
     if (overlap >= OVERLAP_THRESHOLD && (!best || overlap > best.overlap)) {
       best = {prior, overlap, sharedFiles: shared};
     }

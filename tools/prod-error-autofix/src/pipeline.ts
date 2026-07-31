@@ -437,7 +437,7 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   // citations are what ANALYZE produces — the analysis cost is already spent, but the fix,
   // the smoke run, a second MR and a second review are not.
   const dup = duplicateOf(
-    verified.citations.map(c => c.file),
+    verified.citations.map(c => ({file: c.file, line: c.line})),
     loadPriorFixes(cfg.paths.brainRoot, fingerprint, fp => {
       const row = store.getAlert(fp);
       // An unmerged MR blocks. A merged fix that did not stop the error does not — that

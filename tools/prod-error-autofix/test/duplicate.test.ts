@@ -2,7 +2,13 @@ import {afterEach, beforeEach, describe, expect, test} from 'bun:test';
 import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {citedFiles, duplicateOf, loadPriorFixes, type PriorFix} from '../src/brain/duplicate';
+import {
+  citedSites,
+  duplicateOf,
+  loadPriorFixes,
+  type CiteSite,
+  type PriorFix
+} from '../src/brain/duplicate';
 
 /** Shaped exactly like `renderIncident` writes it. */
 function incident(input: {files: string[]; mrUrl?: string}): string {
@@ -29,14 +35,17 @@ const OPENAI = [
   'packages/functions/src/const/genAIBlog.js'
 ];
 
-describe('citedFiles', () => {
-  test('reads the ## Code section in order, deduped, without line numbers', () => {
+/** `incident()` numbers its citations from 100, so file i sits at line 100 + i. */
+const sites = (files: string[]): CiteSite[] => files.map((file, i) => ({file, line: 100 + i}));
+
+describe('citedSites', () => {
+  test('reads the ## Code section in order, one entry per file, with its first line', () => {
     const text = incident({files: [...OPENAI, 'packages/functions/src/services/openAi.service.js']});
-    expect(citedFiles(text)).toEqual(OPENAI);
+    expect(citedSites(text)).toEqual(sites(OPENAI));
   });
 
   test('stops at the next section — evidence queries are not citations', () => {
-    expect(citedFiles(incident({files: ['a.js']}))).toEqual(['a.js']);
+    expect(citedSites(incident({files: ['a.js']}))).toEqual([{file: 'a.js', line: 100}]);
   });
 
   /**
@@ -53,20 +62,31 @@ describe('citedFiles', () => {
       '## Evidence',
       '- `c.js:1` — not a citation'
     ].join('\n');
-    expect(citedFiles(text)).toEqual(['a.js', 'b.js']);
+    expect(citedSites(text)).toEqual([
+      {file: 'a.js', line: 101},
+      {file: 'b.js', line: 9}
+    ]);
   });
 
   test('an incident with no Code section cites nothing', () => {
-    expect(citedFiles('# incident\n\n## Job\n- cost: $1\n')).toEqual([]);
+    expect(citedSites('# incident\n\n## Job\n- cost: $1\n')).toEqual([]);
   });
 });
 
 describe('duplicateOf', () => {
-  const prior: PriorFix = {fingerprint: '1ce20uv', mrUrl: 'https://gitlab.com/x/-/merge_requests/795', files: OPENAI};
+  const prior: PriorFix = {
+    fingerprint: '1ce20uv',
+    mrUrl: 'https://gitlab.com/x/-/merge_requests/795',
+    sites: sites(OPENAI)
+  };
 
   test('the real 1ce20uv/1h51j7i pair is caught', () => {
     // 1h51j7i cited the same three files, ranked slightly differently.
-    const now = [OPENAI[0]!, OPENAI[2]!, OPENAI[1]!];
+    const now = [
+      {file: OPENAI[0]!, line: 100},
+      {file: OPENAI[2]!, line: 7},
+      {file: OPENAI[1]!, line: 12}
+    ];
     const dup = duplicateOf(now, [prior])!;
     expect(dup.prior.fingerprint).toBe('1ce20uv');
     expect(dup.overlap).toBe(1);
@@ -75,11 +95,47 @@ describe('duplicateOf', () => {
   test('a different primary citation is not a duplicate, however much else overlaps', () => {
     // Same supporting files, but the accused line is elsewhere — a different defect
     // that happens to live in the same subsystem.
-    expect(duplicateOf([OPENAI[1]!, OPENAI[0]!, OPENAI[2]!], [prior])).toBeUndefined();
+    const now = [
+      {file: OPENAI[1]!, line: 101},
+      {file: OPENAI[0]!, line: 100},
+      {file: OPENAI[2]!, line: 102}
+    ];
+    expect(duplicateOf(now, [prior])).toBeUndefined();
+  });
+
+  /**
+   * The `j3krke` / `se28ls` false positive: both ranked `genAIBlogController.js` first, at
+   * :513 (`genIdeas`) and :337 (`genSuggested`). Two defects, one file, and `j3krke` was
+   * folded into an MR that fixed neither.
+   */
+  test('the same primary file in a different function is not a duplicate', () => {
+    const far = [{file: OPENAI[0]!, line: 100 + 176}, ...sites(OPENAI).slice(1)];
+    expect(duplicateOf(far, [prior])).toBeUndefined();
+  });
+
+  test('the same primary file a few lines off is still the same defect', () => {
+    const near = [{file: OPENAI[0]!, line: 100 + 12}, ...sites(OPENAI).slice(1)];
+    expect(duplicateOf(near, [prior])!.prior.fingerprint).toBe('1ce20uv');
+  });
+
+  /**
+   * The pipeline hands over raw citations, and an analysis routinely names several lines in
+   * one file. Counting each of them against a set-sized union put `overlap` at 1.50 in
+   * production — a ratio that cannot exceed 1.
+   */
+  test('repeat citations of one file do not inflate the overlap past 1', () => {
+    const repeated = [
+      {file: OPENAI[0]!, line: 100},
+      {file: OPENAI[0]!, line: 140},
+      {file: OPENAI[0]!, line: 180},
+      {file: OPENAI[1]!, line: 101},
+      {file: OPENAI[2]!, line: 102}
+    ];
+    expect(duplicateOf(repeated, [prior])!.overlap).toBe(1);
   });
 
   test('sharing only the primary file is below the bar', () => {
-    const now = [OPENAI[0]!, 'a.js', 'b.js', 'c.js', 'd.js'];
+    const now = [{file: OPENAI[0]!, line: 100}, ...sites(['a.js', 'b.js', 'c.js', 'd.js'])];
     expect(duplicateOf(now, [prior])).toBeUndefined();
   });
 
@@ -88,13 +144,17 @@ describe('duplicateOf', () => {
   });
 
   test('the strongest overlap wins when two priors match', () => {
-    const weaker: PriorFix = {fingerprint: 'weak', mrUrl: 'u', files: [OPENAI[0]!, 'x.js', 'y.js']};
-    const dup = duplicateOf(OPENAI, [weaker, prior])!;
+    const weaker: PriorFix = {
+      fingerprint: 'weak',
+      mrUrl: 'u',
+      sites: [{file: OPENAI[0]!, line: 100}, ...sites(['x.js', 'y.js'])]
+    };
+    const dup = duplicateOf(sites(OPENAI), [weaker, prior])!;
     expect(dup.prior.fingerprint).toBe('1ce20uv');
   });
 
   test('the shared files are reported, so the reply can name them', () => {
-    expect(duplicateOf(OPENAI, [prior])!.sharedFiles).toEqual(OPENAI);
+    expect(duplicateOf(sites(OPENAI), [prior])!.sharedFiles).toEqual(OPENAI);
   });
 });
 
