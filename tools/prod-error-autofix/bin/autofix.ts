@@ -196,6 +196,14 @@ async function main(argv: string[]): Promise<void> {
         `caps: ${cfg.caps.maxConcurrentJobs} song song · ${cfg.caps.mrPerHour} MR/h · ` +
           `${cfg.caps.mrPerRepoPerDay} MR/repo/ngày · analyze ${cfg.analyzeMaxRounds} vòng`
       );
+      // Notifying is optional, so a missing token fails silently at MR time. Say at
+      // startup which mode this process is in, or the first "why no Telegram?" costs
+      // a config re-derivation.
+      log(
+        cfg.telegram
+          ? `telegram: chat ${cfg.telegram.chatId}${cfg.telegram.threadId ? ` · topic ${cfg.telegram.threadId}` : ''} · token ${redact(cfg.telegram.botToken)}`
+          : 'telegram: chưa cấu hình → không báo MR ra ngoài Slack'
+      );
       if (cfg.transport === 'poll') {
         log('không có SLACK_APP_TOKEN → poll conversations.history; thêm xapp- token để chuyển sang Socket Mode');
       }
