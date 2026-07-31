@@ -326,7 +326,7 @@ Ngoài session (Tuan làm tay): tạo Slack app + 3 token, `gcloud auth login` n
 → `6b171da` smoke → `41311bf` worktree+MR → `d04e1de` Slack → `94176b4` pipeline+LEARN
 → `05535fe` CLI → `6602c00` launchd+README.
 
-### 6 bug thật bắt được nhờ verify (không phải suy đoán)
+### 9 bug thật bắt được nhờ verify (không phải suy đoán)
 1. **AEO base branch là `main`**, không phải `master` — mọi MR cho `llm-ai-search-seo` sẽ trỏ branch
    không tồn tại. Có test derive từ `git symbolic-ref` nên không tái diễn.
 2. **`env -C` không có trên macOS** (`illegal option -- C`) — mọi lần chạy jest sẽ bị đọc thành "jest
@@ -347,6 +347,26 @@ Ngoài session (Tuan làm tay): tạo Slack app + 3 token, `gcloud auth login` n
    đúng cú push duy nhất có thể chạy được. Fix: bỏ hẳn `merge_request.description`, body đi trong
    commit message; thêm `singleLine()` cho mọi push option còn lại + test assert không option nào
    chứa `\n`.
+
+**Đêm chạy không người trông đầu tiên (2026-07-30 → 07-31) lòi thêm 3 cái, nặng hơn cả 6 cái trên:**
+
+7. **Một job treo là khoá cả hệ thống.** `spawnRunner` timeout xong gọi `proc.kill()` — chỉ giết
+   con trực tiếp. `claude` đẻ process cháu, cháu thừa kế pipe stdout, nên
+   `new Response(proc.stdout).text()` không bao giờ resolve dù kill đã gửi. Job `te44sp` pending
+   **11.8 giờ**. Verify bằng cách chạy lại code cũ: timeout 300ms, tới 6000ms **vẫn pending**.
+   Fix: `detached: true` (process group riêng) + `kill(-pid)` + race read với deadline thay vì
+   tin nó tự kết thúc. Test spawn process thật, không stub — stub không thể lộ bug này.
+8. **Không có reclaim job chết.** `activeCount()` chỉ đếm `status='analyzing'`, không nhìn
+   `last_run_ms`. Cộng với cap concurrency = 1 → **59 alert `deferred`, 12 `inconclusive`,
+   1 `analyzing`**, daemon trông vẫn sống mà không làm gì. Fix: `Store.reclaimStale()` park về
+   `inconclusive` sau 90 phút, daemon quét theo timer *và* trước mỗi alert.
+9. **Worktree không bao giờ được thu hồi khi job dở.** Mỗi worktree là full checkout, 2.0G sau khi
+   link `node_modules`. 7 cái = **7.3G**, đĩa còn **800Mi/228Gi**, tới mức `bash` cũng không chạy
+   được. Fix: commit việc dở lên branch của nó rồi gỡ worktree — branch nằm trong repo chính nên
+   không mất gì. Chỉ giữ worktree nếu commit fail.
+
+Sau khi dọn: worktree 7.3G → 4.1M, free 8.4Gi, 12 branch `fix/prod-blog-*` giữ nguyên trong `blogs`.
+Cap concurrency đổi 1 → **2**.
 
 ### Tuan cần làm để bật thật
 1. Thêm `SLACK_APP_TOKEN=xapp-...` (scope `connections:write` + subscribe `message.channels`) vào
