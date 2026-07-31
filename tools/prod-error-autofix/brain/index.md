@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `14ydm3m` · 2026-07-31 · BLOG · proxy · Shopify's Admin GraphQL `article(id: "gid://shopify/Article/560458924077")` returns `data.article: null` for g · — · deferred
 - `hleb6l` · 2026-07-31 · BLOG · proxy · Shopify's GraphQL `article(id:)` returned `null` for article 560458924077 on glacierfrostco.myshopify.com, and · — · deferred
 - `urawwr` · 2026-07-31 · BLOG · proxy · The alert is not a defect: verifyAppProxySignature correctly rejected one tampered App Proxy request (signatur · https://gitlab.com/avada/blogs/-/merge_requests/792 · mr_open
 - `19z28dd` · 2026-07-31 · BLOG · api · shop.recentOpenedArticles in Firestore holds character-indexed objects instead of gid strings — written by the · https://gitlab.com/avada/blogs/-/merge_requests/791 · mr_open
@@ -20,5 +21,5 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `j3krke` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
 - `1th7fsw` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
 - `1whczpb` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
-- `1ph12wf` · 2026-07-30 · BLOG · api · GET /api/get-list-ai-image ignores its own page/limit params and re-downloads the shop's entire Shopify file l · — · inconclusive
+- `1ph12wf` · 2026-07-30 · BLOG · api · GET /api/get-list-ai-image ignores its own page/limit params and re-downloads the shop's entire Shopify file l · https://gitlab.com/avada/blogs/-/merge_requests/789 · mr_open
 - `1xqxz29` · 2026-07-30 · BLOG · apiv2 · The fire-and-forget analytics call `void logCreateBlogByGenAIEvent(shop)` in langGraphController.generate crea · — · inconclusive

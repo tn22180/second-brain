@@ -5,6 +5,7 @@ import type {Analysis} from './agent/analysisSchema';
 import type {ClaudeRunner} from './agent/claudeCli';
 import {fix, type FixOutcome} from './agent/fix';
 import {recordCandidate, writeIncident} from './agent/learn';
+import {isAlreadyFixed, knownIncident} from './brain/known';
 import {buildSlice} from './brain/slice';
 import type {Config} from './config';
 import {fetchLogs, summarize, type LogBundle} from './gcloud/logs';
@@ -127,7 +128,7 @@ export async function runPipeline(deps: PipelineDeps, message: IncomingMessage):
   }
 
   const alertTsMs = Math.round(Number(message.ts) * 1000) || nowMs;
-  const {previous} = store.seenAlert({
+  const seen = store.seenAlert({
     fingerprint,
     appName: alert.appName,
     repo: app.repo,
@@ -136,6 +137,21 @@ export async function runPipeline(deps: PipelineDeps, message: IncomingMessage):
     alertTsMs,
     threadTs: message.ts
   });
+  let previous = seen.previous;
+
+  // The DB is not the only record of what has been fixed, and it is the losable one:
+  // it was cleared on 2026-07-31, and an MR opened by hand never reaches it at all.
+  // `brain/index.md` is a file in git and outlived both. When it names an MR the DB
+  // does not know about, adopt it — the state machine then reports the existing MR
+  // instead of paying for an analysis that rediscovers a fix already in production.
+  if (!previous?.mrUrl) {
+    const known = knownIncident(cfg.paths.brainRoot, fingerprint);
+    if (isAlreadyFixed(known)) {
+      store.patchAlert(fingerprint, {status: 'mr_open', mrUrl: known.mrUrl});
+      previous = store.getAlert(fingerprint);
+      log(`${fingerprint} đã có MR trong brain (${known.mrUrl}) — không phân tích lại`);
+    }
+  }
 
   // Probe only when there is something to probe: a fix that was already pushed.
   let probe: DeployProbe | undefined;
