@@ -13,7 +13,9 @@ import {
   promoteCandidate,
   statusReport
 } from '../src/cli/commands';
+import {sweepWorktrees} from '../src/git/worktreeGc';
 import {runPipeline} from '../src/pipeline';
+import {listApps} from '../src/registry';
 import {createSlackApi} from '../src/slack/client';
 import {createListener, createPollTransport, createSocketTransport} from '../src/slack/listener';
 import {Store} from '../src/state/store';
@@ -185,12 +187,24 @@ async function main(argv: string[]): Promise<void> {
       // concurrency slot forever and every later alert comes back `deferred`.
       // Swept on a timer as well as before each alert: the timer is what unsticks a
       // queue that is already frozen, since nothing else runs while it is.
-      const reclaim = () => {
+      // Reclaim then sweep, in that order: a job freed here no longer owns its
+      // worktree, so the same pass can reclaim the checkout too.
+      const reclaim = async () => {
         const freed = store.reclaimStale(now() - cfg.timeouts.staleJobMs, now());
         if (freed.length) log(`reclaimed ${freed.length} stale job(s): ${freed.join(', ')}`);
+
+        const swept = await sweepWorktrees({
+          apps: listApps(cfg),
+          worktreeRoot: cfg.paths.worktreeRoot,
+          activeFingerprints: new Set(store.activeFingerprints()),
+          timeoutMs: cfg.timeouts.gcloudMs
+        });
+        for (const p of swept.preserved) log(`orphaned work committed @ ${p.sha.slice(0, 9)} before reclaiming ${p.dir}`);
+        if (swept.removed.length) log(`reclaimed ${swept.removed.length} orphaned worktree(s)`);
+        for (const f of swept.failed) log(`worktree ${f.dir} left in place: ${f.detail}`);
       };
-      reclaim();
-      const reclaimTimer = setInterval(reclaim, cfg.pollIntervalMs);
+      await reclaim();
+      const reclaimTimer = setInterval(() => void reclaim(), cfg.pollIntervalMs);
 
       const listener = createListener({
         cfg,
@@ -199,7 +213,7 @@ async function main(argv: string[]): Promise<void> {
         transport,
         log,
         onAlert: async message => {
-          reclaim();
+          await reclaim();
           const res = await runPipeline({cfg, store, slack, now, log}, message);
           if (res.handled) {
             log(`→ ${res.fingerprint} status ${res.status} · ${res.detail} · $${res.costUsd.toFixed(2)}`);

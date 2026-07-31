@@ -247,6 +247,14 @@ export class Store {
     return row.n;
   }
 
+  /** Fingerprints of jobs still running — the worktrees a sweep must not touch. */
+  activeFingerprints(): string[] {
+    const rows = this.db
+      .query("SELECT fingerprint FROM alerts WHERE status = 'analyzing'")
+      .all() as {fingerprint: string}[];
+    return rows.map(r => r.fingerprint);
+  }
+
   /**
    * Frees jobs whose process died without ever writing a terminal status.
    *
