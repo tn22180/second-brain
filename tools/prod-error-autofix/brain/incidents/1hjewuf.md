@@ -1,51 +1,40 @@
 fingerprint: 1hjewuf
 service: api
-message: HTTP 500 POST /api/gen-ai-suggested/blog-post-idea-outline
+message: HTTP 503 POST /api/gen-ai-suggested/blog-post-idea-outline
 app: BLOG
 repo: blogs
-date: 2026-07-31T08:48:24.769Z
-status: mr_open
-attempt: 1
+date: 2026-07-31T10:17:23.438Z
+status: inconclusive
+attempt: 2
 
 # BLOG · api · 1hjewuf
 
-**Outcome.** MR opened: https://gitlab.com/avada/blogs/-/merge_requests/804
+**Outcome.** fix blocked at agent_failed
 
-**Root cause.** OpenRouter returns a truncated or empty content string for /api/gen-ai-suggested/:type completions with finish_reason != 'length', so getCompletion's truncation guard never fires and genSuggested calls bare JSON.parse on the partial payload, throwing SyntaxError and returning 500.
+**Root cause.** OpenRouter's provider for google/gemini-2.5-flash-lite aborts generation mid-output with finish_reason='error' on /api/gen-ai-suggested/*, and getCompletion's single same-model retry (MAX_TRUNCATION_RETRIES=1) is not enough to survive it, so it throws CompletionTruncatedError and genSuggested answers 503. This is the same cause already recorded as fingerprint 1xisexs, whose fix is open but undeployed as MR https://gitlab.com/avada/blogs/-/merge_requests/809.
 
-**Mechanism.** genSuggested calls getCompletion with model 'gpt-4.1', which resolveModel maps to OPENROUTER_GEMINI_2_5_FLASH_LITE (packages/functions/src/const/aiModels.js:19, openAi.service.js:27). getCompletion's retry loop only re-issues when resp.choices[0].finish_reason === 'length' (openAi.service.js:138); anything else breaks out and the raw content is returned unchecked (openAi.service.js:158-161). When the provider ends generation early with finish_reason 'stop' (or null), the content is a half-written JSON document or an empty string. genSuggested then runs bare JSON.parse on it — genAIBlogController.js:229 for recommendBlogPost (prod stack lib/controllers/genAIBlogController.js:259:67) and genAIBlogController.js:337 for blog-post-idea-outline (prod stack lib:354:61) — which throws, hits the catch at genAIBlogController.js:368 and sets ctx.status = 500. All four distinct V8 messages seen in the window are end-of-input class, not malformed-escaping class: reproduced locally on Node 20, JSON.parse('{\n "a": "hello') gives "Unterminated string in JSON at position 14", JSON.parse('') gives "Unexpected end of JSON input", and JSON.parse('{ ') gives "Expected property name or '}' in JSON at position 2", while a raw control character instead gives "Bad control character in string literal" — which is not what any of these 500s carry. So this is truncation, and safeParseJsonCompletion (services/openrouter/safeParseJsonCompletion.js:50), which only repairs control characters, would not have saved it — and genSuggested does not call it anyway. Corroborating negative: zero log entries matching 'output truncated (finish_reason=length)' exist in the same 24h window in which 74 genSuggested SyntaxErrors were logged, i.e. the existing guard fired zero times. Latency 0.95-2.4s is far below the 30s client timeout, so the cut is upstream, not a client-side abort.
+**Mechanism.** genSuggested case 'blog-post-idea-outline' (genAIBlogController.js:316) calls complete({model:'gpt-4.1', format:'json_object', name:'suggested_outline'}) — resolveModel maps 'gpt-4.1' to DEFAULT_TEXT_MODEL = google/gemini-2.5-flash-lite (const/aiModels.js:19). OpenRouter returns a half-written JSON body with finish_reason='error' (not 'length'), which the guard from MR 804 catches via isJsonCompletionIncomplete, logs '[getCompletion] ... output truncated (finish_reason=error), retry 1/1', and re-issues once against the same model with no backoff (openAi.service.js:55, MAX_TRUNCATION_RETRIES=1). When the second attempt aborts too, openAi.service.js:161 throws CompletionTruncatedError; genAIBlogController.js:368-370 maps that class specifically to ctx.status = 503 with retryable:true, which is exactly the alert text. Pairing is 1:1 and exact: 503 at 09:45:20.601 (2.76s) → CompletionTruncatedError at 09:45:23.363 on suggested_outline (partial content 129 chars); 503 at 09:38:22.969 (2.99s) → 09:38:25.960 on suggested_recomment_blog (318 chars); 503 at 09:33:42.124 (1.86s) → 09:33:43.989 on suggested_outline (76 chars). All 3 of 3 gen-ai-suggested 503s in the 24h window are accounted for, and all 3 are the alerting fingerprint. The base rate is visible in the retry warnings: 10 provider aborts in the 30-minute window, every one of them finish_reason=error and zero finish_reason=length, so the output cap is not involved — 7 of 10 recovered on the single retry, 3 exhausted it and became 503s. Partial content of 76-318 chars means the abort lands very early in generation, not at any cap. Latency 1.86-2.99s is far under the 30s client timeout, so the cut is upstream. Distinct from the other 18 5xx in the same window, which are 504s at 539.947s against the function's own timeoutSeconds: 540 on /api/article* and are a separate cause, not this fingerprint.
 
 Confidence: `high`
 
 ## Code
-- `packages/functions/src/controllers/genAIBlogController.js:337` — case 'blog-post-idea-outline' — bare JSON.parse(blogPostIdeaRaw), the alerting endpoint; prod stack lib:354:61
-- `packages/functions/src/controllers/genAIBlogController.js:229` — case 'recommendBlogPost' — bare JSON.parse(rawRecommentBlog), the other failing type in the window; prod stack lib:259:67
-- `packages/functions/src/controllers/genAIBlogController.js:368` — catch that logs '[genSuggested] ... Error genSuggested' and sets 500 — the exact log line in the alert
-- `packages/functions/src/services/openAi.service.js:138` — guard only retries on finish_reason === 'length'; an early stop with any other finish_reason passes through unchecked
-- `packages/functions/src/services/openAi.service.js:158` — raw content returned with no completeness or JSON-validity check even when needsJsonParse is true
-- `packages/functions/src/const/aiModels.js:19` — DEFAULT_TEXT_MODEL = OPENROUTER_GEMINI_2_5_FLASH_LITE, what 'gpt-4.1' resolves to for every genSuggested call
-- `packages/functions/src/services/openrouter/safeParseJsonCompletion.js:50` — existing repair helper handles control chars only, not truncation, and genSuggested does not use it
+- `packages/functions/src/services/openAi.service.js:161` — throw new CompletionTruncatedError — the exact frame in the prod stack (lib/services/openAi.service.js:161:13)
+- `packages/functions/src/services/openAi.service.js:55` — MAX_TRUNCATION_RETRIES = 1 — one same-model retry, no backoff, no provider/model fallback; too few for a transient provider abort
+- `packages/functions/src/services/openAi.service.js:157` — truncation predicate catches the finish_reason='error' half-document via isJsonCompletionIncomplete, which is why these surface as CompletionTruncatedError and not SyntaxError
+- `packages/functions/src/controllers/genAIBlogController.js:369` — ctx.status = 503 for CompletionTruncatedError — the 503 in the alert is deliberate, emitted here, not a Cloud Run capacity 503
+- `packages/functions/src/controllers/genAIBlogController.js:316` — case 'blog-post-idea-outline' — the alerting endpoint; prod stack lib/controllers/genAIBlogController.js:338:33
+- `packages/functions/src/controllers/genAIBlogController.js:367` — the '[genSuggested] ... Error genSuggested' line that carries CompletionTruncatedError in the errors read
+- `packages/functions/src/const/aiModels.js:19` — DEFAULT_TEXT_MODEL = OPENROUTER_GEMINI_2_5_FLASH_LITE — the model named in every abort message
 
 ## Evidence
-- 74 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T08:00:00Z" AND timestamp<="2026-07-31T08:30:00Z" AND jsonPayload.message:"Error genSuggested SyntaxError"`
-- 5 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T07:59:47.143Z" AND timestamp<="2026-07-31T08:29:47.143Z" AND jsonPayload.message:"Error genSuggested"`
-- 6 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T07:59:47.143Z" AND timestamp<="2026-07-31T08:29:47.143Z" AND httpRequest.status>=500`
-- 1 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T08:00:00Z" AND timestamp<="2026-07-31T08:30:00Z" AND jsonPayload.message:"SyntaxError: Unterminated string in JSON"`
+- 3 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T09:18:45.296Z" AND timestamp<="2026-07-31T09:48:45.296Z" AND jsonPayload.message:"CompletionTruncatedError"`
+- 10 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T10:00:00Z" AND timestamp<="2026-07-31T09:48:45Z" AND jsonPayload.message:"output truncated (finish_reason="`
+- 3 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T10:00:00Z" AND timestamp<="2026-07-31T09:48:45Z" AND httpRequest.status=503 AND httpRequest.requestUrl:"gen-ai-suggested"`
+- 21 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T09:18:45.296Z" AND timestamp<="2026-07-31T09:48:45.296Z" AND httpRequest.status>=500`
 
 ## Job
 - analyze rounds: 1
-- cost: $3.51
-- branch: `fix/prod-blog-1hjewuf`
-- fix commit: `89eea7c1f025e1c9810991b2a35c115bccd0163b`
-- MR: https://gitlab.com/avada/blogs/-/merge_requests/804
-- tests: 237 tests, 3 failing · baseline 3 failing · reproduce test fails without the fix
-
-```
-.../src/controllers/genAIBlogController.js         |  7 +++-
- .../__tests__/getCompletion.truncation.test.js     | 44 ++++++++++++++++++++++
- packages/functions/src/services/openAi.service.js  | 43 +++++++++++++++------
- 3 files changed, 81 insertions(+), 13 deletions(-)
-```
+- cost: $1.07
 
 ## Verdict
 

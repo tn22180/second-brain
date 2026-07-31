@@ -5,6 +5,11 @@ set -euo pipefail
 SKILL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TZ_ARG="${TZ_ARG:-Asia/Ho_Chi_Minh}"
 
+# Run bq as a service account, not the interactive user. Workspace "Google Cloud
+# session control" forces `gcloud auth login` roughly daily, which silently broke
+# this job overnight; a service account's stored key refreshes tokens indefinitely.
+export CLOUDSDK_CORE_ACCOUNT="${CLOUDSDK_CORE_ACCOUNT:-firebase-adminsdk-bplmq@avada-seo.iam.gserviceaccount.com}"
+
 /opt/homebrew/bin/python3 "$SKILL/scripts/render_report.py" --tz "$TZ_ARG"
 
 # Post GCP cost summary to Telegram (only when configured — silent skip otherwise).

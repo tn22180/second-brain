@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: a3f0f490-5c60-457e-82b7-5860fe12e2f5
+  modified: 2026-07-31T09:23:22.371Z
 ---
 
 seo repo **master** `.gitlab-ci.yml` `deploy_worker` job = `only.variables: $CI_COMMIT_TITLE =~ /\[deploy-worker\]/`. There is **no `detect_worker` job on master** (0 occurrences). So a normal merge to master does NOT redeploy the self-hosted worker box — GCF gets it (`deploy_production` unconditional) but the worker box does not.
@@ -13,6 +14,6 @@ The fail-safe `detect_worker` auto-detection (scripts/detect-worker-affected.js 
 
 To ship a fix to the prod worker box today: push a commit to master with `[deploy-worker]` in the title (an empty marker commit works — `git commit --allow-empty`). That renders `deploy_worker`, which rsyncs master source + `docker compose build/up` on `seo-worker-box` via the gcp-gw gateway (34.87.163.45, ProxyJump WireGuard). Verified 2026-07-21: pipeline 2693230610, deploy_worker success ~80s, all 3 containers up clean.
 
-Master is protected (push/merge = Maintainer/40). glab token for querying pipelines lives in `speed-up-report/apps/functions/.env` as `GLAB_TOKEN`.
+Master is protected (push/merge = Maintainer/40). A glab token for querying pipelines lives in `speed-up-report/apps/functions/.env` as `GLAB_TOKEN`, but as of 2026-07-31 it is **revoked** — `Token was revoked. You have to re-authorize from the user.` Nothing else on the machine holds a GitLab API credential: `glab auth status` is 401, no `~/.config/glab-cli/`, no `GITLAB_TOKEN` in env, and `ssh -T git@gitlab.com` is `Permission denied (publickey)`. `git push` over HTTPS still works from the osxkeychain credential, so pushing a branch succeeds while anything API-driven (opening an MR, reading pipelines) fails. Fix by running `glab auth login`.
 
 Related: [[verify-branch-before-diagnosing]] — same trap (docs/worktree describe a branch, not master).

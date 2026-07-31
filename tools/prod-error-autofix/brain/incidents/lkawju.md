@@ -1,13 +1,13 @@
-fingerprint: 1xqxz29
-service: apiv2
-message: HTTP 500 POST /apiv2/apiV2/langgraph/blog
+fingerprint: lkawju
+service: api
+message: HTTP 504 GET /api/articles
 app: BLOG
 repo: blogs
-date: 2026-07-31T12:22:57.419Z
+date: 2026-07-31T11:33:56.222Z
 status: inconclusive
 attempt: 1
 
-# BLOG · apiv2 · 1xqxz29
+# BLOG · api · lkawju
 
 **Outcome.** timeout: killed after 480000ms
 

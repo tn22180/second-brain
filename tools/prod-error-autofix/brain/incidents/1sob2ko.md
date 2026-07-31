@@ -1,13 +1,13 @@
-fingerprint: 1xqxz29
-service: apiv2
-message: HTTP 500 POST /apiv2/apiV2/langgraph/blog
+fingerprint: 1sob2ko
+service: api
+message: The request has been terminated because it has reached the maximum request timeout. To change this limit, see <https://cloud.google.com/run/docs/configuring/request-timeout>
 app: BLOG
 repo: blogs
-date: 2026-07-31T12:22:57.419Z
+date: 2026-07-31T11:50:01.752Z
 status: inconclusive
 attempt: 1
 
-# BLOG · apiv2 · 1xqxz29
+# BLOG · api · 1sob2ko
 
 **Outcome.** timeout: killed after 480000ms
 

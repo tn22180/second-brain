@@ -69,3 +69,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) SEO không còn ghi Firestore collection `activity` theo lịch — dead code đã xoá, đừng đọc collection đó làm nguồn dữ liệu
 - [ ] (×1) prod-error-autofix có second-brain riêng ở `tools/prod-error-autofix/brain/` (incidents + index) — context tách khỏi second-brain chính
 - [ ] (×1) Google Sheet point sprint chỉ edit được bằng service account chỉ định; script `tools/jira-point-sync/sync-sheet.mjs`
+
+### memory candidates 2026-07-31
+- [ ] (×1) gcloud user login hết hạn hằng ngày → dùng SA `tony-cli@avada-seo.iam.gserviceaccount.com` cho mọi project, env file lưu trong second-brain; cần grant role đọc log riêng từng project
+- [ ] (×1) Không tồn tại MCP server chính chủ cho gcloud — mọi thao tác GCP vẫn qua `bq`/`gcloud` CLI
+- [ ] (×1) prod-error-autofix report bắn Telegram DM cá nhân (không nhóm/Slack); concurrency cap 2 fix/lượt, history issue đã fix để dedup
+- [ ] (×1) Skill `tony-wf` workflow chuẩn: /init → brainstorm → plan → TaskCreate → subagent theo chuyên môn → test loop cap 5 vòng fail thì dừng
+- [ ] (×1) Blogs Slack paging phần lớn là expected-error noise (redis ECONNRESET tự lành, 4xx per-shop, revoked token, 404 asset probe) — phân loại trước khi coi là bug
