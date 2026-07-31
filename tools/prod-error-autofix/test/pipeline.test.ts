@@ -401,6 +401,63 @@ describe('paths that must not open an MR', () => {
   });
 });
 
+describe('duplicate gate', () => {
+  /** The prior incident the gate reads: same accused file, MR still open. */
+  function seedPriorFix(fingerprint: string, file: string, mrUrl: string) {
+    mkdirSync(join(cfg.paths.brainRoot, 'incidents'), {recursive: true});
+    writeFileSync(
+      join(cfg.paths.brainRoot, 'incidents', `${fingerprint}.md`),
+      `fingerprint: ${fingerprint}\napp: BLOG\nservice: api\nmessage: earlier symptom\n\n## Code\n- \`${file}:1\` — the accused line\n\n## Job\n- MR: ${mrUrl}\n`,
+      'utf8'
+    );
+    store.seenAlert({
+      fingerprint,
+      appName: 'BLOG',
+      repo: 'blogs',
+      service: 'api',
+      kind: 'app',
+      alertTsMs: NOW - 3_600_000,
+      threadTs: undefined
+    });
+    store.patchAlert(fingerprint, {status: 'mr_open', mrUrl});
+  }
+
+  const MR = 'https://gitlab.com/avada/blogs/-/merge_requests/795';
+
+  test('a second fingerprint accusing the same code reuses the open MR', async () => {
+    seedPriorFix('prior', 'packages/functions/src/x.js', MR);
+    const res = await runPipeline(deps(), alertMessage({message: 'a totally different symptom string'}));
+
+    expect(res.status).toBe('mr_open');
+    expect(res.mrUrl).toBe(MR);
+    expect(posted[0]).toContain('prior');
+    expect(posted[0]).toContain(MR);
+    // Stopped before FIX: one model call, no push.
+    expect(claudeCalls).toHaveLength(1);
+    expect(ranArgs.some(a => a.join(' ').includes(' push '))).toBe(false);
+    // Which fingerprint it deferred to is recorded, so the link survives the reply.
+    expect(store.getAlert(res.fingerprint!)!.note).toBe('duplicate of prior');
+    expect(store.getAlert(res.fingerprint!)!.mrUrl).toBe(MR);
+  });
+
+  test('a different accused file is not a duplicate and proceeds to a real MR', async () => {
+    seedPriorFix('prior', 'packages/functions/src/somewhere-else.js', MR);
+    const res = await runPipeline(deps(), alertMessage());
+    expect(res.status).toBe('mr_open');
+    expect(res.mrUrl).not.toBe(MR);
+    expect(claudeCalls).toHaveLength(2);
+  });
+
+  /** A merged fix that did not stop the error must be allowed a second look. */
+  test('a resolved prior does not block', async () => {
+    seedPriorFix('prior', 'packages/functions/src/x.js', MR);
+    store.patchAlert('prior', {status: 'inconclusive'});
+    const res = await runPipeline(deps(), alertMessage({message: 'a totally different symptom string'}));
+    expect(res.mrUrl).not.toBe(MR);
+    expect(claudeCalls).toHaveLength(2);
+  });
+});
+
 describe('caps', () => {
   test('the MR cap defers after the analysis, and still reports it', async () => {
     for (let i = 0; i < cfg.caps.mrPerHour; i++) store.recordMrEvent('other-repo', NOW - 60_000);

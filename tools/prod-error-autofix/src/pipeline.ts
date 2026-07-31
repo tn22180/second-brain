@@ -5,6 +5,7 @@ import type {Analysis} from './agent/analysisSchema';
 import type {ClaudeRunner} from './agent/claudeCli';
 import {fix, type FixOutcome} from './agent/fix';
 import {recordCandidate, writeIncident} from './agent/learn';
+import {duplicateOf, loadPriorFixes} from './brain/duplicate';
 import {isAlreadyFixed, knownIncident} from './brain/known';
 import {buildSlice} from './brain/slice';
 import type {Config} from './config';
@@ -430,6 +431,38 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
     );
     await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'infra', outcome: 'infra class — reported, no MR', rounds: analysis.rounds.length, costUsd, message: input.message});
     return await finish('infra', 'infra class, no autofix', {replied});
+  }
+
+  // Two fingerprints, one defect. Checked here because it needs the citations, and the
+  // citations are what ANALYZE produces — the analysis cost is already spent, but the fix,
+  // the smoke run, a second MR and a second review are not.
+  const dup = duplicateOf(
+    verified.citations.map(c => c.file),
+    loadPriorFixes(cfg.paths.brainRoot, fingerprint, fp => {
+      const row = store.getAlert(fp);
+      // An unmerged MR blocks. A merged fix that did not stop the error does not — that
+      // is a fix that failed, and it has to be allowed a second look.
+      return row?.status === 'mr_open' || row?.status === 'awaiting_deploy';
+    })
+  );
+  if (dup) {
+    const replied = await say(
+      reply.replyDuplicate({
+        fingerprint,
+        appName: alert.appName,
+        attempt,
+        analysis: verified,
+        mrUrl: dup.prior.mrUrl,
+        priorFingerprint: dup.prior.fingerprint,
+        sharedFiles: dup.sharedFiles
+      })
+    );
+    // The MR has to land on the row, not just in the reply: `decide` reads it to route a
+    // recurrence to `mr_open_unmerged` instead of paying for another analysis.
+    store.patchAlert(fingerprint, {mrUrl: dup.prior.mrUrl});
+    await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'mr_open', outcome: `duplicate of ${dup.prior.fingerprint} — MR ${dup.prior.mrUrl}`, rounds: analysis.rounds.length, costUsd, message: input.message, mrUrl: dup.prior.mrUrl});
+    log(`${fingerprint} trùng ${dup.prior.fingerprint} (overlap ${dup.overlap.toFixed(2)}) → dùng lại ${dup.prior.mrUrl}`);
+    return await finish('mr_open', `duplicate of ${dup.prior.fingerprint}`, {replied, mrUrl: dup.prior.mrUrl});
   }
 
   const caps = checkMrCaps(store, cfg.caps, app.repo, now());

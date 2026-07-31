@@ -68,9 +68,12 @@ export function similarity(a: string, b: string): number {
 }
 
 export const NEAR_MISS_THRESHOLD = 0.6;
+/** Same app, different service: only a near-identical message means the same helper. */
+export const CROSS_SERVICE_THRESHOLD = 0.9;
 
 interface IncidentHeader {
   fingerprint: string;
+  app: string | undefined;
   service: string | undefined;
   message: string | undefined;
 }
@@ -81,6 +84,7 @@ export function parseIncidentHeader(text: string, fallbackFp: string): IncidentH
     new RegExp(`^${name}:\\s*(.+)$`, 'im').exec(text)?.[1]?.trim() || undefined;
   return {
     fingerprint: field('fingerprint') ?? fallbackFp,
+    app: field('app'),
     service: field('service'),
     message: field('message')
   };
@@ -104,11 +108,16 @@ function pickIncident(input: SliceInput): {path: string; text: string; reason: s
     const text = read(path);
     if (!text) continue;
     const header = parseIncidentHeader(text, file.replace(/\.md$/, ''));
-    // Same service is a precondition: a similar message in a different service is
-    // a different bug, and loading it would put the wrong code in front of the model.
-    if (header.service !== input.service || !header.message) continue;
+    if (!header.message) continue;
+    // Same app is the precondition, not same service: `1whczpb` (api) and `1i6gqkt`
+    // (apisa) are the identical `[getCrmWidgets] ... status code 400` — one shared
+    // helper reached from two services — and the old service-equality test threw the
+    // match away at similarity 1.000. Across services the bar is raised instead, since
+    // an identical message there means a shared helper rather than a coincidence.
+    if (header.app && header.app !== input.appName) continue;
+    const threshold = header.service === input.service ? NEAR_MISS_THRESHOLD : CROSS_SERVICE_THRESHOLD;
     const score = similarity(input.message, header.message);
-    if (score >= NEAR_MISS_THRESHOLD && (!best || score > best.score)) best = {path, text, score};
+    if (score >= threshold && (!best || score > best.score)) best = {path, text, score};
   }
   return best ? {path: best.path, text: best.text, reason: `near miss ${best.score.toFixed(2)}`} : undefined;
 }

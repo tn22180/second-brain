@@ -148,12 +148,39 @@ describe('incident selection', () => {
     expect(slice().sections.some(n => n.name === 'incident')).toBe(true);
   });
 
-  test('a similar message on a different service is not loaded', () => {
+  /**
+   * `1whczpb` (service `api`) and `1i6gqkt` (service `apisa`) are the identical
+   * `[getCrmWidgets] ... status code 400` — one shared helper reached from two services.
+   * Service equality used to throw that away at similarity 1.000.
+   */
+  test('an identical message on another service of the same app is loaded', () => {
     writeFileSync(
       join(tmp, 'incidents', 'fp-other.md'),
-      'fingerprint: fp-other\nservice: apiv2\nmessage: Unterminated string in JSON at position 42\n\nbody'
+      'fingerprint: fp-other\napp: BLOG\nservice: apisa\nmessage: [getCrmWidgets] 3yhj0ZCmZ1wOF0cvipu4 Request failed with status code 400\n\nbody'
+    );
+    const s = slice({
+      service: 'api',
+      message: '[getCrmWidgets] mPATvvR7OiUGuZCDvuS2 Request failed with status code 400'
+    });
+    expect(s.sections.some(n => n.name === 'incident')).toBe(true);
+  });
+
+  /** 0.667 — over the same-service bar, under the cross-service one. */
+  test('a merely similar message on another service stays out', () => {
+    writeFileSync(
+      join(tmp, 'incidents', 'fp-other.md'),
+      'fingerprint: fp-other\napp: BLOG\nservice: apiv2\nmessage: Unterminated string in JSON at position 42 while parsing\n\nbody'
     );
     expect(slice({service: 'api'}).sections.some(n => n.name === 'incident')).toBe(false);
+    expect(slice({service: 'apiv2'}).sections.some(n => n.name === 'incident')).toBe(true);
+  });
+
+  test('another app is never loaded, however identical the message', () => {
+    writeFileSync(
+      join(tmp, 'incidents', 'fp-seo.md'),
+      'fingerprint: fp-seo\napp: SEO\nservice: api\nmessage: Unterminated string in JSON at position 900\n\nbody'
+    );
+    expect(slice().sections.some(n => n.name === 'incident')).toBe(false);
   });
 
   test('an unrelated incident is not loaded, and is reported as skipped', () => {
@@ -208,8 +235,8 @@ describe('incident selection', () => {
 
 describe('parseIncidentHeader', () => {
   test('reads the fields it matches on', () => {
-    const h = parseIncidentHeader('fingerprint: abc\nservice: job:img\nmessage: boom here\nrest', 'fallback');
-    expect(h).toEqual({fingerprint: 'abc', service: 'job:img', message: 'boom here'});
+    const h = parseIncidentHeader('fingerprint: abc\napp: BLOG\nservice: job:img\nmessage: boom here\nrest', 'fallback');
+    expect(h).toEqual({fingerprint: 'abc', app: 'BLOG', service: 'job:img', message: 'boom here'});
   });
 
   test('falls back to the filename when the header is missing', () => {

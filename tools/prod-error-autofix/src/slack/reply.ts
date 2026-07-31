@@ -69,6 +69,24 @@ export function replyCapped(input: ReplyBase & {analysis: Analysis; cap: string;
   ].join('\n');
 }
 
+/**
+ * Same defect, second fingerprint. The analysis accused the same code an open MR already
+ * changes, so a second fix would duplicate the review and race the first branch.
+ */
+export function replyDuplicate(
+  input: ReplyBase & {analysis: Analysis; mrUrl: string; priorFingerprint: string; sharedFiles: string[]}
+): string {
+  return [
+    `🔁 *Cùng một lỗi với \`${input.priorFingerprint}\` — không mở MR thứ hai.*`,
+    `Fix đang chờ review ở ${input.mrUrl}`,
+    '',
+    `*Root cause.* ${input.analysis.rootCause}`,
+    `*Chung code với MR kia:* ${input.sharedFiles.map(f => `\`${f}\``).join(', ')}`,
+    '',
+    `_${footer(input)}_`
+  ].join('\n');
+}
+
 /** Ran the loop, could not stand anything up. */
 export function replyInconclusive(input: ReplyBase & {analysis: Analysis | undefined; rounds: number; costUsd: number; detail: string}): string {
   const head = [`❓ *Chưa chốt được root cause* sau ${input.rounds} vòng. Không mở MR.`, ''];
