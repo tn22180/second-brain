@@ -612,7 +612,9 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
         attempt
       })
     );
-    if (!sent.ok) log(`${fingerprint} telegram không gửi được: ${sent.detail}`);
+    // Logged either way: a silent success is indistinguishable from a notifier that
+    // was never wired, and that is exactly what has to be checked after a restart.
+    log(sent.ok ? `${fingerprint} telegram đã gửi` : `${fingerprint} telegram không gửi được: ${sent.detail}`);
   }
   const replied = await say(
     reply.replyMrOpened({
