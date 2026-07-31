@@ -19,7 +19,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `50pvzt` · 2026-07-30 · BLOG · reviewupdatesschedule · no verified cause · — · inconclusive
 - `pf3lkx` · 2026-07-30 · BLOG · reviewupdatesschedule · reviewUpdatesSchedule fails on every scheduled run because Chrome is absent from the deployed function artifac · — · inconclusive
 - `j3krke` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
-- `1th7fsw` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
-- `1whczpb` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
+- `1th7fsw` · 2026-07-31 · BLOG · api · setupTemplates uses `shopify.asset.get(themeId, {'asset[key]': 'templates/page.avada-articles-tags.liquid'})`  · https://gitlab.com/avada/blogs/-/merge_requests/794 · mr_open
+- `1whczpb` · 2026-07-31 · BLOG · api · public.avada.io/widget/list intermittently answers HTTP 400 (30 of ~596 /api/shops loads in 24h, 5.0%); getCrm · https://gitlab.com/avada/blogs/-/merge_requests/793 · mr_open
 - `1ph12wf` · 2026-07-30 · BLOG · api · GET /api/get-list-ai-image ignores its own page/limit params and re-downloads the shop's entire Shopify file l · https://gitlab.com/avada/blogs/-/merge_requests/789 · mr_open
 - `1xqxz29` · 2026-07-30 · BLOG · apiv2 · The fire-and-forget analytics call `void logCreateBlogByGenAIEvent(shop)` in langGraphController.generate crea · — · inconclusive

@@ -22,6 +22,7 @@ import {
   worktreeDirFor
 } from './git/worktree';
 import {fingerprintOf} from './fingerprint';
+import {buildMrMessage, sendTelegram} from './notify/telegram';
 import {parseAlert, type ParsedAlert} from './parseAlert';
 import {appNames, resolveApp, type App} from './registry';
 import type {SlackApi} from './slack/client';
@@ -594,6 +595,25 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
 
   recordMr(store, app.repo, now());
   store.patchAlert(fingerprint, {status: 'mr_open', mrUrl: mr.mrUrl, fixSha: mr.fixSha, branch: worktree.value.branch});
+
+  // Management view. Deliberately after the MR is recorded and never awaited into the
+  // job's outcome: a Telegram outage must not turn a successful MR into a failed job.
+  if (cfg.telegram) {
+    const sent = await sendTelegram(
+      cfg.telegram,
+      buildMrMessage({
+        appName: alert.appName,
+        service: alert.service,
+        fingerprint,
+        rootCause: verified.rootCause,
+        mrUrl: mr.mrUrl!,
+        threadUrl,
+        costUsd,
+        attempt
+      })
+    );
+    if (!sent.ok) log(`${fingerprint} telegram không gửi được: ${sent.detail}`);
+  }
   const replied = await say(
     reply.replyMrOpened({
       fingerprint,

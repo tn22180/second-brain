@@ -1,6 +1,7 @@
 import {existsSync, readFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join, resolve} from 'node:path';
+import type {TelegramConfig} from './notify/telegram';
 
 export const PROJECT_ROOT = resolve(import.meta.dir, '..');
 
@@ -92,6 +93,8 @@ export interface Config {
   analyzeMaxRounds: number;
   brainSliceTokenBudget: number;
   caps: Caps;
+  /** Absent when no bot token is configured; the pipeline then simply does not notify. */
+  telegram: TelegramConfig | undefined;
   models: Models;
   timeouts: Timeouts;
   paths: Paths;
@@ -153,6 +156,17 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
       maxFixAttempts: num(env, 'AUTOFIX_MAX_FIX_ATTEMPTS', 3),
       replyCooldownMs: num(env, 'AUTOFIX_REPLY_COOLDOWN_MS', 24 * HOUR)
     },
+    // Both halves are required: a token with no chat id has nowhere to post, and a
+    // chat id with no token cannot authenticate. Either missing means no notifying,
+    // which is a degraded mode, never a failure — the Slack thread is the record.
+    telegram:
+      env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID
+        ? {
+            botToken: env.TELEGRAM_BOT_TOKEN,
+            chatId: env.TELEGRAM_CHAT_ID,
+            threadId: env.TELEGRAM_THREAD_ID || undefined
+          }
+        : undefined,
     models: {
       analyze: env.AUTOFIX_ANALYZE_MODEL || 'claude-opus-5',
       fix: env.AUTOFIX_FIX_MODEL || 'claude-sonnet-5',
