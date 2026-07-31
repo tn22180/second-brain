@@ -368,6 +368,11 @@ Ngoài session (Tuan làm tay): tạo Slack app + 3 token, `gcloud auth login` n
 Sau khi dọn: worktree 7.3G → 4.1M, free 8.4Gi, 12 branch `fix/prod-blog-*` giữ nguyên trong `blogs`.
 Cap concurrency đổi 1 → **2**.
 
+Thêm `sweepWorktrees()`: pipeline chỉ dọn worktree của chính nó **khi tới được một exit path** —
+process bị giết hoặc treo rồi bị `reclaimStale` thu thì không tới. Daemon giờ quét sau mỗi lần
+reclaim, commit việc dở lên branch rồi gỡ; cái nào commit fail thì để nguyên và báo.
+`listOwnedWorktrees` viết sẵn từ đầu cho đúng việc này nhưng **chưa từng được gọi ở đâu**.
+
 ### Tuan cần làm để bật thật
 1. Thêm `SLACK_APP_TOKEN=xapp-...` (scope `connections:write` + subscribe `message.channels`) vào
    `tools/prod-error-autofix/.env` → tự chuyển từ poll sang Socket Mode. **Không bắt buộc**, poll chạy được.
