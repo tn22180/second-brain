@@ -25,6 +25,20 @@
     <dict>
         <key>HOME</key>
         <string>/Users/nguyentuan</string>
+
+        <!--
+          Every gcloud call runs as this service account rather than as the logged-in
+          user. Google Cloud expires a user credential on the org's session-length
+          policy — roughly daily here — and a daemon cannot answer a reauth prompt:
+          on 2026-07-31 four alerts came back `blocked · gcloud auth` inside one
+          half-hour window for exactly that reason. A service account has no such
+          expiry. Verified read access on all five prod projects: logging.read plus
+          functions describe and run revisions list, which is everything probeDeploy
+          needs. Set here and not globally so an interactive `gcloud` in a terminal
+          still runs as the user.
+        -->
+        <key>CLOUDSDK_CORE_ACCOUNT</key>
+        <string>tony-cli@avada-seo.iam.gserviceaccount.com</string>
         <key>PATH</key>
         <string>/Users/nguyentuan/.local/bin:/Users/nguyentuan/.bun/bin:/opt/homebrew/bin:/Users/nguyentuan/.nvm/versions/node/v22.22.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>

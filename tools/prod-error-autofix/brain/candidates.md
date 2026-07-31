@@ -10,3 +10,6 @@ One job's inference is not a fact about an app.
 Format: `<n> · <app> · <seen count> · <fingerprints> · <claim>`
 
 <!-- LEARN appends below this line -->
+- 1 · BLOG · seen 1 · [1rzr1j4] · subscribeHandleSummaryNewPublishedArticle logs its normal FREE-plan skip branch at logger.error, so every article publish by a FREE-plan shop emits severity=ERROR and pages Slack even though nothing failed.
+- 2 · BLOG · seen 1 · [19z28dd] · shop.recentOpenedArticles in Firestore holds character-indexed objects instead of gid strings — written by the pre-2026-07-28 formatDateFields, which spread every array item through itself — and articleController.list passes those objects straight into getShopifyArticleById, where `id.includes('gid')` throws TypeError.
+- 3 · BLOG · seen 1 · [urawwr] · The alert is not a defect: verifyAppProxySignature correctly rejected one tampered App Proxy request (signature last byte mutated d9→e0 vs a request that succeeded 0.79s earlier with identical query params), but that legitimate 403 rejection path is logged with logger.error, which emits severity=ERROR and trips the prod-error-alerts sink.
