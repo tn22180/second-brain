@@ -373,6 +373,24 @@ process bị giết hoặc treo rồi bị `reclaimStale` thu thì không tới.
 reclaim, commit việc dở lên branch rồi gỡ; cái nào commit fail thì để nguyên và báo.
 `listOwnedWorktrees` viết sẵn từ đầu cho đúng việc này nhưng **chưa từng được gọi ở đâu**.
 
+### Ghi nhận MR mở tay: `autofix mark` (`205caa9`)
+
+Bug #6 để lại một khe hở không phải ở code fix: pipeline chạy ra fix, push chết, MR mở bằng tay —
+và **không chỗ nào lưu được điều đó**. State DB, `brain/index.md` lẫn incident record đều còn
+`— · inconclusive`, nên lần sau đúng lỗi ấy tái diễn là trả tiền phân tích Opus lại từ đầu để
+tìm ra một fix đã merge. Đây là hệ quả trực tiếp của việc gate dedupe chỉ tin `index.md`.
+
+`autofix mark <fp> --mr <url> [--cause "..."]` ghi đúng 3 chỗ mà một job thành công ghi. **Không**
+đụng rate ledger — ledger đếm MR do process này mở, còn `mark` phải idempotent (chạy 2 lần ra đúng
+một dòng, verify bằng test và bằng chạy thật trên `1ph12wf`: index không đổi 1 byte).
+
+Gộp luôn phần đọc/ghi `index.md` từ `learn.ts` về `brain/known.ts` — module parse format giờ cũng là
+module duy nhất viết format đó, hết đường lệch nhau. Chạy thật trên brain thấy `1ph12wf` có MR ở
+index nhưng incident file thì không → đúng loại mâu thuẫn `mark` sinh ra để dập.
+
+383 pass / 9 skip / 0 fail (thêm 8 test), tsc clean. Daemon restart 05:07:39Z nạp Telegram + gate brain;
+banner giờ in `telegram: chat <id>` để không phải suy ra từ `.env` lần sau (`e98aa59`).
+
 ### Tuan cần làm để bật thật
 1. Thêm `SLACK_APP_TOKEN=xapp-...` (scope `connections:write` + subscribe `message.channels`) vào
    `tools/prod-error-autofix/.env` → tự chuyển từ poll sang Socket Mode. **Không bắt buộc**, poll chạy được.
