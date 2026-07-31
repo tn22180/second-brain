@@ -36,6 +36,7 @@ Confidence: `high`
 - 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-07-30T10:38:46.443Z" AND timestamp<="2026-07-30T11:08:46.443Z" AND "maximum request timeout"`
 
 ## Job
+- MR: https://gitlab.com/avada/blogs/-/merge_requests/789
 - analyze rounds: 1
 - cost: $2.49
 - fix commit: `7e02a1e3b08827f4c7e1b5b6d85a69ef3557b430`

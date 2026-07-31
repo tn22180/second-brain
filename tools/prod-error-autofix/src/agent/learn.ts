@@ -1,5 +1,6 @@
-import {appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {formatIndexLine, upsertIndexLine} from '../brain/known';
 import type {Analysis} from './analysisSchema';
 import type {ParsedAlert} from '../parseAlert';
 import type {AlertStatus} from '../state/stateMachine';
@@ -96,11 +97,15 @@ export function renderIncident(input: IncidentInput): string {
 }
 
 export function indexLine(input: IncidentInput): string {
-  const cause = input.analysis?.rootCause.replace(/\s+/g, ' ').slice(0, 110) ?? 'no verified cause';
-  const mr = input.mrUrl ?? '—';
-  return `- \`${input.fingerprint}\` · ${input.dateIso.slice(0, 10)} · ${input.alert.appName} · ${
-    input.alert.service ?? '?'
-  } · ${cause} · ${mr} · ${input.status}`;
+  return formatIndexLine({
+    fingerprint: input.fingerprint,
+    dateIso: input.dateIso,
+    appName: input.alert.appName,
+    service: input.alert.service ?? '?',
+    rootCause: input.analysis?.rootCause.replace(/\s+/g, ' ').slice(0, 110) ?? 'no verified cause',
+    mrUrl: input.mrUrl,
+    status: input.status
+  });
 }
 
 export interface LearnDeps {
@@ -113,8 +118,6 @@ export interface LearnResult {
   indexUpdated: boolean;
 }
 
-const INDEX_MARKER = '<!-- LEARN appends below this line -->';
-
 export function writeIncident(deps: LearnDeps, input: IncidentInput): LearnResult {
   const dir = join(deps.brainRoot, 'incidents');
   mkdirSync(dir, {recursive: true});
@@ -124,23 +127,7 @@ export function writeIncident(deps: LearnDeps, input: IncidentInput): LearnResul
   // a second one: brainSlice loads exactly one incident file per fingerprint.
   writeFileSync(incidentPath, renderIncident(input), 'utf8');
 
-  const indexPath = join(deps.brainRoot, 'index.md');
-  let indexUpdated = false;
-  if (existsSync(indexPath)) {
-    const current = readFileSync(indexPath, 'utf8');
-    const line = indexLine(input);
-    const already = new RegExp(`^- \`${input.fingerprint}\``, 'm').test(current);
-    if (already) {
-      // Rewrite the existing line in place, keeping the index one line per fingerprint.
-      const next = current.replace(new RegExp(`^- \`${input.fingerprint}\`.*$`, 'm'), line);
-      writeFileSync(indexPath, next, 'utf8');
-    } else if (current.includes(INDEX_MARKER)) {
-      writeFileSync(indexPath, current.replace(INDEX_MARKER, `${INDEX_MARKER}\n${line}`), 'utf8');
-    } else {
-      appendFileSync(indexPath, `\n${line}\n`, 'utf8');
-    }
-    indexUpdated = true;
-  }
+  const indexUpdated = upsertIndexLine(deps.brainRoot, input.fingerprint, indexLine(input));
 
   return {incidentPath, indexUpdated};
 }

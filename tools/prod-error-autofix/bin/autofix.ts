@@ -10,6 +10,7 @@ import {
   listCandidates,
   listIncidents,
   loadAlertFile,
+  markMr,
   promoteCandidate,
   statusReport
 } from '../src/cli/commands';
@@ -33,6 +34,8 @@ const USAGE = `autofix — prod error → MR
   run <ts|slack-url>          chạy pipeline trên đúng 1 message trong channel (CÓ thể mở MR thật)
   replay <fingerprint>        chạy lại pipeline trên một incident đã lưu (không post Slack trừ --post)
   incidents                   liệt kê fingerprint đã lưu
+  mark <fp> --mr <url> [--cause "..."]
+                              ghi nhận MR mở bằng tay vào index.md + incident + state DB
   brain budget                đo token slice từng app, exit 1 nếu vượt
   brain candidates            liệt kê candidate đang chờ
   brain promote <n> [--force] đưa candidate #n vào apps/<app>.md (cần seen >= 2)
@@ -78,6 +81,25 @@ async function main(argv: string[]): Promise<void> {
 
     case 'incidents': {
       console.log(listIncidents(cfg));
+      return;
+    }
+
+    case 'mark': {
+      const fp = args[1];
+      const flag = (name: string) => {
+        const i = args.indexOf(name);
+        return i > 0 ? args[i + 1] : undefined;
+      };
+      const mrUrl = flag('--mr');
+      if (!fp || !mrUrl) fail('dùng: autofix mark <fingerprint> --mr <url> [--cause "..."]');
+      const res = markMr(cfg, store, {
+        fingerprint: fp,
+        mrUrl,
+        cause: flag('--cause'),
+        dateIso: new Date(now()).toISOString()
+      });
+      console.log(res.detail);
+      if (!res.ok) process.exit(1);
       return;
     }
 

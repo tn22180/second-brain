@@ -1,4 +1,4 @@
-import {existsSync, readFileSync} from 'node:fs';
+import {appendFileSync, existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
 /**
@@ -44,6 +44,35 @@ export function parseIndexLine(line: string): KnownIncident | undefined {
     mrUrl: mr && mr !== '—' ? mr : undefined,
     status: parts[parts.length - 1]!
   };
+}
+
+/** The inverse of `parseIndexLine`. Sole writer of the format, so the two cannot drift. */
+export function formatIndexLine(k: KnownIncident): string {
+  return (
+    `- \`${k.fingerprint}\` · ${k.dateIso.slice(0, 10)} · ${k.appName} · ${k.service} · ` +
+    `${k.rootCause} · ${k.mrUrl ?? '—'} · ${k.status}`
+  );
+}
+
+export const INDEX_MARKER = '<!-- LEARN appends below this line -->';
+
+/**
+ * One line per fingerprint: a repeat rewrites in place rather than appending, so the
+ * index never grows two records that disagree about the same error.
+ */
+export function upsertIndexLine(brainRoot: string, fingerprint: string, line: string): boolean {
+  const path = join(brainRoot, 'index.md');
+  if (!existsSync(path)) return false;
+  const current = readFileSync(path, 'utf8');
+  const existing = new RegExp(`^- \`${fingerprint}\`.*$`, 'm');
+  if (existing.test(current)) {
+    writeFileSync(path, current.replace(existing, line), 'utf8');
+  } else if (current.includes(INDEX_MARKER)) {
+    writeFileSync(path, current.replace(INDEX_MARKER, `${INDEX_MARKER}\n${line}`), 'utf8');
+  } else {
+    appendFileSync(path, `\n${line}\n`, 'utf8');
+  }
+  return true;
 }
 
 export function loadKnownIncidents(brainRoot: string): Map<string, KnownIncident> {

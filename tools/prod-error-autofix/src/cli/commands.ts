@@ -1,5 +1,6 @@
 import {existsSync, readFileSync, readdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {formatIndexLine, knownIncident, upsertIndexLine} from '../brain/known';
 import {buildSlice} from '../brain/slice';
 import {parseCandidates} from '../agent/learn';
 import type {Config} from '../config';
@@ -229,6 +230,77 @@ export function formatBudget(rows: BudgetRow[]): string {
     .join('\n');
   const worst = rows.reduce((a, b) => (b.tokens > a.tokens ? b : a), rows[0]!);
   return `${body}\n\nlớn nhất: ${worst.app} ${worst.tokens}/${worst.budget}`;
+}
+
+export interface MarkResult {
+  ok: boolean;
+  detail: string;
+}
+
+/**
+ * Record an MR that the pipeline did not open itself.
+ *
+ * The case this exists for: the fix ran, the push failed (`1ph12wf`, bug #6), the branch
+ * was pushed and the MR opened by hand. Everything durable then said `— · inconclusive`,
+ * so the next occurrence of that error would have paid for a full Opus analysis to
+ * rediscover a fix already merged. `mark` closes that hole from the outside, writing the
+ * same three places a successful job writes: the state DB, `brain/index.md` (what the
+ * dedupe gate reads), and the incident record (what a matching job is shown).
+ *
+ * Deliberately does NOT call `recordMrEvent`: the rate ledger counts MRs this process
+ * opened, and `mark` is idempotent — re-running it must not spend quota twice.
+ */
+export function markMr(
+  cfg: Config,
+  store: Store,
+  input: {fingerprint: string; mrUrl: string; cause?: string; dateIso: string}
+): MarkResult {
+  const fp = input.fingerprint;
+  if (!/^https?:\/\/\S+$/.test(input.mrUrl)) return {ok: false, detail: `MR url không hợp lệ: ${input.mrUrl}`};
+
+  const known = knownIncident(cfg.paths.brainRoot, fp);
+  const row = store.getAlert(fp);
+  if (!known && !row) {
+    return {ok: false, detail: `không biết fingerprint ${fp} — không có trong index.md lẫn state DB`};
+  }
+
+  const entry = {
+    fingerprint: fp,
+    dateIso: known?.dateIso ?? input.dateIso,
+    appName: known?.appName ?? row!.appName,
+    service: known?.service ?? row?.service ?? '?',
+    rootCause: input.cause?.replace(/\s+/g, ' ').slice(0, 110) ?? known?.rootCause ?? 'recorded by hand',
+    mrUrl: input.mrUrl,
+    status: 'mr_open'
+  };
+  const indexUpdated = upsertIndexLine(cfg.paths.brainRoot, fp, formatIndexLine(entry));
+
+  // The incident file is loaded whole on a fingerprint match. Leaving it saying no MR
+  // while the index says there is one hands the analyst two contradictory facts.
+  const incidentPath = join(cfg.paths.brainRoot, 'incidents', `${fp}.md`);
+  let incidentUpdated = false;
+  if (existsSync(incidentPath)) {
+    const text = readFileSync(incidentPath, 'utf8');
+    const line = `- MR: ${input.mrUrl}`;
+    const next = /^- MR: .*$/m.test(text)
+      ? text.replace(/^- MR: .*$/m, line)
+      : text.replace(/^## Job$/m, `## Job\n${line}`);
+    if (next !== text) {
+      writeFileSync(incidentPath, next, 'utf8');
+      incidentUpdated = true;
+    }
+  }
+
+  const patched = row ? store.patchAlert(fp, {status: 'mr_open', mrUrl: input.mrUrl}) !== undefined : false;
+
+  return {
+    ok: indexUpdated || patched,
+    detail:
+      `${fp} → ${input.mrUrl}\n` +
+      `  index.md    ${indexUpdated ? 'đã ghi' : 'KHÔNG (thiếu brain/index.md)'}\n` +
+      `  incident    ${incidentUpdated ? 'đã ghi' : 'không có file'}\n` +
+      `  state DB    ${patched ? 'mr_open' : 'không có row'}`
+  };
 }
 
 export interface PromoteResult {

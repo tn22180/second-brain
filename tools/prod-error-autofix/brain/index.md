@@ -7,12 +7,13 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1h51j7i` · 2026-07-31 · BLOG · api · getCompletion downgrades the structured-output response_format to bare {type:'json_object'} for every zod v4 s · https://gitlab.com/avada/blogs/-/merge_requests/796 · mr_open
 - `14ydm3m` · 2026-07-31 · BLOG · proxy · Shopify's Admin GraphQL `article(id: "gid://shopify/Article/560458924077")` returns `data.article: null` for g · — · deferred
 - `hleb6l` · 2026-07-31 · BLOG · proxy · Shopify's GraphQL `article(id:)` returned `null` for article 560458924077 on glacierfrostco.myshopify.com, and · — · deferred
 - `urawwr` · 2026-07-31 · BLOG · proxy · The alert is not a defect: verifyAppProxySignature correctly rejected one tampered App Proxy request (signatur · https://gitlab.com/avada/blogs/-/merge_requests/792 · mr_open
 - `19z28dd` · 2026-07-31 · BLOG · api · shop.recentOpenedArticles in Firestore holds character-indexed objects instead of gid strings — written by the · https://gitlab.com/avada/blogs/-/merge_requests/791 · mr_open
 - `1a46pf9` · 2026-07-30 · BLOG · api · no verified cause · — · inconclusive
-- `1ce20uv` · 2026-07-30 · BLOG · api · getCompletion's truncation guard only retries when OpenRouter reports finish_reason === 'length'; the gpt-4.1  · — · inconclusive
+- `1ce20uv` · 2026-07-31 · BLOG · api · getCompletion silently downgrades the structured-output response_format to plain {type:'json_object'} whenever · https://gitlab.com/avada/blogs/-/merge_requests/795 · mr_open
 - `1502okp` · 2026-07-30 · BLOG · api · getCompletion only guards finish_reason==='length' and otherwise returns the raw model string unvalidated, so  · — · inconclusive
 - `1rzr1j4` · 2026-07-31 · BLOG · subscribesummarynewpublishedarticle · subscribeHandleSummaryNewPublishedArticle logs its normal FREE-plan skip branch at logger.error, so every arti · https://gitlab.com/avada/blogs/-/merge_requests/790 · mr_open
 - `1i6gqkt` · 2026-07-30 · BLOG · apisa · The external CRM widget endpoint https://public.avada.io/widget/list intermittently answers HTTP 400 (21 times · — · inconclusive
