@@ -26,6 +26,8 @@ export interface Worktree {
   dir: string;
   branch: string;
   baseSha: string;
+  /** Set when an earlier attempt's commits were parked before the branch was reset. */
+  archivedRef?: string;
 }
 
 export type WorktreeResult = {ok: true; value: Worktree} | {ok: false; detail: string};
@@ -38,6 +40,33 @@ export function branchNameFor(appName: string, fingerprint: string, attempt: num
 
 export function worktreeDirFor(worktreeRoot: string, repo: string, fingerprint: string, attempt: number): string {
   return join(worktreeRoot, `${repo}-${fingerprint}${attempt > 1 ? `-a${attempt}` : ''}`);
+}
+
+/**
+ * Parks a branch tip under `refs/autofix-archive/` when it holds commits the base
+ * does not, so resetting the branch cannot lose them.
+ *
+ * Returns the archive ref, or undefined when there was nothing worth keeping — a
+ * branch that does not exist, or one that is already contained in the base.
+ */
+export async function archiveBranchTip(
+  input: {repoPath: string; branch: string; baseSha: string; timeoutMs: number},
+  runner: Runner = spawnRunner
+): Promise<string | undefined> {
+  const git = (args: string[]) => runner(['git', '-C', input.repoPath, ...args], input.timeoutMs);
+
+  const tip = await git(['rev-parse', '--verify', `refs/heads/${input.branch}`]);
+  if (tip.code !== 0) return undefined;
+  const sha = tip.stdout.trim();
+  if (!sha) return undefined;
+
+  // Already in the base — nothing on this branch that a reset would drop.
+  const contained = await git(['merge-base', '--is-ancestor', sha, input.baseSha]);
+  if (contained.code === 0) return undefined;
+
+  const ref = `refs/autofix-archive/${input.branch.replace(/^fix\//, '')}-${sha.slice(0, 7)}`;
+  const saved = await git(['update-ref', ref, sha]);
+  return saved.code === 0 ? ref : undefined;
 }
 
 export async function createWorktree(
@@ -64,13 +93,19 @@ export async function createWorktree(
   }
   const baseSha = sha.stdout.trim();
 
-  // -B so a leftover branch from an earlier attempt is reset rather than colliding.
+  // `-B` resets a leftover branch from an earlier attempt rather than colliding with
+  // it — but that silently discards whatever that attempt committed. Seen on
+  // 2026-07-31: rerunning fingerprint 1rzr1j4 after the state was cleared dropped a
+  // finished fix commit to dangling, one `git gc` away from gone. Anything not already
+  // contained in the base gets a ref of its own first.
+  const archived = await archiveBranchTip({repoPath: input.repoPath, branch: input.branch, baseSha, timeoutMs: input.timeoutMs}, runner);
+
   const added = await git(['worktree', 'add', '-B', input.branch, input.dir, baseSha]);
   if (added.code !== 0) {
     return {ok: false, detail: `worktree add failed: ${(added.stderr || added.stdout).trim().slice(0, 300)}`};
   }
 
-  return {ok: true, value: {dir: input.dir, branch: input.branch, baseSha}};
+  return {ok: true, value: {dir: input.dir, branch: input.branch, baseSha, archivedRef: archived}};
 }
 
 /**

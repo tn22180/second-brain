@@ -1,6 +1,7 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {fingerprintFromDir, sweepWorktrees} from '../src/git/worktreeGc';
+import {archiveBranchTip} from '../src/git/worktree';
 import type {App} from '../src/registry';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
@@ -127,5 +128,52 @@ describe('sweepWorktrees', () => {
     );
     expect(res.removed).toEqual([]);
     expect(res.failed[0]!.detail).toContain('locked');
+  });
+});
+
+/**
+ * `git worktree add -B` resets a leftover branch, which silently drops whatever an
+ * earlier attempt committed. On 2026-07-31 a rerun of fingerprint 1rzr1j4 — after the
+ * state DB was cleared — did exactly that to a finished fix commit, leaving it
+ * dangling and one `git gc` from gone.
+ */
+describe('archiveBranchTip', () => {
+  function git(over: {tip?: string; tipCode?: number; contained?: boolean}): {run: Runner; seen: () => string[]} {
+    const seen: string[] = [];
+    const run: Runner = async args => {
+      const joined = args.join(' ');
+      seen.push(joined);
+      if (joined.includes('rev-parse --verify')) {
+        return ok({code: over.tipCode ?? 0, stdout: over.tip ?? 'abcdef1234567\n'});
+      }
+      if (joined.includes('merge-base --is-ancestor')) return ok({code: over.contained ? 0 : 1});
+      return ok();
+    };
+    return {run, seen: () => seen};
+  }
+
+  test('a branch with commits the base lacks is parked under refs/autofix-archive', async () => {
+    const {run, seen} = git({contained: false});
+    const ref = await archiveBranchTip(
+      {repoPath: '/repos/blogs', branch: 'fix/prod-blog-1a2b', baseSha: 'base', timeoutMs: 1000},
+      run
+    );
+    expect(ref).toBe('refs/autofix-archive/prod-blog-1a2b-abcdef1');
+    expect(seen().some(c => c.includes('update-ref refs/autofix-archive/prod-blog-1a2b-abcdef1 abcdef1234567'))).toBe(true);
+  });
+
+  test('a branch already contained in the base is not archived', async () => {
+    const {run, seen} = git({contained: true});
+    expect(
+      await archiveBranchTip({repoPath: '/r', branch: 'fix/prod-blog-x', baseSha: 'base', timeoutMs: 1000}, run)
+    ).toBeUndefined();
+    expect(seen().some(c => c.includes('update-ref'))).toBe(false);
+  });
+
+  test('a branch that does not exist yet is not an error', async () => {
+    const {run} = git({tipCode: 1, tip: ''});
+    expect(
+      await archiveBranchTip({repoPath: '/r', branch: 'fix/prod-blog-new', baseSha: 'base', timeoutMs: 1000}, run)
+    ).toBeUndefined();
   });
 });
