@@ -30,12 +30,18 @@ describe('concurrency', () => {
     expect(checkConcurrency(store, caps)).toMatchObject({allowed: true, cap: undefined});
   });
 
-  test('one running job fills the default cap and names it', () => {
+  test('one running job leaves the second slot open', () => {
     seed('a', 'analyzing');
+    expect(checkConcurrency(store, caps).allowed).toBe(true);
+  });
+
+  test('two running jobs fill the default cap and name it', () => {
+    seed('a', 'analyzing');
+    seed('b', 'analyzing');
     const v = checkConcurrency(store, caps);
     expect(v.allowed).toBe(false);
     expect(v.cap).toBe('concurrency');
-    expect(v.detail).toBe('1/1 job đang chạy');
+    expect(v.detail).toBe('2/2 job đang chạy');
   });
 
   test('a finished job frees the slot', () => {
@@ -89,6 +95,7 @@ describe('MR caps', () => {
 describe('what the caps do not block', () => {
   test('a cap verdict carries text for the thread reply and nothing else', () => {
     seed('a', 'analyzing');
+    seed('b', 'analyzing');
     const v = checkConcurrency(store, caps);
     // The gate's whole contract: it reports, the caller still replies.
     expect(Object.keys(v).sort()).toEqual(['allowed', 'cap', 'detail']);

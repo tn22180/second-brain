@@ -181,6 +181,17 @@ async function main(argv: string[]): Promise<void> {
           ? createSocketTransport({appToken: cfg.slackAppToken, log})
           : createPollTransport({cfg, store, slack, log});
 
+      // A job whose process died never writes a terminal status, so it holds its
+      // concurrency slot forever and every later alert comes back `deferred`.
+      // Swept on a timer as well as before each alert: the timer is what unsticks a
+      // queue that is already frozen, since nothing else runs while it is.
+      const reclaim = () => {
+        const freed = store.reclaimStale(now() - cfg.timeouts.staleJobMs, now());
+        if (freed.length) log(`reclaimed ${freed.length} stale job(s): ${freed.join(', ')}`);
+      };
+      reclaim();
+      const reclaimTimer = setInterval(reclaim, cfg.pollIntervalMs);
+
       const listener = createListener({
         cfg,
         store,
@@ -188,6 +199,7 @@ async function main(argv: string[]): Promise<void> {
         transport,
         log,
         onAlert: async message => {
+          reclaim();
           const res = await runPipeline({cfg, store, slack, now, log}, message);
           if (res.handled) {
             log(`→ ${res.fingerprint} status ${res.status} · ${res.detail} · $${res.costUsd.toFixed(2)}`);
@@ -197,6 +209,7 @@ async function main(argv: string[]): Promise<void> {
 
       const shutdown = async (signal: string) => {
         log(`${signal} — đang dừng`);
+        clearInterval(reclaimTimer);
         await listener.stop();
         store.close();
         process.exit(0);

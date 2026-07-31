@@ -247,6 +247,32 @@ export class Store {
     return row.n;
   }
 
+  /**
+   * Frees jobs whose process died without ever writing a terminal status.
+   *
+   * Without this a single hung job holds a concurrency slot forever: on 2026-07-30
+   * `te44sp` sat in `analyzing` for 11.8 hours and every alert after it — 59 of them —
+   * came back `deferred · concurrency`. The daemon looked alive and was doing nothing.
+   *
+   * A reclaimed job is parked at `inconclusive`, not retried on the spot: it already
+   * spent model budget once, and whatever hung it may hang it again. The next
+   * occurrence of the same fingerprint decides that, under the usual cooldown.
+   */
+  reclaimStale(cutoffMs: number, nowMs: number): string[] {
+    const rows = this.db
+      .query(
+        "SELECT fingerprint FROM alerts WHERE status = 'analyzing' AND COALESCE(last_run_ms, first_seen_ms) < ?"
+      )
+      .all(cutoffMs) as {fingerprint: string}[];
+    for (const {fingerprint} of rows) {
+      this.patchAlert(fingerprint, {
+        status: 'inconclusive',
+        note: `stale_reclaimed: no terminal status by ${new Date(nowMs).toISOString()}`
+      });
+    }
+    return rows.map(r => r.fingerprint);
+  }
+
   recentAlerts(limit = 10): AlertRow[] {
     const rows = this.db
       .query('SELECT * FROM alerts ORDER BY last_seen_ms DESC LIMIT ?')

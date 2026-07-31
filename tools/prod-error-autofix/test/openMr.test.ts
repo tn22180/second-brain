@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, singleLine, type OpenMrInput} from '../src/git/openMr';
-import {branchNameFor, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
+import {branchNameFor, commitWip, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
 
@@ -371,5 +371,51 @@ describe('linkNodeModules', () => {
     );
     expect(res.linked).toEqual([]);
     expect(res.missing.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * A worktree is a full checkout — 2.0 GB once `node_modules` is linked in — and one
+ * per unfinished job filled this machine's disk on 2026-07-31: seven of them, 7.3 GB,
+ * after which the daemon had no room left to work. The changed files are what matter,
+ * and a branch ref holds them in the main repo for nothing.
+ */
+describe('commitWip', () => {
+  function runner(over: {staged?: string; addCode?: number; commitCode?: number} = {}): {
+    run: Runner;
+    seen: () => string[];
+  } {
+    const seen: string[] = [];
+    const run: Runner = async args => {
+      seen.push(args.join(' '));
+      const joined = args.join(' ');
+      if (joined.includes('diff --cached')) return ok({stdout: over.staged ?? 'src/x.js\n'});
+      if (joined.includes(' add ')) return ok({code: over.addCode ?? 0});
+      if (joined.includes(' commit ')) return ok({code: over.commitCode ?? 0});
+      if (joined.includes('rev-parse HEAD')) return ok({stdout: 'beef5678\n'});
+      return ok();
+    };
+    return {run, seen: () => seen};
+  }
+
+  test('it commits what is there and returns the sha', async () => {
+    const {run, seen} = runner();
+    const res = await commitWip({worktreeDir: '/wt/x', message: 'wip: keep this', timeoutMs: 1000}, run);
+    expect(res).toMatchObject({ok: true, sha: 'beef5678'});
+    expect(seen().some(c => c.includes('commit -m wip: keep this'))).toBe(true);
+  });
+
+  /** The normal case after openMr, which commits before it pushes. */
+  test('nothing staged is success with no sha, not a failure', async () => {
+    const {run, seen} = runner({staged: '  \n'});
+    const res = await commitWip({worktreeDir: '/wt/x', message: 'wip', timeoutMs: 1000}, run);
+    expect(res).toMatchObject({ok: true, sha: undefined});
+    expect(seen().some(c => c.includes(' commit '))).toBe(false);
+  });
+
+  test('a failed commit reports rather than pretending the work is safe', async () => {
+    const {run} = runner({commitCode: 1});
+    const res = await commitWip({worktreeDir: '/wt/x', message: 'wip', timeoutMs: 1000}, run);
+    expect(res.ok).toBe(false);
   });
 });

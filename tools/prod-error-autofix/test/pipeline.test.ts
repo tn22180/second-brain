@@ -345,7 +345,12 @@ describe('paths that must not open an MR', () => {
     expect(existsSync(join(ROOT, 'brain', 'incidents', `${res.fingerprint}.md`))).toBe(true);
   });
 
-  test('a new test failure blocks the MR and keeps the worktree', async () => {
+  /**
+   * The work has to survive, but a 2.0 GB checkout per blocked job does not: seven of
+   * them filled this machine's disk on 2026-07-31. A commit on the branch keeps the
+   * work in the main repo, which is what lets the worktree go.
+   */
+  test('a new test failure blocks the MR, commits the work and reclaims the worktree', async () => {
     const res = await runPipeline(
       deps({runner: script({jestBaselineFailures: [], jestAfterFailures: ['other.test.js::was passing']})}),
       alertMessage()
@@ -353,8 +358,10 @@ describe('paths that must not open an MR', () => {
     expect(res.status).toBe('inconclusive');
     expect(res.detail).toContain('new_failures');
     expect(posted[0]).toContain('other.test.js::was passing');
-    expect(posted[0]).toContain('Worktree giữ lại');
-    expect(ranArgs.some(a => a.join(' ').includes('worktree remove'))).toBe(false);
+    expect(posted[0]).toContain('fix/prod-blog-');
+    const commands = ranArgs.map(a => a.join(' '));
+    expect(commands.some(c => c.includes('commit -m wip(prod-autofix)'))).toBe(true);
+    expect(commands.some(c => c.includes('worktree remove'))).toBe(true);
   });
 
   test('a reproduce test that passes without the fix blocks the MR', async () => {
@@ -417,6 +424,16 @@ describe('caps', () => {
       threadTs: undefined
     });
     store.patchAlert('other', {status: 'analyzing'});
+    store.seenAlert({
+      fingerprint: 'other2',
+      appName: 'BLOG',
+      repo: 'blogs',
+      service: 'api',
+      kind: 'app',
+      alertTsMs: NOW,
+      threadTs: undefined
+    });
+    store.patchAlert('other2', {status: 'analyzing'});
     const res = await runPipeline(deps(), alertMessage());
     expect(res.status).toBe('deferred');
     expect(claudeCalls).toHaveLength(0);

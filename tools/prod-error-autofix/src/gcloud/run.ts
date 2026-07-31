@@ -24,23 +24,84 @@ export interface RunOptions {
 
 export type Runner = (args: string[], timeoutMs: number, opts?: RunOptions) => Promise<RunResult>;
 
+/** How long to keep reading a killed process's output before abandoning the pipe. */
+const DRAIN_GRACE_MS = 2000;
+
+const TIMED_OUT = Symbol('timed out');
+
+/**
+ * Spawns a command and *always* returns, even when the child misbehaves.
+ *
+ * Two failure modes, both hit live on 2026-07-30 by job `te44sp`, which hung for
+ * 11.8 hours and — with a concurrency cap — froze the whole queue behind it:
+ *
+ *  - `proc.kill()` signals only the direct child. `claude` spawns its own children,
+ *    and they inherit the stdout pipe, so killing the parent leaves the pipe open.
+ *  - Reading that pipe is awaited together with `proc.exited`, so an open pipe means
+ *    the await never settles. The timeout fired, the kill landed, and the promise
+ *    stayed pending anyway.
+ *
+ * So: the child gets its own process group and the whole group is signalled, and the
+ * read is raced against the deadline rather than trusted to end on its own.
+ */
 export const spawnRunner: Runner = async (args, timeoutMs, opts) => {
-  const proc = Bun.spawn(args, {stdout: 'pipe', stderr: 'pipe', ...(opts?.cwd ? {cwd: opts.cwd} : {})});
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    proc.kill();
-  }, timeoutMs);
-  try {
+  const proc = Bun.spawn(args, {
+    stdout: 'pipe',
+    stderr: 'pipe',
+    // Verified on this machine: with `detached`, pgid === pid, and killing -pid
+    // took a 3-process tree to 0.
+    detached: true,
+    ...(opts?.cwd ? {cwd: opts.cwd} : {})
+  });
+
+  const killTree = () => {
+    try {
+      process.kill(-proc.pid, 'SIGKILL');
+    } catch {
+      try {
+        proc.kill(9);
+      } catch {
+        // Already gone.
+      }
+    }
+  };
+
+  const collected: Promise<RunResult> = (async () => {
     const [stdout, stderr, code] = await Promise.all([
       new Response(proc.stdout).text(),
       new Response(proc.stderr).text(),
       proc.exited
     ]);
-    return {code, stdout, stderr, timedOut};
-  } finally {
-    clearTimeout(timer);
-  }
+    return {code, stdout, stderr, timedOut: false};
+  })();
+  // The abandoned branch must never surface as an unhandled rejection.
+  collected.catch(() => {});
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<typeof TIMED_OUT>(resolve => {
+    timer = setTimeout(() => {
+      killTree();
+      resolve(TIMED_OUT);
+    }, timeoutMs);
+  });
+
+  const settled = await Promise.race([collected, deadline]);
+  if (timer) clearTimeout(timer);
+  if (settled !== TIMED_OUT) return settled;
+
+  // The kill is sent. Whatever output already arrived is worth having, but a pipe a
+  // grandchild still holds is not worth waiting on.
+  const drained = await Promise.race([
+    collected,
+    Bun.sleep(DRAIN_GRACE_MS).then((): typeof TIMED_OUT => TIMED_OUT)
+  ]);
+  if (drained !== TIMED_OUT) return {...drained, timedOut: true};
+  return {
+    code: -1,
+    stdout: '',
+    stderr: `killed after ${timeoutMs}ms; output pipe still held by a child process`,
+    timedOut: true
+  };
 };
 
 export type GcloudFailure = 'auth' | 'not_found' | 'permission' | 'timeout' | 'other';

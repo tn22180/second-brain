@@ -160,3 +160,44 @@ describe('slack cursor and event dedupe', () => {
     expect(store.markEventSeen('Ev2', NOW)).toBe(false);
   });
 });
+
+/**
+ * A job whose process dies never writes a terminal status, so it holds its
+ * concurrency slot forever. Live on 2026-07-30: `te44sp` sat in `analyzing` for 11.8
+ * hours and the 59 alerts behind it all came back `deferred · concurrency`.
+ */
+describe('reclaiming stale jobs', () => {
+  test('a job past the cutoff is parked and named', () => {
+    store.seenAlert(alert({fingerprint: 'stuck'}));
+    store.patchAlert('stuck', {status: 'analyzing'});
+    store.markRun('stuck', NOW - 2 * HOUR);
+
+    expect(store.activeCount()).toBe(1);
+    expect(store.reclaimStale(NOW - HOUR, NOW)).toEqual(['stuck']);
+    expect(store.activeCount()).toBe(0);
+    expect(store.getAlert('stuck')!.status).toBe('inconclusive');
+    expect(store.getAlert('stuck')!.note).toContain('stale_reclaimed');
+  });
+
+  test('a job still inside the cutoff is left alone', () => {
+    store.seenAlert(alert({fingerprint: 'running'}));
+    store.patchAlert('running', {status: 'analyzing'});
+    store.markRun('running', NOW - 5 * 60_000);
+    expect(store.reclaimStale(NOW - HOUR, NOW)).toEqual([]);
+    expect(store.activeCount()).toBe(1);
+  });
+
+  test('a job that never recorded a run falls back to when it was first seen', () => {
+    store.seenAlert(alert({fingerprint: 'norun', alertTsMs: NOW - 3 * HOUR}));
+    store.patchAlert('norun', {status: 'analyzing'});
+    expect(store.reclaimStale(NOW - HOUR, NOW)).toEqual(['norun']);
+  });
+
+  test('jobs that already finished are not touched', () => {
+    store.seenAlert(alert({fingerprint: 'done'}));
+    store.patchAlert('done', {status: 'mr_open'});
+    store.markRun('done', NOW - 5 * HOUR);
+    expect(store.reclaimStale(NOW - HOUR, NOW)).toEqual([]);
+    expect(store.getAlert('done')!.status).toBe('mr_open');
+  });
+});

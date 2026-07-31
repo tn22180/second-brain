@@ -12,7 +12,14 @@ import {probeDeploy} from './gcloud/deploy';
 import type {Runner} from './gcloud/run';
 import {buildMrBody, openMr} from './git/openMr';
 import {probeMerge} from './git/mergeProbe';
-import {branchNameFor, createWorktree, linkNodeModules, removeWorktree, worktreeDirFor} from './git/worktree';
+import {
+  branchNameFor,
+  commitWip,
+  createWorktree,
+  linkNodeModules,
+  removeWorktree,
+  worktreeDirFor
+} from './git/worktree';
 import {fingerprintOf} from './fingerprint';
 import {parseAlert, type ParsedAlert} from './parseAlert';
 import {appNames, resolveApp, type App} from './registry';
@@ -249,6 +256,37 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   let costUsd = 0;
   let worktreeDir: string | undefined;
   let keepWorktree = false;
+  let preserved: {branch: string; sha: string; repoPath: string} | undefined;
+
+  /**
+   * Preserves an unfinished job's work as a commit on its own branch and lets the
+   * worktree go. The branch stays in the main repo, so nothing is lost, and the
+   * checkout — 2.0 GB with `node_modules` linked in — does not accumulate.
+   *
+   * If the commit fails the worktree is kept instead: losing the work is worse than
+   * losing the disk.
+   */
+  const preserveWork = async (why: string): Promise<void> => {
+    if (!worktreeDir) return;
+    const branch = branchNameFor(alert.appName, fingerprint, attempt);
+    const wip = await commitWip(
+      {
+        worktreeDir,
+        message: `wip(prod-autofix): ${why} for ${fingerprint}\n\nNo MR was opened; this had no review. Kept so the worktree could be reclaimed.`,
+        timeoutMs: cfg.timeouts.gcloudMs
+      },
+      deps.runner
+    );
+    if (!wip.ok) {
+      keepWorktree = true;
+      log(`could not preserve ${fingerprint} as a commit (${wip.detail}) — keeping the worktree`);
+      return;
+    }
+    if (wip.sha) {
+      preserved = {branch, sha: wip.sha, repoPath: app.repoPath};
+      log(`${fingerprint} work preserved on ${branch} @ ${wip.sha.slice(0, 9)}`);
+    }
+  };
 
   const finish = async (status: AlertStatus, detail: string, extras: Partial<JobResult> = {}): Promise<JobResult> => {
     store.patchAlert(fingerprint, {status, note: detail.slice(0, 500)});
@@ -418,7 +456,7 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   costUsd += fixed.costUsd;
 
   if (!fixed.ok) {
-    keepWorktree = true;
+    await preserveWork('fix gate failed');
     const replied = await say(
       reply.replyGateFailed({
         fingerprint,
@@ -428,7 +466,8 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
         gate: fixed.failure ?? 'fix',
         detail: fixed.detail ?? '',
         smoke: undefined,
-        worktreeKept: worktreeDir
+        preserved,
+        worktreeKept: keepWorktree ? worktreeDir : undefined
       })
     );
     await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'inconclusive', outcome: `fix blocked at ${fixed.failure}`, rounds: analysis.rounds.length, costUsd, message: input.message, diffStat: fixed.diffStat});
@@ -448,7 +487,7 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   );
 
   if (!smoke.ok) {
-    keepWorktree = true;
+    await preserveWork('smoke gate failed');
     const replied = await say(
       reply.replyGateFailed({
         fingerprint,
@@ -458,7 +497,8 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
         gate: smoke.failure ?? 'smoke',
         detail: smoke.detail ?? '',
         smoke,
-        worktreeKept: worktreeDir
+        preserved,
+        worktreeKept: keepWorktree ? worktreeDir : undefined
       })
     );
     await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'inconclusive', outcome: `smoke gate ${smoke.failure}`, rounds: analysis.rounds.length, costUsd, message: input.message, diffStat: fixed.diffStat, smokeLine: describeSmoke(smoke)});
@@ -495,7 +535,10 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   );
 
   if (!mr.ok) {
-    keepWorktree = true;
+    // `openMr` commits before it pushes, so the branch already holds the fix and
+    // `preserveWork` finds nothing staged — the call is here for the paths where the
+    // commit itself is what failed.
+    await preserveWork('MR could not be opened');
     // A pushed branch with no MR is a click away from done, so it gets its own
     // reply carrying the create link and the body — not a generic gate failure.
     const replied = await say(
@@ -520,7 +563,8 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
             gate: mr.failure ?? 'open_mr',
             detail: mr.detail ?? '',
             smoke,
-            worktreeKept: worktreeDir
+            preserved,
+            worktreeKept: keepWorktree ? worktreeDir : undefined
           })
     );
     store.patchAlert(fingerprint, {

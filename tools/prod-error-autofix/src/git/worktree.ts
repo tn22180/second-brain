@@ -116,6 +116,39 @@ export async function linkNodeModules(
   return {linked, missing};
 }
 
+/**
+ * Commits whatever a failed job left behind, so the worktree can be reclaimed.
+ *
+ * A worktree is a full checkout — 2.0 GB each once `node_modules` is in it — and
+ * keeping one per unfinished job filled this machine's disk on 2026-07-31: seven
+ * worktrees, 7.3 GB, and the daemon then had no room to work. The work itself is a
+ * handful of changed files, and a branch holds it for nothing: branch refs live in
+ * the main repo and survive `worktree remove`.
+ *
+ * Returns `ok: true` with no sha when there was nothing to commit — that is the
+ * normal case after `openMr`, which commits before it pushes.
+ */
+export async function commitWip(
+  input: {worktreeDir: string; message: string; timeoutMs: number},
+  runner: Runner = spawnRunner
+): Promise<{ok: boolean; sha: string | undefined; detail: string | undefined}> {
+  const git = (args: string[]) => runner(['git', '-C', input.worktreeDir, ...args], input.timeoutMs);
+
+  const added = await git(['add', '-A']);
+  if (added.code !== 0) {
+    return {ok: false, sha: undefined, detail: (added.stderr || added.stdout).trim().slice(0, 300)};
+  }
+  const staged = await git(['diff', '--cached', '--name-only']);
+  if (!staged.stdout.trim()) return {ok: true, sha: undefined, detail: undefined};
+
+  const committed = await git(['commit', '-m', input.message]);
+  if (committed.code !== 0) {
+    return {ok: false, sha: undefined, detail: (committed.stderr || committed.stdout).trim().slice(0, 300)};
+  }
+  const head = await git(['rev-parse', 'HEAD']);
+  return {ok: true, sha: head.code === 0 ? head.stdout.trim() : undefined, detail: undefined};
+}
+
 export async function removeWorktree(
   input: {repoPath: string; dir: string; timeoutMs: number},
   runner: Runner = spawnRunner

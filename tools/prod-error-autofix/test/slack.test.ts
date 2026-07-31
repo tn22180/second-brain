@@ -314,7 +314,7 @@ describe('reply text', () => {
     expect(replyInfra({...base, analysis, detail: undefined})).toContain('không auto-fix');
   });
 
-  test('a blocked gate lists the new failures and where the worktree is', () => {
+  test('a blocked gate lists the new failures and the branch holding the work', () => {
     const failed: SmokeOutcome = {...smoke, ok: false, failure: 'new_failures', newFailures: ['a.test.js::t']};
     const text = replyGateFailed({
       ...base,
@@ -322,11 +322,28 @@ describe('reply text', () => {
       gate: 'new_failures',
       detail: '1 test fail thêm',
       smoke: failed,
-      worktreeKept: '/home/u/.cache/prod-autofix/wt/blogs-1a2b'
+      preserved: {branch: 'fix/prod-blog-1a2b', sha: 'cafe1234567', repoPath: '/repos/blogs'},
+      worktreeKept: undefined
     });
     expect(text).toContain('a.test.js::t');
-    expect(text).toContain('wt/blogs-1a2b');
+    expect(text).toContain('fix/prod-blog-1a2b');
+    expect(text).toContain('cafe12345');
+    expect(text).toContain('/repos/blogs');
     expect(text).toContain('không mở MR');
+  });
+
+  /** The fallback: the work could not be committed, so the checkout is all there is. */
+  test('a gate that could not commit the work still names the worktree', () => {
+    const text = replyGateFailed({
+      ...base,
+      analysis,
+      gate: 'new_failures',
+      detail: '1 test fail thêm',
+      smoke: undefined,
+      preserved: undefined,
+      worktreeKept: '/home/u/.cache/prod-autofix/wt/blogs-1a2b'
+    });
+    expect(text).toContain('wt/blogs-1a2b');
   });
 
   test('every repeat reason produces a distinct, non-empty line', () => {

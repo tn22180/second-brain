@@ -65,7 +65,7 @@ afterEach(() => {
 describe('status', () => {
   test('an empty store reports idle, not an error', () => {
     const text = formatStatus(statusReport(cfg, store, NOW));
-    expect(text).toContain('0/1 job đang chạy');
+    expect(text).toContain('0/2 job đang chạy');
     expect(text).toContain('MR: 0/5 trong 1h');
     expect(text).toContain('chưa có alert nào');
   });

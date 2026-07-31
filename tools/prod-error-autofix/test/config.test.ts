@@ -46,7 +46,7 @@ describe('buildConfig', () => {
 
   test('defaults match the agreed caps and models', () => {
     const cfg = buildConfig(base);
-    expect(cfg.caps).toMatchObject({maxConcurrentJobs: 1, mrPerHour: 5, mrPerRepoPerDay: 3, maxFixAttempts: 3});
+    expect(cfg.caps).toMatchObject({maxConcurrentJobs: 2, mrPerHour: 5, mrPerRepoPerDay: 3, maxFixAttempts: 3});
     expect(cfg.analyzeMaxRounds).toBe(5);
     expect(cfg.brainSliceTokenBudget).toBe(6000);
     expect(cfg.models.analyze).not.toBe(cfg.models.fix);

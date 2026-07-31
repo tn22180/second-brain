@@ -67,6 +67,8 @@ export interface Timeouts {
   learnMs: number;
   jestMs: number;
   gcloudMs: number;
+  /** A job still `analyzing` past this is treated as dead and its slot is freed. */
+  staleJobMs: number;
 }
 
 export interface Paths {
@@ -145,7 +147,7 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     analyzeMaxRounds: num(env, 'AUTOFIX_ANALYZE_MAX_ROUNDS', 5),
     brainSliceTokenBudget: num(env, 'AUTOFIX_BRAIN_TOKEN_BUDGET', 6000),
     caps: {
-      maxConcurrentJobs: num(env, 'AUTOFIX_MAX_CONCURRENT_JOBS', 1),
+      maxConcurrentJobs: num(env, 'AUTOFIX_MAX_CONCURRENT_JOBS', 2),
       mrPerHour: num(env, 'AUTOFIX_MR_PER_HOUR', 5),
       mrPerRepoPerDay: num(env, 'AUTOFIX_MR_PER_REPO_PER_DAY', 3),
       maxFixAttempts: num(env, 'AUTOFIX_MAX_FIX_ATTEMPTS', 3),
@@ -161,7 +163,11 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
       fixMs: num(env, 'AUTOFIX_FIX_TIMEOUT_MS', 12 * MINUTE),
       learnMs: num(env, 'AUTOFIX_LEARN_TIMEOUT_MS', 3 * MINUTE),
       jestMs: num(env, 'AUTOFIX_JEST_TIMEOUT_MS', 20 * MINUTE),
-      gcloudMs: num(env, 'AUTOFIX_GCLOUD_TIMEOUT_MS', 2 * MINUTE)
+      gcloudMs: num(env, 'AUTOFIX_GCLOUD_TIMEOUT_MS', 2 * MINUTE),
+      // Longer than any single job can legitimately take: ANALYZE at 5 rounds plus
+      // FIX plus a jest baseline is bounded by 5*8 + 12 + 20 = 72 minutes. Anything
+      // past 90 has lost its process, not its patience.
+      staleJobMs: num(env, 'AUTOFIX_STALE_JOB_MS', 90 * MINUTE)
     },
     paths: {
       projectRoot: PROJECT_ROOT,

@@ -140,13 +140,27 @@ export function replyPushedNoMr(input: ReplyBase & {
 }
 
 /** The fix stage or the smoke gate refused. */
-export function replyGateFailed(input: ReplyBase & {analysis: Analysis; gate: string; detail: string; smoke: SmokeOutcome | undefined; worktreeKept: string | undefined}): string {
+export function replyGateFailed(
+  input: ReplyBase & {
+    analysis: Analysis;
+    gate: string;
+    detail: string;
+    smoke: SmokeOutcome | undefined;
+    /** Where the unfinished work went. A branch normally; a worktree only if committing it failed. */
+    preserved: {branch: string; sha: string; repoPath: string} | undefined;
+    worktreeKept: string | undefined;
+  }
+): string {
   return [
     `🚫 *Có fix nhưng không mở MR* — chặn ở \`${input.gate}\`.`,
     input.detail,
     '',
     input.smoke?.newFailures.length
       ? ['*Test fail thêm so với base:*', ...input.smoke.newFailures.map(f => `• \`${f}\``)].join('\n')
+      : '',
+    input.preserved
+      ? `Việc dở giữ ở branch \`${input.preserved.branch}\` @ \`${input.preserved.sha.slice(0, 9)}\` ` +
+        `trong \`${input.preserved.repoPath}\` — worktree đã gỡ, chưa push đi đâu.`
       : '',
     input.worktreeKept ? `Worktree giữ lại để soi: \`${input.worktreeKept}\`` : '',
     '',
