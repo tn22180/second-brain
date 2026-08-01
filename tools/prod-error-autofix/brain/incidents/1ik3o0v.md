@@ -1,13 +1,13 @@
-fingerprint: 1q0ihss
-service: proxy
-message: HTTP 500 GET /proxy/tags
+fingerprint: 1ik3o0v
+service: subscribesummarynewpublishedarticle
+message: [subscribeHandleSummaryNewPublishedArticle] W4pcWYoy0MopPm1nnJY7 savePromises is not defined
 app: BLOG
 repo: blogs
-date: 2026-07-31T14:35:24.805Z
+date: 2026-07-31T17:31:26.243Z
 status: inconclusive
 attempt: 1
 
-# BLOG · proxy · 1q0ihss
+# BLOG · subscribesummarynewpublishedarticle · 1ik3o0v
 
 **Outcome.** timeout: killed after 480000ms
 

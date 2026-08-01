@@ -1,13 +1,13 @@
-fingerprint: 1q0ihss
-service: proxy
-message: HTTP 500 GET /proxy/tags
+fingerprint: y82dik
+service: api
+message: [genIdeas] DGoejquxZ1oqwTQqD35u SyntaxError: Expected double-quoted property name in JSON at position 1284 (line 25 column 22)
 app: BLOG
 repo: blogs
-date: 2026-07-31T14:35:24.805Z
+date: 2026-07-31T17:17:06.168Z
 status: inconclusive
 attempt: 1
 
-# BLOG · proxy · 1q0ihss
+# BLOG · api · y82dik
 
 **Outcome.** timeout: killed after 480000ms
 

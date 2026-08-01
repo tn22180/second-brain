@@ -1,13 +1,13 @@
-fingerprint: 1q0ihss
-service: proxy
-message: HTTP 500 GET /proxy/tags
+fingerprint: oivd0n
+service: api
+message: [seoProxyApi] <http://blackoutcoffee.myshopify.com|blackoutcoffee.myshopify.com> POST /updateOvrList error 500 Request failed with status code 500
 app: BLOG
 repo: blogs
-date: 2026-07-31T14:35:24.805Z
+date: 2026-07-31T17:48:39.661Z
 status: inconclusive
 attempt: 1
 
-# BLOG · proxy · 1q0ihss
+# BLOG · api · oivd0n
 
 **Outcome.** timeout: killed after 480000ms
 

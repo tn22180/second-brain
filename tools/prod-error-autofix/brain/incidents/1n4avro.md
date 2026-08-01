@@ -1,21 +1,21 @@
-fingerprint: 1q0ihss
-service: proxy
-message: HTTP 500 GET /proxy/tags
-app: BLOG
-repo: blogs
-date: 2026-07-31T14:35:24.805Z
+fingerprint: 1n4avro
+service: authgen2
+message: HTTP 504 POST /auth/webhook/shop/update
+app: SEO
+repo: seo
+date: 2026-07-31T15:36:53.375Z
 status: inconclusive
 attempt: 1
 
-# BLOG · proxy · 1q0ihss
+# SEO · authgen2 · 1n4avro
 
 **Outcome.** timeout: killed after 480000ms
 
 No analysis survived verification.
 
 ## Job
-- analyze rounds: 1
-- cost: $0.00
+- analyze rounds: 2
+- cost: $2.40
 
 ## Verdict
 

@@ -3,36 +3,39 @@ service: reviewupdatesschedule
 message: HTTP 500 POST /
 app: BLOG
 repo: blogs
-date: 2026-07-31T12:57:53.297Z
-status: deferred
+date: 2026-08-01T12:11:07.166Z
+status: mr_open
 attempt: 1
 
 # BLOG · reviewupdatesschedule · pf3lkx
 
-**Outcome.** MR deferred by mr_per_repo_per_day
+**Outcome.** duplicate of epfkly — MR https://gitlab.com/avada/blogs/-/merge_requests/814
 
-**Root cause.** The Shopify App Store review-card markup no longer matches `.tw-order-2.tw-text-fg-tertiary > div:nth-child(1)`, so `querySelector` returns null inside `getPageReviews`'s `page.evaluate` and `.outerText` throws a TypeError that aborts the whole scheduled run.
+**Root cause.** Shopify App Store review-card markup no longer matches the selector `.tw-order-2.tw-text-fg-tertiary > div:nth-child(1)`, so that querySelector returns null inside getPageReviews' page.evaluate and `.outerText` throws a TypeError that aborts every scheduled reviewUpdatesSchedule run — the same unfixed defect as fingerprint pf3lkx attempt 1 (MR deferred by mr_per_repo_per_day, never merged).
 
-**Mechanism.** The stack frame is `pptr:evaluate;getPageReviews (/workspace/lib/services/puppeteer/getPageReviews.js:27:21):5:101`. Babel-compiling src/services/puppeteer/getPageReviews.js locally reproduces the deployed bundle exactly: lib line 27 is `return await page.evaluate(() => {`, and line 5 of that callback is lib line 31, the collapsed `const customer = reviewEle.querySelector('.tw-order-2.tw-text-fg-tertiary > div:nth-child(1)').outerText.trim();` — `awk 'NR==31{print index($0,".outerText")}'` returns exactly 101, the reported column. So the null receiver is the customer-name querySelector, not the date/rating/content ones. `[data-merchant-review]` itself still matches (an empty NodeList would skip the forEach and return `[]` with no error), so the page loaded and the cards are there; only the inner class chain changed — these are Shopify's Tailwind build classes, not stable hooks. The TypeError propagates out of page.evaluate through crawlNewestReviews/crawlBadReviews to handleReviewUpdates's catch, which logs `[handleReviewUpdates]` and rethrows, so the firebase-functions v2 scheduler wrapper answers Cloud Scheduler a 500. This is a new cause behind the same fingerprint: the previous `Could not find Chrome` failure ran 14 times 2026-07-24→07-30T12:00 on revs 00072–00099 and stopped; every run since rev 00100 (07-31T00:01 and 07-31T12:01, 2 of 2, identical file:line:column) fails here instead — Chrome now launches and the scraper gets far enough to hit stale selectors.
+**Mechanism.** Stack frame is `pptr:evaluate;getPageReviews (/workspace/lib/services/puppeteer/getPageReviews.js:27:21):5:101` — lib:27:21 is the `page.evaluate(` call (src line 19), and the `:5:101` is inside the babel-collapsed evaluate callback: line 1 `() => {`, 2 `const reviews = []`, 3 `const elements = document.querySelectorAll('[data-merchant-review]')`, 4 `elements.forEach(reviewEle => {`, 5 the customer extraction collapsed onto one line. On that line `const customer = reviewEle.querySelector('<50-char selector>').outerText.trim();` puts the `.outerText` access at column 95 + 6 spaces of babel indent = 101, matching the reported column exactly. The other three extractions are excluded: `querySelectorAll(...)[0]` (reviewDate) would report 'undefined' not 'null', and `.tw-relative` would report `reading 'ariaLabel'`. `[data-merchant-review]` itself still matches — an empty NodeList would skip the forEach and return `[]` silently — so the page loads and cards exist; only the inner Tailwind build classes changed. The TypeError propagates out of page.evaluate through crawlNewestReviews/crawlBadReviews to handleReviewUpdates' catch (src/handlers/cron/handleReviewUpdates.js:288-289), which logs `[handleReviewUpdates] Cannot read properties of null (reading 'outerText')` — the exact line in this window — then rethrows at :290, so the firebase-functions v2 scheduler wrapper answers Cloud Scheduler HTTP 500 (latency 27.36s). Failure rate is now 4 of 4 runs since 2026-07-31T00:01 (07-31T00:01, 07-31T12:01, 08-01T00:01, 08-01T12:00), identical file:line:column across four revisions (00100, 00106, 00107) — deploys do not clear it, and there is not one successful POST in that span. Cadence of exactly 2 failures/day matches schedule '0 0,12 * * *'.
 
 Confidence: `high`
 
 ## Code
-- `packages/functions/src/services/puppeteer/getPageReviews.js:25` — `.outerText` on the unguarded querySelector chain — the exact throw site, lib 31 col 101
-- `packages/functions/src/services/puppeteer/getPageReviews.js:24` — selector `.tw-order-2.tw-text-fg-tertiary > div:nth-child(1)` that returned null; Tailwind build classes, no null check on it or the three sibling extractions (lines 27, 29, 30)
-- `packages/functions/src/handlers/cron/handleReviewUpdates.js:289` — catch logs then rethrows, so one unparsable review card fails the entire scheduled run and returns 500
-- `packages/functions/src/handlers/cron/handleReviewUpdates.js:260` — crawlBadReviews loops pages until a page yields zero reviews; a throw on any page discards the already-crawled results too
+- `packages/functions/src/services/puppeteer/getPageReviews.js:25` — `.outerText` on the unguarded querySelector chain — the throw site, lib callback line 5 col 101
+- `packages/functions/src/services/puppeteer/getPageReviews.js:24` — selector `.tw-order-2.tw-text-fg-tertiary > div:nth-child(1)` returned null; Tailwind build classes, no null guard here or on the three sibling extractions (lines 27, 29, 30)
+- `packages/functions/src/services/puppeteer/getPageReviews.js:30` — `.tw-break-words` extraction is equally unguarded — next selector to break once line 24 is fixed
+- `packages/functions/src/handlers/cron/handleReviewUpdates.js:289` — catch logs `[handleReviewUpdates] Cannot read properties of null (reading 'outerText')` — the exact log line in this window
+- `packages/functions/src/handlers/cron/handleReviewUpdates.js:290` — rethrow turns one unparsable review card into a 500 for the entire scheduled run
+- `packages/functions/src/handlers/cron/handleReviewUpdates.js:260` — crawlBadReviews runs after crawlNewestReviews; a throw on any page discards already-crawled results too
 - `packages/functions/src/functions/scheduled.js:21` — schedule '0 0,12 * * *' explains the exactly-two-failures-per-day cadence
 
 ## Evidence
-- 2 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-24T00:00:00Z" AND textPayload:"outerText"`
-- 14 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-24T00:00:00Z" AND textPayload:"Could not find Chrome"`
-- 1 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-31T11:46:19.793Z" AND timestamp<="2026-07-31T12:16:19.793Z" AND httpRequest.status>=500`
-- 3 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-31T11:46:19.793Z" AND timestamp<="2026-07-31T12:16:19.793Z" AND logName:"stderr"`
+- 4 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-31T00:00:00Z" AND textPayload:"outerText"`
+- 4 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-31T00:00:00Z" AND httpRequest.requestMethod="POST"`
+- 18 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-07-24T00:00:00Z" AND httpRequest.status>=500`
+- 3 matching entries: `(resource.labels.service_name="reviewupdatesschedule") AND timestamp>="2026-08-01T11:46:11.658Z" AND timestamp<="2026-08-01T12:16:11.658Z" AND logName:"stderr"`
 
 ## Job
 - analyze rounds: 1
-- cost: $0.97
+- cost: $0.76
+- MR: https://gitlab.com/avada/blogs/-/merge_requests/814
 
 ## Verdict
 

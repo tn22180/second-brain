@@ -3,7 +3,7 @@ service: proxy
 message: HTTP 500 GET /proxy/posts-by-tag
 app: BLOG
 repo: blogs
-date: 2026-07-31T07:00:51.221Z
+date: 2026-07-31T14:11:12.445Z
 status: deferred
 attempt: 1
 
@@ -11,32 +11,32 @@ attempt: 1
 
 **Outcome.** MR deferred by mr_per_repo_per_day
 
-**Root cause.** Shops whose install is gone (uninstalled or store deactivated) keep their Firestore shop doc with a now-revoked accessToken, so crawler hits on /proxy/tags and /proxy/posts-by-tag build a Shopify client from that dead token, Shopify Admin answers 401, got throws HTTPError, and both controllers' catch blocks turn it into HTTP 500.
+**Root cause.** Shopify's Admin GraphQL answered a single transient HTTP 503 to two otherwise-healthy shops, and the storefront tag path has no retry — initShopify builds the client with `autoLimit: true`, which shopify-api-node treats as mutually exclusive with `maxRetries`, so maxRetries stays 0, got's retry is disabled, and the one-off 503 propagates straight to `ctx.status = 500`.
 
-**Mechanism.** 1f790c-c4.myshopify.com uninstalled at 2026-07-29T16:41:46.289076Z ('Handling uninstalling for  1f790c-c4.myshopify.com', service auth). uninstallApp (packages/functions/src/services/uninstallationService.js:16) returns early at :27-29 when it wants an accessToken and never clears the token nor writes an uninstalled flag, so the shop doc survives with a revoked token. Theme still ships the app block, so crawlers (AhrefsBot/7.0 on 1f790c-c4, a Firefox-152 UA on 2c8a5e-75) keep firing /proxy/tags and /proxy/posts-by-tag. getShopByField returns the surviving doc, so the `if (!shop)` guards at tag.controller.js:75 and :104-106 are bypassed; initShopify (tag.controller.js:76 and :107 → shopifyService.js:23) constructs a Shopify client from the dead token; getTagsForStorefront issues shopify.graphql(getArticleTagsList) at tag.service.js:176 and getArticlesByTagWithPagination at tag.service.js:246; Shopify answers 401; shopify-api-node's got rejects with HTTPError ERR_NON_2XX_3XX_RESPONSE (stack /workspace/node_modules/got/dist/source/as-promise/index.js:118:42, verbatim in all 8 stderr entries in the window); the catches log at severity ERROR (tag.controller.js:86 and :122) and set ctx.status = 500 at :88 and :131. Latencies 0.086-0.561s — immediate failure, not saturation. shopCacheService.withCache only caches a returned value, so a throw is never cached and every crawler hit repeats the round trip: 32 401 log lines across 4 domains today (1f790c-c4 20, kzzi-2 4, 7e7d24-a8 4, 2c8a5e-75 4).
+**Mechanism.** Both 500s in the alert window are HTTPError ERR_NON_2XX_3XX_RESPONSE 'Response code 503 (Service Unavailable)' thrown by got inside shopify-api-node (stack /workspace/node_modules/got/dist/source/as-promise/index.js:118:42, identical in both stderr entries). Path: listStorefront (tag.controller.js:76 withCache miss → initShopify → getTagsForStorefront) issues shopify.graphql(getArticleTagsList) at tag.service.js:176; getPostsByTag (tag.controller.js:107 → getArticlesByTagWithPagination) issues shopify.graphql(getArticleByTags678) at tag.service.js:246. initShopify (shopifyService.js:23) passes autoLimit: true (shopifyService.js:30) and no maxRetries; shopify-api-node's constructor rejects the combination (node_modules/shopify-api-node/index.js:56 throws on `options.autoLimit && options.maxRetries`), so maxRetries defaults to 0 (index.js:66) and the request is built with `options.retry = 0` (index.js:192) — even though 503 is in that library's own retryableStatusCodesArray (index.js:24-26). The rejection reaches the controller catch; isShopifyAuthError (tag.controller.js:19) only matches 401/402/403, so a 503 falls through to logger.error and ctx.status = 500 at tag.controller.js:98 (listStorefront) and :161 (getPostsByTag). The failure is per-request, not per-shop: at 13:04:14.725 /proxy/tags for 13b148-e5 returned 500 while /proxy/posts-by-tag for the same shop returned 200 at 13:04:14.751, and at 13:01:39.798 /proxy/posts-by-tag for 84be78-2 returned 500 while /proxy/tags for it returned 200 at 13:01:39.796 — 18 of 20 requests for these two domains in the 40-minute window were 200. Latencies 0.688s and 1.844s, i.e. immediate upstream rejection, not saturation. Rare: 2 such 503s on proxy in 7 days.
 
 Confidence: `high`
 
 ## Code
-- `packages/functions/src/controllers/tag.controller.js:107` — getPostsByTag — the endpoint in the alert — calls initShopify on the surviving shop doc; only guard is `if (!shop)` at :104, nothing checks token validity
-- `packages/functions/src/controllers/tag.controller.js:122` — catch logs '[getPostsByTag] <domain> tag:  Error listing posts by tag' — the literal message in the window's stderr/errors entries
-- `packages/functions/src/controllers/tag.controller.js:131` — ctx.status = 500 for a revoked-token 401 — this is what produced httpRequest.status 500 that paged
-- `packages/functions/src/controllers/tag.controller.js:76` — listStorefront has the identical initShopify path; its 500s interleave with posts-by-tag one-for-one in the request log
-- `packages/functions/src/controllers/tag.controller.js:86` — catch logs '[listStorefront] <domain> Error listing storefront tags' — second message family in the window
-- `packages/functions/src/controllers/tag.controller.js:88` — ctx.status = 500 on the listStorefront path
-- `packages/functions/src/services/shopifyService.js:23` — initShopify reads accessToken via prepareShopData with no validity check; a revoked token yields a client that 401s on its first call
-- `packages/functions/src/services/tag.service.js:176` — shopify.graphql(getArticleTagsList) in getTagsForStorefront — the call whose got rejection is the HTTPError in the stack
-- `packages/functions/src/services/tag.service.js:246` — shopify.graphql(getArticleByTags678) in getArticlesByTagWithPagination — same for the posts-by-tag path
-- `packages/functions/src/services/uninstallationService.js:27` — uninstallApp returns early on a missing accessToken and never clears it nor marks the shop uninstalled, so the dead token survives indefinitely — 1f790c-c4 still 401s 38h after its uninstall webhook
+- `packages/functions/src/services/shopifyService.js:30` — autoLimit: true with no maxRetries — the combination shopify-api-node forbids, so maxRetries stays 0 and got retry is disabled for every Shopify call built here
+- `packages/functions/src/services/shopifyService.js:23` — initShopify, the single constructor used by both storefront tag paths
+- `packages/functions/src/controllers/tag.controller.js:19` — isShopifyAuthError covers only 401/402/403; a transient 5xx is not classified and falls through to the 500 branch
+- `packages/functions/src/controllers/tag.controller.js:161` — ctx.status = 500 on getPostsByTag — the endpoint named in the alert
+- `packages/functions/src/controllers/tag.controller.js:98` — ctx.status = 500 on listStorefront — the second 500 in the same window
+- `packages/functions/src/controllers/tag.controller.js:152` — catch logs '[getPostsByTag] <domain> tag: Error listing posts by tag' — verbatim message in the window's stderr entry
+- `packages/functions/src/controllers/tag.controller.js:96` — catch logs '[listStorefront] <domain> Error listing storefront tags' — verbatim message in the other stderr entry
+- `packages/functions/src/services/tag.service.js:176` — shopify.graphql(getArticleTagsList) in getTagsForStorefront — the call whose got rejection is the 503 HTTPError on the /proxy/tags path
+- `packages/functions/src/services/tag.service.js:246` — shopify.graphql(getArticleByTags678) in getArticlesByTagWithPagination — same for /proxy/posts-by-tag
 
 ## Evidence
-- 32 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-31T00:00:00Z" AND jsonPayload.message:"401 (Unauthorized)"`
-- 8 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-31T06:32:29.627Z" AND timestamp<="2026-07-31T07:02:29.627Z" AND httpRequest.status>=500`
-- 1 matching entries: `timestamp>="2026-06-01T00:00:00Z" AND (textPayload:"Handling uninstalling for" OR jsonPayload.message:"Handling uninstalling for") AND (textPayload:("2c8a5e-75" OR "1f790c-c4") OR jsonPayload.message:("2c8a5e-75" OR "1f790c-c4"))`
+- 2 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-31T12:46:42.672Z" AND timestamp<="2026-07-31T13:16:42.672Z" AND jsonPayload.error.message:"Response code 503"`
+- 2 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-31T12:46:42.672Z" AND timestamp<="2026-07-31T13:16:42.672Z" AND httpRequest.status>=500`
+- 20 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-31T12:40:00Z" AND timestamp<="2026-07-31T13:20:00Z" AND httpRequest.requestUrl:("13b148-e5" OR "84be78-2")`
+- 2 matching entries: `(resource.labels.service_name="proxy") AND timestamp>="2026-07-24T00:00:00Z" AND jsonPayload.error.message:"503"`
 
 ## Job
 - analyze rounds: 1
-- cost: $0.72
+- cost: $1.23
 
 ## Verdict
 
