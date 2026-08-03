@@ -1,0 +1,179 @@
+{% comment %}
+  Avada SEO Suite - WebMCP storefront tools
+  Auto-generated: the app overwrites this file, edits are lost.
+{% endcomment %}
+<script>
+(function () {
+  if (typeof document.modelContext === 'undefined') return;
+  if (typeof fetch !== 'function') return;
+
+  var TOOLS = [{"name":"search_products","description":"Search the product catalog of this store by keyword. Returns matching products with title, handle, price, availability and relative URL. Use this to find a product before reading its details or adding it to the cart.","inputSchema":{"type":"object","properties":{"query":{"type":"string","description":"Keywords to search the catalog for, for example \"blue running shoes\"."},"limit":{"type":"integer","minimum":1,"maximum":10,"description":"Maximum number of products to return. Defaults to 5, capped at 10."}},"required":["query"],"additionalProperties":false},"annotations":{"readOnlyHint":true,"openWorldHint":false}},{"name":"view_product","description":"Read the full details of one product in this store: title, plain-text description, price, availability and its purchasable variants. The variant id returned here is what add_to_cart needs.","inputSchema":{"type":"object","properties":{"handle":{"type":"string","description":"Product handle taken from its URL, for example \"blue-running-shoes\" in /products/blue-running-shoes."}},"required":["handle"],"additionalProperties":false},"annotations":{"readOnlyHint":true,"openWorldHint":false}},{"name":"add_to_cart","description":"Add a product variant to the shopper cart of this store. Requires the numeric variant id returned by view_product. This changes the cart, so confirm the variant and quantity with the shopper first.","inputSchema":{"type":"object","properties":{"id":{"type":"string","description":"Numeric variant id to add, as returned in the variants list by view_product."},"quantity":{"type":"integer","minimum":1,"maximum":99,"description":"How many units of the variant to add. Defaults to 1."}},"required":["id"],"additionalProperties":false},"annotations":{"readOnlyHint":false,"destructiveHint":false,"idempotentHint":false}},{"name":"view_cart","description":"Read the current cart of this store: line items with quantity and line price, the item count and the cart total.","inputSchema":{"type":"object","properties":{},"additionalProperties":false},"annotations":{"readOnlyHint":true,"openWorldHint":false}},{"name":"get_collections","description":"List the collections (product categories) published on this store, with title, handle and relative URL, so a shopper can browse by category.","inputSchema":{"type":"object","properties":{"limit":{"type":"integer","minimum":1,"maximum":50,"description":"Maximum number of collections to return. Defaults to 20, capped at 50."}},"additionalProperties":false},"annotations":{"readOnlyHint":true,"openWorldHint":false}}];
+  var MAX_OUTPUT = 1500;
+
+  function toolResult(value, isError) {
+    var text = typeof value === 'string' ? value : JSON.stringify(value);
+    text = text || '';
+    if (text.length > MAX_OUTPUT) text = text.slice(0, MAX_OUTPUT - 3) + '...';
+    return {content: [{type: 'text', text: text}], isError: !!isError};
+  }
+
+  function clampInt(value, min, max, fallback) {
+    var parsed = parseInt(value, 10);
+    if (isNaN(parsed)) return fallback;
+    return Math.min(Math.max(parsed, min), max);
+  }
+
+  function plainText(value, max) {
+    return String(value || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, max);
+  }
+
+  function buildRequest(name, args) {
+    var input = args || {};
+    switch (name) {
+      case 'search_products':
+        return {
+          url: '/search/suggest.json?q=' + encodeURIComponent(input.query || '') +
+            '&resources[type]=product&resources[limit]=' + clampInt(input.limit, 1, 10, 5)
+        };
+      case 'view_product':
+        return {url: '/products/' + encodeURIComponent(String(input.handle || '')) + '.js'};
+      case 'add_to_cart':
+        return {
+          url: '/cart/add.js',
+          method: 'POST',
+          body: {id: String(input.id || ''), quantity: clampInt(input.quantity, 1, 99, 1)}
+        };
+      case 'view_cart':
+        return {url: '/cart.js'};
+      case 'get_collections':
+        return {url: '/collections.json?limit=' + clampInt(input.limit, 1, 50, 20)};
+      default:
+        return null;
+    }
+  }
+
+  function summarizeProduct(product) {
+    return {
+      title: product.title,
+      handle: product.handle,
+      url: product.url,
+      price: product.price,
+      available: product.available
+    };
+  }
+
+  function summarize(name, data) {
+    if (!data) return data;
+    if (name === 'search_products') {
+      var results = data.resources && data.resources.results && data.resources.results.products;
+      return (results || []).map(summarizeProduct);
+    }
+    if (name === 'view_product') {
+      return {
+        title: data.title,
+        handle: data.handle,
+        url: data.url,
+        price: data.price,
+        available: data.available,
+        description: plainText(data.description, 300),
+        variants: (data.variants || []).slice(0, 10).map(function (variant) {
+          return {
+            id: variant.id,
+            title: variant.title,
+            price: variant.price,
+            available: variant.available
+          };
+        })
+      };
+    }
+    if (name === 'add_to_cart') {
+      return {added: {id: data.variant_id || data.id, title: data.title, quantity: data.quantity}};
+    }
+    if (name === 'view_cart') {
+      return {
+        item_count: data.item_count,
+        total_price: data.total_price,
+        currency: data.currency,
+        items: (data.items || []).slice(0, 10).map(function (item) {
+          return {
+            id: item.variant_id,
+            title: item.title,
+            quantity: item.quantity,
+            line_price: item.line_price
+          };
+        })
+      };
+    }
+    if (name === 'get_collections') {
+      return (data.collections || []).map(function (collection) {
+        return {
+          title: collection.title,
+          handle: collection.handle,
+          url: '/collections/' + collection.handle
+        };
+      });
+    }
+    return data;
+  }
+
+  function callTool(name, args) {
+    var request = buildRequest(name, args);
+    if (!request) return Promise.resolve(toolResult('Unknown tool: ' + name, true));
+
+    var options = {
+      method: request.method || 'GET',
+      credentials: 'same-origin',
+      headers: {Accept: 'application/json'}
+    };
+    if (request.body) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(request.body);
+    }
+
+    return fetch(request.url, options)
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok) {
+            var reason = data && data.description ? data.description : 'status ' + response.status;
+            return toolResult('Request failed: ' + reason, true);
+          }
+          return toolResult(summarize(name, data));
+        });
+      })
+      .catch(function (error) {
+        return toolResult('Request failed: ' + (error && error.message ? error.message : 'unknown'), true);
+      });
+  }
+
+  function buildTool(definition) {
+    return {
+      name: definition.name,
+      description: definition.description,
+      inputSchema: definition.inputSchema,
+      annotations: definition.annotations,
+      execute: function (args) {
+        return callTool(definition.name, args);
+      }
+    };
+  }
+
+  try {
+    var context = document.modelContext;
+    var tools = TOOLS.map(buildTool);
+    if (typeof context.registerTool === 'function') {
+      tools.forEach(function (tool) {
+        context.registerTool(tool);
+      });
+    } else if (typeof context.provideContext === 'function') {
+      context.provideContext({tools: tools});
+    }
+  } catch (error) {
+    // Swallowed deliberately: this runs inside a live merchant theme, where a WebMCP failure
+    // must never surface as a page error.
+  }
+})();
+</script>

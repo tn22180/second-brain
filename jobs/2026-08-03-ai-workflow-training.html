@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Làm việc với AI — hệ thống của SEOOn</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #FAFAF8; }
+  @media (prefers-color-scheme: dark) { body { background: #12151A; } }
+  :root[data-theme="dark"] body { background: #12151A; }
+  :root[data-theme="light"] body { background: #FAFAF8; }
+  #theme {
+    position: fixed; top: 1rem; right: 1rem; z-index: 10;
+    font: 600 .78rem/1 ui-monospace, "SF Mono", Menlo, monospace;
+    padding: .5rem .7rem; border-radius: 4px; cursor: pointer;
+    background: rgba(127,127,127,.12); color: inherit;
+    border: 1px solid rgba(127,127,127,.35);
+  }
+  #theme:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  @media print { #theme { display: none; } }
+</style>
+</head>
+<body>
+<button id="theme" type="button" aria-label="Đổi nền sáng tối">SÁNG / TỐI</button>
+<style>
+  :root {
+    --paper: #FAFAF8;
+    --surface: #F1F0EC;
+    --sunken: #E7E6E1;
+    --ink: #16191D;
+    --ink-2: #454C55;
+    --ink-3: #6E7680;
+    --rule: #D9D8D2;
+    --rule-strong: #BBBAB3;
+    --accent: #0F6E8C;
+    --rust: #A8481A;
+    --rust-soft: #F6E9E1;
+    --moss: #3A6E42;
+    --moss-soft: #E5EFE5;
+
+    --step--1: .78rem;
+    --step-0: 1rem;
+    --step-1: 1.18rem;
+    --step-2: 1.5rem;
+    --step-3: 2rem;
+    --step-4: 2.75rem;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "DejaVu Sans Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #12151A;
+      --surface: #191D23;
+      --sunken: #0D1014;
+      --ink: #E8EAEC;
+      --ink-2: #A9B0B8;
+      --ink-3: #767E88;
+      --rule: #272C33;
+      --rule-strong: #3A4149;
+      --accent: #63C7E6;
+      --rust: #E0885A;
+      --rust-soft: #33200F;
+      --moss: #86BC8F;
+      --moss-soft: #16261A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #12151A;
+    --surface: #191D23;
+    --sunken: #0D1014;
+    --ink: #E8EAEC;
+    --ink-2: #A9B0B8;
+    --ink-3: #767E88;
+    --rule: #272C33;
+    --rule-strong: #3A4149;
+    --accent: #63C7E6;
+    --rust: #E0885A;
+    --rust-soft: #33200F;
+    --moss: #86BC8F;
+    --moss-soft: #16261A;
+  }
+
+  :root[data-theme="light"] {
+    --paper: #FAFAF8;
+    --surface: #F1F0EC;
+    --sunken: #E7E6E1;
+    --ink: #16191D;
+    --ink-2: #454C55;
+    --ink-3: #6E7680;
+    --rule: #D9D8D2;
+    --rule-strong: #BBBAB3;
+    --accent: #0F6E8C;
+    --rust: #A8481A;
+    --rust-soft: #F6E9E1;
+    --moss: #3A6E42;
+    --moss-soft: #E5EFE5;
+  }
+
+  .page {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page *, .page *::before, .page *::after { box-sizing: border-box; }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    gap: 3.5rem;
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 3rem 1.75rem 6rem;
+    align-items: start;
+  }
+
+  /* ---------- rail ---------- */
+
+  .rail { position: sticky; top: 2rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .rail-mark {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .rail-list { display: flex; flex-direction: column; gap: .1rem; list-style: none; margin: 0; padding: 0; }
+
+  .rail-list a {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: .5rem;
+    padding: .3rem .4rem .3rem 0;
+    font-size: var(--step--1);
+    line-height: 1.35;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-radius: 3px;
+  }
+
+  .rail-list a:hover { color: var(--accent); background: var(--surface); }
+  .rail-list a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rail-list .n { font-family: var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .rail-list a:hover .n { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+
+  .masthead { padding-bottom: 2.5rem; margin-bottom: 3rem; border-bottom: 2px solid var(--ink); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1rem;
+  }
+
+  .masthead h1 {
+    font-family: var(--mono);
+    font-size: var(--step-4);
+    font-weight: 600;
+    letter-spacing: -.035em;
+    line-height: 1.04;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    margin: 0 0 1.25rem;
+  }
+
+  .standfirst { font-size: var(--step-1); line-height: 1.5; color: var(--ink-2); max-width: 42ch; margin: 0 0 2rem; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 1.5rem; font-family: var(--mono); font-size: var(--step--1); color: var(--ink-3); }
+  .meta-row b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+
+  .sec { padding-top: 3.25rem; scroll-margin-top: 1.5rem; }
+  .sec + .sec { border-top: 1px solid var(--rule); }
+
+  .sec-head { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; align-items: baseline; margin-bottom: 1.5rem; }
+
+  .sec-num {
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    letter-spacing: .02em;
+  }
+
+  .sec h2 {
+    font-family: var(--mono);
+    font-size: var(--step-3);
+    font-weight: 600;
+    letter-spacing: -.03em;
+    line-height: 1.12;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    margin: 0;
+  }
+
+  .sec-sub { grid-column: 2; font-size: var(--step-0); color: var(--ink-2); margin: .6rem 0 0; max-width: 60ch; }
+
+  .body { display: grid; gap: 1.25rem; }
+  .sec > .body { margin-left: 4rem; }
+
+  /* grid items default to min-width:auto, so preformatted text or a min-width table
+     refuses to shrink and pushes the page wide instead of scrolling inside its own box */
+  .shell > *, .body > *, .trace > *, .stop > *, .sec-head > *, .stratum > * { min-width: 0; }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding: 2rem 1.25rem 4rem; }
+    .rail { position: static; }
+    .rail-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+    .sec-head { grid-template-columns: 2.25rem minmax(0, 1fr); gap: .75rem; }
+    .sec > .body { margin-left: 0; }
+    .masthead h1 { font-size: var(--step-3); }
+  }
+
+  .body p { margin: 0; max-width: 66ch; }
+
+  .body h3.sub {
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    font-weight: 600;
+    letter-spacing: -.02em;
+    overflow-wrap: break-word;
+    margin: .75rem 0 0;
+    padding-top: .75rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  code, .m { font-family: var(--mono); font-size: .9em; }
+
+  .body code {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .06em .3em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  /* ---------- lists ---------- */
+
+  .pts { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+
+  /* NOT grid: every element child of a grid box becomes its own grid item, which would
+     break a sentence containing <b> or <code> into one fragment per row */
+  .pts li {
+    position: relative;
+    padding-left: 1.85rem;
+    max-width: 68ch;
+  }
+
+  .pts li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--mono);
+    color: var(--accent);
+    line-height: 1.6;
+  }
+
+  .pts.bad li::before { content: "×"; color: var(--rust); }
+  .pts.good li::before { content: "✓"; color: var(--moss); }
+
+  .pts b { font-weight: 650; }
+
+  /* ---------- strata (đường AI đọc) ---------- */
+
+  .strata { display: grid; gap: .3rem; }
+
+  .stratum {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+    padding: .8rem 1rem;
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .stratum:nth-child(1) { margin-left: 0; }
+  .stratum:nth-child(2) { margin-left: .9rem; }
+  .stratum:nth-child(3) { margin-left: 1.8rem; }
+  .stratum:nth-child(4) { margin-left: 2.7rem; }
+  .stratum:nth-child(5) { margin-left: 3.6rem; }
+  .stratum:nth-child(6) { margin-left: 4.5rem; }
+  .stratum:nth-child(7) { margin-left: 5.4rem; background: var(--sunken); border-left-color: var(--rule-strong); }
+
+  .stratum .path { font-family: var(--mono); font-size: var(--step--1); color: var(--ink); word-break: break-word; }
+  .stratum .what { font-size: var(--step--1); color: var(--ink-2); }
+
+  @media (max-width: 700px) {
+    .stratum { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+    .stratum:nth-child(n) { margin-left: 0; }
+  }
+
+  /* ---------- trace (dùng ở cả case thật lẫn bảo mật) ---------- */
+
+  .trace { display: grid; gap: 0; border-left: 1px solid var(--rule-strong); margin-left: .4rem; }
+
+  .stop { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: .9rem; padding: 0 0 1.4rem 0; }
+
+  .stop .dot {
+    position: relative;
+    left: -.4rem;
+    margin-top: .35rem;
+    width: .8rem;
+    height: .8rem;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--accent);
+    justify-self: start;
+  }
+
+  .stop.terminal .dot { background: var(--accent); }
+
+  .stop h3 {
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -.01em;
+    margin: 0 0 .3rem;
+  }
+
+  .stop p { margin: 0; font-size: var(--step--1); color: var(--ink-2); max-width: 62ch; }
+  .stop p + p { margin-top: .4rem; }
+
+  .evi {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: var(--sunken);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .6rem .75rem;
+    margin-top: .5rem;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--ink-2);
+  }
+
+  /* ---------- stat band ---------- */
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .stat { background: var(--paper); padding: .9rem 1rem; }
+  .stat .v { font-family: var(--mono); font-size: var(--step-2); font-variant-numeric: tabular-nums; letter-spacing: -.03em; display: block; line-height: 1.15; }
+  .stat .k { font-size: var(--step--1); color: var(--ink-3); display: block; margin-top: .2rem; }
+
+  /* ---------- tables ---------- */
+
+  .tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: var(--step--1); }
+  th, td { text-align: left; padding: .6rem .85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th { background: var(--surface); font-weight: 650; color: var(--ink); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.m, th.m { font-family: var(--mono); }
+  td .tag { font-family: var(--mono); font-size: .95em; }
+
+  /* ---------- callout ---------- */
+
+  .note {
+    border-left: 3px solid var(--rust);
+    background: var(--rust-soft);
+    padding: .85rem 1rem;
+    border-radius: 0 3px 3px 0;
+    font-size: var(--step--1);
+    color: var(--ink);
+    max-width: 66ch;
+  }
+
+  .note.ok { border-left-color: var(--moss); background: var(--moss-soft); }
+  .note b { font-weight: 650; }
+
+  /* ---------- pipeline strip ---------- */
+
+  .strip { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; font-family: var(--mono); font-size: var(--step--1); }
+  .strip span { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: .3rem .55rem; }
+  .strip i { color: var(--ink-3); font-style: normal; }
+
+  /* ---------- loop (tony-wf) ---------- */
+
+  .loop {
+    display: grid;
+    gap: .25rem;
+    padding: 1rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
+  .loop-row { display: grid; grid-template-columns: 2.1rem minmax(0, 1fr); gap: .85rem; align-items: baseline; }
+  .loop-row > * { min-width: 0; }
+  .loop-row .k { font-family: var(--mono); font-size: var(--step--1); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .loop-row .t { font-size: var(--step--1); color: var(--ink); }
+  .loop-row.back .k, .loop-row.back .t { color: var(--rust); }
+  .loop-row.halt .k, .loop-row.halt .t { color: var(--rust); font-weight: 650; }
+  .loop-row.done .k, .loop-row.done .t { color: var(--moss); }
+  .loop-rule { border: 0; border-top: 1px dashed var(--rule-strong); margin: .5rem 0; }
+
+  /* ---------- steps (final) ---------- */
+
+  .steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: .9rem; }
+  .steps li { counter-increment: s; position: relative; padding-left: 2.75rem; max-width: 66ch; }
+  .steps li::before {
+    content: counter(s, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-size: var(--step--1);
+    line-height: 1.7;
+  }
+
+  .closer { margin-top: 3.5rem; padding-top: 2rem; border-top: 2px solid var(--ink); font-family: var(--mono); font-size: var(--step--1); color: var(--ink-3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="page">
+<div class="shell">
+
+  <nav class="rail" aria-label="Mục lục">
+    <div class="rail-mark">SEOOn · training</div>
+    <ol class="rail-list">
+      <li><a href="#s01"><span class="n">01</span><span>Vấn đề</span></a></li>
+      <li><a href="#s02"><span class="n">02</span><span>Ba tầng context</span></a></li>
+      <li><a href="#s03"><span class="n">03</span><span>Đường AI đọc</span></a></li>
+      <li><a href="#s04"><span class="n">04</span><span>Bảo mật</span></a></li>
+      <li><a href="#s05"><span class="n">05</span><span>Second brain + harness</span></a></li>
+      <li><a href="#s06"><span class="n">06</span><span>Hook · memory · resume</span></a></li>
+      <li><a href="#s07"><span class="n">07</span><span>tony-wf + vòng lặp</span></a></li>
+      <li><a href="#s08"><span class="n">08</span><span>Routing agent/model</span></a></li>
+      <li><a href="#s09"><span class="n">09</span><span>Vì sao flow này ăn</span></a></li>
+      <li><a href="#s10"><span class="n">10</span><span>Case thật · 18xbru1</span></a></li>
+      <li><a href="#s11"><span class="n">11</span><span>Bắt đầu từ đâu</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <header class="masthead">
+      <p class="eyebrow">Team SEOOn · 2026-08-03</p>
+      <h1>Làm việc với AI như một hệ thống, không phải một khung chat</h1>
+      <p class="standfirst">
+        AI không giỏi hơn context bạn đưa cho nó. Bài này là toàn bộ cách team dựng context đó —
+        và một ca prod thật nó tự sửa từ đầu tới MR.
+      </p>
+      <div class="meta-row">
+        <div><b>Case</b> SEO · 18xbru1 · MR 2107</div>
+        <div><b>Chi phí</b> $4.37 · 1 vòng phân tích</div>
+        <div><b>Kho</b> 16 skill · 20 memory</div>
+      </div>
+    </header>
+
+    <!-- 01 -->
+    <section class="sec" id="s01">
+      <div class="sec-head">
+        <div class="sec-num">01</div>
+        <h2>Vấn đề: mỗi session bắt đầu lại từ số không</h2>
+        <p class="sec-sub">Không phải model dốt. Là repo không chịu tự mô tả nó, và không ai giữ lại cái đã học.</p>
+      </div>
+      <div class="body">
+        <ul class="pts bad">
+          <li><b>Context chết theo terminal.</b> Đóng cửa sổ là mất. Hôm sau giải thích lại kiến trúc từ đầu, mỗi lần một kiểu.</li>
+          <li><b>AI đoán.</b> Repo không nói entry point ở đâu, cái gì không được đụng, job nào chạy trên fleet — nên nó suy diễn từ tên file.</li>
+          <li><b>Skill bê từ app khác sang.</b> Năm app Shopify nhìn giống nhau, khác nhau ở chi tiết. Skill copy qua lại thì cite code không tồn tại.</li>
+          <li><b>Không đo được.</b> Không biết AI tốn bao nhiêu, làm được gì, sai chỗ nào — nên không cãi được với ai.</li>
+        </ul>
+        <div class="note">
+          <b>Ca có thật:</b> ba skill global <code>firestore</code> / <code>backend</code> / <code>polaris</code> bị xoá ngày 2026-07-16.
+          Chúng là bản sao của skill repo <code>joy</code> — <code>cloudTaskService</code>, <code>enqueueTask</code>, <code>paginateQuery</code>
+          chỉ tồn tại trong joy. Nạp global tức là bơm kiến trúc của joy vào mọi app như thể sự thật.
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section class="sec" id="s02">
+      <div class="sec-head">
+        <div class="sec-num">02</div>
+        <h2>Ba tầng context, mỗi tầng một loại sự thật</h2>
+        <p class="sec-sub">Nhét sai tầng là nguồn gốc của mọi rác về sau. Kiến trúc không nằm trong memory; fact rời không nằm trong CLAUDE.md.</p>
+      </div>
+      <div class="body">
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Tầng</th><th>Chứa gì</th><th class="m">Ở đâu</th><th>Đổi khi nào</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Identity</b></td>
+                <td>Bạn là ai, muốn trả lời kiểu gì, luật cứng (deploy thủ công, xác nhận project id, đường tuyệt đối)</td>
+                <td class="m">~/.claude/CLAUDE.md</td>
+                <td>Hiếm</td>
+              </tr>
+              <tr>
+                <td><b>Repo</b></td>
+                <td>App làm gì, stack, domain map, pattern, cái gì cấm đụng</td>
+                <td class="m">&lt;repo&gt;/CLAUDE.md<br>&lt;repo&gt;/.claude/skills/</td>
+                <td>Theo code</td>
+              </tr>
+              <tr>
+                <td><b>Fact</b></td>
+                <td>Một sự thật rời đã verify — 1 file 1 fact, link nhau bằng <code>[[slug]]</code></td>
+                <td class="m">memory/*.md<br>memory/MEMORY.md</td>
+                <td>Khi học được</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>MEMORY.md</code> là mục lục — một dòng một memory, nạp mỗi session. Nội dung memory không bao giờ nằm trong mục lục.
+          Hiện có <b>20 memory</b>, ví dụ <span class="m">seo-redis-command-timeout-noise</span>: Redis đo được đang rảnh (1% CPU, 7.2k key),
+          <code>Command timed out</code> là ngân sách client 200ms — <b>đừng resize Redis</b>. Đó là một tối cãi nhau tiết kiệm được, ghi một lần.
+        </p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="sec" id="s03">
+      <div class="sec-head">
+        <div class="sec-num">03</div>
+        <h2>Đường AI đọc khi nhận một task trong app SEO</h2>
+        <p class="sec-sub">Từ rộng tới hẹp. Mỗi tầng thu hẹp phạm vi tầng dưới, nên tới lúc chạm code thì nó đã biết đang đứng ở đâu.</p>
+      </div>
+      <div class="body">
+        <div class="strata">
+          <div class="stratum">
+            <div class="path">~/.claude/CLAUDE.md</div>
+            <div class="what">Bạn là ai, trả lời kiểu gì, luật cứng. Deploy là thao tác tay.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">second-brain/CLAUDE.md</div>
+            <div class="what">Bản đồ: repo → Firebase project (prod/staging), lib nào, skill nào cho việc nào.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">seo/CLAUDE.md</div>
+            <div class="what">Koa trên Firebase Functions <i>cộng</i> fleet BullMQ/Redis tự host. Queue việc bằng <span class="m">dispatchWork(topic, data, shop)</span> — không gọi thẳng <span class="m">publishTopic</span>.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">seo/.claude/skills/&lt;domain&gt;/</div>
+            <div class="what">16 skill. Đụng redirect thì mở <span class="m">url-redirects</span>, đụng ảnh thì <span class="m">image-optimization</span>. Mỗi skill cite <span class="m">file:line</span> thật.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">seo/PATTERNS.md</div>
+            <div class="what">Pattern đang có và pattern nên dùng, kèm ví dụ có dòng.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">packages/*/CLAUDE.md</div>
+            <div class="what">Luật theo tầng và theo code của từng package. Không phải skill.</div>
+          </div>
+          <div class="stratum">
+            <div class="path">packages/functions/src/…</div>
+            <div class="what">Tới đây mới đọc code. Phạm vi đã hẹp còn vài file.</div>
+          </div>
+        </div>
+        <div class="note">
+          <b>Skill là chuyện của từng repo.</b> App nào không có skill cho mảng nào thì đó là lỗ hổng thật — không lấp bằng skill của app khác.
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section class="sec" id="s04">
+      <div class="sec-head">
+        <div class="sec-num">04</div>
+        <h2>Bảo mật: cái AI phải biết trước khi nó chạm route</h2>
+        <p class="sec-sub">Skill không chỉ nói code nằm đâu. Nó nói mối đe doạ thật của app này là gì — và chỗ nào nhìn như bug nhưng là cố ý.</p>
+      </div>
+      <div class="body">
+
+        <h3 class="sub">Threat model quyết định AI soi chỗ nào</h3>
+        <ul class="pts">
+          <li><b>Scope của app SEO chỉ có</b> themes, products, content, files, locales, markets, translations (<span class="m">config/shopify.js:10-29</span>). Không <span class="m">read_customers</span>, không order, không cart.</li>
+          <li><b>Suy ra:</b> app này không giữ PII khách, không giữ dữ liệu thanh toán. Tài sản cần bảo vệ là cấu hình và nội dung SEO <i>của một shop</i>.</li>
+          <li><b>Nên rủi ro số một là IDOR</b> — shop A đọc được dữ liệu shop B — chứ không phải rò rỉ PII.</li>
+          <li><b>Đây chính là chỗ context ăn tiền.</b> Biết threat model thì AI review đúng mặt trận. Không biết thì nó đi soi mã hoá PII trong một app không có PII, và bỏ qua cái ownership check thiếu.</li>
+        </ul>
+
+        <h3 class="sub">"Đừng sửa cái người ta cố ý"</h3>
+        <ul class="pts">
+          <li>Skill <span class="m">security</span> của SEO ghi thẳng một mục: những quirk đang chạy <b>không được "sửa"</b>. Không có dòng đó thì AI thấy lạ là vá — và vá đúng cái có chủ đích.</li>
+          <li>Nó dài 187 dòng: threat model, sáu đường verify route <i>không thay thế cho nhau</i>, cộng danh sách bug sống. Nhét vào <code>CLAUDE.md</code> thì nạp mọi lúc cho mọi task — lãng phí và loãng.</li>
+          <li>Mỗi skill mang một trường <span class="m">why-not-claude-md</span> tự bào chữa vì sao nó tách ra. <b>Không justify được thì không đáng làm skill.</b> Đó là thứ chặn kho skill phình thành rác.</li>
+        </ul>
+
+        <h3 class="sub">Luật cứng, đặt ở tầng identity nên không task nào lách được</h3>
+        <ul class="pts bad">
+          <li><b>Không bao giờ đưa credential lên dòng lệnh.</b> Không <span class="m">sshpass -p</span>, không <span class="m">redis-cli -a &lt;pw&gt;</span>. Dùng <span class="m">sshpass -f &lt;file&gt;</span> hoặc <span class="m">-e</span> — transcript nằm trên đĩa và đọc lại được sau này.</li>
+          <li><b>Bot autofix cấm chạm</b> <code>.env</code>, lockfile, <code>.gitlab-ci.yml</code>, <code>firebase.json</code>, <code>.firebaserc</code>. Không merge, không deploy.</li>
+          <li><b>Xác nhận project id trước mọi lệnh ghi</b> vào GCP hay Firestore. Prod và staging chỉ khác cái đuôi — gõ nhầm là sự cố production.</li>
+        </ul>
+
+        <h3 class="sub">Case thật: <span class="m">n9axd7</span> · BLOG · MR 816 · $1.87</h3>
+        <div class="trace">
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Alert nhìn như lỗi vặt bên thứ ba</h3>
+              <p>Crisp trả 404 <span class="m">not_subscribed</span> cho cron đồng bộ shop 1-sao. Đọc lướt thì kết luận "Crisp lỗi", đóng ticket.</p>
+            </div>
+          </div>
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Truy ra credential hardcode</h3>
+              <p>Định danh plugin Crisp nằm cứng trong <span class="m">config/crisp.js:5</span>, bị Crisp thu hồi khỏi website từ 2026-07-30. Không phải hồi quy code — là credential tĩnh bị vô hiệu bên ngoài.</p>
+            </div>
+          </div>
+          <div class="stop terminal">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Và bắt thêm cái không ai hỏi</h3>
+              <p><span class="m">crispSegmentRepository.js:22</span> — <span class="m">getOneStarShops</span> không kiểm tra <span class="m">syncedAt</span>. Nên suốt bốn ngày, tính năng cảnh báo khách 1-sao vẫn phục vụ danh sách đông cứng từ 2026-07-29 mà không ai biết.</p>
+              <p>256 test, 3 fail — đúng baseline 3 fail.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="note ok">
+          <b>Điểm đáng nói không phải "AI tìm ra credential".</b> Là nó tìm ra <i>hệ quả</i> — một tính năng khác đang chạy trên dữ liệu chết bốn ngày —
+          vì nó đọc cả repo theo skill chứ không đọc mỗi cái stack trace trong alert.
+        </div>
+
+        <p>Biết threat model là điều kiện cần. Điều kiện đủ là <b>bắt buộc soi</b>: mọi task trong <span class="m">tony-wf</span> phải qua một security check bảy mục trên diff trước khi được đánh ✅ — <a href="#s07">xem section 07</a>.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section class="sec" id="s05">
+      <div class="sec-head">
+        <div class="sec-num">05</div>
+        <h2>Second brain + harness: chỗ context sống qua đêm</h2>
+        <p class="sec-sub">Repo <span class="m">second-brain</span> vừa là kho kiến thức vừa là thư mục cha của mọi repo Avada. Harness là mấy con script giữ cho nó không thối.</p>
+      </div>
+      <div class="body">
+        <p><code>brain.py sync</code> chạy 20:00 mỗi ngày qua launchd:</p>
+        <div class="strip">
+          <span>mirror</span><i>→</i><span>learn</span><i>→</i><span>summarize · claude -p headless</span><i>→</i><span>commit</span><i>→</i><span>push</span>
+        </div>
+        <ul class="pts">
+          <li><b>Bốn nguồn học:</b> <span class="m">sessions</span> (transcript hội thoại), <span class="m">gitlog</span> (commit của chính bạn, lọc theo user.email, quét 10 repo), <span class="m">daily</span>, <span class="m">inbox</span>.</li>
+          <li><b>Fact durable không vào memory ngay.</b> Nó thành candidate trong <code>daily/inbox.md</code> kèm bộ đếm <span class="m">(×N)</span>.</li>
+          <li><b>Chín rồi mới nổi.</b> <span class="m">read_loop.maturity_days: 2</span> — phải tái xuất hiện ở 2 ngày sync khác nhau mới được đẩy lên đầu session.</li>
+          <li><b>Máy không bao giờ tự ghi memory.</b> <code>surface.py</code> chỉ nhắc. Promote là thao tác tay, có người duyệt. Gắn <span class="m">#hold</span> là dập luôn.</li>
+        </ul>
+        <div class="note ok">
+          Đây là chỗ nhiều người làm sai: cho AI tự ghi nhớ mọi thứ nó nghĩ là quan trọng. Sáu tuần sau memory đầy suy đoán,
+          và không ai dám xoá vì không biết cái nào đúng. <b>Hai ngày chờ + một người duyệt</b> giải quyết chuyện đó.
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section class="sec" id="s06">
+      <div class="sec-head">
+        <div class="sec-num">06</div>
+        <h2>Hook, memory, <span class="m">/resume</span></h2>
+        <p class="sec-sub">Ba thứ trả lời ba câu khác nhau: việc gì tự chạy, cái gì được nhớ, và làm sao không mất việc khi dính rate limit.</p>
+      </div>
+      <div class="body">
+        <ul class="pts">
+          <li>
+            <b>Hook là việc harness làm, không phải việc model nhớ.</b> Bảo AI "lần nào sửa file cũng format nhé" là vô ích — nó sẽ quên.
+            <code>PostToolUse</code> khớp <span class="m">Write|Edit</span> gọi <span class="m">prettier-on-write.sh</span>, timeout 15s. Chạy mọi lần, không cần nhắc.
+          </li>
+          <li>
+            <b>Read-loop nằm ở <code>SessionStart</code>.</b> Trong <code>second-brain/.claude/settings.json</code>:
+            <span class="m">brain.py surface --json</span>, timeout 5s. Mở session là candidate đã chín đập vào mặt, chờ duyệt.
+          </li>
+          <li>
+            <b>Memory: một file một fact.</b> Frontmatter <span class="m">type: user | feedback | project | reference</span>, thân bài link nhau bằng <code>[[slug]]</code>.
+            <span class="m">feedback</span> phải có <b>Why</b> và <b>How to apply</b> — nếu không thì lần sau đọc lại không biết áp vào đâu.
+          </li>
+          <li>
+            <b><code>/resume</code> là lệnh dùng nhiều nhất.</b> Đụng rate limit giữa chừng, mở lại đúng session đó, context còn nguyên. Việc dài không cần chạy một hơi.
+          </li>
+          <li>
+            <b>Output style đổi được.</b> Session này đang chạy caveman mode qua hook — cắt mạo từ và lời khách sáo, giữ nguyên thuật ngữ và code. Ít token hơn cho cùng lượng thông tin.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section class="sec" id="s07">
+      <div class="sec-head">
+        <div class="sec-num">07</div>
+        <h2><span class="m">tony-wf</span> — brief thành việc đã chạy</h2>
+        <p class="sec-sub">Skill nuốt một file brief markdown và lái nó tới xong. Bản deck này được làm bằng đúng nó.</p>
+      </div>
+      <div class="body">
+        <div class="strip">
+          <span>đọc brief</span><i>→</i><span>/init</span><i>→</i><span>brainstorm</span><i>→</i><span>chia task</span><i>→</i><span>dual tracking</span><i>→</i><span>plan task</span><i>→</i><span>dispatch</span><i>→</i><span>test-fix ≤5</span><i>→</i><span>review</span><i>→</i><span>security check</span><i>→</i><span>task kế</span>
+        </div>
+        <ul class="pts">
+          <li><b>Brainstorm là bắt buộc.</b> Brief một dòng thì chín phần mười là hiểu sai. Hỏi trước, làm sau.</li>
+          <li><b>Mọi task phải có lệnh test trước khi chạy.</b> Test, build, lint, hay một script tái hiện bug — không có thì định nghĩa ra rồi mới bắt đầu.</li>
+          <li><b>Trần 5 vòng, cứng.</b> Vòng 5 vẫn fail thì dừng cả workflow, báo lại kèm output lỗi nguyên văn. Không đổi model để reset đồng hồ — trần tính theo task, không theo model.</li>
+          <li><b>Tracking hai chỗ.</b> Checklist trong terminal, và section <code>## Progress</code> ghi thẳng vào chính file brief. Không đẻ file <span class="m">PROGRESS.md</span> riêng — brief là nguồn duy nhất, đóng máy mở lại vẫn biết đang ở đâu.</li>
+          <li><b>Review sau mỗi task.</b> Test xanh chưa đủ. Phải xem chất lượng và hồi quy. Review trượt tính là một vòng fail.</li>
+        </ul>
+
+        <h3 class="sub">Plan từng task, ngay trước khi chạy nó</h3>
+        <p>Bước "chia task" plan cho <b>cả brief</b> — quá thô để giao cho agent. Mỗi task có plan riêng, sáu dòng, viết thẳng vào brief trước khi dispatch. Agent không tự đoán ranh giới nữa: chính sáu dòng này là prompt giao cho nó.</p>
+
+        <div class="loop">
+          <div class="loop-row"><span class="k">01</span><span class="t"><b>Goal</b> — một câu, "xong" nhìn ra bằng cái gì</span></div>
+          <div class="loop-row"><span class="k">02</span><span class="t"><b>Files allowed</b> — danh sách file cụ thể. Ngoài danh sách là ngoài phạm vi</span></div>
+          <div class="loop-row"><span class="k">03</span><span class="t"><b>Approach</b> — cách chọn, một dòng; kèm cách đã loại và vì sao</span></div>
+          <div class="loop-row"><span class="k">04</span><span class="t"><b>Test command</b> — lệnh chính xác + kết quả mong đợi</span></div>
+          <div class="loop-row"><span class="k">05</span><span class="t"><b>Risk</b> — sai thì hỏng cái gì: dữ liệu, app khác, đường prod</span></div>
+          <div class="loop-row"><span class="k">06</span><span class="t"><b>Rollback</b> — revert commit / flag / thêm mới nên không cần gỡ</span></div>
+        </div>
+
+        <ul class="pts">
+          <li><b>Không plan thì không dispatch.</b> Viết không nổi sáu dòng nghĩa là chưa hiểu task đủ để giao đi.</li>
+          <li><b>Đọc file rồi mới plan.</b> Plan viết từ trí nhớ hay từ một hit grep là đoán. Mọi khẳng định trong plan phải có <code>file:line</code>.</li>
+          <li><b>Task khó thì để kiến trúc sư plan.</b> Route sang agent <span class="m">Plan</span> (opus, không quyền ghi) và lấy output đó làm plan. Rẻ hơn nhiều so với một refactor chéo file sai hướng.</li>
+          <li><b>Plan lệch giữa chừng thì viết lại vào brief rồi mới chạy tiếp.</b> Plan trôi ngầm làm số vòng mất nghĩa.</li>
+          <li><b>Phát hiện task thật ra là ba task</b> lúc đang plan → dừng, tách ra ở cả hai chỗ tracking, báo người dùng. Không nuốt gọn im lặng.</li>
+        </ul>
+
+        <h3 class="sub">Vòng lặp một task — thứ thực sự đẩy việc tới xong</h3>
+        <p>Không phải "chạy agent rồi hy vọng". Mỗi task quay trong vòng này tới khi đạt, hoặc tới khi chạm trần rồi dừng hẳn.</p>
+
+        <div class="loop">
+          <div class="loop-row"><span class="k">01</span><span class="t">Viết plan sáu dòng cho task</span></div>
+          <div class="loop-row"><span class="k">02</span><span class="t">Giao việc cho agent đã chọn ở bảng routing, kèm plan</span></div>
+          <div class="loop-row"><span class="k">03</span><span class="t">Chạy lệnh test của task</span></div>
+          <div class="loop-row"><span class="k">04</span><span class="t">Xanh → xuống bước 06</span></div>
+          <div class="loop-row back"><span class="k">05</span><span class="t">Đỏ → chẩn đoán bằng systematic-debugging → sửa → quay lại 03, <b>round++</b></span></div>
+          <div class="loop-row"><span class="k">06</span><span class="t">Review output: chất lượng, hồi quy, có lan phạm vi không</span></div>
+          <div class="loop-row"><span class="k">07</span><span class="t">Security check trên <b>diff</b> của task — bảy mục dưới đây</span></div>
+          <div class="loop-row back"><span class="k">08</span><span class="t">Review trượt hoặc security bẩn → tính là một vòng đỏ → quay lại 05</span></div>
+          <div class="loop-row done"><span class="k">09</span><span class="t">Sạch cả hai → ✅ hai chỗ tracking, ghi số vòng + verdict security</span></div>
+          <hr class="loop-rule">
+          <div class="loop-row halt"><span class="k">↺5</span><span class="t">Vòng 5 vẫn đỏ → 🛑 dừng CẢ workflow, không chỉ task này</span></div>
+        </div>
+
+        <ul class="pts">
+          <li><b>Trần tính theo task, không theo model.</b> Đổi từ sonnet sang opus không được đếm lại từ 0. Năm là năm.</li>
+          <li><b>Dừng thì phải báo đủ:</b> task nào, agent/model nào, lệnh test là gì, <b>output lỗi cuối nguyên văn</b>, và năm vòng đã thử gì — thử gì mà vẫn trượt mới là thông tin.</li>
+          <li><b>Số vòng là dữ liệu, không phải điểm số.</b> Task xong trong 1–2 vòng là task định nghĩa tốt. Task ngốn 4–5 vòng gần như luôn là brief mơ hồ, không phải model dốt.</li>
+          <li><b>Không có trần thì tệ hơn.</b> Vòng 7 sửa cái vòng 3 đã đúng. Dừng đúng lúc rẻ hơn chạy tiếp.</li>
+        </ul>
+
+        <h3 class="sub">Security check — bảy mục, chạy trên diff, sau mỗi task</h3>
+        <p>Test xanh chứng minh tính năng chạy được. Nó không nói gì về cái vừa bị lộ ra ngoài. Lấy <code>git diff</code> của task rồi soi từng hunk. Repo nào có <span class="m">skill security</span> riêng thì nạp và áp threat model của nó lên trên — bảy mục này là <b>sàn</b>, không phải trần.</p>
+
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th class="m">#</th><th>Mục</th><th>Bẩn trông như thế nào</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="m">1</td><td>Không có secret trong diff</td><td>API key, token, webhook secret viết cứng. Kể cả bị đẩy vào comment hay test fixture</td></tr>
+              <tr><td class="m">2</td><td>Secret không lên dòng lệnh, không vào log</td><td><span class="m">sshpass -p</span>, <span class="m">redis-cli -a</span>, hoặc log in nguyên header / nguyên object config</td></tr>
+              <tr><td class="m">3</td><td>Còn nguyên shop scoping</td><td>Query Firestore hay handler đọc/ghi mà không lọc theo shop id của chính người gọi — IDOR chéo shop</td></tr>
+              <tr><td class="m">4</td><td>Input từ request là không đáng tin</td><td>Lấy shop domain, plan, quota, giá, role từ body/query thay vì từ session hoặc Firestore</td></tr>
+              <tr><td class="m">5</td><td>Không đụng file cấm</td><td><span class="m">.env*</span>, lockfile, <span class="m">.gitlab-ci.yml</span>, <span class="m">firebase.json</span>, <span class="m">.firebaserc</span>, rule IAM/Firestore xuất hiện trong diff mà task không hề yêu cầu</td></tr>
+              <tr><td class="m">6</td><td>Không lén thêm dep hay call ra ngoài</td><td>Package mới, host outbound mới, webhook target mới mà plan không nhắc. Thêm dep thì phải commit kèm <span class="m">yarn.lock</span> — CI dùng immutable install</td></tr>
+              <tr><td class="m">7</td><td>Có ghi blast radius</td><td>Diff chạm đường prod, migration, hoặc lệnh xoá mà không ai viết ra "sai thì sao"</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ul class="pts">
+          <li><b>Verdict ghi vào brief:</b> <span class="m">clean</span> (kèm <code>git diff --stat</code> để còn audit được) · <span class="m">fixed</span> (tính là một vòng đỏ) · <span class="m">accepted</span> — chỉ khi người dùng đồng ý rõ ràng, ghi lại trong brief. AI không tự accept.</li>
+          <li><b>Không "sửa" secret bằng cách xoá dòng.</b> Secret đã commit là secret đã cháy — phải báo để đi thu hồi. Case <span class="m">n9axd7</span> là tiền lệ: credential Crisp hardcode, thu hồi ngoài luồng trước khi bản fix kịp merge.</li>
+          <li><b>Phát hiện ngoài phạm vi task thì báo, không sửa.</b> Nới diff ra để tiện tay vá là cách một MR nhỏ biến thành MR không ai review nổi.</li>
+          <li><b>"Task này chỉ sửa CSS/docs, khỏi check"</b> — không được. Diff docs quét sạch trong vài giây, và docs đúng là chỗ credential dán nhầm hay nằm nhất.</li>
+          <li><b>Cuối workflow quét lại toàn branch.</b> Hai diff sạch riêng lẻ vẫn có thể sai khi cộng lại: task 2 thêm biến, task 5 thêm dòng log in ra chính nó.</li>
+        </ul>
+
+        <h3 class="sub">Sổ vòng của chính bản deck này</h3>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Task</th><th class="m">Vòng</th><th>Vòng đỏ hỏng ở đâu</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Verify 13 claim của deck</td><td class="m">1/5</td><td>—</td></tr>
+              <tr><td>Viết deck 11 section</td><td class="m">2/5</td><td>Script test — regex bắt <span class="m">&lt;head</span> dính nhầm <span class="m">&lt;header&gt;</span></td></tr>
+              <tr><td>Publish Artifact</td><td class="m">1/5</td><td>—</td></tr>
+              <tr><td>Ghi Progress vào brief</td><td class="m">1/5</td><td>—</td></tr>
+              <tr><td>Sửa tràn chữ</td><td class="m">3/5</td><td>Script test — hai lần: bắt nhầm chữ trong comment CSS, rồi strip comment nuốt nửa HTML</td></tr>
+              <tr><td>Sửa list vỡ một chữ một dòng</td><td class="m">2/5</td><td>Script test — quên nối lại thẻ <span class="m">&lt;/style&gt;</span> sau khi cắt</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <b>Đọc kỹ cột phải:</b> bốn vòng đỏ của session này, <b>cả bốn là lỗi của script test</b> — không vòng nào là lỗi trang.
+          Còn hai lỗi trang thật (chữ tràn khung, list vỡ từng chữ) thì script xanh lè, phải <b>mở trình duyệt</b> mới lòi ra.
+          Vòng lặp có giá trị đúng ở chỗ đó: nó bắt sửa cái thước trước khi tin vào số đo — nhưng thước đúng vẫn không thay được việc nhìn sản phẩm thật.
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section class="sec" id="s08">
+      <div class="sec-head">
+        <div class="sec-num">08</div>
+        <h2>Chọn agent và model theo hình dạng việc</h2>
+        <p class="sec-sub">Dí model mạnh nhất vào mọi việc là đốt tiền và đốt luôn hạn mức. Một task giao một agent, không nhồi hai việc rời nhau.</p>
+      </div>
+      <div class="body">
+        <div class="tw">
+          <table>
+            <thead>
+              <tr><th>Hình dạng việc</th><th class="m">Agent</th><th class="m">Model</th><th>Vì sao</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Tìm code ở đâu, map thư mục, liệt kê caller</td><td class="m">cavecrew-investigator</td><td class="m">haiku</td><td>Chỉ đọc, output nén sẵn</td></tr>
+              <tr><td>Quét rộng nhiều thư mục, chưa rõ quy ước đặt tên</td><td class="m">Explore</td><td class="m">sonnet</td><td>Cần phán đoán tìm ở đâu</td></tr>
+              <tr><td>Sửa typo, rename, viết lại một hàm, 1–2 file cơ học</td><td class="m">cavecrew-builder</td><td class="m">haiku</td><td>Phạm vi kín, từ chối khi ≥3 file</td></tr>
+              <tr><td>Feature mới, file mới, refactor chéo file</td><td class="m">general-purpose</td><td class="m">sonnet</td><td>Cần đủ tool và đủ context</td></tr>
+              <tr><td>Quyết kiến trúc, thuật toán khó, đụng bảo mật</td><td class="m">general-purpose</td><td class="m">opus</td><td>Sai thì đắt</td></tr>
+              <tr><td>Thiết kế chiến lược cho việc khó</td><td class="m">Plan</td><td class="m">opus</td><td>Vai kiến trúc sư, không ghi file</td></tr>
+              <tr><td>Review diff / file / branch</td><td class="m">cavecrew-reviewer</td><td class="m">sonnet</td><td>Gắn mức nghiêm trọng, không lan phạm vi</td></tr>
+              <tr><td>Việc theo domain (UI/UX, Shopify, billing, credit, Jira)</td><td class="m">skill, chạy inline</td><td>—</td><td>Skill thắng agent chung chung</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Task độc lập thì bắn song song trong một lượt. Task phụ thuộc nhau thì giữ tuần tự — chia đôi một chuỗi có thứ tự chỉ tổ hỏng.</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section class="sec" id="s09">
+      <div class="sec-head">
+        <div class="sec-num">09</div>
+        <h2>Vì sao flow này ăn</h2>
+        <p class="sec-sub">Ưu điểm đo được, không phải tính từ.</p>
+      </div>
+      <div class="body">
+        <ul class="pts good">
+          <li><b>Context không chết.</b> Memory + harness + <code>/resume</code> ⇒ session mới không bắt đầu từ 0, và dính rate limit giữa chừng không mất việc.</li>
+          <li><b>AI hết đoán.</b> Skill cite <span class="m">file:line</span> có thật, citation bị đối chiếu đĩa. Sai là bị vứt và hỏi lại, không lọt ra MR.</li>
+          <li><b>Chi phí thành con số.</b> $4.37 và 1 vòng phân tích cho một ca prod, ghi ngay trong incident. So được với hai tiếng dev đào Cloud Logging.</li>
+          <li><b>Bug prod có sẵn MR.</b> Người chỉ review chứ không đào. Sáng mở Slack là đã có nguyên nhân kèm chứng cứ đếm được.</li>
+          <li><b>Không có hố token không đáy.</b> Trần 5 vòng, 5 MR/giờ, 3 MR/repo/ngày, brain 6000 token. Hỏng thì dừng và báo, không cắm đầu chạy tiếp.</li>
+          <li><b>Model đúng việc.</b> haiku tra cứu, sonnet làm, opus quyết. Không dí opus vào việc grep.</li>
+          <li><b>Sai của một app không lây.</b> Skill theo repo. Bài học 07-16 không lặp lại được nữa về mặt cấu trúc.</li>
+          <li><b>Bảo mật là cấu trúc, không phải trí nhớ.</b> Bot bị chặn khỏi <code>.env</code>/lockfile/CI bằng luật trong code, không bằng lời dặn. Threat model nằm trong skill nên AI review đúng mặt trận — IDOR chéo shop, không phải PII trong app không có PII.</li>
+          <li><b>Người vẫn là cổng.</b> Fact phải chín 2 ngày rồi mới được duyệt tay. Bot không merge, không deploy, không đụng lockfile/CI/env.</li>
+          <li><b>Việc lặp lại được viết ra.</b> <span class="m">tony-wf</span>, autofix, harness — thứ đã chạy đúng một lần thì lần sau chạy y hệt, không phụ thuộc hôm đó ai nhớ ra.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec" id="s10">
+      <div class="sec-head">
+        <div class="sec-num">10</div>
+        <h2>Case thật: <span class="m">18xbru1</span> — alert prod thành MR</h2>
+        <p class="sec-sub">Toàn bộ những thứ ở trên, chạy thật một lần. SEO · <span class="m">apisagen2</span> · 2026-08-02 · HTTP 500 <span class="m">PUT /apiSa/redirects/resolve</span>. Không ai đụng tay từ alert tới MR.</p>
+      </div>
+      <div class="body">
+        <div class="trace">
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Alert rơi vào #prod-errors</h3>
+              <p>Daemon poll kênh Slack mỗi 60s. Alert mới → fingerprint <span class="m">18xbru1</span>, app SEO, service <span class="m">apisagen2</span>.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Nạp brain, cắt worktree</h3>
+              <p>Nạp <code>CORE.md</code> + <code>patterns.md</code> + <b>đúng một</b> file app (<code>SEO.md</code>) + <code>index.md</code>, trần 6000 token — vượt là <span class="m">brain budget</span> fail build.</p>
+              <p><code>index.md</code> giữ một dòng cho mỗi incident đã xử. Không khớp fingerprint, không near-miss → job mới. Worktree cắt từ <span class="m">origin/master</span> vào <span class="m">~/.cache/prod-autofix/wt</span>, không đụng cây làm việc của ai.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Đọc context của chính app SEO</h3>
+              <p>Worktree là cwd, nên nó đọc <code>seo/CLAUDE.md</code> và <code>seo/.claude/skills/</code> — đúng đường ở mục 03. Luật số 4 trong <code>CORE.md</code> ghi thẳng: quy ước của app khác không áp vào đây.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Đếm log, không cảm nhận log</h3>
+              <p>Ba lượt đọc trên đĩa: <span class="m">errors</span>, <span class="m">stderr</span>, <span class="m">requests</span>. Cửa sổ 14:00–17:00Z.</p>
+              <div class="evi">3   × httpRequest.status >= 500
+3   × "[redirectController] Response code 429"
+37  × "Exceeded 2 calls per second for api client"</div>
+              <p>Mỗi 500 khớp 1:1 với một dòng controller ở đúng thời điểm <i>request-start + latency</i> (lệch 0.35ms / 1.5ms / 4ms), và trước đó 124–151ms luôn có một dòng <span class="m">UPDATE TARGET URL error</span>. Đó là một round-trip REST — chính là lệnh delete.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Nguyên nhân, kèm cơ chế</h3>
+              <p>Gặp 429 của Shopify REST, nhánh catch của <span class="m">handleResolveRedirectSkipError</span> bắn tiếp <span class="m">shopify.redirect.delete()</span> mà không có <code>.catch</code>. Lần 429 thứ hai này không ai bắt: nó thoát khỏi helper, làm <code>Promise.all</code> trong <span class="m">redirectController.resolve</span> reject, và catch của controller trả HTTP 500.</p>
+              <p>Vì sao đụng trần: mỗi item dựng một Shopify client mới, nên leaky bucket của <span class="m">shopify-api-node</span> là per-instance — hai item chạy song song, item nào cũng tưởng mình sở hữu trọn 2 call/giây. <span class="m">maxRetries</span> mặc định 0, không có backoff.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Bảy citation, kiểm trên đĩa</h3>
+              <div class="evi">urlRedirectService.js:65   delete() trong catch, không .catch  ← thủ phạm
+urlRedirectService.js:63   dòng log nổ trước mỗi 500 124–151ms
+urlRedirectService.js:79   catch { throw e } — "Skip" mà không skip
+urlRedirectService.js:56   initShopify() mỗi item → bucket per-client
+redirectController.js:83   pLimit(2) — hai item cùng lúc
+redirectController.js:447  Promise.all bị một item kéo sập
+redirectController.js:454  ctx.status = 500
+shopifyService.js:58       maxRetries mặc định 0</div>
+              <p>Mọi <span class="m">file:line</span> bị đối chiếu với đĩa sau khi trả lời. Citation không resolve thì bị vứt và hỏi lại. Thêm một luật: stack prod trỏ vào <code>lib/</code> (bundle babel) — số dòng <b>không</b> khớp <code>src/</code>, phải tìm theo tên symbol.</p>
+            </div>
+          </div>
+
+          <div class="stop">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>Test tái hiện trước, fix sau</h3>
+              <p>Viết test fail khi chưa fix. Rồi chạy toàn bộ: <b>785 test, 9 fail</b> — đúng bằng baseline 9 fail. Không thêm hồi quy.</p>
+            </div>
+          </div>
+
+          <div class="stop terminal">
+            <div class="dot" aria-hidden="true"></div>
+            <div>
+              <h3>MR mở, thread trả lời, incident ghi lại</h3>
+              <p>Branch <span class="m">fix/prod-seo-18xbru1</span>, 2 file, <span class="m">+83 / −24</span> → <span class="m">merge_requests/2107</span>. Reply vào đúng thread alert, ghi <code>incidents/18xbru1.md</code> để lần sau khỏi suy lại.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span class="v">$4.37</span><span class="k">chi phí job</span></div>
+          <div class="stat"><span class="v">1</span><span class="k">vòng phân tích</span></div>
+          <div class="stat"><span class="v">785</span><span class="k">test chạy</span></div>
+          <div class="stat"><span class="v">9→9</span><span class="k">fail vs baseline</span></div>
+          <div class="stat"><span class="v">high</span><span class="k">confidence</span></div>
+        </div>
+
+        <div class="note">
+          <b>Nó không được phép làm gì:</b> không merge, không deploy, không đụng <code>package.json</code>, lockfile,
+          <code>.gitlab-ci.yml</code>, <code>firebase.json</code>, <code>.firebaserc</code>, <code>.env</code>.
+          Lỗi hạ tầng (OOM, hết instance) thì đo và đề xuất tier rồi dừng — đó là quyết định tiền, không phải quyết định code.
+          Trần: 1 job một lúc, 5 MR/giờ, 3 MR/repo/ngày, 3 lần thử/fingerprint.
+        </div>
+        <div class="note ok">
+          <b>Luật đắt nhất trong <code>CORE.md</code>:</b> không có log chứng minh thì không có nguyên nhân.
+          Một defect nhìn thấy trong code <i>không phải</i> nguyên nhân của alert này trừ khi có dòng log buộc nó vào alert này.
+          Không đủ chứng cứ thì trả <span class="m">confidence: low</span> và kết thúc là inconclusive — đó là kết quả hợp lệ.
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="sec" id="s11">
+      <div class="sec-head">
+        <div class="sec-num">11</div>
+        <h2>Dev bắt đầu từ đâu</h2>
+        <p class="sec-sub">Đừng dựng cả hệ thống trong một tuần. Làm theo thứ tự này, mỗi bước có giá trị ngay cả khi dừng ở đó.</p>
+      </div>
+      <div class="body">
+        <ol class="steps">
+          <li><b>Viết <code>CLAUDE.md</code> cho repo bạn.</b> App làm gì, entry point ở đâu, cái gì cấm đụng, hàm nào là đường chính. Ngắn cũng được, nhưng phải đúng.</li>
+          <li><b>Một domain một skill.</b> Mọi claim phải cite <span class="m">file:line</span> tồn tại thật. Grep lại từng symbol — "0 kết quả" chính là phát hiện.</li>
+          <li><b>Bật gate trong CI.</b> Doc cite code đã chết thì chặn MR. Không có gate thì doc thối trong im lặng, và thối rồi thì tệ hơn không có.</li>
+          <li><b>Đừng bê skill app khác sang.</b> Không có skill cho mảng đó là một lỗ hổng thật — ghi nhận nó, đừng lấp bằng đồ giả.</li>
+          <li><b>Việc lặp lại thì viết thành hook hoặc script.</b> Đừng nhớ bằng mồm, đừng nhắc AI mỗi lần.</li>
+          <li><b>Mọi task phải có cách kiểm chứng.</b> "Xong" chỉ có nghĩa khi đã chạy và nhìn thấy output. Không thì mới là "chắc là xong".</li>
+        </ol>
+        <div class="note">
+          <b>Một câu mang về:</b> AI không thay thế việc hiểu hệ thống. Nó khuếch đại cái bạn đã viết ra.
+          Repo mô tả rõ chính nó thì AI làm việc tốt trong đó — repo im lặng thì nó đoán, và bạn review đống suy đoán đó.
+        </div>
+      </div>
+    </section>
+
+    <div class="closer">
+      Nguồn: <span class="m">tools/prod-error-autofix/brain/incidents/18xbru1.md</span> ·
+      <span class="m">harness/config.yml</span> ·
+      <span class="m">second-brain/.claude/settings.json</span> ·
+      <span class="m">seo/CLAUDE.md</span> — mọi số trong deck đối chiếu ngày 2026-08-03.
+    </div>
+
+  </main>
+</div>
+</div>
+<script>
+  const root = document.documentElement, btn = document.getElementById('theme');
+  const sysDark = () => matchMedia('(prefers-color-scheme: dark)').matches;
+  btn.addEventListener('click', () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : sysDark();
+    root.dataset.theme = dark ? 'light' : 'dark';
+  });
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+- [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
 - [Verify the branch before diagnosing](verify-branch-before-diagnosing.md) — pin the tree before ANY code claim; the worktree you sit in feels like truth. Fired twice: SEO-260714, then a whole doc set written 207 commits behind master.
 - [Docs from code: shared layer first](docs-from-code.md) — Tony's rule; common layer before per-domain, else skills can't justify why-not-claude-md and you get two taxonomies.
 - [Verify skill citations against disk](verify-skill-citations-against-disk.md) — Avada skills get copied between apps and cite code that doesn't exist; grep every symbol, "0 occurrences" is the finding.
@@ -12,6 +13,7 @@
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.
 - [seo .env.avada-seo local override](seo-env-avada-seo-local-override.md) — local-only override for hand-deploying fns to prod; canonical prod env = CI PRODUCTION_ENV_FILE. internalGen2 is a function, not an env.
 - [User profile: Tuan](user-profile.md) — Avada engineer, Shopify apps + Firebase + GCP cost/credit reporting; prefers Vietnamese, terse output.
+- [Lighthouse agentic-browsing](lighthouse-agentic-browsing.md) — score = mean audit applicable; WebMCP sau flag Chrome 150 nên PSI mù; llms.txt ở domain root là đòn bẩy duy nhất hôm nay.
 - [Credits, not tokens](credit-not-tokens.md) — Avada credit histories count credits per feature, never tokens; no token data exists upstream.
 - [Credit report BigQuery cost](credit-report-bigquery-cost.md) — joining shops_raw_* to resolve domains costs 139 GB/run; resolve via Firestore batchGet instead.
 - [Firestore purge cost](firestore-purge-cost.md) — shop-data purge bills mostly Firestore reads (3x delete price, 76% of the spike), not deletes.

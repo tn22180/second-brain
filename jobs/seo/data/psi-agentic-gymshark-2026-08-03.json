@@ -1,0 +1,488 @@
+{
+  "lighthouseResult": {
+    "lighthouseVersion": "13.4.1",
+    "requestedUrl": "https://www.gymshark.com/",
+    "environment": {
+      "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+      "hostUserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.7871.186 Safari/537.36",
+      "benchmarkIndex": 722,
+      "credits": {
+        "axe-core": "4.12.1"
+      }
+    },
+    "categories": {
+      "performance": {
+        "score": 0.29
+      },
+      "agentic-browsing": {
+        "id": "agentic-browsing",
+        "title": "Agentic Browsing",
+        "description": "These checks ensure high-quality, [browsable websites for AI agents](https://goo.gle/lighthouse-agentic-web) and validate the correctness of WebMCP integrations. This category is still under development and subject to change.",
+        "score": 0.48,
+        "auditRefs": [
+          {
+            "id": "agent-accessibility-tree",
+            "weight": 1,
+            "group": "agent-accessibility"
+          },
+          {
+            "id": "webmcp-form-coverage",
+            "weight": 0,
+            "group": "webmcp"
+          },
+          {
+            "id": "webmcp-registered-tools",
+            "weight": 0,
+            "group": "webmcp"
+          },
+          {
+            "id": "webmcp-schema-validity",
+            "weight": 0,
+            "group": "webmcp"
+          },
+          {
+            "id": "cumulative-layout-shift",
+            "weight": 1,
+            "acronym": "CLS"
+          },
+          {
+            "id": "llms-txt",
+            "weight": 0,
+            "group": "agent-accessibility"
+          }
+        ],
+        "categoryScoreDisplayMode": "fraction"
+      }
+    },
+    "audits": {
+      "agent-accessibility-tree": {
+        "id": "agent-accessibility-tree",
+        "title": "Accessibility tree is not well-formed",
+        "description": "A well-formed [accessibility tree](https://developer.chrome.com/docs/lighthouse/agentic-browsing/accessibility-for-agents) helps AI agents to navigate and interact with the page.",
+        "score": 0,
+        "scoreDisplayMode": "binary",
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "value": {
+                "type": "table",
+                "headings": [
+                  {
+                    "label": "Description",
+                    "key": "description",
+                    "valueType": "text"
+                  },
+                  {
+                    "label": "Failing Element",
+                    "valueType": "node",
+                    "key": "node"
+                  }
+                ],
+                "items": [
+                  {
+                    "node": {
+                      "boundingRect": {
+                        "top": 763,
+                        "left": 16,
+                        "bottom": 1298,
+                        "height": 535,
+                        "right": 346,
+                        "width": 330
+                      },
+                      "selector": "div > section.carousel_section__aQkWM > ul.carousel_carousel__mgqi_ > li",
+                      "type": "node",
+                      "snippet": "<li data-is-active=\"true\" class=\"\" role=\"group\" aria-label=\"Slide 1 of 10\">",
+                      "path": "1,HTML,1,BODY,1,DIV,2,MAIN,0,DIV,1,SECTION,0,DIV,0,DIV,0,DIV,0,SECTION,1,UL,0,LI",
+                      "nodeLabel": "NEW\nDevant Seamless Tank\n\nSlim Fit\n\nAmethyst\n\nRegular Price:\n$34",
+                      "lhId": "1-0-LI"
+                    },
+                    "description": "ARIA role should be appropriate for the element"
+                  },
+                  {
+                    "description": "ARIA dialog and alertdialog nodes should have an accessible name",
+                    "node": {
+                      "path": "1,HTML,1,BODY,1,DIV,1,DIV,1,HEADER,3,DIV,1,DIV",
+                      "selector": "div.header_wrapper-container__io8BP > header.header_header__KA3hF > div.header_wrapper__F0L5L > div.header_container__hpkiK",
+                      "lhId": "1-40-DIV",
+                      "snippet": "<div class=\"header_container__hpkiK\" role=\"dialog\" aria-modal=\"true\" data-testid=\"navigation-component\" aria-describedby=\"mobile-menu-heading\">",
+                      "boundingRect": {
+                        "height": 823,
+                        "right": 0,
+                        "width": 412,
+                        "left": -412,
+                        "bottom": 823,
+                        "top": 0
+                      },
+                      "nodeLabel": "What are you looking for today?\nWomen\nMen\nAccessories\nAccessibility Statement\nH…",
+                      "type": "node"
+                    }
+                  },
+                  {
+                    "description": "ARIA input fields must have an accessible name",
+                    "node": {
+                      "snippet": "<div id=\"dropdown-:Rvdq8tm:\" data-testid=\"navigation-storeSelector-select\" class=\"dropdown_select__gtDIt store-selector_select__lTgwi store-selector_select-…\" role=\"combobox\" aria-labelledby=\"dropdown-label-:Rvdq8tm:\" aria-expanded=\"false\" aria-haspopup=\"listbox\" tabindex=\"0\">",
+                      "lhId": "1-41-DIV",
+                      "path": "1,HTML,1,BODY,1,DIV,1,DIV,1,HEADER,3,DIV,1,DIV,2,DIV,0,DIV,0,DIV,4,DIV,0,DIV,0,UL,5,LI,0,DIV,1,DIV,0,DIV",
+                      "nodeLabel": "US",
+                      "type": "node",
+                      "selector": "li.secondary-links_region-selector__W9cN6 > div.region-selector_flex__ANhGu > div.dropdown_dropdown__NSfLC > div#dropdown-:Rvdq8tm:",
+                      "boundingRect": {
+                        "width": 380,
+                        "bottom": 417,
+                        "right": -16,
+                        "height": 28,
+                        "top": 389,
+                        "left": -396
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "type": "node",
+                      "selector": "section.carousel_section__aQkWM > ul.carousel_carousel__mgqi_ > li > article.product-card_product-card__1T7k9",
+                      "path": "1,HTML,1,BODY,1,DIV,2,MAIN,0,DIV,1,SECTION,0,DIV,0,DIV,0,DIV,0,SECTION,1,UL,0,LI,0,ARTICLE",
+                      "boundingRect": {
+                        "top": 763,
+                        "left": 16,
+                        "bottom": 1279,
+                        "height": 516,
+                        "right": 346,
+                        "width": 330
+                      },
+                      "snippet": "<article class=\"product-card_product-card__1T7k9\" data-testid=\"plp-productCard-6806577381578-select\" aria-label=\"product\" role=\"listitem\">",
+                      "lhId": "1-1-ARTICLE",
+                      "nodeLabel": "NEW\nDevant Seamless Tank\n\nSlim Fit\n\nAmethyst\n\nRegular Price:\n$34"
+                    },
+                    "description": "Certain ARIA roles must be contained by particular parents"
+                  },
+                  {
+                    "description": "Buttons must have discernible text",
+                    "node": {
+                      "type": "node",
+                      "nodeLabel": "div.product-card_image-wrap-container__oNLur > div.product-card_image-wrap__s68z6 > div.quick-add_mobile__2b7pP > button.quick-add_mobile-button__8ATn3",
+                      "lhId": "1-45-BUTTON",
+                      "snippet": "<button class=\"quick-add_mobile-button__8ATn3\" data-testid=\"plp-quickAdd-6806577381578-open\">",
+                      "path": "1,HTML,1,BODY,1,DIV,2,MAIN,0,DIV,1,SECTION,0,DIV,0,DIV,0,DIV,0,SECTION,1,UL,0,LI,0,ARTICLE,0,DIV,0,DIV,0,DIV,2,DIV,0,BUTTON",
+                      "boundingRect": {
+                        "bottom": 813,
+                        "right": 66,
+                        "width": 48,
+                        "top": 765,
+                        "left": 18,
+                        "height": 48
+                      },
+                      "selector": "div.product-card_image-wrap-container__oNLur > div.product-card_image-wrap__s68z6 > div.quick-add_mobile__2b7pP > button.quick-add_mobile-button__8ATn3"
+                    }
+                  }
+                ]
+              },
+              "type": "list-section",
+              "title": "Failed Audits"
+            }
+          ]
+        }
+      },
+      "webmcp-form-coverage": {
+        "id": "webmcp-form-coverage",
+        "title": "WebMCP form coverage",
+        "description": "Consider adding [WebMCP](https://developer.chrome.com/docs/ai/webmcp) annotations to the forms listed below. This helps AI agents identify and interact with these forms more reliably.",
+        "score": null,
+        "scoreDisplayMode": "notApplicable"
+      },
+      "webmcp-registered-tools": {
+        "id": "webmcp-registered-tools",
+        "title": "WebMCP tools registered",
+        "description": "Lists the [WebMCP tools](https://developer.chrome.com/docs/ai/webmcp) registered at the time of analysis.",
+        "score": null,
+        "scoreDisplayMode": "notApplicable"
+      },
+      "webmcp-schema-validity": {
+        "id": "webmcp-schema-validity",
+        "title": "WebMCP schemas are valid",
+        "description": "Valid [WebMCP schemas](https://developer.chrome.com/docs/ai/webmcp) are required for AI agents to understand and interact with tools correctly. Please fix any errors or warnings reported by the browser.",
+        "score": null,
+        "scoreDisplayMode": "notApplicable"
+      },
+      "cumulative-layout-shift": {
+        "id": "cumulative-layout-shift",
+        "title": "Cumulative Layout Shift",
+        "description": "Cumulative Layout Shift measures the movement of visible elements within the viewport. [Learn more about the Cumulative Layout Shift metric](https://web.dev/articles/cls).",
+        "score": 0.95,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "0.075",
+        "details": {
+          "type": "debugdata",
+          "items": [
+            {
+              "newEngineResultDiffered": false,
+              "newEngineResult": {
+                "cumulativeLayoutShiftMainFrame": 0.07528837536854321,
+                "cumulativeLayoutShift": 0.07528837536854321
+              },
+              "cumulativeLayoutShiftMainFrame": 0.07528837536854321
+            }
+          ]
+        },
+        "numericValue": 0.07528837536854321,
+        "numericUnit": "unitless"
+      },
+      "llms-txt": {
+        "id": "llms-txt",
+        "title": "llms.txt follows recommendations",
+        "description": "If your llms.txt file does not follow recommendations, large language models may not be able to understand how you want your website to be crawled or used for training. The [llms.txt](https://llmstxt.org/) file should be a Markdown file containing at least one H1 header. [Learn more about the llms.txt audit](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt).",
+        "score": null,
+        "scoreDisplayMode": "notApplicable"
+      },
+      "largest-contentful-paint": {
+        "id": "largest-contentful-paint",
+        "title": "Largest Contentful Paint",
+        "description": "Largest Contentful Paint marks the time at which the largest text or image is painted. [Learn more about the Largest Contentful Paint metric](https://developer.chrome.com/docs/lighthouse/performance/lighthouse-largest-contentful-paint/)",
+        "score": 0,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "31.2 s",
+        "numericValue": 31221.925835533137,
+        "numericUnit": "millisecond"
+      },
+      "total-blocking-time": {
+        "id": "total-blocking-time",
+        "title": "Total Blocking Time",
+        "description": "Sum of all time periods between FCP and Time to Interactive, when task length exceeded 50ms, expressed in milliseconds. [Learn more about the Total Blocking Time metric](https://developer.chrome.com/docs/lighthouse/performance/lighthouse-total-blocking-time/).",
+        "score": 0.01,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "4,080 ms",
+        "numericValue": 4079.983122209196,
+        "numericUnit": "millisecond"
+      },
+      "speed-index": {
+        "id": "speed-index",
+        "title": "Speed Index",
+        "description": "Speed Index shows how quickly the contents of a page are visibly populated. [Learn more about the Speed Index metric](https://developer.chrome.com/docs/lighthouse/performance/speed-index/).",
+        "score": 0,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "17.7 s",
+        "numericValue": 17749.84057916334,
+        "numericUnit": "millisecond"
+      },
+      "first-contentful-paint": {
+        "id": "first-contentful-paint",
+        "title": "First Contentful Paint",
+        "description": "First Contentful Paint marks the time at which the first text or image is painted. [Learn more about the First Contentful Paint metric](https://developer.chrome.com/docs/lighthouse/performance/first-contentful-paint/).",
+        "score": 0.45,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "3.2 s",
+        "numericValue": 3152.512941924384,
+        "numericUnit": "millisecond"
+      },
+      "max-potential-fid": {
+        "id": "max-potential-fid",
+        "title": "Max Potential First Input Delay",
+        "description": "The maximum potential First Input Delay that your users could experience is the duration of the longest task. [Learn more about the Maximum Potential First Input Delay metric](https://developer.chrome.com/docs/lighthouse/performance/lighthouse-max-potential-fid/).",
+        "score": 0,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "900 ms",
+        "numericValue": 895.9999999999964,
+        "numericUnit": "millisecond"
+      },
+      "bootup-time": {
+        "id": "bootup-time",
+        "title": "Reduce JavaScript execution time",
+        "description": "Consider reducing the time spent parsing, compiling, and executing JS. You may find delivering smaller JS payloads helps with this. [Learn how to reduce Javascript execution time](https://developer.chrome.com/docs/lighthouse/performance/bootup-time/).",
+        "score": 0,
+        "scoreDisplayMode": "metricSavings",
+        "displayValue": "8.5 s",
+        "metricSavings": {
+          "TBT": 4450
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "label": "URL",
+              "key": "url",
+              "valueType": "url"
+            },
+            {
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Total CPU Time",
+              "key": "total"
+            },
+            {
+              "label": "Script Evaluation",
+              "granularity": 1,
+              "valueType": "ms",
+              "key": "scripting"
+            },
+            {
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Script Parse",
+              "key": "scriptParseCompile"
+            }
+          ],
+          "items": [
+            {
+              "scriptParseCompile": 0.9708,
+              "url": "https://www.gymshark.com/",
+              "total": 11146.76280000029,
+              "scripting": 18.73320000000001
+            },
+            {
+              "scripting": 1847.0592000002457,
+              "total": 2327.112000000242,
+              "scriptParseCompile": 15.627599999999997,
+              "url": "https://www.gymshark.com/_next/static/chunks/framework-a07e17fc51f42ee2.js"
+            },
+            {
+              "scriptParseCompile": 319.686,
+              "total": 1705.253999999952,
+              "url": "https://www.gymshark.com/_next/static/chunks/pages/_app-e90a77c89dbd4b4e.js",
+              "scripting": 1298.984399999952
+            },
+            {
+              "scripting": 985.507199999986,
+              "total": 1112.797199999986,
+              "url": "https://www.googletagmanager.com/gtm.js?id=GTM-WQXVFFG&gtm_auth=&gtm_preview=&gtm_cookies_win=x",
+              "scriptParseCompile": 104.51279999999997
+            },
+            {
+              "total": 950.4959999998904,
+              "scripting": 170.9447999999999,
+              "url": "Unattributable",
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "https://10ef4229c7d0.edge.sdk.awswaf.com/10ef4229c7d0/f2cb19c6a7d6/challenge.js",
+              "total": 814.0607999999955,
+              "scriptParseCompile": 61.785599999999995,
+              "scripting": 666.1067999999956
+            },
+            {
+              "scriptParseCompile": 86.3964,
+              "total": 564.0227999999955,
+              "scripting": 394.19639999999555,
+              "url": "https://js.intercomcdn.com/frame-modern.4cceb2ba.js"
+            },
+            {
+              "scripting": 249.30239999999694,
+              "scriptParseCompile": 47.2488,
+              "url": "https://cdn.dynamicyield.com/api/8786363/api_static.js",
+              "total": 396.60119999999733
+            },
+            {
+              "total": 297.64199999999914,
+              "url": "https://www.googletagmanager.com/gtag/destination?id=G-PQJ0N2K1QF&cx=c&gtm=4e67t1",
+              "scripting": 212.0555999999992,
+              "scriptParseCompile": 83.58719999999998
+            },
+            {
+              "scripting": 14.837999999999996,
+              "total": 264.7763999999998,
+              "url": "https://s.axon.ai/pixel.js",
+              "scriptParseCompile": 3.8208
+            },
+            {
+              "scriptParseCompile": 23.943600000000004,
+              "total": 249.7151999999997,
+              "url": "https://res4.applovin.com/p/104/b/bs.c9e1074f5b3f9fc8ea15d152add07294-1.iife.js",
+              "scripting": 221.45879999999968
+            },
+            {
+              "scripting": 199.71359999999956,
+              "scriptParseCompile": 34.974,
+              "url": "https://connect.facebook.net/signals/config/293240424340622?v=2.9.368&r=stable&domain=www.gymshark.com&hme=78c3d709c6e52779dc9d6e8b8770857bb5dfd27159797805bacb5f93b9e7568a&ex_m=108%2C210%2C160%2C22%2C73%2C74%2C151%2C69%2C68%2C11%2C169%2C93%2C16%2C143%2C131%2C39%2C76%2C81%2C139%2C165%2C171%2C26%2C27%2C28%2C30%2C48%2C152%2C78%2C116%2C18%2C20%2C44%2C40%2C42%2C41%2C86%2C95%2C99%2C114%2C150%2C153%2C46%2C115%2C24%2C21%2C123%2C70%2C36%2C155%2C154%2C156%2C147%2C145%2C25%2C35%2C59%2C113%2C167%2C71%2C17%2C158%2C118%2C84%2C67%2C19%2C88%2C89%2C120%2C87%2C141%2C140%2C144%2C100%2C166%2C34%2C49%2C117%2C47%2C8%2C4%2C5%2C7%2C6%2C3%2C94%2C105%2C172%2C177%2C224%2C75%2C237%2C236%2C235%2C23%2C33%2C55%2C107%2C61%2C10%2C64%2C101%2C102%2C103%2C109%2C134%2C31%2C29%2C136%2C137%2C138%2C133%2C132%2C161%2C77%2C164%2C162%2C163%2C50%2C60%2C127%2C15%2C168%2C45%2C281%2C282%2C280%2C295%2C313%2C217%2C206%2C62%2C207%2C205%2C316%2C307%2C52%2C218%2C111%2C135%2C83%2C125%2C54%2C124%2C130%2C129%2C58%2C65%2C63%2C157%2C79%2C80%2C119%2C37%2C32%2C53%2C56%2C104%2C170%2C1%2C128%2C14%2C126%2C12%2C2%2C57%2C96%2C66%2C122%2C92%2C91%2C173%2C174%2C97%2C98%2C9%2C106%2C51%2C148%2C90%2C82%2C72%2C121%2C110%2C43%2C149%2C0%2C85%2C142%2C146%2C159%2C38%2C112%2C13%2C175%2C234%2C232%2C227%2C229%2C230%2C231%2C228%2C216%2C233%2C226%2C198%2C192%2C196%2C197%2C195%2C190%2C337%2C201%2C193%2C194%2C220%2C191%2C189%2C241%2C211%2C183%2C184%2C179%2C185%2C182%2C180%2C181%2C178%2C176%2C187%2C188%2C186%2C283%2C336%2C304%2C302%2C303%2C301%2C199%2C244%2C251%2C245%2C247%2C250%2C248%2C249%2C246%2C243%2C260%2C255%2C257%2C254%2C261%2C258%2C253%2C259%2C256%2C252%2C297%2C310",
+              "total": 237.88679999999957
+            },
+            {
+              "scripting": 166.82999999999976,
+              "scriptParseCompile": 60.70439999999999,
+              "total": 236.45759999999976,
+              "url": "https://analytics.tiktok.com/i18n/pixel/static/main.MWI1YzJiMWRhMQ.js"
+            },
+            {
+              "url": "https://connect.facebook.net/en_US/fbevents.js",
+              "scripting": 131.63519999999994,
+              "scriptParseCompile": 37.5564,
+              "total": 217.70039999999992
+            },
+            {
+              "scripting": 19.2888,
+              "scriptParseCompile": 70.5204,
+              "total": 158.09519999999998,
+              "url": "https://www.googletagmanager.com/gtag/js?id=G-PQJ0N2K1QF&cx=c&gtm=4e67t1"
+            },
+            {
+              "total": 154.43399999999966,
+              "scripting": 94.73399999999965,
+              "scriptParseCompile": 59.07359999999999,
+              "url": "https://www.googletagmanager.com/gtag/destination?id=AW-823557903&cx=c&gtm=4e67t1"
+            },
+            {
+              "scripting": 84.08999999999953,
+              "url": "https://www.googletagmanager.com/gtag/destination?id=AW-933026149&cx=c&gtm=4e67t1",
+              "total": 135.34679999999952,
+              "scriptParseCompile": 50.693999999999996
+            },
+            {
+              "scripting": 47.368800000000086,
+              "scriptParseCompile": 37.302,
+              "url": "https://cdn.cookielaw.org/scripttemplates/6.33.0/otBannerSdk.js",
+              "total": 132.04800000000006
+            },
+            {
+              "total": 115.28640000000007,
+              "scripting": 73.88760000000008,
+              "scriptParseCompile": 40.743599999999994,
+              "url": "https://connect.facebook.net/signals/config/1263319854288554?v=2.9.368&r=stable&domain=www.gymshark.com&hme=78c3d709c6e52779dc9d6e8b8770857bb5dfd27159797805bacb5f93b9e7568a&ex_m=108%2C210%2C160%2C22%2C73%2C74%2C151%2C69%2C68%2C11%2C169%2C93%2C16%2C143%2C131%2C39%2C76%2C81%2C139%2C165%2C171%2C26%2C27%2C28%2C30%2C48%2C152%2C78%2C116%2C18%2C20%2C44%2C40%2C42%2C41%2C86%2C95%2C99%2C114%2C150%2C153%2C46%2C115%2C24%2C21%2C123%2C70%2C36%2C155%2C154%2C156%2C147%2C145%2C25%2C35%2C59%2C113%2C167%2C71%2C17%2C158%2C118%2C84%2C67%2C19%2C88%2C89%2C120%2C87%2C141%2C140%2C144%2C100%2C166%2C34%2C49%2C117%2C47%2C8%2C4%2C5%2C7%2C6%2C3%2C94%2C105%2C172%2C177%2C224%2C75%2C237%2C236%2C235%2C23%2C33%2C55%2C107%2C61%2C10%2C64%2C101%2C102%2C103%2C109%2C134%2C31%2C29%2C136%2C137%2C138%2C133%2C132%2C161%2C77%2C164%2C162%2C163%2C50%2C60%2C127%2C15%2C168%2C45%2C281%2C282%2C280%2C295%2C313%2C217%2C206%2C62%2C207%2C205%2C316%2C307%2C52%2C218%2C111%2C135%2C83%2C125%2C54%2C124%2C130%2C129%2C58%2C65%2C63%2C157%2C79%2C80%2C119%2C37%2C32%2C53%2C56%2C104%2C170%2C1%2C128%2C14%2C126%2C12%2C2%2C57%2C96%2C66%2C122%2C92%2C91%2C173%2C174%2C97%2C98%2C9%2C106%2C51%2C148%2C90%2C82%2C72%2C121%2C110%2C43%2C149%2C0%2C85%2C142%2C146%2C159%2C38%2C112%2C13%2C175"
+            },
+            {
+              "total": 108.70799999999994,
+              "scriptParseCompile": 9.906,
+              "url": "https://cdn.dynamicyield.com/api/8786363/api_dynamic.js",
+              "scripting": 91.52159999999994
+            },
+            {
+              "scriptParseCompile": 12.591600000000001,
+              "url": "https://www.gymshark.com/_next/static/chunks/main-dc91a3d7efd3a730.js",
+              "total": 89.23320000000005,
+              "scripting": 75.72960000000005
+            },
+            {
+              "total": 88.59119999999997,
+              "scripting": 82.82519999999997,
+              "url": "https://bat.bing.com/bat.js",
+              "scriptParseCompile": 5.609999999999999
+            },
+            {
+              "scriptParseCompile": 24.3276,
+              "scripting": 60.11160000000002,
+              "url": "https://s.pinimg.com/ct/lib/main.3c5b736e.js",
+              "total": 85.5948
+            },
+            {
+              "total": 83.86440000000002,
+              "scriptParseCompile": 47.8164,
+              "url": "https://jssdkcdns.mparticle.com/js/v2/eu1-ebd2cad076757c498ce604d818b0d8ae/mparticle.js?env=0&plan_id=gymshark_data_plan_shop",
+              "scripting": 34.74600000000001
+            },
+            {
+              "scriptParseCompile": 50.49960000000001,
+              "url": "https://js.intercomcdn.com/vendor-modern.bb14a12d.js",
+              "scripting": 3.2483999999999997,
+              "total": 55.16040000000001
+            }
+          ],
+          "summary": {
+            "wastedMs": 8534.816400000169
+          },
+          "sortedBy": [
+            "total"
+          ]
+        },
+        "numericValue": 8534.816400000169,
+        "numericUnit": "millisecond"
+      }
+    }
+  }
+}

@@ -76,3 +76,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) prod-error-autofix report bắn Telegram DM cá nhân (không nhóm/Slack); concurrency cap 2 fix/lượt, history issue đã fix để dedup
 - [ ] (×1) Skill `tony-wf` workflow chuẩn: /init → brainstorm → plan → TaskCreate → subagent theo chuyên môn → test loop cap 5 vòng fail thì dừng
 - [ ] (×1) Blogs Slack paging phần lớn là expected-error noise (redis ECONNRESET tự lành, 4xx per-shop, revoked token, 404 asset probe) — phân loại trước khi coi là bug
+
+### memory candidates 2026-08-03
+- [ ] (×1) `node_modules` bị commit trong `packages/assets` (seo) làm CI deploy fail `YN0001 ENOTDIR` khi Yarn Berry persist cache — check gitignore trước khi đổ lỗi cache CI
+- [ ] (×1) `tony-wf` bước `/init` tốn % context đáng kể; workflow chuẩn giờ có planning trước mỗi task + security check trên diff sau mỗi task
+- [ ] (×1) `/loop` trong `tony-wf` = theo dõi tiến độ tất cả task, không phải cơ chế retry task
