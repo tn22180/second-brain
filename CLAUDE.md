@@ -46,7 +46,9 @@ Team-wide AI usage is queryable via the `prompt-audit` MCP server
 `avada-prod-error-alert` is published to **public npm under that exact unscoped name** —
 not `@avada/prod-error-alert`.
 
-`seo-wt-*` and `blogs-wt-docs` are git worktrees, not separate repos.
+A sibling dir named `<repo>-wt-<something>` is a git worktree of `<repo>`, not a separate repo.
+All 15 were cleared on 2026-08-03; the branches stay, so they come and go — check
+`git worktree list` rather than assuming either way.
 
 BigQuery billing export and the Firestore export both live in `avada-seo`.
 
