@@ -3,38 +3,45 @@ service: api
 message: HTTP 503 POST /api/gen-ai-suggested/blog-post-idea-outline
 app: BLOG
 repo: blogs
-date: 2026-07-31T10:17:23.438Z
-status: inconclusive
-attempt: 2
+date: 2026-08-03T13:55:12.885Z
+status: mr_open
+attempt: 3
 
 # BLOG · api · 1hjewuf
 
-**Outcome.** fix blocked at agent_failed
+**Outcome.** duplicate of 10ydl1h — MR https://gitlab.com/avada/blogs/-/merge_requests/826
 
-**Root cause.** OpenRouter's provider for google/gemini-2.5-flash-lite aborts generation mid-output with finish_reason='error' on /api/gen-ai-suggested/*, and getCompletion's single same-model retry (MAX_TRUNCATION_RETRIES=1) is not enough to survive it, so it throws CompletionTruncatedError and genSuggested answers 503. This is the same cause already recorded as fingerprint 1xisexs, whose fix is open but undeployed as MR https://gitlab.com/avada/blogs/-/merge_requests/809.
+**Root cause.** Duplicate of fingerprint pboq3f (MR https://gitlab.com/avada/blogs/-/merge_requests/826 open, unmerged): during OpenRouter's intermittent rate limit on Google's Gemini SKUs, getCompletion's last-attempt fallback swaps google/gemini-2.5-flash-lite for google/gemini-2.5-flash — another Google model behind the same rate-limited upstream — so both /api/gen-ai-suggested 503s in this window exhausted all 3 attempts and genSuggested answered 503.
 
-**Mechanism.** genSuggested case 'blog-post-idea-outline' (genAIBlogController.js:316) calls complete({model:'gpt-4.1', format:'json_object', name:'suggested_outline'}) — resolveModel maps 'gpt-4.1' to DEFAULT_TEXT_MODEL = google/gemini-2.5-flash-lite (const/aiModels.js:19). OpenRouter returns a half-written JSON body with finish_reason='error' (not 'length'), which the guard from MR 804 catches via isJsonCompletionIncomplete, logs '[getCompletion] ... output truncated (finish_reason=error), retry 1/1', and re-issues once against the same model with no backoff (openAi.service.js:55, MAX_TRUNCATION_RETRIES=1). When the second attempt aborts too, openAi.service.js:161 throws CompletionTruncatedError; genAIBlogController.js:368-370 maps that class specifically to ctx.status = 503 with retryable:true, which is exactly the alert text. Pairing is 1:1 and exact: 503 at 09:45:20.601 (2.76s) → CompletionTruncatedError at 09:45:23.363 on suggested_outline (partial content 129 chars); 503 at 09:38:22.969 (2.99s) → 09:38:25.960 on suggested_recomment_blog (318 chars); 503 at 09:33:42.124 (1.86s) → 09:33:43.989 on suggested_outline (76 chars). All 3 of 3 gen-ai-suggested 503s in the 24h window are accounted for, and all 3 are the alerting fingerprint. The base rate is visible in the retry warnings: 10 provider aborts in the 30-minute window, every one of them finish_reason=error and zero finish_reason=length, so the output cap is not involved — 7 of 10 recovered on the single retry, 3 exhausted it and became 503s. Partial content of 76-318 chars means the abort lands very early in generation, not at any cap. Latency 1.86-2.99s is far under the 30s client timeout, so the cut is upstream. Distinct from the other 18 5xx in the same window, which are 504s at 539.947s against the function's own timeoutSeconds: 540 on /api/article* and are a separate cause, not this fingerprint.
+**Mechanism.** POST /api/gen-ai-suggested/:type reaches genSuggested; both failing types call getCompletion with model 'gpt-4.1' and format 'json_object' — case 'recommendBlogPost' name 'suggested_recomment_blog' (genAIBlogController.js:216-225) and case 'blog-post-idea-outline' name 'suggested_outline' (genAIBlogController.js:316-333). LEGACY_MODEL_MAP resolves 'gpt-4.1' to DEFAULT_TEXT_MODEL = google/gemini-2.5-flash-lite (openAi.service.js:28, aiModels.js:19). OpenRouter answers HTTP 200 with finish_reason='error' and resp.error.message 'google/gemini-2.5-flash-lite is temporarily rate-limited upstream' (captured as providerReason at openAi.service.js:167); because format is json_object, isJsonCompletionIncomplete fails on the partial body so the attempt counts as truncated. Attempts 1 and 2 re-issue the same model after a flat 300ms sleep (MAX_TRUNCATION_RETRIES=2 at :55, TRUNCATION_RETRY_BACKOFF_MS=300 at :56, awaited at :189); on attempt 3 the finishReason==='error' branch at :161-162 swaps attemptModel to DEFAULT_PRO_TEXT_MODEL = google/gemini-2.5-flash (aiModels.js:20) — same vendor, same rate-limited upstream — which also aborts, so CompletionTruncatedError is thrown at :173 (prod frame lib/services/openAi.service.js:179) and mapped to 503 at genAIBlogController.js:368-369. Both chains match to the millisecond: recommendBlogPost 503 at 12:39:50.907Z latency 39.344273865s → 12:40:30.251Z vs the error line at 12:40:30.253055Z, preceded by retry 1/2 at 12:39:58.176Z and retry 2/2 at 12:40:08.945Z; blog-post-idea-outline (the alerting endpoint) 503 at 12:45:55.209Z latency 9.321404092s → 12:46:04.530Z vs the error line at 12:46:04.529515Z, preceded by retry 1/2 at 12:45:59.852Z and retry 2/2 at 12:46:00.766Z. Both thrown errors name google/gemini-2.5-flash (the fallback), while all retry warnings name google/gemini-2.5-flash-lite — the vendor-identical swap made visible in the log text. Counts in this 30-minute window are exact: 2 of 2 5xx are these 503s, 2 of 2 CompletionTruncatedError, 10 'temporarily rate-limited upstream' lines. The other 8 rate-limit encounters (suggested_topics 12:51:29/13:01:06, suggested_recomment_blog 12:45:29/12:52:40, plus the four retry lines belonging to the two failures) recovered on a retry — the difference is purely whether the last attempt's Google fallback also landed on the limit. Partial content lengths 249 and 292 chars confirm an early abort, not an output cap. Unrelated noise in the window: 8 'Failed to log event' 16 UNAUTHENTICATED lines (P6), [getOne] 429 from Shopify, [getCrmWidgets] 400 from public.avada.io, and the z.toJSONSchema json_object fallback warnings — none produced a 5xx.
 
 Confidence: `high`
 
 ## Code
-- `packages/functions/src/services/openAi.service.js:161` — throw new CompletionTruncatedError — the exact frame in the prod stack (lib/services/openAi.service.js:161:13)
-- `packages/functions/src/services/openAi.service.js:55` — MAX_TRUNCATION_RETRIES = 1 — one same-model retry, no backoff, no provider/model fallback; too few for a transient provider abort
-- `packages/functions/src/services/openAi.service.js:157` — truncation predicate catches the finish_reason='error' half-document via isJsonCompletionIncomplete, which is why these surface as CompletionTruncatedError and not SyntaxError
-- `packages/functions/src/controllers/genAIBlogController.js:369` — ctx.status = 503 for CompletionTruncatedError — the 503 in the alert is deliberate, emitted here, not a Cloud Run capacity 503
-- `packages/functions/src/controllers/genAIBlogController.js:316` — case 'blog-post-idea-outline' — the alerting endpoint; prod stack lib/controllers/genAIBlogController.js:338:33
-- `packages/functions/src/controllers/genAIBlogController.js:367` — the '[genSuggested] ... Error genSuggested' line that carries CompletionTruncatedError in the errors read
-- `packages/functions/src/const/aiModels.js:19` — DEFAULT_TEXT_MODEL = OPENROUTER_GEMINI_2_5_FLASH_LITE — the model named in every abort message
+- `packages/functions/src/services/openAi.service.js:161` — final-attempt fallback fires on finish_reason='error' regardless of cause — a vendor-wide rate limit is treated like a transient per-model abort
+- `packages/functions/src/services/openAi.service.js:162` — the swap itself: attemptModel = DEFAULT_PRO_TEXT_MODEL, another google/* SKU behind the same rate-limited upstream
+- `packages/functions/src/services/openAi.service.js:167` — providerReason 'temporarily rate-limited upstream' is captured but only decorates the message; it never changes backoff or model choice
+- `packages/functions/src/services/openAi.service.js:173` — throws CompletionTruncatedError after attempt 3 — the exact error in the alert, lib/services/openAi.service.js:179 in the deployed bundle
+- `packages/functions/src/services/openAi.service.js:56` — TRUNCATION_RETRY_BACKOFF_MS = 300, flat, no jitter — whole retry budget is seconds against a multi-hour intermittent upstream limit
+- `packages/functions/src/services/openAi.service.js:189` — the only delay between attempts, identical for a cap-hit truncation and a provider rate-limit abort
+- `packages/functions/src/services/openAi.service.js:28` — LEGACY_MODEL_MAP maps the caller's 'gpt-4.1' to DEFAULT_TEXT_MODEL, so the caller cannot see which vendor it depends on
+- `packages/functions/src/const/aiModels.js:19` — DEFAULT_TEXT_MODEL = google/gemini-2.5-flash-lite — the model named in all retry warnings in this window
+- `packages/functions/src/const/aiModels.js:20` — DEFAULT_PRO_TEXT_MODEL = google/gemini-2.5-flash — the fallback target named in both thrown errors
+- `packages/functions/src/const/aiModels.js:16` — OPENROUTER_DEEPSEEK_V3_1 already exists as a non-Google backup — the fallback that would have survived this limit
+- `packages/functions/src/controllers/genAIBlogController.js:316` — case 'blog-post-idea-outline' — the alerting endpoint, name 'suggested_outline', the 12:45:55 chain
+- `packages/functions/src/controllers/genAIBlogController.js:216` — case 'recommendBlogPost', name 'suggested_recomment_blog' — the second 503 at 12:39:50
+- `packages/functions/src/controllers/genAIBlogController.js:369` — maps CompletionTruncatedError to the observed 503
 
 ## Evidence
-- 3 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T09:18:45.296Z" AND timestamp<="2026-07-31T09:48:45.296Z" AND jsonPayload.message:"CompletionTruncatedError"`
-- 10 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T10:00:00Z" AND timestamp<="2026-07-31T09:48:45Z" AND jsonPayload.message:"output truncated (finish_reason="`
-- 3 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-30T10:00:00Z" AND timestamp<="2026-07-31T09:48:45Z" AND httpRequest.status=503 AND httpRequest.requestUrl:"gen-ai-suggested"`
-- 21 matching entries: `(resource.labels.service_name="api") AND timestamp>="2026-07-31T09:18:45.296Z" AND timestamp<="2026-07-31T09:48:45.296Z" AND httpRequest.status>=500`
+- 10 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-08-03T12:31:07.765Z" AND timestamp<="2026-08-03T13:01:07.765Z" AND "temporarily rate-limited upstream"`
+- 2 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-08-03T12:31:07.765Z" AND timestamp<="2026-08-03T13:01:07.765Z" AND "CompletionTruncatedError"`
+- 2 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-08-03T12:31:07.765Z" AND timestamp<="2026-08-03T13:01:07.765Z" AND httpRequest.status>=500`
+- 51 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-08-03T00:00:00Z" AND timestamp<="2026-08-03T14:00:00Z" AND "temporarily rate-limited upstream"`
 
 ## Job
 - analyze rounds: 1
-- cost: $1.07
+- cost: $1.08
+- MR: https://gitlab.com/avada/blogs/-/merge_requests/826
 
 ## Verdict
 

@@ -60,12 +60,18 @@ export interface Models {
   analyze: string;
   fix: string;
   learn: string;
+  /**
+   * The security gate blocks merge requests, so a weak reviewer here costs more than
+   * it saves: a missed finding ships, and a hallucinated one parks a good fix.
+   */
+  security: string;
 }
 
 export interface Timeouts {
   analyzeRoundMs: number;
   fixMs: number;
   learnMs: number;
+  securityMs: number;
   jestMs: number;
   gcloudMs: number;
   /** A job still `analyzing` past this is treated as dead and its slot is freed. */
@@ -90,6 +96,8 @@ export interface Config {
   transport: Transport;
   pollIntervalMs: number;
   logWindowMs: number;
+  /** How often the daemon re-measures whether shipped fixes actually held. 0 disables it. */
+  verifyIntervalMs: number;
   analyzeMaxRounds: number;
   brainSliceTokenBudget: number;
   caps: Caps;
@@ -147,6 +155,9 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     transport,
     pollIntervalMs: num(env, 'AUTOFIX_POLL_INTERVAL_MS', MINUTE),
     logWindowMs: num(env, 'AUTOFIX_LOG_WINDOW_MS', 15 * MINUTE),
+    // Six hours matches `MIN_AFTER_MS`: sweeping more often than a fix can become
+    // measurable only re-reads logs to print `too_soon` again.
+    verifyIntervalMs: num(env, 'AUTOFIX_VERIFY_INTERVAL_MS', 6 * HOUR),
     analyzeMaxRounds: num(env, 'AUTOFIX_ANALYZE_MAX_ROUNDS', 5),
     brainSliceTokenBudget: num(env, 'AUTOFIX_BRAIN_TOKEN_BUDGET', 6000),
     caps: {
@@ -170,12 +181,16 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     models: {
       analyze: env.AUTOFIX_ANALYZE_MODEL || 'claude-opus-5',
       fix: env.AUTOFIX_FIX_MODEL || 'claude-sonnet-5',
-      learn: env.AUTOFIX_LEARN_MODEL || 'claude-haiku-4-5-20251001'
+      learn: env.AUTOFIX_LEARN_MODEL || 'claude-haiku-4-5-20251001',
+      security: env.AUTOFIX_SECURITY_MODEL || 'claude-opus-5'
     },
     timeouts: {
       analyzeRoundMs: num(env, 'AUTOFIX_ANALYZE_TIMEOUT_MS', 8 * MINUTE),
       fixMs: num(env, 'AUTOFIX_FIX_TIMEOUT_MS', 12 * MINUTE),
       learnMs: num(env, 'AUTOFIX_LEARN_TIMEOUT_MS', 3 * MINUTE),
+      // Reads one diff plus whatever files it needs to check reachability. A timeout
+      // here blocks the MR, so it is set long enough that only a hung agent hits it.
+      securityMs: num(env, 'AUTOFIX_SECURITY_TIMEOUT_MS', 6 * MINUTE),
       jestMs: num(env, 'AUTOFIX_JEST_TIMEOUT_MS', 20 * MINUTE),
       gcloudMs: num(env, 'AUTOFIX_GCLOUD_TIMEOUT_MS', 2 * MINUTE),
       // Longer than any single job can legitimately take: ANALYZE at 5 rounds plus

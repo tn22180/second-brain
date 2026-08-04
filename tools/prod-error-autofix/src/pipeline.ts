@@ -33,6 +33,7 @@ import * as reply from './slack/reply';
 import {checkConcurrency, checkMrCaps, recordMr} from './state/rateGate';
 import {decide, INCONCLUSIVE_RETRY_MS, type AlertStatus, type DeployProbe} from './state/stateMachine';
 import type {Store} from './state/store';
+import {describeSecurity, securityGate, type SecurityOutcome} from './verify/security';
 import {describeSmoke, measureBaseline, smokeGate, type SmokeOutcome} from './verify/smoke';
 
 /**
@@ -137,7 +138,10 @@ export async function runPipeline(deps: PipelineDeps, message: IncomingMessage):
     service: alert.service,
     kind: alert.kind,
     alertTsMs,
-    threadTs: message.ts
+    threadTs: message.ts,
+    // Kept verbatim because `fingerprint` is a one-way hash: without the message the
+    // verify sweep has nothing to build a log filter from. See `verify/recurrence.ts`.
+    signature: alert.message.split('\n')[0]?.trim()
   });
   let previous = seen.previous;
 
@@ -157,7 +161,13 @@ export async function runPipeline(deps: PipelineDeps, message: IncomingMessage):
 
   // Probe only when there is something to probe: a fix that was already pushed.
   let probe: DeployProbe | undefined;
-  if (previous?.fixSha && (previous.status === 'mr_open' || previous.status === 'awaiting_deploy' || previous.status === 'fix_failed')) {
+  if (
+    previous?.fixSha &&
+    (previous.status === 'mr_open' ||
+      previous.status === 'awaiting_deploy' ||
+      previous.status === 'fix_failed' ||
+      previous.status === 'fix_verified')
+  ) {
     probe = await runProbes(deps, app, alert, previous.fixSha, previous.branch);
   }
 
@@ -553,6 +563,41 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
     );
     await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'inconclusive', outcome: `smoke gate ${smoke.failure}`, rounds: analysis.rounds.length, costUsd, message: input.message, diffStat: fixed.diffStat, smokeLine: describeSmoke(smoke)});
     return await finish('inconclusive', `smoke ${smoke.failure}: ${smoke.detail}`, {replied});
+  }
+
+  // Last gate before the diff leaves the machine. The smoke gate proved it works;
+  // this asks whether it is safe to merge with nobody watching, which the tests
+  // cannot answer — a fix that stops an endpoint validating passes every one of them.
+  const security: SecurityOutcome = await securityGate(
+    {
+      diff: fixed.diff,
+      repoPath: worktree.value.dir,
+      appName: alert.appName,
+      rootCause: verified.rootCause,
+      model: cfg.models.security,
+      timeoutMs: cfg.timeouts.securityMs
+    },
+    {claude: deps.claude}
+  );
+  costUsd += security.costUsd;
+
+  if (!security.ok) {
+    await preserveWork('security gate failed');
+    const replied = await say(
+      reply.replyGateFailed({
+        fingerprint,
+        appName: alert.appName,
+        attempt,
+        analysis: verified,
+        gate: `security/${security.failure}`,
+        detail: describeSecurity(security),
+        smoke,
+        preserved,
+        worktreeKept: keepWorktree ? worktreeDir : undefined
+      })
+    );
+    await learn(deps, {app, alert, fingerprint, attempt, analysis: verified, status: 'inconclusive', outcome: `security gate ${security.failure}`, rounds: analysis.rounds.length, costUsd, message: input.message, diffStat: fixed.diffStat, smokeLine: describeSmoke(smoke)});
+    return await finish('inconclusive', `security ${security.failure}: ${security.detail}`, {replied});
   }
 
   const threadUrl = await deps.slack.permalink({channel: input.message.channel, ts: input.message.ts}).catch(() => undefined);

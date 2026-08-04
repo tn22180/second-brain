@@ -18,6 +18,8 @@ export type AlertStatus =
   | 'mr_open'
   | 'awaiting_deploy'
   | 'fix_failed'
+  /** Terminal, and only ever written by the verify sweep — never by an alert. */
+  | 'fix_verified'
   | 'inconclusive'
   | 'infra'
   | 'needs_human'
@@ -162,6 +164,11 @@ export function decide(input: DecideInput): Decision {
     case 'mr_open':
     case 'awaiting_deploy':
     case 'fix_failed':
+    // A fingerprint the sweep proved fixed is firing again. That is not automatically
+    // a regression — a late or replayed alert predating the deploy says nothing — so
+    // it goes through the same ordering check as every other post-MR state rather
+    // than straight to a re-run.
+    case 'fix_verified':
       return afterMr(input);
 
     case 'infra':

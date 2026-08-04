@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
-import {buildConfig, ConfigError, redact} from '../src/config';
+import {homedir} from 'node:os';
+import {join} from 'node:path';
+import {buildConfig, ConfigError, loadEnv, PROJECT_ROOT, redact} from '../src/config';
 import {
   brainBudget,
   dryRun,
@@ -15,6 +17,9 @@ import {
   statusReport
 } from '../src/cli/commands';
 import {sweepWorktrees} from '../src/git/worktreeGc';
+import {doctor, formatDoctor} from '../src/setup/doctor';
+import {formatInit, initInstall} from '../src/setup/init';
+import {formatSweep, sweepVerify} from '../src/verify/sweep';
 import {runPipeline} from '../src/pipeline';
 import {listApps} from '../src/registry';
 import {createSlackApi} from '../src/slack/client';
@@ -28,11 +33,17 @@ import {Store} from '../src/state/store';
 
 const USAGE = `autofix — prod error → MR
 
+  init [--label X] [--service-account <email>] [--force-plist]
+                              dựng install: .env, thư mục cache, skeleton brain, plist cho máy này
+  doctor [--quick]            soi mọi thứ daemon cần: claude, gcloud, git SSH, Slack, từng repo app
   daemon                      nghe #prod-errors và chạy pipeline (launchd chạy lệnh này)
   status                      queue, cap còn lại, 10 incident gần nhất
   dry-run <file> [--prompt]   feed alert giả: in registry + fingerprint + brain slice, KHÔNG gọi model
   run <ts|slack-url>          chạy pipeline trên đúng 1 message trong channel (CÓ thể mở MR thật)
   replay <fingerprint>        chạy lại pipeline trên một incident đã lưu (không post Slack trừ --post)
+  verify [--apply] [--fp <fingerprint>]
+                              đếm lỗi trong log trước merge vs sau deploy để biết fix có ăn không;
+                              mặc định chỉ đọc, --apply mới ghi fix_verified/fix_failed
   incidents                   liệt kê fingerprint đã lưu
   mark <fp> --mr <url> [--cause "..."]
                               ghi nhận MR mở bằng tay vào index.md + incident + state DB
@@ -56,13 +67,66 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+  const flag = (name: string): string | undefined => {
+    const i = args.indexOf(name);
+    return i >= 0 ? args[i + 1] : undefined;
+  };
+
+  // `init` exists to create the config, so it must run before the config is required.
+  if (command === 'init') {
+    const env = loadEnv();
+    const cacheRoot = env.AUTOFIX_CACHE_ROOT || join(homedir(), '.cache', 'prod-autofix');
+    console.log(
+      formatInit(
+        initInstall({
+          projectRoot: PROJECT_ROOT,
+          cacheRoot,
+          brainRoot: env.AUTOFIX_BRAIN_ROOT || join(PROJECT_ROOT, 'brain'),
+          label: flag('--label') || 'com.avada.prod-error-autofix',
+          serviceAccount: flag('--service-account') || env.CLOUDSDK_CORE_ACCOUNT,
+          env: {...process.env, ...env},
+          forcePlist: args.includes('--force-plist')
+        })
+      )
+    );
+    return;
+  }
+
   let cfg;
+  let configError: ConfigError | undefined;
   try {
     cfg = buildConfig();
   } catch (e) {
-    if (e instanceof ConfigError) fail(`config: ${e.message}`);
-    throw e;
+    if (!(e instanceof ConfigError)) throw e;
+    // Everything except `doctor` needs a real config. `doctor` is how an operator finds
+    // out *why* there isn't one, so it runs anyway on placeholder credentials and
+    // reports the missing keys as its first blocking check.
+    if (command !== 'doctor') fail(`config: ${e.message}`);
+    configError = e;
+    cfg = buildConfig({...loadEnv(), SLACK_BOT_TOKEN: 'unset', SLACK_ERROR_CHANNEL_ID: 'unset'});
   }
+
+  if (command === 'doctor') {
+    const report = await doctor({
+      cfg,
+      quick: args.includes('--quick'),
+      slack: configError ? undefined : createSlackApi(cfg.slackBotToken)
+    });
+    if (configError) {
+      report.checks.unshift({
+        group: 'config',
+        name: '.env',
+        status: 'fail',
+        detail: `thiếu ${configError.missing.join(', ')}`,
+        fix: 'chạy `autofix init` rồi điền vào .env'
+      });
+      report.ok = false;
+    }
+    console.log(formatDoctor(report));
+    if (!report.ok) process.exit(1);
+    return;
+  }
+
   const store = new Store(cfg.paths.stateDb);
   const now = () => Date.now();
 
@@ -84,12 +148,20 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
 
+    case 'verify': {
+      const i = args.indexOf('--fp');
+      const only = i > 0 ? args[i + 1] : undefined;
+      const apply = args.includes('--apply');
+      const report = await sweepVerify(
+        {cfg, store, now, log: line => console.error(line)},
+        {apply, only}
+      );
+      console.log(formatSweep(report));
+      return;
+    }
+
     case 'mark': {
       const fp = args[1];
-      const flag = (name: string) => {
-        const i = args.indexOf(name);
-        return i > 0 ? args[i + 1] : undefined;
-      };
       const mrUrl = flag('--mr');
       if (!fp || !mrUrl) fail('dùng: autofix mark <fingerprint> --mr <url> [--cause "..."]');
       const res = markMr(cfg, store, {
@@ -196,6 +268,11 @@ async function main(argv: string[]): Promise<void> {
         `caps: ${cfg.caps.maxConcurrentJobs} song song · ${cfg.caps.mrPerHour} MR/h · ` +
           `${cfg.caps.mrPerRepoPerDay} MR/repo/ngày · analyze ${cfg.analyzeMaxRounds} vòng`
       );
+      log(
+        cfg.verifyIntervalMs > 0
+          ? `verify sweep mỗi ${Math.round(cfg.verifyIntervalMs / 3_600_000)}h`
+          : 'verify sweep: tắt (AUTOFIX_VERIFY_INTERVAL_MS=0)'
+      );
       // Notifying is optional, so a missing token fails silently at MR time. Say at
       // startup which mode this process is in, or the first "why no Telegram?" costs
       // a config re-derivation.
@@ -236,6 +313,28 @@ async function main(argv: string[]): Promise<void> {
       await reclaim();
       const reclaimTimer = setInterval(() => void reclaim(), cfg.pollIntervalMs);
 
+      // Measures whether shipped fixes held. Skipped while a pipeline is running: the
+      // sweep is serial but still spends two gcloud reads per fingerprint, and the job
+      // in flight has the better claim on that quota.
+      const verify = async () => {
+        if (store.activeCount() > 0) return;
+        try {
+          const report = await sweepVerify({cfg, store, now, log}, {apply: true});
+          const counts = new Map<string, number>();
+          for (const r of report.rows) counts.set(r.verdict, (counts.get(r.verdict) ?? 0) + 1);
+          if (report.checked) {
+            log(
+              `verify sweep: ${report.checked} fingerprint · ` +
+                [...counts].map(([v, n]) => `${v} ${n}`).join(', ')
+            );
+          }
+        } catch (e) {
+          log(`verify sweep failed: ${(e as Error).message}`);
+        }
+      };
+      const verifyTimer =
+        cfg.verifyIntervalMs > 0 ? setInterval(() => void verify(), cfg.verifyIntervalMs) : undefined;
+
       const listener = createListener({
         cfg,
         store,
@@ -254,6 +353,7 @@ async function main(argv: string[]): Promise<void> {
       const shutdown = async (signal: string) => {
         log(`${signal} — đang dừng`);
         clearInterval(reclaimTimer);
+        if (verifyTimer) clearInterval(verifyTimer);
         await listener.stop();
         store.close();
         process.exit(0);

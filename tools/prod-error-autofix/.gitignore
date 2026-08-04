@@ -5,3 +5,7 @@
 
 node_modules/
 *.tsbuildinfo
+
+# Generated per machine by `autofix init` — carries a home dir, a username and a
+# service-account email, none of which should travel with the package.
+launchd/*.plist

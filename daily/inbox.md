@@ -81,3 +81,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) `node_modules` bị commit trong `packages/assets` (seo) làm CI deploy fail `YN0001 ENOTDIR` khi Yarn Berry persist cache — check gitignore trước khi đổ lỗi cache CI
 - [ ] (×1) `tony-wf` bước `/init` tốn % context đáng kể; workflow chuẩn giờ có planning trước mỗi task + security check trên diff sau mỗi task
 - [ ] (×1) `/loop` trong `tony-wf` = theo dõi tiến độ tất cả task, không phải cơ chế retry task
+
+### memory candidates 2026-08-04
+- [ ] (×1) Theme app extension script limit 64 KB — `optimize-product-images` 75 KB chặn `shopify app dev`, phải trim/split trước khi dev được
+- [ ] (×1) WebMCP enabled state đi qua app metafield → snippet; `settings.webMcp.enabled` ở backend không tự tới theme
+- [ ] (×1) SEO Agentic AI = 1 menu gộp (AI Agent Readiness + LLMs page), WebMCP page cũ đã fold vào, không còn card ở landing Performance
+- [ ] (×1) prod-error-autofix đã đóng gói để cài sang app khác, quy trình có security check trên diff
+- [ ] (×1) OpenClaw ngốn RAM đáng kể → dự tính host máy riêng, không chạy chung máy dev

@@ -185,6 +185,62 @@ export async function fetchLogs(
   };
 }
 
+export interface CountInput {
+  projectId: string;
+  service: string | undefined;
+  /** Already-built clause from `verify/recurrence.signatureFilter`. */
+  signatureClause: string;
+  fromIso: string;
+  toIso: string;
+  /** Read stops here; the caller is told the count is a floor. */
+  cap: number;
+  timeoutMs: number;
+}
+
+export interface CountResult {
+  count: number;
+  /** True when the read hit `cap`, so the real number is at least `count`. */
+  truncated: boolean;
+  filter: string;
+}
+
+/**
+ * How many times one error signature appears in a window.
+ *
+ * `value(insertId)` rather than `json`: the verify sweep wants a number, and every
+ * entry parsed is JSON this caller throws away. On a service like `proxygen2`,
+ * where a single window held 441 matches, that is the difference between a few KB
+ * and several MB per read.
+ */
+export async function countMatching(
+  input: CountInput,
+  runner: Runner = spawnRunner
+): Promise<GcloudResult<CountResult>> {
+  const svc = serviceClause(input.service);
+  const filter =
+    `${svc ? `${svc} AND ` : ''}timestamp>="${input.fromIso}" AND timestamp<="${input.toIso}" ` +
+    `AND ${input.signatureClause}`;
+  const res = await runner(
+    [
+      'gcloud',
+      'logging',
+      'read',
+      filter,
+      `--project=${input.projectId}`,
+      `--limit=${input.cap}`,
+      '--format=value(insertId)',
+      '--order=desc'
+    ],
+    input.timeoutMs
+  );
+  // Unlike `fetchLogs`, a failed read here is never softened to zero: a zero count
+  // is the whole basis for calling a fix verified, and an auth error that reads as
+  // "no more errors" would close the incident on the strength of a broken command.
+  if (res.code !== 0) return err(res);
+  const count = res.stdout.split('\n').filter(line => line.trim().length > 0).length;
+  return {ok: true, value: {count, truncated: count >= input.cap, filter}};
+}
+
 /** One-line-per-query summary for the reply and the job log. */
 export function summarize(bundle: LogBundle): string {
   return bundle.queries

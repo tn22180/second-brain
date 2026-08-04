@@ -118,13 +118,21 @@ function fakeSlack(): SlackApi {
   };
 }
 
-function fakeClaude(over: {analysis?: unknown; fixReply?: string} = {}) {
+function fakeClaude(over: {analysis?: unknown; fixReply?: string; securityReply?: string} = {}) {
   return async (inv: ClaudeInvocation): Promise<ClaudeResult> => {
     claudeCalls.push({model: inv.model, prompt: inv.prompt});
     const isFix = inv.prompt.startsWith('# Fix this');
+    const isSecurity = inv.prompt.startsWith('# Security review');
+    // The security gate fails closed, so a stub that does not answer it blocks every
+    // MR in this file. Default to a clean review; tests that want it to bite pass one.
+    const text = isSecurity
+      ? (over.securityReply ?? '{"findings": []}')
+      : isFix
+        ? (over.fixReply ?? FIX_REPLY)
+        : JSON.stringify(over.analysis ?? ANALYSIS);
     return {
       ok: true,
-      text: isFix ? (over.fixReply ?? FIX_REPLY) : JSON.stringify(over.analysis ?? ANALYSIS),
+      text,
       costUsd: 0.1,
       numTurns: 4,
       sessionId: 's',
@@ -251,7 +259,8 @@ describe('happy path', () => {
     expect(res.status).toBe('mr_open');
     expect(res.mrUrl).toBe('https://gitlab.com/avada/blogs/-/merge_requests/1487');
     expect(res.replied).toBe(true);
-    expect(res.costUsd).toBeCloseTo(0.2);
+    // ANALYZE + FIX + the security review, at 0.1 each.
+    expect(res.costUsd).toBeCloseTo(0.3);
 
     expect(posted).toHaveLength(1);
     expect(posted[0]).toContain('merge_requests/1487');
@@ -271,14 +280,17 @@ describe('happy path', () => {
     expect(readFileSync(join(ROOT, 'brain', 'index.md'), 'utf8')).toContain(res.fingerprint!);
   });
 
-  test('the two stages use different models, and only ANALYZE sees the logs', async () => {
+  test('each stage uses its own model, and only ANALYZE sees the logs', async () => {
     await runPipeline(deps(), alertMessage());
-    expect(claudeCalls).toHaveLength(2);
+    expect(claudeCalls).toHaveLength(3);
     expect(claudeCalls[0]!.model).toBe(cfg.models.analyze);
     expect(claudeCalls[1]!.model).toBe(cfg.models.fix);
+    expect(claudeCalls[2]!.model).toBe(cfg.models.security);
     expect(claudeCalls[0]!.prompt).toContain('Logs already pulled for you');
     expect(claudeCalls[1]!.prompt).not.toContain('Logs already pulled for you');
     expect(claudeCalls[1]!.prompt).toContain('already confirmed');
+    // The reviewer is shown the diff, not the log evidence — it judges the change.
+    expect(claudeCalls[2]!.prompt).toContain('# Security review');
   });
 
   test('the baseline is measured before the fix and cached for the next job', async () => {
@@ -364,6 +376,30 @@ describe('paths that must not open an MR', () => {
     expect(commands.some(c => c.includes('worktree remove'))).toBe(true);
   });
 
+  test('a security finding blocks the MR and preserves the work', async () => {
+    const res = await runPipeline(
+      deps({
+        claude: fakeClaude({
+          securityReply: '{"findings":[{"rule":"idor","file":"packages/functions/src/x.js","line":1,"why":"any shop can read another shop article"}]}'
+        })
+      }),
+      alertMessage()
+    );
+    expect(res.status).toBe('inconclusive');
+    expect(res.detail).toContain('security review');
+    expect(posted[0]).toContain('any shop can read another shop article');
+    expect(ranArgs.some(a => a.join(' ').includes('merge_request.create'))).toBe(false);
+    // Same treatment as the smoke gate: the diff is committed to its branch, not lost.
+    expect(ranArgs.some(a => a.join(' ').includes('commit -m wip(prod-autofix)'))).toBe(true);
+  });
+
+  test('a security review that could not run blocks — it fails closed', async () => {
+    const res = await runPipeline(deps({claude: fakeClaude({securityReply: 'looks fine to me'})}), alertMessage());
+    expect(res.status).toBe('inconclusive');
+    expect(res.detail).toContain('review_unavailable');
+    expect(ranArgs.some(a => a.join(' ').includes('merge_request.create'))).toBe(false);
+  });
+
   test('a reproduce test that passes without the fix blocks the MR', async () => {
     const res = await runPipeline(deps({runner: script({reproFails: true})}), alertMessage());
     expect(res.status).toBe('inconclusive');
@@ -445,7 +481,7 @@ describe('duplicate gate', () => {
     const res = await runPipeline(deps(), alertMessage());
     expect(res.status).toBe('mr_open');
     expect(res.mrUrl).not.toBe(MR);
-    expect(claudeCalls).toHaveLength(2);
+    expect(claudeCalls).toHaveLength(3);
   });
 
   /** A merged fix that did not stop the error must be allowed a second look. */
@@ -454,7 +490,7 @@ describe('duplicate gate', () => {
     store.patchAlert('prior', {status: 'inconclusive'});
     const res = await runPipeline(deps(), alertMessage({message: 'a totally different symptom string'}));
     expect(res.mrUrl).not.toBe(MR);
-    expect(claudeCalls).toHaveLength(2);
+    expect(claudeCalls).toHaveLength(3);
   });
 });
 

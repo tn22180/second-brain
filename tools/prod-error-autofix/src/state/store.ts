@@ -25,6 +25,14 @@ export interface AlertRow extends AlertRecord {
   branch: string | undefined;
   mergedAtMs: number | undefined;
   note: string | undefined;
+  /**
+   * First line of the alert message, verbatim. `fingerprint` is a hash and cannot be
+   * inverted, so without this the verify sweep has no way to build a log filter for
+   * the error it is supposed to be counting.
+   */
+  signature: string | undefined;
+  verifiedAtMs: number | undefined;
+  verdict: string | undefined;
 }
 
 interface RawAlert {
@@ -46,6 +54,9 @@ interface RawAlert {
   last_reply_ms: number | null;
   last_run_ms: number | null;
   note: string | null;
+  signature: string | null;
+  verified_at_ms: number | null;
+  verdict: string | null;
 }
 
 const opt = <T>(v: T | null): T | undefined => (v === null ? undefined : v);
@@ -69,7 +80,10 @@ function toRow(r: RawAlert): AlertRow {
     mergedAtMs: opt(r.merged_at_ms),
     lastReplyMs: opt(r.last_reply_ms),
     lastRunMs: opt(r.last_run_ms),
-    note: opt(r.note)
+    note: opt(r.note),
+    signature: opt(r.signature),
+    verifiedAtMs: opt(r.verified_at_ms),
+    verdict: opt(r.verdict)
   };
 }
 
@@ -81,6 +95,8 @@ export interface SeenAlertInput {
   kind: ErrorKind;
   alertTsMs: number;
   threadTs: string | undefined;
+  /** First line of the raw message; what `verify` counts on. */
+  signature?: string | undefined;
 }
 
 export interface AlertPatch {
@@ -91,6 +107,9 @@ export interface AlertPatch {
   mrUrl?: string;
   mergedAtMs?: number;
   note?: string;
+  signature?: string;
+  verifiedAtMs?: number;
+  verdict?: string;
 }
 
 export class Store {
@@ -124,8 +143,18 @@ export class Store {
         merged_at_ms     INTEGER,
         last_reply_ms    INTEGER,
         last_run_ms      INTEGER,
-        note             TEXT
+        note             TEXT,
+        signature        TEXT,
+        verified_at_ms   INTEGER,
+        verdict          TEXT
       )`);
+    // The live DB predates the verify sweep and holds 116 rows worth keeping, so the
+    // three columns are added in place rather than by recreating the table.
+    this.addColumns('alerts', {
+      signature: 'TEXT',
+      verified_at_ms: 'INTEGER',
+      verdict: 'TEXT'
+    });
     this.db.run('CREATE INDEX IF NOT EXISTS alerts_status ON alerts(status)');
     this.db.run('CREATE INDEX IF NOT EXISTS alerts_last_seen ON alerts(last_seen_ms DESC)');
     this.db.run(`
@@ -156,6 +185,16 @@ export class Store {
       )`);
   }
 
+  /** `ADD COLUMN` is the only in-place schema change sqlite allows, and it is not idempotent. */
+  private addColumns(table: string, columns: Record<string, string>): void {
+    const existing = new Set(
+      (this.db.query(`PRAGMA table_info(${table})`).all() as {name: string}[]).map(c => c.name)
+    );
+    for (const [name, type] of Object.entries(columns)) {
+      if (!existing.has(name)) this.db.run(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+    }
+  }
+
   close(): void {
     this.db.close();
   }
@@ -181,8 +220,8 @@ export class Store {
         .query(
           `INSERT INTO alerts
              (fingerprint, app_name, repo, service, kind, status,
-              first_seen_ms, last_seen_ms, recurrence_count, first_thread_ts, attempts)
-           VALUES (?, ?, ?, ?, ?, 'new', ?, ?, 1, ?, 0)`
+              first_seen_ms, last_seen_ms, recurrence_count, first_thread_ts, attempts, signature)
+           VALUES (?, ?, ?, ?, ?, 'new', ?, ?, 1, ?, 0, ?)`
         )
         .run(
           input.fingerprint,
@@ -192,17 +231,22 @@ export class Store {
           input.kind,
           input.alertTsMs,
           input.alertTsMs,
-          input.threadTs ?? null
+          input.threadTs ?? null,
+          input.signature ?? null
         );
     } else {
+      // COALESCE, not overwrite: the fingerprint is derived from the normalized
+      // message, so every occurrence carries the same signature modulo ids — keeping
+      // the first one means the filter does not drift between sweeps.
       this.db
         .query(
           `UPDATE alerts
               SET last_seen_ms = ?, recurrence_count = recurrence_count + 1,
-                  first_thread_ts = COALESCE(first_thread_ts, ?)
+                  first_thread_ts = COALESCE(first_thread_ts, ?),
+                  signature = COALESCE(signature, ?)
             WHERE fingerprint = ?`
         )
-        .run(input.alertTsMs, input.threadTs ?? null, input.fingerprint);
+        .run(input.alertTsMs, input.threadTs ?? null, input.signature ?? null, input.fingerprint);
     }
     return {previous, current: this.getAlert(input.fingerprint)!};
   }
@@ -215,7 +259,10 @@ export class Store {
       fixSha: 'fix_sha',
       mrUrl: 'mr_url',
       mergedAtMs: 'merged_at_ms',
-      note: 'note'
+      note: 'note',
+      signature: 'signature',
+      verifiedAtMs: 'verified_at_ms',
+      verdict: 'verdict'
     };
     const sets: string[] = [];
     const values: (string | number)[] = [];
@@ -290,6 +337,27 @@ export class Store {
 
   alertsByStatus(status: AlertStatus): AlertRow[] {
     const rows = this.db.query('SELECT * FROM alerts WHERE status = ?').all(status) as RawAlert[];
+    return rows.map(toRow);
+  }
+
+  /**
+   * Rows the verify sweep has something to say about: a fix was pushed and the
+   * outcome is still open.
+   *
+   * `fix_verified` is deliberately excluded — it is terminal, and re-reading logs for
+   * a closed incident on every sweep would spend gcloud quota to re-answer a settled
+   * question. A regression after that point arrives as a new alert, which
+   * `stateMachine.decide` routes back through the merge/deploy ordering check.
+   */
+  alertsPendingVerify(): AlertRow[] {
+    const rows = this.db
+      .query(
+        `SELECT * FROM alerts
+          WHERE status IN ('mr_open', 'awaiting_deploy', 'fix_failed')
+            AND fix_sha IS NOT NULL
+          ORDER BY last_seen_ms DESC`
+      )
+      .all() as RawAlert[];
     return rows.map(toRow);
   }
 

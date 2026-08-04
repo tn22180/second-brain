@@ -7,7 +7,41 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
-- `nb3ce` · 2026-08-03 · SEO · apigen2 · no verified cause · — · inconclusive
+- `1mv41mw` · 2026-08-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
+- `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
+- `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
+- `19yp12q` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) was OOM-killed at 2026-08-04T10:33:21.448Z (2060 MiB use · — · infra
+- `1ts5gj8` · 2026-08-04 · SEO · handleoptimizeimagegen2 · Duplicate of fingerprint 17q2y13 (same 10:01-10:07Z burst on handleoptimizeimagegen2, already recorded as infr · — · infra
+- `17q2y13` · 2026-08-04 · SEO · handleoptimizeimagegen2 · Five of 14 cold-start containers of handleOptimizeImageGen2 never reached listen() on :8080 during a 10:01–10: · — · infra
+- `1z02bjy` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled the app at 2026-08-04T06:10:23.755Z, revoking  · https://gitlab.com/avada/blogs/-/merge_requests/845 · mr_open
+- `8bd7iu` · 2026-08-04 · BLOG · apisa · Duplicate of fingerprint 1izzel4 (MR https://gitlab.com/avada/blogs/-/merge_requests/843 open, unmerged): the  · https://gitlab.com/avada/blogs/-/merge_requests/844 · mr_open
+- `mmdzug` · 2026-08-04 · BLOG · apisa · Duplicate of fingerprint ksxs3b (MR https://gitlab.com/avada/blogs/-/merge_requests/842 open, unmerged): the s · — · inconclusive
+- `ybkdm9` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled at 2026-08-04T06:10:23.755Z, which blanked its · — · inconclusive
+- `1izzel4` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled at 2026-08-04T06:10:24Z, which blanked its acc · https://gitlab.com/avada/blogs/-/merge_requests/843 · mr_open
+- `ksxs3b` · 2026-08-04 · BLOG · apisa · The same uninstalled shop ZeyGA7UaqrZBTQ1cgDW2 (accessToken blanked at 2026-08-04T06:10:24Z) drove a stale api · https://gitlab.com/avada/blogs/-/merge_requests/842 · mr_open
+- `12v7fbr` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled at 2026-08-04T06:10:23.755Z, which blanked its · https://gitlab.com/avada/blogs/-/merge_requests/841 · mr_open
+- `ve6kl7` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled at 2026-08-04T06:10:23Z, blanking its accessTo · https://gitlab.com/avada/blogs/-/merge_requests/840 · mr_open
+- `1pckik6` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled at 2026-08-04T06:10:24.385Z and its accessToke · https://gitlab.com/avada/blogs/-/merge_requests/839 · mr_open
+- `16sagxr` · 2026-08-04 · BLOG · apisa · Shop ZeyGA7UaqrZBTQ1cgDW2 (5k0par-xd.myshopify.com) uninstalled the app at 2026-08-04T06:10:23Z, which blanked · https://gitlab.com/avada/blogs/-/merge_requests/838 · mr_open
+- `re1fqz` · 2026-08-04 · SEO · apisagen2 · getAllTheme issues its Themes query through a bare `shopify.graphql()` with no shopifyRetryGraphQL wrapper, so · — · inconclusive
+- `q3fla3` · 2026-08-04 · BLOG · proxy · A ~133-second Shopify Admin GraphQL brownout (08:51:19–08:53:32Z) returned HTTP 500 to getTagsForStorefront's  · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
+- `ohuo7a` · 2026-08-04 · BLOG · proxy · During a 71-second Shopify Admin GraphQL brownout (08:51:01-08:52:10Z), getArticlesByTagWithPagination issued  · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
+- `o878fj` · 2026-08-04 · BLOG · api · One GET /api/articles?limit=100 for littlethingshewear.com fanned out 40 simultaneous storefront HTML GETs fro · https://gitlab.com/avada/blogs/-/merge_requests/837 · mr_open
+- `b59yxp` · 2026-08-04 · SEO · proxygen2 · Duplicate of fingerprint pgb7sh (MR https://gitlab.com/avada/seo/-/merge_requests/2117 open, unmerged): valida · https://gitlab.com/avada/seo/-/merge_requests/2117 · mr_open
+- `mmxvm4` · 2026-08-04 · BLOG · api · One articleController.list call for shop fabzonefabindia.com fanned out 5 concurrent node-fetch GETs to that s · https://gitlab.com/avada/blogs/-/merge_requests/836 · mr_open
+- `pgb7sh` · 2026-08-04 · SEO · proxygen2 · validateAccessToken calls veryShopifyDomain, which does a node-fetch v2 GET of https://<shop>/robots.txt with  · https://gitlab.com/avada/seo/-/merge_requests/2117 · mr_open
+- `1w6r1x2` · 2026-08-04 · BLOG · api · getKeyWordsSuggestion splits the merchant's free-text keyword on spaces and passes every resulting word as a K · https://gitlab.com/avada/blogs/-/merge_requests/835 · mr_open
+- `onfujl` · 2026-08-04 · BLOG · apisa · The standalone editor was mounted at /articles/edit/dev_zone, so GET /apiSa/article/dev_zone reached articleCo · https://gitlab.com/avada/blogs/-/merge_requests/833 · mr_open
+- `9t0caz` · 2026-08-04 · BLOG · api · Duplicate of fingerprint 14psg9p (MR https://gitlab.com/avada/blogs/-/merge_requests/832 open, unmerged): getB · https://gitlab.com/avada/blogs/-/merge_requests/832 · mr_open
+- `14psg9p` · 2026-08-04 · BLOG · api · getBlogsGraphQL double-quotes the search filter: it builds `title:"${searchQuery}"` and then interpolates that · https://gitlab.com/avada/blogs/-/merge_requests/832 · mr_open
+- `1yp9x9h` · 2026-08-04 · SEO · handledowngradespeedupgen2 · One single downgradeSpeedUp message OOM-killed its own dedicated 1GiB instance after 183.33s because subscribe · — · infra
+- `1r6hbdn` · 2026-08-03 · BLOG · api · During an OpenRouter rate-limit window on Google's Gemini SKUs, one translation chunk exhausted getCompletion' · https://gitlab.com/avada/blogs/-/merge_requests/829 · mr_open
+- `qftd5e` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): Shopi · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
+- `ha4bhr` · 2026-08-03 · BLOG · proxy · Shopify's Admin GraphQL answered ezarc-tools.myshopify.com with an in-band GraphQL error body ("Internal error · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
+- `vvgnr` · 2026-08-03 · BLOG · apiv2 · OpenRouter answered HTTP 200 for the callModel stream and then emitted a 429 'google/gemini-2.5-flash-lite is  · — · inconclusive
+- `pmbm66` · 2026-08-03 · BLOG · apiv2 · OpenRouter returned its 429 'google/gemini-2.5-flash-lite is temporarily rate-limited upstream' as an in-band  · https://gitlab.com/avada/blogs/-/merge_requests/825 · mr_open
+- `3mppft` · 2026-08-03 · BLOG · api · no verified cause · — · inconclusive
+- `nb3ce` · 2026-08-04 · SEO · apigen2 · OpenRouter aborted generation (finishReason=error, zero prompt/completion tokens) for google/gemini-2.5-flash- · — · inconclusive
 - `1ag0h4n` · 2026-08-03 · SEO · apigen2 · Duplicate of fingerprint h9cev0 (MR https://gitlab.com/avada/seo/-/merge_requests/2095 open, unmerged): the br · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
 - `ioi4d9` · 2026-08-03 · SEO · syncelasticsearchchunkgen2 · syncElasticsearchChunkGen2 is declared memory: '1GiB' with no `concurrency` override, so Cloud Run runs it at  · — · infra
 - `5nsp1i` · 2026-08-03 · BLOG · apiv2 · createFeaturedImageNode's single-shot `chatModel.invoke()` runs against a ChatOpenAI built with `streaming: tr · https://gitlab.com/avada/blogs/-/merge_requests/824 · mr_open
@@ -46,12 +80,12 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `997lb2` · 2026-07-31 · BLOG · api · genIdeas asks OpenRouter for an unconstrained free-text completion (getAIResponse → getCompletion with format  · — · deferred
 - `4cha8x` · 2026-07-31 · SEO · proxygen2 · proxyGen2 is declared with concurrency: 2 and no minInstances, so at its steady-state 4–8 warm instances it ha · — · infra
 - `oivd0n` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
-- `1ik3o0v` · 2026-07-31 · BLOG · subscribesummarynewpublishedarticle · no verified cause · — · inconclusive
+- `1ik3o0v` · 2026-08-04 · BLOG · subscribesummarynewpublishedarticle · generateAndSaveLocaleSummary references an undeclared variable `savePromises`, so every call throws ReferenceE · https://gitlab.com/avada/blogs/-/merge_requests/834 · mr_open
 - `y82dik` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
 - `1n4avro` · 2026-07-31 · SEO · authgen2 · no verified cause · — · inconclusive
 - `15lpfvb` · 2026-07-31 · SEO · apigen2 · OpenRouter aborted generation mid-output (finish_reason=error) for google/gemini-2.5-flash-lite on the meta_ta · https://gitlab.com/avada/seo/-/merge_requests/2093 · mr_open
 - `wyd91p` · 2026-08-03 · BLOG · apiv2 · OpenRouter answers HTTP 200 and then emits a 429 'temporarily rate-limited upstream' error frame inside the al · https://gitlab.com/avada/blogs/-/merge_requests/822 · mr_open
-- `10ydl1h` · 2026-07-31 · BLOG · api · OpenRouter rate-limited the whole google/gemini-2.5 family upstream for ~23 minutes and returned it in-band as · — · deferred
+- `10ydl1h` · 2026-08-03 · BLOG · api · Duplicate of fingerprint pboq3f (MR https://gitlab.com/avada/blogs/-/merge_requests/826 open, unmerged — fix c · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `9m7zmo` · 2026-07-31 · BLOG · proxy · Article gid://shopify/Article/560458924077 does not exist in Shopify for glacierfrostco.myshopify.com; getShop · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `hqfte0` · 2026-07-31 · BLOG · proxy · Duplicate of fingerprints 9m7zmo / 14ydm3m / phe6lm (MR 798 open, unmerged): article gid://shopify/Article/560 · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `1zjaa5` · 2026-07-31 · BLOG · proxy · Article gid://shopify/Article/560458924077 no longer exists in Shopify for glacierfrostco.myshopify.com, so ge · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
@@ -62,7 +96,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `rq3qf8` · 2026-07-31 · BLOG · api · Shopify Admin GraphQL answered one transient HTTP 503 to shop FqpPuSM3XKz0LLkZXe24's shopLocales query, and sh · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
 - `1f3smxv` · 2026-07-31 · BLOG · proxy · Shopify's Admin GraphQL API returned a one-off HTTP 503 for two healthy shops, and the storefront tag path cal · — · deferred
 - `100ms51` · 2026-07-31 · SEO · apigen2 · GET /api/resource-report returns HTTP 500 because getResourceReport's catch block references `shopID` and `dat · https://gitlab.com/avada/seo/-/merge_requests/2092 · mr_open
-- `pboq3f` · 2026-07-31 · BLOG · api · OpenRouter's Google Gemini upstream was rate-limited for at least 88 minutes (13:04:01–14:32:09Z), and getComp · — · deferred
+- `pboq3f` · 2026-08-03 · BLOG · api · During a 13.5-hour intermittent OpenRouter rate limit on Google's Gemini SKUs, getCompletion's last-attempt fa · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `ri78d8` · 2026-07-31 · SEO · apisagen2 · no verified cause · — · inconclusive
 - `epfkly` · 2026-08-01 · BLOG · reviewupdatesschedule · Every run of reviewUpdatesSchedule since Chrome was restored on the container (2026-07-31) dies in getPageRevi · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
 - `n7z34s` · 2026-08-02 · BLOG · reviewupdatesschedule · Duplicate of fingerprints pf3lkx / epfkly (MR https://gitlab.com/avada/blogs/-/merge_requests/814 open, unmerg · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
@@ -87,16 +121,16 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `se28ls` · 2026-07-31 · BLOG · api · Duplicate of fingerprint 1hjewuf: the OpenRouter completion behind /api/gen-ai-suggested/:type comes back as a · https://gitlab.com/avada/blogs/-/merge_requests/804 · mr_open
 - `ds0z0c` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
 - `4khzsv` · 2026-07-31 · BLOG · api · getRedirectTracer races trace-redirect against delay(3000), and delay resolves undefined — so every /api/recen · https://gitlab.com/avada/blogs/-/merge_requests/805 · mr_open
-- `1hjewuf` · 2026-07-31 · BLOG · api · OpenRouter's provider for google/gemini-2.5-flash-lite aborts generation mid-output with finish_reason='error' · — · inconclusive
+- `1hjewuf` · 2026-08-03 · BLOG · api · Duplicate of fingerprint pboq3f (MR https://gitlab.com/avada/blogs/-/merge_requests/826 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `1j7e5xr` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
 - `15ca22n` · 2026-07-31 · BLOG · api · The alert is not a user-facing failure: seoProxyApi swallows every upstream error and returns undefined, but l · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
 - `3349gs` · 2026-07-31 · BLOG · api · shop.recentOpenedArticles keeps gids of articles that no longer resolve in Shopify, and getShopifyArticleById  · https://gitlab.com/avada/blogs/-/merge_requests/802 · mr_open
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
 - `ct2hgz` · 2026-08-03 · IMG-OPT · apiSa · Shop f49eef-3b.myshopify.com uninstalled the app at 08:08:31Z, which revoked its Shopify access token, but uni · — · inconclusive
-- `a4bayk` · 2026-08-03 · IMG-OPT · createPreviewImages · uploadToStorage passes sharpCompressImage's optional `base64` straight into uploadToCloudStorage without check · — · inconclusive
+- `a4bayk` · 2026-08-04 · IMG-OPT · createPreviewImages · uploadToStorage destructures the optional `base64` off sharpCompressImage and passes it to uploadToCloudStorag · — · inconclusive
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
-- `1ib8ldr` · 2026-07-31 · BLOG · proxy · Shopify's Admin GraphQL answered a single transient HTTP 503 to two otherwise-healthy shops, and the storefron · — · deferred
+- `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open
 - `12qs3xc` · 2026-07-31 · BLOG · proxy · Four shops that uninstalled the app still have their shop doc and stale accessToken in Firestore, so every cra · https://gitlab.com/avada/blogs/-/merge_requests/799 · mr_open
 - `1777i7x` · 2026-07-31 · BLOG · proxy · no verified cause · — · inconclusive
 - `1t43oph` · 2026-07-31 · AEO · aggregateAiReferralsScheduler · publishTopic constructs a brand-new @google-cloud/pubsub PubSub client (with its own gRPC channel and auth cli · — · infra
