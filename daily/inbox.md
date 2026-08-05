@@ -88,3 +88,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) SEO Agentic AI = 1 menu gộp (AI Agent Readiness + LLMs page), WebMCP page cũ đã fold vào, không còn card ở landing Performance
 - [ ] (×1) prod-error-autofix đã đóng gói để cài sang app khác, quy trình có security check trên diff
 - [ ] (×1) OpenClaw ngốn RAM đáng kể → dự tính host máy riêng, không chạy chung máy dev
+
+### memory candidates 2026-08-05
+- [ ] (×1) Nhánh feature ở seo có thể có nhiều người cùng làm UI — check ai đang động vào nhánh trước khi push UI work, không thì phải revert
+- [ ] (×1) `aggregateAiReferralsScheduler` (llm-ai-search-seo) cần memory cao hơn default — đã nâng 2026-08-05
+- [ ] (×1) Setup Claude Code + toàn bộ project trên máy remote qua SSH tràn memory — cần host RAM lớn, không dùng máy dev phụ

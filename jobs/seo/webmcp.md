@@ -51,9 +51,19 @@ Started: 2026-08-04
 | T19 | Bật/tắt từng tool trong "Tools this app registers" | inline | ✅ | 0/5 | clean | `be1043e` |
 | T20 | Rút description còn sót — nằm ở trang LLMs, không phải Readiness | inline | ✅ | 0/5 | clean | `be1043e` + `41bc89a` |
 | T21 | Sinh lại locale sau T19+T20 | inline | ✅ | 0/5 | clean | `41bc89a`, 3 chuỗi, 0 key mới |
-T22 show save bar to save action như mấy chỗ khác, không update luôn
-t23 hình như đang không save data vào metafile + setting đang k chia theo show từng phần ở Tools this app registers
-t24 WebMCP registered tools và WebMCP form coverage đang không update status, status hơi khó hiểu chỉ có pass và chưa apply thôi cho dễ hiểu
+| H1 | Hậu T21: gate `enabled` rơi mất khi dời `render` trong block | inline | ✅ | 0/5 | clean | `4c64e8f` |
+| H2 | Hậu T21: `webMcp.enabled` không bao giờ tới metafield | inline | ✅ | 0/5 | clean | `ac911d7`, TDD |
+| T22 | Save bar để save action như mấy chỗ khác (đang save ngay, không update) | inline | ↩️ | 0/5 | clean | `2081ca7` |
+| T23 | Không save data vào metafield + setting không tách theo từng tool | inline | ↩️ | 0/5 | clean | `ac911d7` + `2081ca7` |
+| T24 | 2 audit WebMCP không update status; rút còn pass / chưa apply | inline | ↩️ | 0/5 | clean | `2081ca7`, +5 test |
+| T25 | Sinh lại locale sau T22–T24 | inline | ↩️ | 0/5 | clean | `2081ca7`, 1 key/locale |
+| T26 | Card score làm lại UI theo trang Shop SEO checklist (`SeoScore/OverallScore.js`) | inline | ↩️ | 0/5 | clean | `ecf18e4` |
+| T27 | Sinh lại locale sau T26 | inline | ↩️ | 0/5 | clean | `ecf18e4`, 9 key/locale |
+| T28 | Không unmount component khi scan speed sai | inline | ↩️ | 0/5 | clean | `7d78211` |
+| T29 | Checklist đổi sang UI y như Shop SEO checklist | inline | ↩️ | 0/5 | clean | `7d78211` |
+| T30 | Sinh lại locale sau T29 | inline | ↩️ | 0/5 | clean | `7d78211`, +1/−1 key |
+| T31 | Bắn setting + toggle WebMCP ra 1 container mới trong Dev Zone | inline | ✅ | 0/5 | clean | `0ef7af1`, +4 test |
+
 Nguyên văn Tony báo, đã gộp vào T9 ở trên:
 
 > fix lỗi saveStorage error 6FFrhDPLyN9t8mLeRT8r Error: Update() requires either a single JavaScript object or an alternating list of field/value pairs that can be followed by an optional precondition. Value for argument "dataOrField" is not a valid Firestore value. Cannot use "undefined" as a Firestore value (found in field "`avada-speed-score.homePage.desktopAgenticAudits`.audits.`agent-accessibility-tree`.displayValue"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`. khi scan pagespeed
@@ -890,3 +900,168 @@ mọi shop — nhưng là hàm thuần đọc response, revert 1 commit là xong
 Commit `94bff8c`. Xoá card `ai-readiness` (`Performance.js:53-58`) + 2 key
 `Landing.aiReadiness.*`. `grep "agentic-ai" pages/Performance` → 0. Vào Readiness giờ chỉ qua menu
 Agentic AI, không còn 2 lối vào cho 1 trang.
+
+### T22–T24 — plan
+
+- Goal: toggle + checkbox chỉ đổi state local, save bar hiện, bấm Save mới gọi API và **gửi trọn
+  `{webMcp: {enabled, tools}}`**; 3 dòng WebMCP trong checklist đọc status từ setting của shop,
+  chỉ 2 trạng thái.
+- Files allowed: `pages/AiReadiness/AiReadiness.js`, `pages/AiReadiness/AiReadiness.json`,
+  `pages/AiReadiness/Components/WebMcp/{WebMcp.js,WebMcp.json}`, `helpers/agenticAudits.js`,
+  `helpers/__tests__/agenticAudits.test.js`, `locale/translations/*` (sinh lại).
+- Approach: theo đúng pattern `Social.js:137-139` — `SaveTopBarContext` +
+  `setHandleSave/setHandleDiscard/setSaveChanged`, so `input` với `initData` của `useFetchApi`.
+  Loại phương án giữ save-ngay rồi chỉ thêm optimistic update: không sửa được lỗi mất `tools` ở dưới.
+- Test command: `npx jest packages/assets/src/helpers/__tests__/agenticAudits.test.js` +
+  `npx eslint` trên các file sửa.
+- Risk: `/settings/speedUp` là đường prod thật. Gửi thiếu key trong `webMcp` là **mất dữ liệu**, xem
+  dưới.
+- Rollback: revert commit, thuần FE.
+
+**Lỗi thứ ba tìm được khi đọc code cho T23** — `saveSettings` kết thúc bằng
+`doc.ref.update(postData)` (`seoRepository.js:249`). Firestore `update()` với key top-level
+`webMcp` **thay cả map**, không merge. `handleToggleWebMcp` hiện gửi đúng `{webMcp: {enabled: val}}`
+→ **bật/tắt feature xoá sạch `webMcp.tools`**. Đây chính là "setting đang k chia theo từng phần" mày
+thấy. Save bar gửi trọn object là fix luôn cả cái này, không cần patch riêng.
+
+### T22–T25 — kết quả
+
+Commit `2081ca7`. Ba lỗi mày báo hoá ra cùng một hình dạng: state không có bản nháp.
+
+**T22 + T23.** Toggle header và checkbox từng tool đều POST ngay lúc đổi, và toggle chỉ gửi
+`{webMcp: {enabled}}`. `saveSettings` kết thúc bằng `doc.ref.update()` — Firestore **thay cả map**
+`webMcp` chứ không merge — nên **bật/tắt feature xoá sạch `tools`**. Đây là "setting k chia theo
+từng phần". Giờ cả hai chỉ sửa state local, save chung một lần qua `SaveTopBarContext`
+(`setHandleSave/setHandleDiscard/setSaveChanged`, đúng pattern `Social.js:137-139`), payload luôn
+đủ cặp `{enabled, tools}`. So sánh chỉ trên nhánh `webMcp`, không phải cả doc `/settings`, để
+save bar không bật vì field trang này không hiển thị.
+
+**T24.** 3 audit WebMCP luôn `notApplicable` (Chrome 150 giấu sau flag) nên badge không bao giờ đổi
+dù merchant làm gì. Thêm `getAgenticRowStatus(auditId, audit, webMcp)` ở `helpers/agenticAudits.js`:
+với 3 id đó, nếu Lighthouse vẫn `notApplicable` thì đọc từ setting của shop — bật = `pass`,
+tắt = `notApplied` ("Not turned on" / "Chưa bật"). Lighthouse đo được là **trả quyền lại ngay** cho
+Lighthouse. Chỉ đổi phần hiển thị: `countAgenticAudits` và vòng score vẫn thuần Lighthouse, setting
+không thể thổi điểm.
+
+Test: +5 case ở `agenticAudits.test.js`, gồm case "setting không đổi được điểm đếm". `npx jest
+packages/assets/src/helpers` → **26/26**. `npx vite build` pass. ESLint sạch 3 file.
+
+**T25.** `yarn update-label-claude-cli` + `reorder.js`: **1 key/locale**, 14 file, +28/−14. Không
+có key nào bị xoá.
+
+Security: 147 dòng thêm (105 ngoài locale), 0 secret, 0 `console.*`, 0 file cấm, 0 dep mới.
+
+### T26–T27 — kết quả
+
+Commit `ecf18e4`. Card score trái của Readiness giờ đúng hình `components/SeoScore/OverallScore.js`:
+`Avada-Sticky` một phần ba, vòng `CircularProcessBar`, dòng "Your AI readiness is <mức>" tô màu theo
+`getColorScore`, "Tasks to solve: n", rồi danh sách đếm theo trạng thái có icon.
+
+Hai class layout (`Avada-Home-SeoScore__Wrapper`, `Avada-SeoScore__Title`) nằm ở
+`styles/page/_home.scss:160` và `styles/components/_store_score.scss:105` — cả hai đều được
+`styles/app.scss` import toàn cục, nên **không** kéo theo stylesheet riêng của component đó. Đây là
+lý do dùng lại được mà không tạo phụ thuộc CSS chéo trang.
+
+Bỏ `notApplicable` và `informative` khỏi bảng đếm: merchant không làm gì được với chúng, xếp cạnh
+lỗi thật làm việc trông nhiều hơn thực tế. `tasksToSolve` = `fail` + `notApplied`.
+
+Không mượn key i18n của `SeoScore.*` — tự khai `AiReadiness.score.rating.*` + `AiReadiness.summary.*`
+để hai màn không dính nhau qua namespace. Locale: **9 key/locale**, 14 file, 0 key đổi, 0 key mất.
+
+`npx jest packages/assets/src/helpers` 26/26, `npx vite build` pass, ESLint sạch.
+
+**Ngoài scope, để nguyên chưa commit**: `extensions/optimize-product-images/shopify.extension.toml`
+bị đổi `api_version` `2026-07` → `2025-07` trong working tree. Không phải tao sửa — dev stack
+(Shopify CLI) ghi đè. Mày quyết giữ hay `git restore`.
+
+**Finding ngoài scope**: `hooks/useSpeedScore.js:28` có `console.log('handleRescan', params)` —
+vi phạm rule FE của repo, nhưng nó đến từ `20ea5488` trên `origin/master`, không phải nhánh này.
+Báo, không sửa.
+
+### T28–T30 — kết quả
+
+Commit `7d78211`.
+
+**T28.** `getSpeedScore` là listener Firestore **sống**. Rescan, hoặc scan hỏng ghi
+`defaultPageSpeedReport` ngược lại, làm mọi score về 0 giữa phiên. Trang đang gate thẳng vào giá trị
+đó (`hasScanned = desktopScore || mobileScore`) nên toàn bộ card bị **gỡ khỏi DOM** và thay bằng
+EmptyState "chưa từng scan" — đúng cái mày thấy. Giờ giữ lại report cuối cùng có score thật
+(`lastReport`), scan tốt luôn thắng nên không thể ghim dữ liệu cũ. Scan hỏng làm xấu **số**, không
+làm mất **màn hình**.
+
+**T29.** Checklist bỏ `LegacyCard` + `ResourceList`, chuyển sang đúng hình cột issue của Shop SEO
+checklist (`components/Issue/IssueList.js:141-155`): 1 `Card`, heading `Icon(AlertDiamondIcon)` +
+"(n tasks)", rồi các row cách nhau bằng `Divider`. Tiêu đề row tô màu theo severity **dùng lại đúng
+hex** của `config/analysis/analysisOption.js:132` (`#8E1F0B` / `#b98900` / `#007f5f` / `#0094d5`) để
+hai màn nói cùng một ngôn ngữ màu.
+
+Row **không** collapse — T15 đã yêu cầu hiện hết audit, nên không kéo `Collapsible` về. Bỏ
+`ProgressBar` và dòng "n/m audits passing": T26 đã chuyển số đếm sang card score, giữ lại là đếm hai
+lần. Key `AiReadiness.score.passing` xoá luôn thay vì để mồ côi.
+
+Dọn import chết theo: `ResourceItem`, `ResourceList`, `ProgressBar`, `TextContainer`,
+`countAgenticAudits`.
+
+Đo: ESLint sạch, `npx vite build` pass, `npx jest packages/assets/src/helpers` 26/26. Locale +1/−1
+key × 14 file. Security clean.
+
+**Không commit, không phải của tao** (để nguyên trong working tree): `CLAUDE.md`,
+`scripts/scan-comments.py`, `scripts/scan-ai-slop.js`, `scripts/__tests__/`,
+`.claude/skills/clean-ai/`, `.agent/skills/clean-ai/` — skill `clean-ai` mày đang viết. Cộng
+`extensions/optimize-product-images/shopify.extension.toml` bị Shopify CLI hạ `api_version`.
+
+### Revert 2026-08-05 — `9dabadd`
+
+Tony: có người khác đang làm UI cho màn này trên cùng nhánh, nên nhường chỗ, xong mới sửa UX lại.
+
+Revert **3 commit của hôm nay**: `2081ca7` (T22–T25), `ecf18e4` (T26–T27), `7d78211` (T28–T30).
+Giữ nguyên mọi commit backend ngày 08-04 — `ac911d7` (metafield), `4c64e8f` (gate snippet),
+`be1043e` (extension + per-tool) đều còn.
+
+Làm bằng **`git revert`, không `reset --hard`**: `2081ca7` đã ở trên remote và nhánh đang có người
+khác dùng — force-push là đè việc của họ. Lịch sử giữ nguyên, thêm 1 commit revert.
+
+Sao lưu ở nhánh **`backup/agentic-ui-2026-08-05`** (trỏ `7d78211`). Lấy lại bằng
+`git cherry-pick 2081ca7 ecf18e4 7d78211` khi UI mới xong.
+
+Kiểm chứng: `git diff ac911d7 HEAD -- packages/assets` → **0 dòng**, tức cây assets về đúng trạng
+thái trước hôm nay. `npx jest` trên 6 suite liên quan → **41/41 pass** (test backend không bị revert
+động vào).
+
+**Regression cố ý nhận lại**: revert `2081ca7` mang lỗi mất dữ liệu quay lại — toggle header POST
+mỗi `{webMcp: {enabled}}`, `saveSettings` kết thúc `doc.ref.update()` thay cả map `webMcp`, nên
+bật/tắt feature **xoá sạch per-tool switch**. Khi UI mới landed thì cherry-pick cái này trước.
+
+### Pull 2026-08-05 — `d602bd0`
+
+Nguyễn Quang Linh rebuild trang WebMCP thành checklist phẳng. Restore lại đúng `getAgenticRowStatus`
+/ `AGENTIC_STATUS_NOT_APPLIED` / `WEB_MCP_AUDIT_IDS` của T24 kèm test (11/11 pass). Bỏ header toggle
++ section Registered tools ⇒ **trang không còn ghi setting nào**, và không còn chỗ nào trong
+`packages/assets/src` POST `webMcp`. T22/T23 chết theo. 12 locale đang là placeholder tiếng Anh,
+commit message ghi rõ phải chạy `yarn update-label` trước khi merge.
+
+#### ✅ T31: Container WebMCP trong Dev Zone
+- Agent: inline
+- Plan:
+  - Goal: Dev Zone có card "WebMCP" riêng — toggle `enabled` + 5 checkbox per-tool, đọc từ
+    `settings.webMcp`, ghi bằng POST `/settings/speedUp`.
+  - Files allowed: `packages/assets/src/pages/DevZone/containers/WebMcpContainer.js` (mới),
+    `packages/assets/src/pages/DevZone/DevZone.js` (lazy import + `CardCollapse`), 1 file test mới.
+  - Approach: đi theo `LighthouseMethodContainer` (context `DevZoneContext`, `handleSettingApi`).
+    Mỗi lần lưu gửi **cả map** `{enabled, tools}` — `saveSettings` kết thúc bằng `doc.ref.update()`,
+    map con bị **thay** chứ không merge, gửi thiếu là xoá per-tool switch. Loại bỏ phương án dùng
+    `/settings` mặc định: chỉ `/settings/speedUp` mới ghi metafield + viết snippet vào theme.
+  - Test command: `npx jest packages/assets/src/pages/DevZone` + `npx eslint` + `npx vite build`.
+  - Risk: POST này ghi thẳng snippet vào theme live của shop đang mở Dev Zone. Đúng hành vi cũ của
+    trang Readiness, nhưng Dev Zone là tay CS bấm — nên ghi rõ trên card.
+  - Rollback: revert commit; container additive, không sửa hành vi cũ.
+
+- Kết quả: `0ef7af1`. `containers/WebMcpContainer.js` mới + mount bằng `CardCollapse` id
+  `webmcp-collapsible` ngay dưới "Lighthouse Scan Method". Không đụng i18n — Dev Zone hardcode text
+  tiếng Anh như mọi container khác, nên **không phải sinh lại locale**.
+- Đo: `npx jest packages/assets/src/pages/DevZone` 4/4 pass, ESLint sạch, `npx vite build` pass.
+- Security: clean. Diff 3 file (+15 dòng `DevZone.js`, 2 file mới). Shop lấy từ session
+  (`getCurrentShop`), body chỉ mang boolean; `selectWebMcpTools` lọc theo tên tool nên key lạ trong
+  `tools` không chèn được tool mới. Không secret, không dep mới, không đụng file cấm.
+- Blast radius: bấm toggle trong Dev Zone **ghi snippet vào theme live của shop đang mở**. Đã ghi
+  cảnh báo ngay trên card.

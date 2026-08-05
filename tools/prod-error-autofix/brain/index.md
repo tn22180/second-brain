@@ -7,6 +7,14 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `ghv4ok` · 2026-08-04 · SEO · lighthouseauditrunnergen2 · Two of 62 lighthouseauditrunnerGen2 cold-start containers in the 15:30–16:30Z hour never bound :8080 and were  · — · infra
+- `yo3dfr` · 2026-08-04 · SEO · lighthouseauditrunnergen2 · no verified cause · — · inconclusive
+- `1d6kx48` · 2026-08-04 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `3xz8u3` · 2026-08-04 · SEO · apisagen2 · no verified cause · — · inconclusive
+- `klsiut` · 2026-08-04 · SEO · apisagen2 · GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request  · — · inconclusive
+- `93pjx6` · 2026-08-04 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · no verified cause · — · inconclusive
+- `wzu2y1` · 2026-08-04 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · no verified cause · — · inconclusive
+- `1h0gjn4` · 2026-08-04 · SEO · apigen2 · Shopify REST answered `metafield.list` for shop LW7GWp7zmfDtdJfQhXjH with HTTP 429 during the GET /api/analysi · — · inconclusive
 - `1mv41mw` · 2026-08-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
@@ -74,12 +82,12 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1svzmym` · 2026-08-01 · SEO · dailyjobspublishergen2 · Duplicate of fingerprint 1ihmdly (MR https://gitlab.com/avada/seo/-/merge_requests/2096 open, unmerged): clean · https://gitlab.com/avada/seo/-/merge_requests/2096 · mr_open
 - `1ihmdly` · 2026-08-01 · SEO · dailyjobspublishergen2 · cleanEmailNotify never filters: its predicate `validateEmailFormat(email.trim()) ? email.trim() : emailShop` r · https://gitlab.com/avada/seo/-/merge_requests/2096 · mr_open
 - `h9cev0` · 2026-07-31 · SEO · apigen2 · The browser sent a `__session` cookie that is not a valid Avada-encrypted session, and @avada/core's decryptTe · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
-- `5id62v` · 2026-08-03 · SEO · apigen2 · no verified cause · — · inconclusive
+- `5id62v` · 2026-08-04 · SEO · apigen2 · POST /api/audit-agent/fix-issue with issueType=FAQS_ASSESSMENT returned 500 because OpenRouter's google/gemini · — · inconclusive
 - `1jt9dai` · 2026-07-31 · SEO · lighthouseauditrunnergen2 · One audit request to lighthouseauditrunnerGen2 sat queued for its caller's full 120s budget and was never plac · — · infra
 - `yt88f3` · 2026-07-31 · BLOG · apiv2 · createChatModel builds every LangGraph ChatOpenAI with `streaming: true`, so createFeaturedImageNode's non-str · — · deferred
 - `997lb2` · 2026-07-31 · BLOG · api · genIdeas asks OpenRouter for an unconstrained free-text completion (getAIResponse → getCompletion with format  · — · deferred
 - `4cha8x` · 2026-07-31 · SEO · proxygen2 · proxyGen2 is declared with concurrency: 2 and no minInstances, so at its steady-state 4–8 warm instances it ha · — · infra
-- `oivd0n` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
+- `oivd0n` · 2026-08-04 · BLOG · api · A one-off HTTP 500 from the upstream Avada SEO proxy (https://seo.apps.avada.io/proxy/updateOvrList) hit seoPr · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
 - `1ik3o0v` · 2026-08-04 · BLOG · subscribesummarynewpublishedarticle · generateAndSaveLocaleSummary references an undeclared variable `savePromises`, so every call throws ReferenceE · https://gitlab.com/avada/blogs/-/merge_requests/834 · mr_open
 - `y82dik` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
 - `1n4avro` · 2026-07-31 · SEO · authgen2 · no verified cause · — · inconclusive
