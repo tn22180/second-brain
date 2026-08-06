@@ -93,3 +93,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Nhánh feature ở seo có thể có nhiều người cùng làm UI — check ai đang động vào nhánh trước khi push UI work, không thì phải revert
 - [ ] (×1) `aggregateAiReferralsScheduler` (llm-ai-search-seo) cần memory cao hơn default — đã nâng 2026-08-05
 - [ ] (×1) Setup Claude Code + toàn bộ project trên máy remote qua SSH tràn memory — cần host RAM lớn, không dùng máy dev phụ
+
+### memory candidates 2026-08-06
+- [ ] (×1) Shopify article metafield id không bền — resolve bằng namespace+key, đừng lưu id (bug `blogs` 2026-08-06, fix `244772f18`)
+- [ ] (×1) Tailscale fleet chạy trên tailnet tài khoản cá nhân (không phải tenant `avadagroup.com`) — dev tự tạo auth key được, ghi đè candidate 07-27 "auth key phải do admin tạo"
+- [ ] (×1) Box fleet chỉ nối được qua Tailscale IP `100.x`, SSH LAN `192.168.2.x` fail — dùng tailnet IP cho mọi thao tác box
+- [ ] (×1) `dispatchWork` (seo worker migration) route qua 3 gates rồi fallback Pub/Sub — không phải Pub/Sub-first
+- [ ] (×1) docs-gate đặt ở step 1 pipeline, fail = chặn toàn bộ deploy step sau

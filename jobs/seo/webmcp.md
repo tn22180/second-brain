@@ -63,7 +63,8 @@ Started: 2026-08-04
 | T29 | Checklist đổi sang UI y như Shop SEO checklist | inline | ↩️ | 0/5 | clean | `7d78211` |
 | T30 | Sinh lại locale sau T29 | inline | ↩️ | 0/5 | clean | `7d78211`, +1/−1 key |
 | T31 | Bắn setting + toggle WebMCP ra 1 container mới trong Dev Zone | inline | ✅ | 0/5 | clean | `0ef7af1`, +4 test |
-
+| H3 | Sinh lại locale sau `d602bd0` (hệ quả commit của Linh) | inline | ✅ | 0/5 | clean | `4704f2c`, 3 thêm/8 đổi/1 xoá × 9 locale |
+| T32 | Bỏ luồng BE + extension của register tools; 2 row WebMCP thành informational + link doc Google | inline | ✅ | 0/5 | clean | `09c35d8`, −1464/+172 |
 Nguyên văn Tony báo, đã gộp vào T9 ở trên:
 
 > fix lỗi saveStorage error 6FFrhDPLyN9t8mLeRT8r Error: Update() requires either a single JavaScript object or an alternating list of field/value pairs that can be followed by an optional precondition. Value for argument "dataOrField" is not a valid Firestore value. Cannot use "undefined" as a Firestore value (found in field "`avada-speed-score.homePage.desktopAgenticAudits`.audits.`agent-accessibility-tree`.displayValue"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`. khi scan pagespeed
@@ -1065,3 +1066,65 @@ commit message ghi rõ phải chạy `yarn update-label` trước khi merge.
   `tools` không chèn được tool mới. Không secret, không dep mới, không đụng file cấm.
 - Blast radius: bấm toggle trong Dev Zone **ghi snippet vào theme live của shop đang mở**. Đã ghi
   cảnh báo ngay trên card.
+
+#### ✅ H3: Sinh lại locale sau `d602bd0`
+- Agent: inline (hệ quả bắt buộc của commit Linh, không phải task mới)
+- `yarn update-label-claude` → `4704f2c`. 3 key thêm, 8 đổi, 1 xoá (`WebMcp.enable.note`) × 9 locale.
+  Cả block `WebMcp` trước giờ chưa từng được dịch nên không đè lên bản dịch tay nào.
+- **Lần chạy đầu mất trắng**: child Claude ghi xong, `git diff --stat` của nó có thay đổi, nhưng vài
+  giây sau cả 11 file về đúng byte HEAD (md5 khớp). Không tìm ra thủ phạm — không stash, không hook
+  revert, không commit mới. Chạy lại và `git add` ngay trong cùng một lệnh bash thì giữ được.
+  Rút ra: sau `update-label-*`, stage ngay, đừng để khoảng trống.
+- Còn hở: `it`, `iw`, `nb` không nằm trong `TARGET_LANGUAGES` (`updateLabel.js:17`) → block `WebMcp`
+  vẫn tiếng Anh. `WebMcp.toast.saved` ngoài diff nên cũng còn tiếng Anh ở cả 9 locale.
+  Repo không có `glossary.json` — skill giả định là có, thuật ngữ mỗi lần chạy lấy từ key hàng xóm.
+
+#### ✅ T32: Gỡ luồng ghi WebMCP, giữ row làm informational
+- Agent: inline
+- Nguyên văn Tony: *"bỏ các reggister tool đi vì shopify có sẵn rồi"*; chốt phạm vi qua câu hỏi:
+  *"chỉ bỏ phần backend + extension, còn status WebMCP tools registered + WebMCP form coverage để là
+  information giống hôm trước, thêm note vào với link tới doc của google"* + *"vẫn show đủ, chỉ là
+  bỏ luồng BE"*.
+- Plan:
+  - Goal: không còn dòng code nào ghi snippet WebMCP vào theme merchant; checklist vẫn đủ 6 row,
+    `webmcp-registered-tools` + `webmcp-form-coverage` hiển thị informational kèm note + link
+    https://developer.chrome.com/docs/ai/webmcp.
+  - Files allowed — BE: `services/webMcpService.js` (xoá), test của nó (xoá),
+    `controllers/seoController.js`, test `setSpeedUp`, `config/assets.js`, `config/default.js`,
+    `handlers/pubsub/{subcribeSpeedupBackground,subcribeDowngradeSpeedUp,subscribeOptimizeStore}.js`.
+    Extension: xoá `snippets/avada-seo-webmcp-tools.liquid`, bỏ dòng render trong
+    `blocks/avada-seo.liquid`. FE: xoá `DevZone/containers/WebMcpContainer.js` + test + mount (revert
+    T31), xoá `AiReadiness/Components/WebMcp/`, sửa `helpers/agenticAudits.js`,
+    `const/agenticChecklist.js`, `pages/AiReadiness/AiReadiness.js` + `.json`, các test liên quan.
+  - Approach: thêm kênh `FIX_CHANNEL_DOC` cho 3 audit WebMCP thay cho `autoFix` trỏ về toggle đã
+    chết. `getAgenticRowStatus` bỏ tham số `webMcp` — 2 audit Tony chỉ định trả `informative` khi
+    Lighthouse nói `notApplicable`; `webmcp-schema-validity` giữ nguyên verdict Lighthouse vì Tony
+    vẫn xếp nó vào 4 issue chính. `countAgenticAudits` **không đổi** — tỉ lệ vẫn khớp ring.
+  - Test command: `npx jest packages/assets/src/helpers packages/assets/src/const packages/functions/src/controllers packages/functions/src/services` + `npx eslint` + `npx vite build`.
+  - Risk: shop nào đã bật WebMCP thì snippet nằm lại trong theme vĩnh viễn vì xoá luôn `revertWebMcp`.
+    Đã kiểm: `git branch -r --contains be1043e` → chỉ `feat/agentic-browsing-score`, `origin/master`
+    không có file webmcp nào ⇒ chưa từng lên prod qua CI. **Chỉ còn rủi ro nếu mày đã deploy tay
+    functions từ nhánh này rồi bấm toggle trên một shop thật.**
+  - Rollback: revert commit; snippet + service lấy lại nguyên vẹn từ `be1043e`.
+
+- Kết quả: `09c35d8`, 34 file, +172/−1464. Xoá: `webMcpService.js` + test, snippet extension,
+  `WebMcpContainer` (revert T31), `Components/WebMcp/`, `ACTION_WEBMCP` ở 3 subscriber,
+  `WEBMCP_TOOLS_SNIPPET`, nhánh `webMcp` trong `setSpeedUp`.
+- Giữ đủ 6 audit trong `AGENTIC_AUDIT_IDS`: `countAgenticAudits` nuôi dòng "n/m audits" còn ring là
+  trung bình 6 audit của Lighthouse — bỏ id đi thì hai con số cãi nhau.
+- `getAgenticRowStatus` bỏ tham số `webMcp`, `AGENTIC_STATUS_NOT_APPLIED` chết theo (không còn
+  setting nào để đọc). Thêm kênh `FIX_CHANNEL_DOC` → https://developer.chrome.com/docs/ai/webmcp.
+- Đo: `npx jest packages/assets/src packages/functions/src` → 693 pass. 5 suite fail
+  (`shopify2026Client`, `onPageListQuery`, `historyOptimizeController.analysis`,
+  `resolveAuditLanguage`, `workListStore`) **có sẵn từ trước** — đã stash toàn bộ diff rồi chạy lại
+  đúng 6 path đó ở HEAD: y hệt 5 fail / 8 test. `classifyToken` flaky, lúc pass lúc fail.
+  ESLint sạch trên file đã sửa, `npx vite build` pass 42.24s.
+- Locale: `yarn update-label-claude` → 2 thêm / 1 đổi / 13 xoá × 9 locale (`WebMcp.*` bị prune,
+  `status.notApplied` chết). Nằm chung commit.
+- Security: clean. 34 file staged, không secret, không dep mới, chỉ thêm 1 host ngoài là doc Chrome
+  (đã khai trong plan). `package.json`, `.claude/hooks/auto-lint.sh` của mày để nguyên unstaged.
+- Rủi ro theme đã đóng: `git ls-tree origin/master | grep webmcp` → rỗng, snippet chưa từng lên
+  master ⇒ không shop nào được phục vụ qua CI, xoá `revertWebMcp` không để lại rác.
+- Còn hở: `it`, `iw`, `nb` vẫn ôm key `WebMcp.*` + `notApplied` đã chết vì không nằm trong
+  `TARGET_LANGUAGES`. Phần còn lại của `AiReadiness.*` (score, checklist, audits, fix, empty) vẫn là
+  tiếng Anh ở cả 9 locale — có từ trước, ngoài scope diff này.

@@ -180,7 +180,7 @@ Structural check trên `.gitlab-ci.yml`: 14/14 pass, cộng assert 0 step nào b
 1. **Token trong URL clone** — cả hai job nhét `$GIT_ACCESS_TOKEN` vào URL. Git lỗi có thể in URL kèm token vào CI log. Có sẵn từ trước, không phải do thay đổi này. Chuẩn hơn: `credential.helper` hoặc `http.extraHeader`.
 2. **URL repo lệch nhau** — brief ghi `gitlab.com/avada/artifacts/avada-seo-react-app-artifacts.git`, CI dùng `gitlab.com/avada/avada-seo-react-app-artifacts.git` (thiếu group `artifacts/`). Project nhiều khả năng đã được move vào subgroup và GitLab đang redirect. Deploy hiện vẫn chạy nên redirect đang hoạt động — nhưng **force-push qua redirect là chỗ đáng xác nhận lại** trước khi bật task 3/4.
 
-3. **🔴 npm auth token plaintext trong `.yarnrc.yml`** — file tracked trên `origin/master`:
+3. **🔴 npm auth token plaintext trong `.yarnrc.yml`** — *Tuan quyết định gác lại 2026-08-06, không xử trong đợt này.* Quét thêm: **một token dùng chung 6 repo** (`seo`, `joy`, `blogs`, `avada-core`, `avada-image-optimizer`, `llm-ai-search-seo`), `ai-product-copy` dùng token thứ hai; tất cả đều tracked. Fix khi làm: rotate cả hai, rồi chuyển sang `npmAuthToken: "${NPM_TOKEN}"` — biến `NPM_TOKEN` đã có sẵn trong CI (`.gitlab-ci.yml:20`). File tracked trên `origin/master`:
    ```
    npmScopes:
      avada:

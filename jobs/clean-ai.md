@@ -22,12 +22,27 @@ Spec: `seo/docs/superpowers/specs/2026-08-05-clean-ai-design.md`
 
 **Status: COMPLETE** — 2026-08-05. Tổng 3/20 round. Security verdict cuối: **clean**.
 
-### Findings ngoài scope (báo, không sửa)
+### Findings
 
-- **ESLint chết trong `seo`.** `eslint@6.8.0` + Node 22 + `async-function@1.0.0` hoisted (ESM-only)
-  → `SyntaxError: Cannot use import statement outside a module`. `yarn eslint-fix` fail;
-  hook `.claude/hooks/auto-lint.sh:33-34` nuốt stderr + `exit 0` nên auto-lint im lặng không chạy.
-  Không đụng trong job này — là lý do skill dùng babel AST thay vì eslint.
+- **ESLint chết trong `seo` — ĐÃ SỬA (2026-08-06, theo yêu cầu).** Chẩn đoán ban đầu của tao
+  ("`async-function` hoisted") **sai**. Root cause thật: eslint 6 nạp `v8-compile-cache@2.4.0`, nó
+  patch `Module._compile` để bọc mọi module vào CJS wrapper; Node ≥ 20.19 resolve `async-function`
+  qua `require(esm)` (điều kiện export `module-sync`) → `_compile` đã bị patch compile file ESM như
+  CJS → `SyntaxError`. Bằng chứng phân lập: `eslint --version` chạy tốt; thêm
+  `DISABLE_V8_COMPILE_CACHE=1` là hết.
+
+  Bug thứ hai lộ ra khi sửa: `packages/*/package.json` trỏ `./node_modules/.bin/eslint` — binary
+  không có ở đó, yarn workspaces hoist lên root → `yarn eslint-fix` báo
+  `sh: ./node_modules/.bin/eslint: No such file or directory`.
+
+  Sửa: cả hai `eslint-fix` script → `cross-env DISABLE_V8_COMPILE_CACHE=1 eslint --fix .`;
+  `auto-lint.sh` giờ in ra stderr khi exit status > 1 (vẫn `exit 0`, vẫn non-blocking).
+  CI không chạy eslint → chỉ hỏng local.
+
+  **Không làm `scan-ai-slop.js` thừa.** Đo trên cùng 1 file: eslint ra 70 `no-unused-vars`, và
+  **0** finding cho identifier chưa import lẫn function 73 dòng — `no-undef` tắt trong config
+  google, và length không phải rule của nó. `no-unused-vars` cũng không auto-fixable nên `--fix`
+  không bao giờ xoá import chết.
 - **`scan-comments.py` sai im lặng khi truyền file path.** `walk()` là `os.walk`
   (`scan-comments.py:60-65`) → file path ra rỗng, report vẫn "sạch". Task 2 sửa.
 
