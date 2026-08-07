@@ -100,3 +100,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Box fleet chỉ nối được qua Tailscale IP `100.x`, SSH LAN `192.168.2.x` fail — dùng tailnet IP cho mọi thao tác box
 - [ ] (×1) `dispatchWork` (seo worker migration) route qua 3 gates rồi fallback Pub/Sub — không phải Pub/Sub-first
 - [ ] (×1) docs-gate đặt ở step 1 pipeline, fail = chặn toàn bộ deploy step sau
+
+### memory candidates 2026-08-07
+- [ ] (×1) Prod worker fleet = 3 box, con cũ giữ central/leader + worker1, box1/box2 là follower — scale-out chứ không cutover
+- [ ] (×1) fleet-control dashboard chạy trên leader dưới systemd unit `seo-fleet-control`, port 3900, chỉ truy cập qua Tailscale IP
+- [ ] (×1) Slack Enterprise upgrade notification dùng `@channel` (không tag tên), kèm Email + shopifyDomain + Crisp link dạng anchor
+- [ ] (×1) Thêm worker prod bằng image-clone (Strategy A) rẻ hơn build từ đầu; Gen2 re-image tách sang phase riêng

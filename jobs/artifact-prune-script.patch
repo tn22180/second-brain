@@ -1,0 +1,267 @@
+From 62cbb39fe7a6400c3515605ddbd694f3a48da379 Mon Sep 17 00:00:00 2001
+From: Tony <tuannv@avada.email>
+Date: Fri, 7 Aug 2026 09:54:10 +0700
+Subject: [PATCH] Protect the newest deploy dates, and never unlink a directory
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Retention is counted in days, but nothing guarantees a deploy every day. Go quiet
+for longer than RETENTION_DAYS and the build merchants are running right now is
+itself past the cutoff, so the pipeline that replaces it deletes its chunks in the
+same run and anyone still on the old index.html loses every lazy route. Protecting
+the newest KEEP_RECENT_DEPLOY_DAYS stamp dates (default 2) keeps the previous
+deploy alive regardless of the gap; the CI job sets it explicitly.
+
+The archive is flat today, but a build that ever emits a subdirectory under
+assets/ would hit EISDIR in unlinkSync and fail the deploy. Skip non-files and
+report them instead.
+
+Tests: the date fixtures used `date -d`, which BSD date does not have, so the
+suite only ran on Linux. node is already a hard dependency here — use it. Added
+cases for the deploy-gap protection, KEEP_RECENT_DEPLOY_DAYS=1 turning it off, a
+directory under assets/, and the env validation.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+---
+ scripts/prune-stale-assets.js      |  37 ++++++++--
+ scripts/test-prune-stale-assets.sh | 110 +++++++++++++++++++++++------
+ 2 files changed, 121 insertions(+), 26 deletions(-)
+
+diff --git a/scripts/prune-stale-assets.js b/scripts/prune-stale-assets.js
+index f6a9ab6..10c19a4 100644
+--- a/scripts/prune-stale-assets.js
++++ b/scripts/prune-stale-assets.js
+@@ -19,8 +19,9 @@
+  *   node scripts/prune-stale-assets.js ../static/assets
+  *
+  * Env:
+- *   RETENTION_DAYS  how long a chunk survives past the last build that shipped it (default 14)
+- *   PRUNE_DRY_RUN   set to "1" to report what would be deleted and change nothing
++ *   RETENTION_DAYS          how long a chunk survives past the last build that shipped it (default 14)
++ *   KEEP_RECENT_DEPLOY_DAYS how many of the newest stamp dates are never pruned (default 2)
++ *   PRUNE_DRY_RUN           set to "1" to report what would be deleted and change nothing
+  */
+ 
+ const fs = require('fs');
+@@ -32,6 +33,7 @@ const MANIFEST = path.join(REPO, 'static/assets-manifest.json');
+ 
+ const buildAssetsDir = process.argv[2];
+ const RETENTION_DAYS = Number(process.env.RETENTION_DAYS || 14);
++const KEEP_RECENT_DEPLOY_DAYS = Number(process.env.KEEP_RECENT_DEPLOY_DAYS || 2);
+ const DRY_RUN = process.env.PRUNE_DRY_RUN === '1';
+ 
+ function fail(msg) {
+@@ -45,6 +47,9 @@ if (!fs.existsSync(ARCHIVE)) fail(`no ${ARCHIVE} — run from the artifacts repo
+ if (!Number.isFinite(RETENTION_DAYS) || RETENTION_DAYS < 1) {
+   fail(`RETENTION_DAYS must be a positive number, got ${process.env.RETENTION_DAYS}`);
+ }
++if (!Number.isFinite(KEEP_RECENT_DEPLOY_DAYS) || KEEP_RECENT_DEPLOY_DAYS < 1) {
++  fail(`KEEP_RECENT_DEPLOY_DAYS must be a positive number, got ${process.env.KEEP_RECENT_DEPLOY_DAYS}`);
++}
+ 
+ const today = new Date().toISOString().slice(0, 10);
+ const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400_000).toISOString().slice(0, 10);
+@@ -78,11 +83,29 @@ for (const name of archived) {
+   }
+ }
+ 
+-const stale = archived.filter(name => manifest.lastSeen[name] < cutoff);
++// Retention is measured in days, but nothing guarantees a deploy every day. Go quiet for
++// longer than RETENTION_DAYS and the build merchants are running right now is itself past
++// the cutoff — the pipeline that replaces it would delete its chunks in the same run, so
++// anyone still on the old index.html loses every lazy route. Protecting the newest few
++// stamp dates keeps the previous deploy alive no matter how large the gap.
++const protectedDates = new Set(
++  [...new Set(Object.values(manifest.lastSeen))].sort().reverse().slice(0, KEEP_RECENT_DEPLOY_DAYS)
++);
++
++const stale = archived.filter(
++  name => manifest.lastSeen[name] < cutoff && !protectedDates.has(manifest.lastSeen[name])
++);
+ 
+ let freed = 0;
++let skippedNonFiles = 0;
+ for (const name of stale) {
+   const p = path.join(ARCHIVE, name);
++  // The archive is flat today. If a build ever emits a subdirectory under assets/,
++  // unlinkSync would throw EISDIR and fail the deploy — leave directories alone.
++  if (!fs.statSync(p).isFile()) {
++    skippedNonFiles++;
++    continue;
++  }
+   freed += fs.statSync(p).size;
+   if (!DRY_RUN) {
+     fs.unlinkSync(p);
+@@ -101,9 +124,13 @@ for (const name of Object.keys(manifest.lastSeen)) {
+ 
+ if (!DRY_RUN) fs.writeFileSync(MANIFEST, JSON.stringify(manifest) + '\n');
+ 
++const pruned = stale.length - skippedNonFiles;
++
+ console.log(`retention:     ${RETENTION_DAYS} days (cutoff ${cutoff})`);
++console.log(`protected:     ${[...protectedDates].sort().reverse().join(', ')} (newest ${KEEP_RECENT_DEPLOY_DAYS} deploy dates)`);
+ console.log(`incoming build: ${incoming.length} files`);
+ if (grandfathered) console.log(`grandfathered: ${grandfathered} pre-manifest files`);
++if (skippedNonFiles) console.log(`skipped:       ${skippedNonFiles} non-file entries`);
+ console.log(`archive before: ${archived.length} files`);
+-console.log(`pruned:        ${stale.length} files, ${(freed / 1e9).toFixed(2)} GB${DRY_RUN ? ' (dry run, nothing changed)' : ''}`);
+-console.log(`archive after:  ${archived.length - (DRY_RUN ? 0 : stale.length)} files`);
++console.log(`pruned:        ${pruned} files, ${(freed / 1e9).toFixed(2)} GB${DRY_RUN ? ' (dry run, nothing changed)' : ''}`);
++console.log(`archive after:  ${archived.length - (DRY_RUN ? 0 : pruned)} files`);
+diff --git a/scripts/test-prune-stale-assets.sh b/scripts/test-prune-stale-assets.sh
+index 7fbbfcb..609cbde 100644
+--- a/scripts/test-prune-stale-assets.sh
++++ b/scripts/test-prune-stale-assets.sh
+@@ -1,59 +1,127 @@
+ #!/usr/bin/env bash
+-# Exercise prune-stale-assets.js against a synthetic archive.
++# Exercise prune-stale-assets.js against synthetic archives.
+ #   bash scripts/test-prune-stale-assets.sh
+ set -euo pipefail
+ 
+ SCRIPT="$(cd "$(dirname "$0")" && pwd)/prune-stale-assets.js"
+ T="$(mktemp -d)"
+ trap 'rm -rf "$T"' EXIT
++fail=0
++
++# node, not `date -d`: BSD date (macOS) has no -d, and node is already a hard dependency here.
++days_ago() {
++  node -e "console.log(new Date(Date.now() - $1 * 86400000).toISOString().slice(0, 10))"
++}
+ 
+-mkdir -p "$T/repo/scripts" "$T/repo/static/assets" "$T/build/assets"
+-cp "$SCRIPT" "$T/repo/scripts/"
++# Lays down repo/ + build/ under $T/$1 and echoes the repo path.
++new_case() {
++  local dir="$T/$1"
++  mkdir -p "$dir/repo/scripts" "$dir/repo/static/assets" "$dir/build/assets"
++  cp "$SCRIPT" "$dir/repo/scripts/"
++  echo "$dir"
++}
+ 
+-OLD=$(date -u -d '40 days ago' +%Y-%m-%d)
+-RECENT=$(date -u -d '5 days ago' +%Y-%m-%d)
++OLD=$(days_ago 40)
++RECENT=$(days_ago 5)
+ 
++echo "=== case 1: retention window ==="
++C="$(new_case retention)"
+ # Archive holds: a chunk the new build still ships, a chunk a 5-day-old build shipped,
+ # and a chunk nothing has shipped in 40 days.
+-echo "live"   > "$T/repo/static/assets/live.js"
+-echo "recent" > "$T/repo/static/assets/recent.js"
+-echo "stale"  > "$T/repo/static/assets/stale.js"
++echo "live" > "$C/repo/static/assets/live.js"
++echo "recent" > "$C/repo/static/assets/recent.js"
++echo "stale" > "$C/repo/static/assets/stale.js"
+ 
+ # The incoming build ships live.js plus a brand-new chunk not yet copied into the archive.
+-echo "live" > "$T/build/assets/live.js"
+-echo "new"  > "$T/build/assets/new.js"
++echo "live" > "$C/build/assets/live.js"
++echo "new" > "$C/build/assets/new.js"
+ 
+-cat > "$T/repo/static/assets-manifest.json" <<EOF
++cat > "$C/repo/static/assets-manifest.json" <<EOF
+ {"lastSeen":{"live.js":"$OLD","recent.js":"$RECENT","stale.js":"$OLD"}}
+ EOF
+ 
+-cd "$T/repo"
+-fail=0
++cd "$C/repo"
+ 
+-echo "=== dry run changes nothing ==="
+-PRUNE_DRY_RUN=1 node scripts/prune-stale-assets.js "$T/build/assets"
++echo "--- dry run changes nothing ---"
++PRUNE_DRY_RUN=1 node scripts/prune-stale-assets.js "$C/build/assets"
+ test -f static/assets/stale.js || { echo "FAIL: dry run deleted a file"; fail=1; }
+ 
+-echo "=== real run ==="
+-node scripts/prune-stale-assets.js "$T/build/assets"
++echo "--- real run ---"
++node scripts/prune-stale-assets.js "$C/build/assets"
+ 
+ # The case that matters: live.js is 40 days stale by the manifest, but the incoming
+ # build ships it, so it must survive. Vite reuses byte-identical chunks for months —
+ # pruning on date alone 404s the running app.
+-test -f static/assets/live.js   || { echo "FAIL: pruned a chunk the incoming build ships"; fail=1; }
++test -f static/assets/live.js || { echo "FAIL: pruned a chunk the incoming build ships"; fail=1; }
+ test -f static/assets/recent.js || { echo "FAIL: pruned a chunk inside the retention window"; fail=1; }
+ test ! -f static/assets/stale.js || { echo "FAIL: kept a chunk past the retention window"; fail=1; }
+ 
+ grep -q '"stale.js"' static/assets-manifest.json && { echo "FAIL: manifest still lists a pruned file"; fail=1; }
+-grep -q '"live.js"' static/assets-manifest.json  || { echo "FAIL: manifest dropped a live file"; fail=1; }
++grep -q '"live.js"' static/assets-manifest.json || { echo "FAIL: manifest dropped a live file"; fail=1; }
+ # new.js ships in this build but is not in the archive yet (prune ran before the copy).
+ # Its stamp must survive or the next run has no record of it.
+ grep -q '"new.js"' static/assets-manifest.json || { echo "FAIL: manifest dropped an incoming file not yet copied in"; fail=1; }
+ 
+-echo "=== corrupt manifest must refuse ==="
++echo "--- corrupt manifest must refuse ---"
+ echo 'not json' > static/assets-manifest.json
+-if node scripts/prune-stale-assets.js "$T/build/assets" 2>/dev/null; then
++if node scripts/prune-stale-assets.js "$C/build/assets" 2>/dev/null; then
+   echo "FAIL: pruned with a corrupt manifest"; fail=1
+ fi
+ 
++echo "=== case 2: a deploy gap longer than the window keeps the previous deploy ==="
++C="$(new_case gap)"
++# No deploy for 40 days. prev.js belongs to the build merchants are running right now;
++# retention alone would delete it in the very pipeline that replaces it.
++echo "prev" > "$C/repo/static/assets/prev.js"
++echo "ancient" > "$C/repo/static/assets/ancient.js"
++echo "new" > "$C/build/assets/new.js"
++cat > "$C/repo/static/assets-manifest.json" <<EOF
++{"lastSeen":{"prev.js":"$OLD","ancient.js":"$(days_ago 400)"}}
++EOF
++cd "$C/repo"
++node scripts/prune-stale-assets.js "$C/build/assets"
++test -f static/assets/prev.js || { echo "FAIL: pruned the previous deploy's chunks"; fail=1; }
++test ! -f static/assets/ancient.js || { echo "FAIL: kept a chunk two deploys back and past the window"; fail=1; }
++
++echo "--- KEEP_RECENT_DEPLOY_DAYS=1 drops that protection ---"
++C="$(new_case gap_no_protect)"
++echo "prev" > "$C/repo/static/assets/prev.js"
++echo "new" > "$C/build/assets/new.js"
++cat > "$C/repo/static/assets-manifest.json" <<EOF
++{"lastSeen":{"prev.js":"$OLD"}}
++EOF
++cd "$C/repo"
++KEEP_RECENT_DEPLOY_DAYS=1 node scripts/prune-stale-assets.js "$C/build/assets"
++test ! -f static/assets/prev.js || { echo "FAIL: KEEP_RECENT_DEPLOY_DAYS=1 still protected an expired date"; fail=1; }
++
++echo "=== case 3: a subdirectory is skipped, not unlinked ==="
++C="$(new_case subdir)"
++mkdir -p "$C/repo/static/assets/fonts"
++echo "font" > "$C/repo/static/assets/fonts/a.woff2"
++echo "stale" > "$C/repo/static/assets/stale.js"
++# recent.js exists only so $OLD is not one of the two newest dates and stays prunable.
++echo "recent" > "$C/repo/static/assets/recent.js"
++echo "new" > "$C/build/assets/new.js"
++cat > "$C/repo/static/assets-manifest.json" <<EOF
++{"lastSeen":{"fonts":"$OLD","stale.js":"$OLD","recent.js":"$RECENT"}}
++EOF
++cd "$C/repo"
++# EISDIR here would fail the deploy job, so a non-zero exit is itself the failure.
++node scripts/prune-stale-assets.js "$C/build/assets" || { echo "FAIL: crashed on a directory under assets/"; fail=1; }
++test -d static/assets/fonts || { echo "FAIL: removed a directory under assets/"; fail=1; }
++test ! -f static/assets/stale.js || { echo "FAIL: a directory stopped the rest of the prune"; fail=1; }
++
++echo "=== case 4: bad env values refuse ==="
++C="$(new_case badenv)"
++echo "x" > "$C/repo/static/assets/x.js"
++echo "new" > "$C/build/assets/new.js"
++echo '{"lastSeen":{}}' > "$C/repo/static/assets-manifest.json"
++cd "$C/repo"
++if KEEP_RECENT_DEPLOY_DAYS=0 node scripts/prune-stale-assets.js "$C/build/assets" 2>/dev/null; then
++  echo "FAIL: accepted KEEP_RECENT_DEPLOY_DAYS=0"; fail=1
++fi
++if RETENTION_DAYS=nope node scripts/prune-stale-assets.js "$C/build/assets" 2>/dev/null; then
++  echo "FAIL: accepted a non-numeric RETENTION_DAYS"; fail=1
++fi
++
+ [ $fail -eq 0 ] && echo "ALL TESTS PASSED" || { echo "TESTS FAILED"; exit 1; }
+-- 
+2.48.1
+

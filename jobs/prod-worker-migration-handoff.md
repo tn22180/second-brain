@@ -13,14 +13,77 @@
 | 7   | Reconcile: merge `origin/master` → branch (2026-08-06)                   | ✅ done             |
 | 8   | Document `dispatchWork` 3-gate routing + Pub/Sub fallback (§6a)          | ✅ done             |
 | 9   | Fix root `CLAUDE.md` `dispatchWork` drift (describes stripped master ver) | ✅ done             |
-| 10  | Tailscale on prod box (step 1, §4)                                       | 🔒 blocked (box access) |
-| 11  | Stand up `compose.central.yml` on prod box                              | ⬜ pending          |
-| 12  | Build + push amd64 worker image (`build_worker_image`)                   | ⬜ pending          |
-| 13  | Add worker box(es) via `join-worker.sh`                                  | ⬜ pending          |
-| 14  | Cut prod queue (db0) over to fleet                                       | ⬜ pending          |
+| 10  | Tailscale enrol box1 + box2 on `tn221805` tailnet (key-exp off, mesh OK) | ✅ done             |
+| 11  | Enrol old cloud box (central) on `tn221805` tailnet (`seo-worker-central-prod` = `100.87.235.36`, key-exp off) | ✅ done 08-07 |
+| 12  | Confirm central redis facts: `100.87.235.36:6380`, plain TCP no TLS, db0, firewall→6380 open | ✅ done 08-07 |
+| 13  | Clone prod image → box1+box2, up as followers (**Strategy A**, no registry/join-worker.sh) | ✅ done 08-07 |
+| 14  | Verify pool: **4 heartbeats** (leader+worker1+box1+box2), both processing prod jobs, RestartCount 0 | ✅ done 08-07 |
+| 15  | Deploy fleet-control dashboard on leader (systemd, reboot-safe, :3900) | ✅ done 08-07 |
+| 18  | Queue "DOWN": 209 stale failed jobs — investigate + clear | ✅ done 08-07 |
+| 19a | Dashboard false-DOWN from cumulative failures — 24h window | ✅ done 08-07 |
+| 20  | Redact `accessTokenHash` + `email` from the dashboard job-data Payload view | ✅ done 08-07 |
+| 16  | Rich telemetry "luồng giống worker mới" (mem/version/history) — re-image prod → Gen2 | 🔄 Phase B |
+| 17  | Name workers by machine (`WORKER_LABEL` per box) | 🔄 folds into #16 |
+| 19b | version/mem/history columns populated | 🔄 folds into #16 |
+20 trước bảo 1 máy tách 2 worker mà nhỉ
+
+
+Steps 11–14 were the scale-out — **COMPLETE 2026-08-07**. See `prod-worker-scaleout-runbook.md`.
+
+## Jobs 15–20 — dashboard sync + Gen2 re-image (2026-08-07)
+
+**Root finding.** Prod runs the **Gen1** worker image (`@minhdevtree/worker-sdk`, image `953d3496921c`) which
+only writes a **thin heartbeat** `{workerId,hostname,pid,tiers,startedAt,lastBeat}`. The fleet-control
+dashboard reads **rich telemetry** hashes that only **Gen2 `packages/functions/worker.mjs`**
+(`@avada-falcon/worker-sdk`) writes: `worker:mem` / `worker:label` / `worker:version` /
+`worker:running:<id>` / `worker:history:<id>` / `metrics:jobs|fail:<hour>`. box1/box2 followers are a
+**clone of the same Gen1 image**, so they are thin too. Hence blank version/mem/history/reports (jobs 16/19b)
+and container-id names instead of machine names (job 17). Fleet is **4 workers** (cloud leader + cloud
+worker1 + box1 + box2), not 5 — the "5" was a miscount.
+
+**Done now (Phase A — control-plane only, zero prod-worker risk):**
+- **Job 18 — cleared.** The 208 medium + 1 heavy failed were all `recursive` / `count_optimized_images`
+  jobs whose Firestore count query timed out (`14 UNAVAILABLE: deadline exceeded`,
+  `historyRepository.js:847`). Newest **2026-08-03** (pre-scale-out), oldest April; **zero new failures
+  since scale-out**. They accreted because `removeOnFail.count:5000`. Deleted job hashes + `:logs` + the
+  `:failed` zsets on prod db0 (medium+heavy) — `wait`/`active`/`completed` untouched (medium active still 2).
+  All tiers `failed:0`.
+- **Job 19a — dashboard 24h window.** `core/fleet.mjs`: `getQueues` now returns `failedRecent`
+  (`zcount :failed (now-FAILED_WINDOW_MS) +inf`, window default 24h, score = finishedOn); `getClusterHealth`
+  drives the queue DOWN/degraded status off `totalFailedRecent`, not cumulative. `public/index.html` health
+  row shows `failed 24h N (M all-time)`.
+- **Job 20 — PII redaction.** Job-data payloads carry the full shop doc incl. `accessTokenHash` + `email`
+  (+ other PII). `core/fleet.mjs` now scrubs a denylist of sensitive keys (`accessTokenHash`,
+  `accessToken`, `email`, `crispSessionToken`) before returning `data` from `getJobDetail`/`getJobsByState`.
+  Deployed to the leader (`~/fleet-control`, respawned via `pkill -f "bun server.mjs"` → systemd
+  `Restart=always`, no sudo). Health `status:ok`.
+
+**Doing (Phase B — re-image prod → Gen2, MANUAL DEPLOY, touches live merchant jobs):** see the Phase B
+runbook block in `prod-worker-scaleout-runbook.md`. Staged canary: box1 → box2 → leader/worker1 (window).
+Gen2 follower compose prepped at `docs/prod-worker-follower-compose-gen2.yml`. Blockers/decisions:
+- Image must be a **git-traceable Gen2 build of the current branch** (reconciled with master 08-06) →
+  `packages/functions/publish-worker.sh <tag>` from the Mac builds it on the build box `100.113.50.9`
+  registry with a GIT_SHA-tagged image. box1/box2 pull from that registry (avada tailnet).
+- **Cross-tailnet:** prod central `100.87.235.36` (tn221805) can't reach the build-box registry
+  (`100.113.50.9`, avada tailnet) → leader/worker1 re-image needs `docker save | ssh | docker load` like
+  the Gen1 clone.
+- `publish-worker.sh` POSTs `/api/deploy` (Ansible rolling deploy) = a **deploy trigger** → Tuan runs it.
+- Naming (job 17) folds in: set `WORKER_LABEL` per box in the Gen2 compose (box1 / box2 / central-prod).
+
+**Strategy A note:** `join-worker.sh` (registry pull) was abandoned — office box1/box2 are a live Gen2
+staging fleet (box1 hosts `local-registry`), the old cloud box runs Gen1 prod build-local separately,
+and no prod registry exists. Instead cloned the running prod image byte-identical:
+`docker save seo-worker-seo-worker:latest` (cloud) → gzip → `docker load` (box1), then box1→box2 over
+LAN. Followers: `~/seo-worker-prod/compose.prod-follower.yml`, `WORKER_ID=box{1,2}`, `CRON_LEADER=false`,
+`REDIS_HOST=100.87.235.36:6380`, `LOKI_URL=""` (central loki bound 127.0.0.1). `redisCache 127.0.0.1:6379
+→ disabled` is **pre-existing prod behavior** (identical on cloud leader/worker1), not a regression.
 
 > **Branch:** `feat/worker-pubsub-migration` · **Repo:** `seo` · **Prod project:** `avada-seo`
-> **Status:** worker healthy on the _current_ single-box setup; master reconciled into the branch 2026-08-06 (§2). Remaining before live: Tailscale on the prod box (step 1, blocked on box access), then stand up central / build image / add workers / cut queue over.
+> **Status (2026-08-07): scale-out LIVE.** Prod fleet = 4 workers on shared queue db0 — cloud central
+> (leader + worker1) + box1 + box2 followers over Tailscale. All 4 heartbeats alive, both new followers
+> processing prod jobs, RestartCount 0. HA via BullMQ stalled-recovery (~30s). Rollback = `docker compose
+> -f ~/seo-worker-prod/compose.prod-follower.yml down` on either follower (central untouched). See
+> `prod-worker-scaleout-runbook.md`.
 > **Audience:** the engineer taking over the migration. Read top-to-bottom before touching prod.
 >
 > **Location note:** canonical copy is `second-brain/jobs/prod-worker-migration-handoff.md` (durable;
@@ -37,12 +100,34 @@ gateway, running `seo-bullboard` / `seo-worker-leader` / `seo-worker` from the m
 with the **Tailscale-mesh fleet** built on this branch:
 
 - **Central box** (`compose.central.yml`): redis + loki + grafana + bullboard + the cron **leader**
-  (singleton). Decided: **reuse the current prod box as central.**
+  (singleton). Decided 2026-08-07: **the old cloud box stays central** (+ worker1) — it is the only
+  box GCF can reach for enqueue (see below). box1/box2 are added as followers.
 - **Worker boxes** (`compose.worker.yml`): a `seo-worker` follower pool pointing at the central
   redis over its Tailscale IP. Added with `join-worker.sh` (run from the Mac).
 - **Rolling deploy** via Ansible (`fleet/inventory.ini` = Tailscale IPs, `deploy-workers.yml`
   `serial:2` drain/verify, `deploy-central.yml`). CI `build_worker_image` builds `Dockerfile.worker`
   once → `$CI_REGISTRY_IMAGE/seo-worker:<sha>`; boxes pull the image instead of rsync+rebuild.
+
+**Target fleet** (decided 2026-08-07), all on the prod tailnet `tn221805@gmail.com`:
+
+| Box | Tailscale name / IP | LAN | Role |
+| --- | --- | --- | --- |
+| old cloud box `seo-worker-box` (10.0.0.2 via gcp-gw) | *pending enrol* | — | **central**: redis + leader + bullboard (+ loki/grafana) **+ worker1** (unchanged) |
+| box1 | `seo-worker-box1` / `100.123.202.84` | `192.168.2.204` | worker2 (follower) |
+| box2 | `seo-worker-box2` / `100.104.18.124` | `192.168.2.184` | worker3 (follower) |
+
+**Why central MUST stay on the old box (a box1-central pivot was considered and rejected):** GCF
+`dispatchWork` enqueues to redis over a **GCP-reachable address** — prod `REDIS_HOST` was
+`10.62.180.107`, a GCP-internal IP (`.env.local:44`). box1/box2 are office/NAT boxes GCF cannot
+reach, and GCF is not on the tailnet. Only the old cloud box is **dual-homed** (GCP-internal for GCF
++ Tailscale for the followers), so it is the only box that can hold the queue. Moving central to
+box1 would leave GCF unable to enqueue → every fleet job would fall back to Pub/Sub → the fleet would
+receive nothing.
+
+**This makes the migration a scale-out, not a cutover.** The old box + its db0 queue stay exactly as
+they are; we only **add box1/box2 as followers** pointing at the old box's redis over Tailscale. No
+redis move, no GCF change, no leader migration. Full step-by-step:
+`prod-worker-scaleout-runbook.md`.
 
 Full design: `packages/functions/fleet/README.md` and `docs/phase-*.md` (phase 0–5) on the branch.
 
@@ -89,22 +174,37 @@ often shallow → `merge-base` reads empty until unshallowed), then
 
 ## 3. Migration order (do NOT reorder)
 
-1. **Tailscale on the prod box** (§4) — additive networking, safe on the live box. Sequenced first
-   per the owner's call ("trước khi live prod setup tailscale").
-2. **Merge fleet infra ↔ master** (§2) — so the image is built from current app code.
-3. **Stand up `compose.central.yml`** on the prod box (redis / leader / bullboard). Redis **db0** is
-   live prod queue data — untouched by a code rollout; do **not** flush it.
+1. **Tailscale on box1 + box2** (§4) — DONE. Both on the `tn221805` tailnet, mesh verified.
+2. **Merge fleet infra ↔ master** (§2) — DONE 2026-08-06.
+3. **Enrol the old cloud box on the tailnet** (§4) — so followers can reach its redis over the mesh.
+   Additive; the old box keeps serving prod. Needs a shell on the box (gcp-gw) — **blocked on sudo**.
 4. **Build + push the amd64 worker image** (`build_worker_image`). Boxes are amd64; build `linux/amd64`.
-5. **Add worker box(es)** via `join-worker.sh` from the Mac.
-6. **Cut the prod queue (db0) over** to the fleet, drain the old containers.
+5. **Add box1 + box2 as followers** via `join-worker.sh` from the Mac, each pointing at the OLD box's
+   redis (`--redis-db 0`, `CRON_LEADER=false`). The old box keeps the single leader.
+6. **Verify the pool** — 3 heartbeats, Bull Board consumers, a test job, tier coverage.
 
-## 4. Step 1 runbook — Tailscale on the prod box
+No cutover, no redis move, no GCF change — the old box stays central throughout. Detailed steps:
+`prod-worker-scaleout-runbook.md`.
+
+## 4. Step 1 runbook — Tailscale on the prod boxes
 
 Additive networking only. Does **not** touch the running worker containers or the prod Redis (db0)
-queue — safe on the live box.
+queue — safe on the live boxes.
 
-**Target box:** `seo-worker-box`, reached by CI at `10.0.0.2` via the `gcp-gw` WireGuard gateway
-(`34.87.163.45`, SSH user `avada`). Ubuntu. This box becomes the fleet **central**.
+**Status (2026-08-07):** account chosen = **`tn221805@gmail.com`** (a dedicated Google account the
+owner is admin of → own tailnet `tail71d230.ts.net`; effectively path **B** below since the owner
+has no `avadagroup.com` admin). **box1 + box2 enrolled** (`seo-worker-box1` 100.123.202.84 @
+192.168.2.204, `seo-worker-box2` 100.104.18.124 @ 192.168.2.184), key-expiry disabled on both, mesh
+verified 2–3 ms. The reusable auth-key used to enrol them has been **revoked** (already-joined nodes
+keep their own node-key). box1/box2 are **followers**, not central.
+
+**Old cloud box `seo-worker-box` (10.0.0.2 via `gcp-gw` 34.87.163.45, user `avada`) — the central,
+enrol PENDING (critical path).** It must join the tailnet so box1/box2 can reach its redis over the
+mesh. I have a shell on it via the deploy SSH key (ProxyJump gcp-gw), but `tailscale up` needs
+**sudo** and the classifier won't let me pipe a sudo password into a prod box — so the owner runs the
+enrol (see the runbook Step 1). Interactive login (no auth-key) works: `sudo tailscale up --ssh
+--hostname seo-worker-central-prod --accept-dns=false` → approve the printed URL in a browser logged
+into `tn221805@gmail.com`. No `--advertise-routes` (cloud box, not the office LAN).
 
 **Which Tailscale account / tailnet (decide first — it is load-bearing)**
 
