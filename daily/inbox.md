@@ -106,3 +106,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) fleet-control dashboard chạy trên leader dưới systemd unit `seo-fleet-control`, port 3900, chỉ truy cập qua Tailscale IP
 - [ ] (×1) Slack Enterprise upgrade notification dùng `@channel` (không tag tên), kèm Email + shopifyDomain + Crisp link dạng anchor
 - [ ] (×1) Thêm worker prod bằng image-clone (Strategy A) rẻ hơn build từ đầu; Gen2 re-image tách sang phase riêng
+
+### memory candidates 2026-08-10
+- [ ] (×1) Skill API cho agent không hard-code nữa — đưa integration key, agent tự fetch docs API mới nhất; skill tách riêng theo app
+- [ ] (×1) `docs-gate` có check mới: routes vs OpenAPI spec lệch → fail MR (đã port AEO + APC)
+- [ ] (×1) AEO `yarn dev` không truy cập được backend khi `yarn emulators` đang chạy
+- [ ] (×1) Clone `avada-seo-react-app-artifacts` qua `gitlab-ci-token` cần access token tạo từ chính project artifacts
+- [ ] (×1) Prod worker fleet đã cutover gen1 → gen2; fleet health fail thì fallback cloud-gen2 (canary)

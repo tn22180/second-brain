@@ -22,12 +22,30 @@
 | 18  | Queue "DOWN": 209 stale failed jobs — investigate + clear | ✅ done 08-07 |
 | 19a | Dashboard false-DOWN from cumulative failures — 24h window | ✅ done 08-07 |
 | 20  | Redact `accessTokenHash` + `email` from the dashboard job-data Payload view | ✅ done 08-07 |
-| 16  | Rich telemetry "luồng giống worker mới" (mem/version/history) — re-image prod → Gen2 | 🔄 Phase B |
-| 17  | Name workers by machine (`WORKER_LABEL` per box) | 🔄 folds into #16 |
-| 19b | version/mem/history columns populated | 🔄 folds into #16 |
-20 trước bảo 1 máy tách 2 worker mà nhỉ
+| 16  | Rich telemetry (mem/version/history) — re-image prod → Gen2 | ✅ done 08-10 |
+| 17  | Name workers by machine (`WORKER_LABEL` per box) | ✅ done 08-10 |
+| 19b | version/mem/history columns populated | ✅ done 08-10 |
+| 21  | Đồng bộ job + worker "nhận"/hiện job | ✅ done 08-10 (Gen2 worker:running) |
+| 22  | Completed count cap 1000 → show số thật | ✅ done 08-10 (Reports = metrics counter) |
+| 23  | Full cutover Gen1→Gen2 all 4 workers (graceful drain) | ✅ done 08-10 |
+| 24  | Gen2 design: 2 worker/máy × 5GB (trừ leader) — scale box1/box2 to 2×5GB | ✅ done 08-10 |
+24-note: box1/box2 giờ mỗi máy 2 replica (box{1,2}-a/-b) MEMORY_BUDGET_MB=5000. Central (leader máy) giữ 2 (leader+worker1, ngoại lệ). Fleet = 6 Gen2 worker, cap 102. Compose `~/seo-worker-prod/compose.gen2-follower.yml` (2 service a/b, YAML anchor, WORKER_LABEL chung). ⚠️ box2 chỉ 4GB RAM free (staging fleet ăn 9GB) — 2×5GB budget = trần 10GB, RSS thật ~600MB/worker nên vừa, nhưng nếu 2 job heavy spike RSS thật cùng lúc thì rủi ro OOM; theo dõi, cần thì giảm budget box2.
+| 25  | Job id = shopdomain+jobId, tất cả job registered Gen2 | ✅ done (đã có sẵn Gen2: `buildJobId` = `<jobName>-<shopdomain>-<6char>` dispatchWork.js:9; 22 job types registered) |
+| 27  | Số jobs count real (vẫn hiện 1000) | ✅ done 08-10 — thêm card "Done 24h" (real từ metrics `getReports.total`), snapshot `done24h` cache 10s, cột Completed nhãn "≤1k". Deployed central, verified 1422. |
+| 26  | Deploy tab → bỏ trigger, đổi thành config view | ✅ done 08-10 — gỡ Deploy tab + deploy-trigger UI (doDeploy/rollback); Config giờ read-only: **Machine config** (per-box budget/mem/version/id từ snapshot) + **worker.config.yml** raw+summary, bỏ Apply(drain+roll) → không còn deploy trigger nào trong dashboard. |
+| 28  | Pre-deploy prod cho nhánh này | 🔄 pending — deploy manual (Tony chạy) |
+| 29  | UI fleet-control polish | ✅ done 08-10 — **master-detail layout**: body grid `minmax(300px,4fr) 8fr`, full-width, 1 window (100vh, mỗi pane scroll riêng); nav trái = menu + fleet/queue summary (click → worker/jobs modal). **dark/light** toggle (persist localStorage, default dark, `:root[data-theme=light]`). env badge `production·db0` dời khỏi brand → header content pane. card `.top` overflow (flex-wrap + name ellipsis) = fix "● processing break". Deployed central, sha khớp, service active. |
+| 30  | Menu to quá → về width cũ | ✅ done 08-10 — body grid về `220px 1fr` (nav slim như đầu), content vẫn full-width 1 window + nav fleet/queue summary. Deployed. |
+| 31  | Job đã chia memory rồi → bỏ tier heavy/medium/light? | ❎ KHÔNG bỏ (khuyến nghị). "chia memory" = per-worker `MEMORY_BUDGET_MB` + RSS admission gate (dynamic OOM-safety), **không phải per-job** — không có field memory/job trong worker.config.yml. Tier làm việc khác admission: (1) **concurrency-per-class** (heavy 2/medium 5/light 10) — cap số image-job CPU-nặng chạy song song; admission chỉ gate RSS, không gate CPU/count → 10 image job cùng lúc dù đủ RAM vẫn thrash CPU. (2) **queue isolation/fairness** — 3 queue riêng ⇒ backlog heavy 10k không chặn light/quick job; gộp 1 queue = head-of-line blocking. Admission bổ trợ, không thay tier. Muốn gọn hơn: thêm `memoryMb` hint per-job cho admission thông minh hơn (additive, vẫn giữ tier). |
+| 32  | box1 2 replica trùng tên → khó phân biệt | ✅ done 08-10 — compose per-service `WORKER_LABEL` `${WORKER_LABEL}.1`/`.2`. Fleet giờ: central-leader · central-worker1 · **box1.1 · box1.2 · box2.1 · box2.2**, all heartbeat live. Recreate từng replica (`up -d --no-deps`) giữ fleet không gián đoạn; box2 deploy qua box1→LAN (SSH_ASKPASS, tailscale-SSH box2 chặn); 0 stale label. |
 
+**⚠ Note (mới, ngoài job):** docker healthcheck của follower container flip `unhealthy` sau ~1min (probe sai, worker thật heartbeat=1 bình thường) — cosmetic, healthcheck cần sửa (HEALTH_PORT 3801 vs port worker thật). Không block.
+| 33  | status xuống dưới tên + theme lên header góc phải icon-only | ✅ done 08-10 — fleetCard: `.statusline` riêng dưới name (không cùng hàng name/role). Theme toggle dời nav → header góc phải, icon-only ☀/☾ (bỏ chữ "theme"). Deployed. |
+| 34  | Budget đồng nhất 5.19GB cả leader (≥2 job 4+1GB) | ✅ done 08-10 — `MEMORY_BUDGET_MB=5190` toàn bộ 6 worker (central compose 4000→5190, follower 5000→5190). Recreate từng replica, cả 6 live budget=5190. ⚠️ **box2 over-commit**: avail RAM chỉ **4654MB**, 2×5190=10380MB ceiling → nếu 2 heavy job (4GB RSS) spike cùng lúc = OOM. RSS thật ~600MB nên ngày thường OK. Central avail 12.6GB, box1 11.1GB — thoải mái. **Cần quyết box2**: (a) free RAM (staging fleet ăn ~11GB), (b) box2 budget exception ~2000, hay (c) box2 về 1 replica. |
+| 35  | Config thêm host info: máy tên gì + OS + RAM(tổng+trống) + SSD(tổng+trống) | 🔄 pending — cần **per-box host agent** (README "Deferred"). Worker trong container không thấy đúng OS/hostname host; nguồn đúng = collector chạy trên host mỗi box ghi `worker:host:<box>` (hostname/OS/RAM/SSD, TTL) → dashboard đọc. 3 collector (central+box1+box2) + systemd timer. Net-new infra trên prod → chờ Tony gật approach. |
+| 36  | Bỏ Queue Trends | ✅ done 08-10 — gỡ Trends tab (nav+view+JS lineChart/loadTrends) + server-side: endpoint `/api/metrics/queue-depth` + `startMetricsSampler` + orphan `core/metrics.mjs` (deleted). Deployed, boot log không còn `ctl:metrics`. |
 
+37: phần Payload của từng jog, chỗ json data nên để chữ xanh như những loại json formater khác cho dễ nhìn, cả phần log thì cần màu chữ đẹp đẹp chút cho dễ nhìn
 Steps 11–14 were the scale-out — **COMPLETE 2026-08-07**. See `prod-worker-scaleout-runbook.md`.
 
 ## Jobs 15–20 — dashboard sync + Gen2 re-image (2026-08-07)
@@ -69,6 +87,51 @@ Gen2 follower compose prepped at `docs/prod-worker-follower-compose-gen2.yml`. B
   the Gen1 clone.
 - `publish-worker.sh` POSTs `/api/deploy` (Ansible rolling deploy) = a **deploy trigger** → Tuan runs it.
 - Naming (job 17) folds in: set `WORKER_LABEL` per box in the Gen2 compose (box1 / box2 / central-prod).
+
+**Jobs 21 + 22 (added 2026-08-10) — both are Gen1 telemetry-gap symptoms, resolve with Gen2:**
+- **Job 22 — completed cap 1000 is NOT a fleet-control bug.** `getQueues` reads `completed` via
+  `zcard(bull:worker-<tier>:completed)`; BullMQ `removeOnComplete` keeps only ~1000/tier
+  (`dispatchWork.js:12` "keeps ~1000/tier"). Heavy + medium sit at exactly 1000 (retention cap),
+  light 16 (real). The zset physically holds ≤1000, so zcard can never exceed it. The **true
+  cumulative** processed count lives only in the hourly `metrics:jobs:<hour>` counters that
+  **only Gen2 `worker.mjs` writes** — Gen1 prod writes none, so `getReports.total ≈ 0` today.
+  Real number ⇒ Gen2. (Optional honest stopgap under Gen1: relabel the Completed column
+  tooltip "retained ~1000; lifetime in Reports" — cosmetic, doesn't produce the real total.)
+- **Job 21 — leader + worker1 show 0 jobs though processing.** Same Gen1 gap: dashboard reads
+  `worker:running:<id>` / `metrics:jobs` which only Gen2 writes. Followers box1/box2 (Gen1 clone)
+  identical. Resolves when the fleet is re-imaged Gen2 (Phase B).
+
+## Gen2 cutover — DONE 2026-08-10 (jobs 16/17/19b/21/22/23)
+
+Full fleet re-imaged Gen1→**Gen2** (`seo-worker:prod-gen2-1eed4e1`, built on prod central box).
+Graceful-drain, zero-gap (started Gen2 before stopping Gen1). Final fleet = **4 Gen2 workers** on
+prod db0, all publishing rich telemetry:
+
+| worker | WORKER_ID | label | box |
+|---|---|---|---|
+| central-leader | `e8d4953472a2-1` | central-leader | cloud central |
+| central-worker1 | `56b0b75765ca-1` | central-worker1 | cloud central |
+| box1 | `413bd070befd-1` | box1 | office box1 |
+| box2 | `f4f74ca28fed-1` | box2 | office box2 |
+
+- **Central**: `~/seo-worker-gen2-build/compose.gen2-central.yml` (2 services, image + env, external net
+  `seo-worker_default`, redis alias `redis:6379`, `REDIS_DB=0`). Gen1 `seo-worker-leader` +
+  `seo-worker-seo-worker-1` graceful-stopped (`docker stop -t 40`, `unless-stopped` → won't auto-revive).
+- **box1/box2**: `~/seo-worker-prod/compose.gen2-follower.yml` (`WORKER_LABEL=box{1,2} docker compose up`,
+  `REDIS_HOST=100.87.235.36:6380` central redis over tailscale, `REDIS_DB=0`). Gen1 `seo-worker-prod-box{1,2}`
+  graceful-stopped.
+- **Gen2 has no CRON_LEADER** — `worker.mjs:334 registerCron` unconditional, BullMQ repeatable dedupes
+  by key. No leader singleton needed.
+- **Image ship**: central→box1 via Mac stream over gcp-gw (`docker save|gzip|ssh|docker load`, ~0.8MB/s,
+  24min). box1→box2 over office LAN (fast). box2 SSH over tailscale is blocked by **Tailscale-SSH
+  "additional check"** → reach box2 only via box1 over LAN (192.168.2.184) with SSH_ASKPASS (no sshpass
+  on box1). box1/box2 creds: `projects/Falcon/ssh.md`.
+- **Results**: dashboard `worker:version/label/mem/history/running` all populate (16/17/19b/21).
+  Reports `/api/reports` total climbs from `metrics:jobs:<hour>` counters — real cumulative, not the
+  retention-capped `completed` zcard (22). The 6 hung recursive jobs requeued → Gen2 processes them and
+  now enforces the 540s timeout ([[seo-recursive-hang-leaks-active-slots]]).
+- **Rollback**: Gen1 containers still exist (stopped) on all boxes; `docker start` them + `docker rm` the
+  Gen2 to revert. Canary `seo-worker-prod-gen2-canary` stopped (folded into central-leader/worker1).
 
 **Strategy A note:** `join-worker.sh` (registry pull) was abandoned — office box1/box2 are a live Gen2
 staging fleet (box1 hosts `local-registry`), the old cloud box runs Gen1 prod build-local separately,
