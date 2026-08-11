@@ -47,7 +47,7 @@
 
 37: phần Payload của từng jog, chỗ json data nên để chữ xanh như những loại json formater khác cho dễ nhìn, cả phần log thì cần màu chữ đẹp đẹp chút cho dễ nhìn
 Steps 11–14 were the scale-out — **COMPLETE 2026-08-07**. See `prod-worker-scaleout-runbook.md`.
-
+38: bỏ file accessToken + email trong payload data đi giúp t
 ## Jobs 15–20 — dashboard sync + Gen2 re-image (2026-08-07)
 
 **Root finding.** Prod runs the **Gen1** worker image (`@minhdevtree/worker-sdk`, image `953d3496921c`) which

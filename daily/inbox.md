@@ -113,3 +113,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) AEO `yarn dev` không truy cập được backend khi `yarn emulators` đang chạy
 - [ ] (×1) Clone `avada-seo-react-app-artifacts` qua `gitlab-ci-token` cần access token tạo từ chính project artifacts
 - [ ] (×1) Prod worker fleet đã cutover gen1 → gen2; fleet health fail thì fallback cloud-gen2 (canary)
+
+### memory candidates 2026-08-11
+- [ ] (×1) Fleet job payload không chứa `accessToken`/`accessTokenHash`/shop email — central strip, worker re-hydrate từ Firestore (seo, commit `df7b7c2dd4`)
+- [ ] (×1) Đổi tên Pub/Sub topic ở seo phải update `detect-changed-functions.js`, nếu không CI bỏ sót function cần deploy
+- [ ] (×1) Deploy worker phải loop toàn bộ box trong inventory, không hard-code box1/box2
+- [ ] (×1) Prod worker fleet đã gỡ Gen1, chỉ còn Gen2 sau 2026-08-11
