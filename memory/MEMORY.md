@@ -8,6 +8,9 @@
 - [seo redis Command timed out = noise](seo-redis-command-timeout-noise.md) — Memorystore measured idle (1% CPU, 7.2k keys); it's the 200ms client budget, not the server. Don't resize Redis.
 - [seo APP_IS_LOCAL](seo-app-is-local.md) — prod leaves it unset → isLocal falsy; only staging4 sets true. Assume prod is non-local.
 - [seo shopify.app.*.toml per-dev](seo-shopify-toml-per-dev.md) — many per-dev tomls, each → own dev store, no canonical pair; don't normalize.
+- [seo gen2 follower fleet deploy](seo-gen2-follower-fleet-deploy.md) — box1/box2 = compose.gen2-follower.yml, image name-pinned local; [deploy-worker] KHÔNG chạm box; boxes chỉ tới qua Tailscale; registry down + inventory thiếu box → hand-ship image.
+- [seo gen2 worker FIREBASE_CONFIG](seo-gen2-worker-firebase-config.md) — hydrate image cần FIREBASE_CONFIG env (không phải FIREBASE_STORAGE_BUCKET) vì import-chain no-arg init chạy trước block bucket của worker.mjs.
+- [fleet-control Queues DOWN semantics](fleet-control-queues-down-semantics.md) — "Queues DOWN" = 1+ failed job trong 24h window, cosmetic; worker liveness (up===0) là row riêng. metrics:jobs giữ count độc lập với bull:*.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.

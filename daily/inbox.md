@@ -119,3 +119,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Đổi tên Pub/Sub topic ở seo phải update `detect-changed-functions.js`, nếu không CI bỏ sót function cần deploy
 - [ ] (×1) Deploy worker phải loop toàn bộ box trong inventory, không hard-code box1/box2
 - [ ] (×1) Prod worker fleet đã gỡ Gen1, chỉ còn Gen2 sau 2026-08-11
+
+### memory candidates 2026-08-12
+- [ ] (×1) `grantedFeatures[]` trên shop doc = cơ chế CS unlock từng feature (không nâng plan); grant phải lift cả Pro badge + upgrade modal, không chỉ gate backend
+- [ ] (×1) Grant feature ở dev_zone chỉ áp cho shop đang truy cập — không có input shopifyDomain/id, cố ý để giảm rủi ro CS grant nhầm store
+- [ ] (×1) Shopify BulkOperation COMPLETED ≠ job app done; `shop.doneOptimize` là cờ độc lập phải reconcile tay khi job stuck
+- [ ] (×1) Job history fleet từng lưu accessTokenHash + shop email → đã clear, chỉ giữ counter; đừng log lại PII/secret vào history
+- [ ] (×1) Skill API cho SEO nay không carry copy docs — agent đọc repo/fetch bằng integration key, cùng pattern AEO + APC (commit `1b3cbb0eee`)

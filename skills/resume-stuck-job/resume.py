@@ -168,12 +168,22 @@ def get_item_map(proj, token, r, job_id, job_fields):
         }
 
     if src == "subcollection":
-        path = "%s/%s/%s?pageSize=300" % (coll, job_id, sub)
-        page = fs_get(proj, token, path)
-        for doc in (page or {}).get("documents", []):
-            item_id = doc["name"].split("/")[-1]
-            read_item(item_id, doc)
-        # NOTE: caps at 300 items/one page; every recipe today is <= 50 items.
+        # Field mask is required for correctness, not just cost: item docs carry a fat
+        # `results` map, so an unmasked list hits the response-size limit and returns a
+        # short page (41 of 70 seen on avada-seo) — the missing items looked terminal.
+        base = "%s/%s/%s?pageSize=300" % (coll, job_id, sub)
+        for f in (sfield, "updatedAt"):
+            base += "&mask.fieldPaths=" + urllib.parse.quote(f)
+        page_token = None
+        while True:
+            path = base + ("&pageToken=" + urllib.parse.quote(page_token) if page_token else "")
+            page = fs_get(proj, token, path) or {}
+            for doc in page.get("documents", []):
+                item_id = doc["name"].split("/")[-1]
+                read_item(item_id, doc)
+            page_token = page.get("nextPageToken")
+            if not page_token:
+                break
     elif src.startswith("jobField:"):
         field_name = src.split(":", 1)[1]
         ids = scalar(job_fields.get(field_name)) or []
