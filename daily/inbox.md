@@ -126,3 +126,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Shopify BulkOperation COMPLETED ≠ job app done; `shop.doneOptimize` là cờ độc lập phải reconcile tay khi job stuck
 - [ ] (×1) Job history fleet từng lưu accessTokenHash + shop email → đã clear, chỉ giữ counter; đừng log lại PII/secret vào history
 - [ ] (×1) Skill API cho SEO nay không carry copy docs — agent đọc repo/fetch bằng integration key, cùng pattern AEO + APC (commit `1b3cbb0eee`)
+
+### memory candidates 2026-08-13
+- [ ] (×1) Tailscale ACL v2 ssh rule không có field `dst`/`sshUser` — sai schema fail cả policy; dùng `tag:deploy` → `tag:worker-box` + accept rule cho SSH non-interactive
+- [ ] (×1) `useFeatureGate(key)` + feature registry (`hasFeature()`, legacy flag) là chuẩn mới cho mọi pro gate ở seo — grant CS đi qua đây, không gate rời rạc
+- [ ] (×1) Dev Zone token gate server-side chặn luôn save của chính card cấp token → chicken-and-egg; đã revert, action unrestricted tạm thời
+- [ ] (×1) Minify là feature đang sunset ở SEO — banner warning trong card minification chỉ hiện với shop còn bật, doc sunset đã vào `minification.mdx` của docs.avada.io
+- [ ] (×1) fleet-control chuyển từ local sang hosting + Google auth + domain Cloudflare để cả team view; bullboard giữ làm shared-infra khi retire old-stack

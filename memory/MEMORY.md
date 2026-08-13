@@ -12,7 +12,9 @@
 - [seo gen2 worker FIREBASE_CONFIG](seo-gen2-worker-firebase-config.md) — hydrate image cần FIREBASE_CONFIG env (không phải FIREBASE_STORAGE_BUCKET) vì import-chain no-arg init chạy trước block bucket của worker.mjs.
 - [fleet-control Queues DOWN semantics](fleet-control-queues-down-semantics.md) — "Queues DOWN" = 1+ failed job trong 24h window, cosmetic; worker liveness (up===0) là row riêng. metrics:jobs giữ count độc lập với bull:*.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
+- [seo fleet Tailscale ACL auto-deploy](seo-fleet-tailscale-acl-autodeploy.md) — central=tag:deploy, box1/box2=tag:worker-box, accept rule → non-interactive SSH. Gotchas: box1 --ssh off, box2 was user-owned untagged.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
+- [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.
 - [seo .env.avada-seo local override](seo-env-avada-seo-local-override.md) — local-only override for hand-deploying fns to prod; canonical prod env = CI PRODUCTION_ENV_FILE. internalGen2 is a function, not an env.
 - [User profile: Tuan](user-profile.md) — Avada engineer, Shopify apps + Firebase + GCP cost/credit reporting; prefers Vietnamese, terse output.

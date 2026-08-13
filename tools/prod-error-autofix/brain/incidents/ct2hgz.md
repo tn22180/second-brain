@@ -3,47 +3,44 @@ service: apiSa
 message: HTTPError: Response code 401 (Unauthorized)
 app: IMG-OPT
 repo: avada-image-optimizer
-date: 2026-08-03T09:20:14.774Z
+date: 2026-08-12T14:20:35.581Z
 status: inconclusive
-attempt: 2
+attempt: 3
 
 # IMG-OPT · apiSa · ct2hgz
 
-**Outcome.** smoke gate new_failures
+**Outcome.** fix blocked at agent_failed
 
-**Root cause.** Shop f49eef-3b.myshopify.com uninstalled the app at 08:08:31Z, which revoked its Shopify access token, but uninstallApp only writes {uninstalled:true} and leaves the dead token in Firestore while nothing gates apiSa on it — so the merchant's still-open standalone tab kept calling apiSa 53 minutes later, initShopify rebuilt a client from the revoked token, and Shopify answered 401.
+**Root cause.** Shop 3ddd6b-2.myshopify.com's stored offline access token ***REMOVED-SECRET*** stopped being accepted by Shopify Admin some time after 00:49:56Z on 2026-08-07, and because nothing in apiSa detects or gates a dead token, all 7 apiSa executions for that shop between 10:29:54Z and 10:55:39Z rebuilt a Shopify client from it and took HTTP 401 — the one whose catch is a bare console.error(e) (getThemes shape) was tagged severity=ERROR by the Cloud Functions log parser and is the only thing the prod-error-alerts sink could match.
 
-**Mechanism.** auth logged `Handling uninstalling for  f49eef-3b.myshopify.com` at 2026-08-03T08:08:31.674Z, followed by `uninstallApp {..."isInstalled":true..."accessTokenHash":"U2FsdGVkX1+vv6o4paxYv3vVtNNMUk9oafD1qHlWxHxpvgo8uzc7qMVW2Wgj1MUtDUv9KDb50/CFa7HPbnc51Q=="}` — uninstallationService.js:24 writes only `{uninstalled: true, uninstalledAt}`: it does not clear accessToken/accessTokenHash and does not flip isInstalled (the dumped doc still shows isInstalled:true). At 09:01:47.727–09:01:50.309Z four apiSa executions (p4liay49xq79, p4liape6m2y0, 47eah6atmnne, p5eses3r70ds) each emit initShopify's `f49eef-3b.myshopify.com ***REMOVED-SECRET***` line (shopifyService.js:39) and then a 401 — apiSa mounts only verifyRequest() (apiSa.js:48), which validates the still-live session and has no uninstalled/dead-token gate. Three of the four are prefixed (`checkHasImages error`, `main theme error`, `[getCurrentAppHandle]`) and land at severity DEFAULT; execution p4liape6m2y0 hits a bare `console.error(e)` catch (representative: shopifyController.js:353, getThemes — one initShopify + one REST call, matching the 107ms got timing), so Cloud Functions' log parser sees an unprefixed stack trace, tags it severity=ERROR and attaches errorGroups COjFyJ_-2t2VTA. That single line is the only severity>=ERROR entry apiSa produced in 24h and is therefore the only thing the prod-error-alerts sink could match. Every one of the four executions still `finished with status code: 200` because each catch swallows the error, which is why the requests read (httpRequest.status>=500) is empty. The exact route of p4liape6m2y0 is not recoverable: apiSa is a gen1 cloud_function whose entries carry no httpRequest payload and the log line has no route tag.
+**Mechanism.** auth logged the install at 2026-08-07T00:44:16-00:44:20Z: 'After validate oauth callback 3ddd6b-2.myshopify.com' then '3ddd6b-2.myshopify.com ***REMOVED-SECRET***' (initShopify's console.log, shopifyService.js:39). That same token string worked all through 00:44-00:49 (api, createPreviewImages, webHookHandlerSubscriber, postOnboardingSpeedReportSubscriber, an Expert $99 appSubscriptionCreate at 00:45:10). At 10:29:54Z it stopped working: 7 distinct apiSa executions (w8h59g7k1boi, w8h5kyjax1jb, ywxljtmooxtw, 8jej2c18u86g, 8jejkv6yqqw3, 8jejntyix151, 8fxc96y5x6yc) each emit the initShopify token line for 3ddd6b-2 and then a 401 — 12 '401' log lines, 7/7 executions, zero successes for that shop in the 26-minute span. No 'uninstallApp' line exists for this shop anywhere between install and 20:00Z, while uninstallApp logging demonstrably works (15 lines project-wide over 2026-08-05..08), and the daily countImagesHandler still picked the shop up at 19:00:34Z with the same dead token — so the shop doc is still live and un-flagged: uninstallationService.js:24 only ever writes {uninstalled,uninstalledAt} and apiSa.js:48 mounts verifyRequest() with no dead-token gate, so the still-open standalone tab kept calling. Which of the seven surfaced as an alert is decided purely by log-string shape, not by the error: w8h59g7k1boi's catch prefixes it ('checkHasImages error', shopifyController.js:390), w8h5kyjax1jb / the three at 10:32 / 8fxc96y5x6yc prefix it too ('main theme error' shopifyService.js:129 and '[getCurrentAppHandle]' shopifyService.js:441) — all six stay severity DEFAULT and never reach the sink. ywxljtmooxtw instead hits a bare console.error(e), so Cloud Functions sees an unprefixed got stack, tags it severity=ERROR and attaches errorGroups COjFyJ_-2t2VTA; that single line is the only severity>=ERROR entry apiSa produced in the 30-minute window. Its shape — one initShopify log 570ms in, then exactly one got request (timings total 295ms, dns 129) failing 401, execution 883ms — matches getThemes (shopifyController.js:333, routed at routes/api.js:127): getShopById -> initShopify -> getAllTheme's single shopify.graphql (shopifyService.js:520) -> catch console.error(e) at shopifyController.js:353. The exact route is not fully recoverable: apiSa is a gen1 cloud_function, its entries carry no httpRequest payload, and the trace 3b5d4b977f3b756c273c918d93736951 holds no request log. Every one of the seven still 'finished with status code: 200' because each catch swallows the error, which is why the requests read (httpRequest.status>=500) is empty. Why the token died is NOT proven by these logs — no uninstall webhook was processed, so revocation happened outside anything this app recorded.
 
-Confidence: `high`
+Confidence: `medium`
 
 ## Code
-- `packages/functions/src/services/uninstallationService.js:24` — uninstallApp's only mutation — sets {uninstalled:true, uninstalledAt} and leaves the revoked accessToken/accessTokenHash and isInstalled:true in the shop doc, exactly as the 08:08:31.787Z dump shows
-- `packages/functions/src/services/shopifyService.js:34` — initShopify builds the shopify-api-node client from the stored token; all four 09:01:4x executions built a client here from the revoked token
-- `packages/functions/src/services/shopifyService.js:39` — console.log(shopifyDomain, accessToken) — emits the `f49eef-3b.myshopify.com shpat_ec8b...` line that immediately precedes every 401, and writes live Admin tokens into Cloud Logging
-- `packages/functions/src/handlers/apiSa.js:48` — apiSa mounts verifyRequest() and the router with no uninstalled-shop or dead-token gate, so an uninstalled shop's session keeps hitting Shopify
-- `packages/functions/src/controllers/shopifyController.js:353` — representative untagged `console.error(e)` on a route that does initShopify + one Shopify REST call (getThemes) — this catch shape produces the bare got stack that Cloud Functions tags severity=ERROR and that fired the alert
-- `packages/functions/src/controllers/shopifyController.js:390` — `console.error('checkHasImages error', e)` — prefixed, so the same 401 in execution p4liay49xq79 stayed at severity DEFAULT and never reached the sink; proves the prefix, not the error, decides visibility
-- `packages/functions/src/services/shopifyService.js:129` — console.error('main theme error', e.message) — matches the 09:01:48.709Z line verbatim, identifying getMainThemeId as a second 401 source on the same shop
+- `packages/functions/src/controllers/shopifyController.js:353` — bare console.error(e) in getThemes' catch — the only unprefixed error string among the seven 401 executions, so Cloud Functions tags it severity=ERROR and it is the one that fired the alert
+- `packages/functions/src/controllers/shopifyController.js:333` — getThemes: getShopById -> initShopify -> one getAllTheme graphql call, matching execution ywxljtmooxtw's shape (one initShopify log, exactly one got request, 883ms)
+- `packages/functions/src/routes/api.js:127` — router.get('/shopify/themes', shopifyController.getThemes) — the route is mounted on the shared router that apiSa serves via getRoutes('/apiSa')
+- `packages/functions/src/services/shopifyService.js:520` — getAllTheme issues a single shopify.graphql call through shopify-api-node (got), which is the request that returned 401 with the got as-promise/index.js:118 stack
+- `packages/functions/src/services/shopifyService.js:34` — initShopify builds the client from the stored accessToken with no validity check; all 7 executions built a client here from the revoked token
+- `packages/functions/src/services/shopifyService.js:39` — console.log(shopifyDomain, accessToken) — emits the '3ddd6b-2.myshopify.com shpat_b09d...' line immediately before every 401, and writes live Admin tokens into Cloud Logging (31 shpat_ lines in the 10:00-11:00Z hour alone)
+- `packages/functions/src/handlers/apiSa.js:48` — apiSa mounts verifyRequest() and the router with no uninstalled-shop / dead-token gate, so a shop with a revoked token keeps hitting Shopify on every tab interaction
+- `packages/functions/src/services/uninstallationService.js:24` — uninstallApp's only mutation writes {uninstalled, uninstalledAt} and never clears accessToken — and here it never even ran, so nothing marks the token dead by any path
+- `packages/functions/src/controllers/shopifyController.js:390` — console.error('checkHasImages error', e) — same 401, same shop, 5 seconds earlier, stayed severity DEFAULT because it is prefixed; proves the prefix, not the error, decides sink visibility
+- `packages/functions/src/services/shopifyService.js:129` — console.error('main theme error', e.message) — matches the 10:29:54.674Z / 10:32:21-23 / 10:55:39Z lines verbatim, identifying getMainThemeId as a second 401 source on the same shop that never alerted
+- `packages/functions/src/services/shopifyService.js:441` — console.error('[getCurrentAppHandle]', e.message) — matches the '[getCurrentAppHandle] Request failed with status code 401' lines paired with each main-theme 401
 
 ## Evidence
-- 1 matching entries: `timestamp>="2026-08-02T09:20:00Z" AND timestamp<="2026-08-03T09:20:00Z" AND textPayload:"Handling uninstalling" AND textPayload:"f49eef-3b"`
-- 5 matching entries: `resource.labels.function_name="apiSa" AND timestamp>="2026-08-03T09:01:40Z" AND timestamp<="2026-08-03T09:02:00Z" AND textPayload:"401"`
-- 4 matching entries: `timestamp>="2026-08-03T09:01:40Z" AND timestamp<="2026-08-03T09:02:00Z" AND textPayload:"f49eef-3b"`
-- 1 matching entries: `resource.labels.function_name="apiSa" AND timestamp>="2026-08-02T09:20:00Z" AND timestamp<="2026-08-03T09:20:00Z" AND severity>=ERROR`
-- 7 matching entries: `timestamp>="2026-08-02T09:20:00Z" AND timestamp<="2026-08-03T09:20:00Z" AND textPayload:"Handling uninstalling for"`
+- 1 matching entries: `resource.labels.function_name="apiSa" AND timestamp>="2026-08-07T10:15:05Z" AND timestamp<="2026-08-07T10:45:05Z" AND severity>=ERROR`
+- 12 matching entries: `resource.labels.function_name="apiSa" AND timestamp>="2026-08-07T10:29:00Z" AND timestamp<="2026-08-07T10:56:00Z" AND textPayload:"401"`
+- 28 matching entries: `resource.labels.function_name="apiSa" AND labels.execution_id="ywxljtmooxtw" AND timestamp>="2026-08-07T10:29:00Z" AND timestamp<="2026-08-07T10:31:00Z"`
+- 69 matching entries: `timestamp>="2026-08-07T00:44:00Z" AND timestamp<="2026-08-07T20:00:00Z" AND textPayload:"3ddd6b-2"`
+- 15 matching entries: `timestamp>="2026-08-05T00:00:00Z" AND timestamp<="2026-08-08T00:00:00Z" AND textPayload:"uninstallApp"`
+- 31 matching entries: `timestamp>="2026-08-07T10:00:00Z" AND timestamp<="2026-08-07T11:00:00Z" AND textPayload:"shpat_"`
 
 ## Job
 - analyze rounds: 1
-- cost: $6.44
-- tests: 16 tests, 75 failing · baseline 73 failing · reproduce check did not pass
-
-```
-.../functions/src/controllers/shopifyController.js | 37 +++++++++++++++-------
- packages/functions/src/services/shopifyService.js  | 14 +++++++-
- .../src/services/uninstallationService.js          | 19 ++++++++++-
- 3 files changed, 56 insertions(+), 14 deletions(-)
-```
+- cost: $2.55
 
 ## Verdict
 

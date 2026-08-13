@@ -5,13 +5,20 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: a3f0f490-5c60-457e-82b7-5860fe12e2f5
-  modified: 2026-08-12T10:13:15.085Z
+  modified: 2026-08-13T08:30:11.771Z
 ---
 
 SEO worker fleet is mid-migration: **old stack** (`~/Projects/seo-worker`, services
 `bullboard`/`seo-worker-leader`/`seo-worker`, deployed by master CI `[deploy-worker]` →
-`deploy-to-worker.sh`, CENTRAL only) runs ALONGSIDE **gen2** on the same redis (central
-`100.87.235.36:6380` db0). `[deploy-worker]` does NOT touch box1/box2 — wrong tool for fleet fixes.
+`deploy-to-worker.sh`) runs ALONGSIDE **gen2** on the same redis (central `100.87.235.36:6380` db0).
+
+**UPDATE 2026-08-13: `[deploy-worker]` NOW rolls box1/box2 too** (was central-only). The
+`deploy_worker` CI job runs `deploy-to-worker.sh` (central) then SSHes central and runs
+`fleet/deploy-followers.yml` — builds the follower image from the freshly-rsynced source
+(`~/Projects/seo-worker/functions`, tag=`$CI_COMMIT_SHORT_SHA`), docker-saves it, ships over the
+Tailscale ACL, rolls box1/box2 serial. Verified prod (pipeline 2756701255, image `dba4ae0e`, all 4
+replicas healthy). Needs the ACL + ansible-core on central — see [[seo-fleet-tailscale-acl-autodeploy]].
+NOTE this builds a ~5GB image + ships to 2 boxes each run → ~18min; fine for the manual trigger.
 
 **gen2 follower boxes** (box1=`100.123.202.84`, box2=`100.104.18.124`, 2 replicas each, box1.1/.2
 etc): compose `/home/avada/seo-worker-prod/compose.gen2-follower.yml`, image **name-pinned local**

@@ -1,11 +1,11 @@
 fingerprint: 3mppft
 service: api
-message: [afterLoginService] <http://kmaikd-tc.myshopify.com|kmaikd-tc.myshopify.com> TypeError: Cannot read properties of null (reading 'id')
+message: [afterLoginService] <http://woodcraft-furniture-ecommerce.myshopify.com|woodcraft-furniture-ecommerce.myshopify.com> TypeError: Cannot read properties of null (reading 'id')
 app: BLOG
 repo: blogs
-date: 2026-08-03T13:24:31.047Z
+date: 2026-08-12T21:12:55.901Z
 status: inconclusive
-attempt: 1
+attempt: 2
 
 # BLOG · api · 3mppft
 

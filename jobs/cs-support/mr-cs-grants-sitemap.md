@@ -1,24 +1,10 @@
-CS ticket 2026-08-12, items 1 and 2.
+CS ticket 2026-08-12, item 2.
 
-> **Stacked on `feat/minify-sunset`.** This MR targets that branch, so the diff shown here is only
-> the grants + Page Loader work. Merge !minify first; GitLab will retarget this to `master`.
+Independent of !2172 (minify). The two branches share exactly one file, `.gitignore`, with an
+identical patch, so they merge in either order without a conflict. Item 1 (Page Loader on Basic)
+moved to !2172 because it edits the same preset arrays that MR rewrites.
 
-## Item 1 — Page Loader is missing from Basic
-
-`ACTION_LOADING` is not in `ENTERPRISE_ACTION_LIST`, so every plan is entitled to Page Loader, but
-the Basic preset never listed it. A free-plan merchant on Basic got Standard's feature set minus the
-one feature they were actually entitled to.
-
-`'loading'` is inserted **before** `'asset'`, not appended. `handleEndProgress` treats the last entry
-of `actionList` as the end-of-run marker and the settings branch runs before the asset branch, so a
-preset ending in `loading` / `preload` / `pageSpeed` would mark the run finished while `asset` and
-`duplicate` are still in flight. The invariant is covered by `speedUpPresets.test.js` (added in
-!minify).
-
-No migration: presets are re-applied from these constants on every mode pick and every auto-optimize
-run.
-
-## Item 2 — CS needs to open a blocked feature for one shop
+## CS needs to open a blocked feature for one shop
 
 A merchant was told to use the XML sitemap on a free plan. Today the only way to do that is to flip
 `noLimit` on the shop doc, which opens **every** pro feature at once — which is exactly what was
@@ -75,12 +61,12 @@ Worth weighing while reviewing: `grantedFeatures` is strictly narrower than the 
 ## Verification
 
 ```
-$ DISABLE_V8_COMPILE_CACHE=1 npx jest speedUpPresets sitemapGate grantedFeatures minifyRetired
-Test Suites: 4 passed, 4 total
-Tests:       50 passed, 50 total
+$ DISABLE_V8_COMPILE_CACHE=1 npx jest sitemapGate grantedFeatures
+Test Suites: 2 passed, 2 total
+Tests:       23 passed, 23 total
 ```
 
-Diff vs `feat/minify-sunset`: 18 files, +425 / −23. No secrets, no `.env*` / lockfile / CI / firebase
+Diff vs `master`: 16 files, +419 / −23. No secrets, no `.env*` / lockfile / CI / firebase
 config touched, no new dependency. Firestore writes stay shop-scoped — the DevZone container has no
 shop input and `updateShopData` is keyed by the session's own `shopID`.
 

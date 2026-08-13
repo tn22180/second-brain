@@ -1,4 +1,10 @@
-CS ticket 2026-08-12, item 3 (Lan Anh / Esther): stop offering Minify.
+CS ticket 2026-08-12, items 1 and 3.
+
+Item 1 (Page Loader on Basic) rides along here rather than in !2173 because it edits the same
+preset arrays this MR rewrites — splitting them would guarantee a conflict on whichever merged
+second. !2173 is now fully independent of this branch.
+
+## Item 3 (Lan Anh / Esther) — stop offering Minify
 
 Shopify's CDN already minifies `theme.css.liquid` / `theme.js.liquid`, so this app's minify is
 redundant. The backend kill-switch has been live since `b67f7eb5c5` (`MINIFY_SUNSET = true` in
@@ -23,6 +29,11 @@ it OFF. Nobody can turn it ON.**
 
 **Presets** (`assets/config/image/speedOptimize.js`, `functions/const/optimizeSpeed.js`,
 `functions/const/speedUp.js`)
+- **Item 1:** `'loading'` added to `tasksBasic`. `ACTION_LOADING` is not in
+  `ENTERPRISE_ACTION_LIST`, so every plan is entitled to Page Loader, but the Basic preset never
+  listed it — a free-plan merchant on Basic got Standard's feature set minus the one feature they
+  were actually entitled to. It is inserted **before** `'asset'`, not appended, for the ordering
+  reason below.
 - `minify` removed from Basic / Standard / Turbo / Rocket and from the custom-mode source array.
   Left in place, an auto-optimize run would undo a merchant's minified theme without them asking.
 - New test `speedUpPresets.test.js` also locks an ordering invariant that is easy to break by
@@ -59,11 +70,11 @@ Full write-up: `docs/features/minify-sunset.md`.
 
 ```
 $ DISABLE_V8_COMPILE_CACHE=1 npx jest speedUpPresets minifyRetired
-Test Suites: 4 passed, 4 total
-Tests:       52 passed, 52 total
+Test Suites: 2 passed, 2 total
+Tests:       27 passed, 27 total
 ```
 
-Branch diff: 28 files, +326 / −106. No secrets, no `.env*` / lockfile / CI / firebase config
+Branch diff: 28 files, +331 / −106. No secrets, no `.env*` / lockfile / CI / firebase config
 touched, no new dependency, no Firestore query changed (shop scoping unaffected).
 
 ## Known follow-up, deliberately not in this MR
