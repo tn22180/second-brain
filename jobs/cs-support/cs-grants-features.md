@@ -93,6 +93,9 @@ Started: 2026-08-13
 | 16 | Reset + Webhook ra container riêng `Reset & Webhook` | inline | ✅ | 0/5 | clean | `7ababe05ca` |
 | 17 | Bỏ Speed Score / Email / Time execute load JS / Device A/B Testing / Custom speed score / Skip optimize / 2 section test 404 | inline | ✅ | 0/5 | clean | `7ababe05ca` |
 | 18 | Bỏ block Revert charge khỏi `Credit and subscription manager` | inline | ✅ | 0/5 | clean | `7ababe05ca` |
+| 19 | Dev & Test tools → CardCollapse, đổi tên `Trigger function` | inline | ✅ | 0/5 | clean | `a9759c1905` |
+| 20 | Phần speed up trong TS tools → card `Speed up` (`SpeedUpSettingsContainer`) | inline | ✅ | 0/5 | clean | `a9759c1905` |
+21: Reset & Webhook bỏ: Remove old HTML sitemap + Check bulk + cancel bulk + Optimize Store + Test Auto Optimize Now + test funtions + stop minification
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
@@ -345,6 +348,14 @@ Tuan thêm yêu cầu trực tiếp trong session, không qua brief. Toàn bộ 
 Sau job 16–18, `Dev & Test tools` chỉ còn `Trigger function` + `Weekly scan speed up test`, không
 còn cần redux / i18n / prop `shop`. Section `Assets` trong đó bọc `{!1 && …}` — guard không bao giờ
 true, code chết có sẵn từ trước nhánh này; **báo, không xoá**.
+
+**Job 20 — quyết định phạm vi**: brief ghi "đến cuối container", nhưng 2 thứ nằm cuối TS tools mà
+**không** phải speed up — `Extend Trial` / `Trial Ends At` (billing) và `Broken link support` — vẫn
+để nguyên trong TS tools. Muốn chuyển nốt thì nói.
+
+`SpeedUpSettingsContainer` đọc cùng draft `settings` qua `DevZoneContext` nên TS tools và card
+Speed up vẫn sửa chung 1 object; `TSToolsContainer` bỏ prop `handleChangeInput` — đó là chỗ duy
+nhất DevZone dùng nó.
 
 Bug bắt được khi làm: ô "Ignore files" trong Fix error 502 bind vào `themeFixId` — trùng key với
 dòng ngay trên, 2 field ghi đè nhau. Đã đi cùng lúc gỡ block đó.
