@@ -106,7 +106,9 @@ Started: 2026-08-13
 | 29 | `ShopSummary` 2 hàng (id+domain badge success / installed+trial+plan) + title `Features` / `Tools` cho 2 cột | inline | ✅ | 0/5 | clean | `4e555b8635` |
 | 30 | Bỏ nút copy ở `Shop installed at` + `Plan` | inline | ✅ | 0/5 | clean | `989ffcc175` |
 | 31 | `ShopSummary` gộp về 1 hàng | inline | ✅ | 0/5 | clean | `989ffcc175` |
-32: 2 title Features + tools chữ to hơn 1 tí và gap hơn 1 tí nữa
+| 32 | Title `Features` / `Tools` to hơn (`headingLg`) + thêm gap dưới | inline | ✅ | 0/5 | clean | `14e32d8ddf` |
+| 33 | `ShopSummary` gom về 1 cột | inline | ✅ | 0/5 | clean | `14e32d8ddf` |
+
 
 
 ### Log
