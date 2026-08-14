@@ -97,6 +97,9 @@ Started: 2026-08-13
 | 20 | Phần speed up trong TS tools → card `Speed up` (`SpeedUpSettingsContainer`) | inline | ✅ | 0/5 | clean | `a9759c1905` |
 | 21 | Bỏ 7 nút khỏi `Reset & Webhook` | inline | ✅ | 0/5 | clean | `a16f6f8934` |
 | 22 | Sắp xếp lại 2 cột DevZone: tools trái / feature phải | inline | ✅ | 0/5 | clean | `f0df7047ac` |
+| 23 | `Trigger function` sang cột phải, sau `Migrate to App Embed` | inline | ✅ | 0/5 | clean | `0a3109bbba` |
+| 24 | Gộp `On Page SEO Audit` vào `Checklist & Audit` | inline | ✅ | 0/5 | clean | `0a3109bbba` |
+| 25 | Sắp lại đầu cột trái theo thứ tự chỉ định | inline | ✅ | 0/5 | clean | `0a3109bbba` |
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
