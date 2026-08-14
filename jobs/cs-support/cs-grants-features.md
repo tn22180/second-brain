@@ -103,6 +103,9 @@ Started: 2026-08-13
 | 26 | Access token → card `Shopify plan & shop info` (`AccessTokenContainer`) | inline | ✅ | 0/5 | clean | `4a7ebe698f` |
 | 27 | Bỏ title `Control Panel`, thay bằng `ShopSummary` (badge + copy) | inline | ✅ | 0/5 | clean | `4a7ebe698f` |
 | 28 | Bỏ `Shop before pricing`, gộp Shop ID + Shopify domain vào `ShopSummary`, xoá card cũ | inline | ✅ | 0/5 | clean | `95160faebf` |
+| 29 | `ShopSummary` 2 hàng (id+domain badge success / installed+trial+plan) + title `Features` / `Tools` cho 2 cột | inline | ✅ | 0/5 | clean | `4e555b8635` |
+
+
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
