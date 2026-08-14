@@ -102,6 +102,7 @@ Started: 2026-08-13
 | 25 | Sắp lại đầu cột trái theo thứ tự chỉ định | inline | ✅ | 0/5 | clean | `0a3109bbba` |
 | 26 | Access token → card `Shopify plan & shop info` (`AccessTokenContainer`) | inline | ✅ | 0/5 | clean | `4a7ebe698f` |
 | 27 | Bỏ title `Control Panel`, thay bằng `ShopSummary` (badge + copy) | inline | ✅ | 0/5 | clean | `4a7ebe698f` |
+| 28 | Bỏ `Shop before pricing`, gộp Shop ID + Shopify domain vào `ShopSummary`, xoá card cũ | inline | ✅ | 0/5 | clean | `95160faebf` |
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
@@ -355,11 +356,11 @@ Sau job 16–18, `Dev & Test tools` chỉ còn `Trigger function` + `Weekly scan
 còn cần redux / i18n / prop `shop`. Section `Assets` trong đó bọc `{!1 && …}` — guard không bao giờ
 true, code chết có sẵn từ trước nhánh này; **báo, không xoá**.
 
-**Job 27 — chọn field theo SEO, không copy y ảnh**: ảnh mẫu là app blog. `ShopSummary` hiện
-`installedAtTest || installedAt`, `plan`, `trialEndsAt` (+ `trialDaysExtend`), và "shop before
-pricing". Dòng cuối **tính lại** mốc `FREE_BEFORE` (`plans.js:29`, 21/06/2021) chứ không đọc field
-— SEO không có field nào lưu chuyện này; có comment cảnh báo ai đổi mốc thì đổi cả 2 chỗ.
-Không có "Trial advanced elements to" như bên blog vì SEO không có khái niệm đó.
+**Job 27–28 — chọn field theo SEO, không copy y ảnh**: ảnh mẫu là app blog. `ShopSummary` cuối
+cùng gồm 5 dòng: Shop ID, Shopify domain, `installedAtTest || installedAt`, `plan`, `trialEndsAt`
+(+ `trialDaysExtend`) — mỗi dòng 1 badge + nút copy. Không có "Trial advanced elements to" (SEO
+không có khái niệm đó). "Shop before pricing" làm ở job 27 rồi **bỏ ở job 28**, kéo theo bản sao
+mốc `FREE_BEFORE` (`plans.js:29`) — giờ không còn chỗ nào phải đồng bộ mốc đó nữa.
 
 **Job 22 — 3 block không có trong danh sách**: brief liệt kê cột trái là "tools", nhưng 3 block
 sau **là tool mà không nằm trong list** nên theo đúng chữ đã sang phải: khối Shop Data Backup /
