@@ -84,6 +84,12 @@ Started: 2026-08-13
 | 7 | Migrate meta / social / site-verify / rule + 4 key mới | inline (~general-purpose/sonnet) | ✅ | 0/5 | clean | `2eb18bcd21` — 22 file |
 | 8 | DevZone gộp + BE honor grant cho image | inline (~cavecrew-builder/haiku) | ✅ | 0/5 | clean | `ca50bde5f2` |
 | 9 | Fix write-guard `isDevZone` | inline (~general-purpose/opus) | ↩️ | 0/5 | — | làm ở `68753214f4`, **đã revert** `db2b4df08f` theo yêu cầu Tuan (tự làm lại) |
+| 10 | Credit management + subscription → container `Credit and subscription manager` | inline | ✅ | 0/5 | clean | `33447647a3` |
+| 11 | Xoá Test zone, `Get all active charge` sang credit card | inline | ✅ | 0/5 | clean | `33447647a3` |
+| 12 | `Shopify Plan` + `Test installed at` → `Shopify plan & shop info` | inline | ✅ | 0/5 | clean | `33447647a3` |
+| 13 | Bỏ Promotion / BFCM 2024 / Trigger cron / Mark downgrade done / export email 404 / Metafields | inline | ✅ | 0/5 | clean | `33447647a3` |
+| 14 | `Extend optimize image quota` + `Uses on page number` → Growth Hacking, lên đầu cột phải | inline | ✅ | 0/5 | clean | `33447647a3` |
+| 15 | `Toggle using API functions V2` + `Use English language` → TS tools | inline | ✅ | 0/5 | clean | `33447647a3` |
 
 ### Log
 
@@ -309,3 +315,85 @@ Verify sau revert: eslint 1 lỗi có sẵn (`main.js:12`), `Tests: 4 failed, 98
   - Rollback: revert commit.
 - Rounds used: 0/5
 - Security check: -
+
+---
+
+## Vòng 2 — dọn DevZone + sunset minify (2026-08-14)
+
+Tuan thêm yêu cầu trực tiếp trong session, không qua brief. Toàn bộ nằm trên cùng nhánh
+`feat/cs-grants-features`, đã push vào **MR !2193**.
+
+### Dọn DevZone (`825b7519b4` → `33447647a3`)
+
+| Commit | Việc |
+|---|---|
+| `70d06f5a8f` | Wire gate 301 redirect, bỏ 2 key, làm lại grant card |
+| `825b7519b4` | Gỡ Review Management, action `getNewFeatureLimited`, Show Banner Score + banner "Management by score" |
+| `12bea3c497` | Custom structured data về card Google structured data |
+| `0c445b7242` | Gỡ FAQ Setting + Minification |
+| `568fc38feb`, `43dbd11222` | Gỡ 10 toggle Dev & Test |
+| `6da498f8d7` | Tách Block competitors / Custom CSS ra container riêng, bỏ Fix error 502 |
+| `c8bbc8dbad` | Gỡ Enable speed up + override preview domain khỏi CS tools |
+| `162cc8f3a4`, `1e5d1e7d0e` | 2 container đó thành collapsible, đẩy xuống cuối |
+| `19973027c1` | Gộp Shopify plan check + Sync shop info thành 1 card |
+| `aedefede57`, `c41a36a132` | CS tools và TS tools thành CardCollapse |
+| `33447647a3` | Job 10–15 (bảng Progress ở trên) |
+
+Bug bắt được khi làm: ô "Ignore files" trong Fix error 502 bind vào `themeFixId` — trùng key với
+dòng ngay trên, 2 field ghi đè nhau. Đã đi cùng lúc gỡ block đó.
+
+### Sunset minify — quét sạch copy + code chết (`725acadf3e`)
+
+27 file, +75/−645. Fan-out 4 investigator song song (FE text / pricing / BE const / docs) rồi gộp:
+
+- **Pricing**: 3 row `Minification / Minify CSS / Minify JS` trong bảng so sánh tier Speed Up.
+- **Speed up mode**: option `minify` ở Custom Mode, row queue-task + case timing, và block
+  `minify:{}` chết trong cả 4 preset (FE `speedOptimize.js` + BE `optimizeSpeed.js`). Không preset
+  nào có `'minify'` trong `actionList` → scaffolding cho task không chạy được.
+- **Copy**: subtitle Speed Up, blurb mode Basic/Standard, mô tả Setup task, block issue
+  `checklist.minify` + link guide, entry Onboarding (file mồ côi).
+- **Code chết**: `SCAN_PAGE_MINIFICATION`, `SETTINGS_FEATURE_MINIFICATION` trong `issuesHasEnable`,
+  nhánh `ACTION_MINIFY` không tới được ở `getListActions`, penalty minify trong `lowerScoreByTier`.
+- **Dev tool**: `/dev?x=test_minify` (đọc path cứng `/Users/namtran/Desktop/...`) + nút DevZone,
+  2 script mồ côi `commands/testMinify*.js`.
+- **Docs**: `home.md`, `performance.md`, skill `image-optimization` (+ mirror `.agent`);
+  `optimize-store.yaml` bỏ minify khỏi enum/example; `POST /api/settings/minify` viết lại thành
+  revert-only — body `minifyHtml/minifyCss/minifyJs` trong doc là bịa, thay bằng object `minify`
+  thật. `docs/features/minify-sunset.md` ghi lại bỏ gì / giữ gì.
+
+**Giữ nguyên đường revert**: `minifyService`, tab Minify cho shop còn `minify.enabled === true`,
+`/dev?x=reset_minify`, `defaultMinify`, reset khi downgrade. Shop còn `*.aio.min.*` trong theme vẫn
+cần chúng để gỡ ra.
+
+**Không đụng** GA event `MINIFICATION_*` (`analyticHelpers.js`, `useSubscriptionAnalytics.js`) —
+xoá là đổi số báo cáo lịch sử, không phải đổi text.
+
+### `devController` thiếu 12 import (`243caab5aa`)
+
+`no-undef` tắt trong eslint config của repo nên chưa ai thấy. Mỗi symbol là 1 `case` của
+`/dev?x=...` throw `ReferenceError` ngay khi gọi: `skippedXmlSitemap`, `handleAutoUpdateSitemap`,
+`SPEED_SCORE_KEY`, `defaultLazyLoad`, `createTransport`, `smtpConfig`, `renderTemplate`,
+`shopifyConfig`, `resolveBrokenLinks`, `handleReviewUpdates`, `startOptimizeByProduct`,
+`THEME_LAYOUT`, `OTHER_SNIPPET_NAME`, `avadaYettSnippetOld`.
+
+Còn 2 cái **chưa sửa** vì không phải lỗi import:
+- case `lazy_loading` đọc `data` trần (11 chỗ), không bind ở đâu. `lazyLoadSetting` dựng 2 dòng trên
+  rồi bỏ không dùng — nhưng `data.lazyLoad` ở chỗ save lại hàm ý object rộng hơn; đoán sai là đổi
+  cái nó ghi.
+- `Buffer` / `require` chỉ đỏ vì lần lint ad-hoc không có env node; babel compile file này ra CJS.
+
+### Verify vòng 2
+
+- `npx jest --testPathIgnorePatterns "/node_modules/" "/lib/" "/.worktrees/" "/scripts/__tests__/"`
+  → `4 failed, 988 passed, 992` — đúng 4 suite fail có sẵn của baseline master.
+- eslint `packages/assets/src` + `packages/functions/src`: chỉ `main.js:12` `ReactDOM.render`
+  deprecated, có sẵn ngoài diff.
+
+### Còn treo
+
+1. **`yarn update-label` với `GOOGLE_TRANSLATE_API_KEY`** — `en.json` đã regenerate (chạy
+   `autoTranslateV2` phần walk, từ chối bước dịch), 12 locale còn lại vẫn giữ 3 câu cũ. Máy không có
+   key, cũng không có model Ollama cho bản local.
+2. **Rotate `DEV_ZONE_PASSWORD`** (finding 🔴 vòng 1) — chưa làm.
+3. **T6**: grant `xmlSitemap` cho `reevolutionsg.myshopify.com` trên prod `avada-seo` — cần Tuan xác
+   nhận project id trước khi ghi.
