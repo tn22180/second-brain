@@ -95,7 +95,7 @@ Started: 2026-08-13
 | 18 | Bỏ block Revert charge khỏi `Credit and subscription manager` | inline | ✅ | 0/5 | clean | `7ababe05ca` |
 | 19 | Dev & Test tools → CardCollapse, đổi tên `Trigger function` | inline | ✅ | 0/5 | clean | `a9759c1905` |
 | 20 | Phần speed up trong TS tools → card `Speed up` (`SpeedUpSettingsContainer`) | inline | ✅ | 0/5 | clean | `a9759c1905` |
-21: Reset & Webhook bỏ: Remove old HTML sitemap + Check bulk + cancel bulk + Optimize Store + Test Auto Optimize Now + test funtions + stop minification
+| 21 | Bỏ 7 nút khỏi `Reset & Webhook` | inline | ✅ | 0/5 | clean | `a16f6f8934` |
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
@@ -348,6 +348,13 @@ Tuan thêm yêu cầu trực tiếp trong session, không qua brief. Toàn bộ 
 Sau job 16–18, `Dev & Test tools` chỉ còn `Trigger function` + `Weekly scan speed up test`, không
 còn cần redux / i18n / prop `shop`. Section `Assets` trong đó bọc `{!1 && …}` — guard không bao giờ
 true, code chết có sẵn từ trước nhánh này; **báo, không xoá**.
+
+**Job 21**: bỏ `Remove old HTML sitemap`, `Check bulk`, `Cancel bulk`, `Optimize Store`,
+`Test Auto Optimize Now`, `Test function`, `Stop minification`. Cái cuối trước đó **cố ý giữ** ở
+vòng quét minify (cách clear `minify.updating` bị kẹt) — Tuan yêu cầu bỏ nút, route BE
+`/dev?x=reset_minify` vẫn còn nên shop kẹt giữa chừng revert vẫn gọi trực tiếp được.
+Reset còn: Wizard, Review, Checklist, Force done Script Manager scan, Stop lazy loading,
+Stop critical CSS, Update Active Sub, Send test Email.
 
 **Job 20 — quyết định phạm vi**: brief ghi "đến cuối container", nhưng 2 thứ nằm cuối TS tools mà
 **không** phải speed up — `Extend Trial` / `Trial Ends At` (billing) và `Broken link support` — vẫn
