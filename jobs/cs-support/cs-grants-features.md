@@ -104,6 +104,9 @@ Started: 2026-08-13
 | 27 | Bỏ title `Control Panel`, thay bằng `ShopSummary` (badge + copy) | inline | ✅ | 0/5 | clean | `4a7ebe698f` |
 | 28 | Bỏ `Shop before pricing`, gộp Shop ID + Shopify domain vào `ShopSummary`, xoá card cũ | inline | ✅ | 0/5 | clean | `95160faebf` |
 | 29 | `ShopSummary` 2 hàng (id+domain badge success / installed+trial+plan) + title `Features` / `Tools` cho 2 cột | inline | ✅ | 0/5 | clean | `4e555b8635` |
+| 30 | Bỏ nút copy ở `Shop installed at` + `Plan` | inline | ✅ | 0/5 | clean | `989ffcc175` |
+| 31 | `ShopSummary` gộp về 1 hàng | inline | ✅ | 0/5 | clean | `989ffcc175` |
+32: 2 title Features + tools chữ to hơn 1 tí và gap hơn 1 tí nữa
 
 
 ### Log
