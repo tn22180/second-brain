@@ -96,6 +96,7 @@ Started: 2026-08-13
 | 19 | Dev & Test tools → CardCollapse, đổi tên `Trigger function` | inline | ✅ | 0/5 | clean | `a9759c1905` |
 | 20 | Phần speed up trong TS tools → card `Speed up` (`SpeedUpSettingsContainer`) | inline | ✅ | 0/5 | clean | `a9759c1905` |
 | 21 | Bỏ 7 nút khỏi `Reset & Webhook` | inline | ✅ | 0/5 | clean | `a16f6f8934` |
+| 22 | Sắp xếp lại 2 cột DevZone: tools trái / feature phải | inline | ✅ | 0/5 | clean | `f0df7047ac` |
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
@@ -348,6 +349,11 @@ Tuan thêm yêu cầu trực tiếp trong session, không qua brief. Toàn bộ 
 Sau job 16–18, `Dev & Test tools` chỉ còn `Trigger function` + `Weekly scan speed up test`, không
 còn cần redux / i18n / prop `shop`. Section `Assets` trong đó bọc `{!1 && …}` — guard không bao giờ
 true, code chết có sẵn từ trước nhánh này; **báo, không xoá**.
+
+**Job 22 — 3 block không có trong danh sách**: brief liệt kê cột trái là "tools", nhưng 3 block
+sau **là tool mà không nằm trong list** nên theo đúng chữ đã sang phải: khối Shop Data Backup /
+Batch Purge / Job History / Wave5 Probe (owner-only), `Trigger function`, `Referral`. Nói 1 câu là
+chuyển sang trái. Panel domain / access token giữ trên cùng cột trái làm header trang.
 
 **Job 21**: bỏ `Remove old HTML sitemap`, `Check bulk`, `Cancel bulk`, `Optimize Store`,
 `Test Auto Optimize Now`, `Test function`, `Stop minification`. Cái cuối trước đó **cố ý giữ** ở
