@@ -90,7 +90,9 @@ Started: 2026-08-13
 | 13 | Bỏ Promotion / BFCM 2024 / Trigger cron / Mark downgrade done / export email 404 / Metafields | inline | ✅ | 0/5 | clean | `33447647a3` |
 | 14 | `Extend optimize image quota` + `Uses on page number` → Growth Hacking, lên đầu cột phải | inline | ✅ | 0/5 | clean | `33447647a3` |
 | 15 | `Toggle using API functions V2` + `Use English language` → TS tools | inline | ✅ | 0/5 | clean | `33447647a3` |
-
+| 16 | Reset + Webhook ra container riêng `Reset & Webhook` | inline | ✅ | 0/5 | clean | `7ababe05ca` |
+| 17 | Bỏ Speed Score / Email / Time execute load JS / Device A/B Testing / Custom speed score / Skip optimize / 2 section test 404 | inline | ✅ | 0/5 | clean | `7ababe05ca` |
+| 18 | Bỏ block Revert charge khỏi `Credit and subscription manager` | inline | ✅ | 0/5 | clean | `7ababe05ca` |
 ### Log
 
 #### ✅ Task 0: gỡ gitlink `.worktrees/` (phát sinh, không có trong plan gốc)
@@ -338,6 +340,11 @@ Tuan thêm yêu cầu trực tiếp trong session, không qua brief. Toàn bộ 
 | `19973027c1` | Gộp Shopify plan check + Sync shop info thành 1 card |
 | `aedefede57`, `c41a36a132` | CS tools và TS tools thành CardCollapse |
 | `33447647a3` | Job 10–15 (bảng Progress ở trên) |
+| `7ababe05ca` | Job 16–18 (bảng Progress ở trên) |
+
+Sau job 16–18, `Dev & Test tools` chỉ còn `Trigger function` + `Weekly scan speed up test`, không
+còn cần redux / i18n / prop `shop`. Section `Assets` trong đó bọc `{!1 && …}` — guard không bao giờ
+true, code chết có sẵn từ trước nhánh này; **báo, không xoá**.
 
 Bug bắt được khi làm: ô "Ignore files" trong Fix error 502 bind vào `themeFixId` — trùng key với
 dòng ngay trên, 2 field ghi đè nhau. Đã đi cùng lúc gỡ block đó.
