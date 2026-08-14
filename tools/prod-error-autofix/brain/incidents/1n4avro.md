@@ -3,41 +3,39 @@ service: authgen2
 message: HTTP 504 POST /auth/webhook/shop/update
 app: SEO
 repo: seo
-date: 2026-08-12T15:21:55.145Z
-status: inconclusive
-attempt: 2
+date: 2026-08-14T02:27:49.573Z
+status: mr_open
+attempt: 3
 
 # SEO · authgen2 · 1n4avro
 
-**Outcome.** smoke gate reproduce_not_failing
+**Outcome.** duplicate of ujwpw9 — MR https://gitlab.com/avada/seo/-/merge_requests/2175
 
-**Root cause.** 0.12% of Shopify shop/update webhook deliveries (6 of 5103 in 32 min) stall past authGen2's 60s Cloud Run request timeout inside @avada/core's onShopUpdate, which runs three unbounded Firestore RPCs with no application-level deadline; Cloud Run returns 504 while the RPC is still pending, so nothing in the process ever logs an error.
+**Root cause.** During 2026-08-13T16:24–16:31Z the single authgen2 instance (001548f7293cac2d1f94…) hit a Firestore write-commit latency spike; `shopRepository.updateShop`'s `DocumentReference.update` inside @avada/core's onShopUpdate has no application-level deadline, so 27 of 2597 shop/update deliveries (1.04%) sat on the pending commit until Cloud Run's undeclared-and-therefore-default 60s request timeout fired and answered Shopify-Captain-Hook with 504.
 
-**Mechanism.** authGen2 is declared at packages/functions/src/handlers/exports/httpFunctions.js:81 with no timeoutSeconds override, so firebase-functions v2 leaves the Cloud Run default of 60s. packages/functions/src/handlers/auth.js:76 mounts shopifyAuth().routes() from @avada/core, which registers POST /webhook/shop/update -> verifyWebhook -> onShopUpdate (node_modules/@avada/core/build/auth.js:96). verifyWebhook is pure HMAC, synchronous, no I/O (node_modules/@avada/core/build/middleware/verifyWebhook.js:56-61). onShopUpdate's first statement is console.log('Handling the shop update webhook', domain, plan_name) at node_modules/@avada/core/build/controllers/webhookController.js:298; every statement after it is Firestore I/O (getShopByShopifyDomain :299, updateShop :305, updateOrCreateShopInfo :313). All 6 of the 504 requests were matched by spanId (request-log spanId in hex == stdout spanId in decimal) to exactly one stdout line each — that first console.log, emitted 3.8-5.2ms after request start — and then produced no further log for the remaining 59.995s. So the request entered the handler, cleared HMAC, and hung somewhere in those three Firestore calls. None of the 6 shops had plan_name in closedPlans ['frozen','cancelled','fraudulent'], so the cancel/reopen branches (:322, :346) never ran; the hang is in the unconditional read+2-write prefix. The stall is transient and not shop-specific: each of the 6 shops had other deliveries in the same window that completed at ~0.1s (lamartinamilano 66 deliveries / 1 stall, 72c95c-57 60/1, quasarbiotech 57/1, j-j-pet-club 14/1, vxdi5q-ek 5/1, 701ba8 3/1). Nothing on the path carries a deadline, so the pending RPC outlives the request and Cloud Run answers Shopify-Captain-Hook with 504 at the 60s mark.
+**Mechanism.** authGen2 is declared at packages/functions/src/handlers/exports/httpFunctions.js:82 with memory/region/vpcSettings but no `timeoutSeconds`, so firebase-functions v2 leaves the Cloud Run 60s default — every one of the 27 failures has latency 59.9996–60.018s. packages/functions/src/handlers/auth.js:76 is the only mount of `shopifyAuth().routes()`, which serves POST /webhook/shop/update -> onShopUpdate (node_modules/@avada/core/build/controllers/webhookController.js:289). onShopUpdate runs its Firestore prefix inline and unbounded: getShopByShopifyDomain (:299), updateShop (:305), updateOrCreateShopInfo (:313). 3 of the 27 requests got a stderr line out before the container cut them, and each stack resolves the same way: `4 DEADLINE_EXCEEDED: Deadline exceeded after 60.000s` -> google-gax -> WriteBatch.commit -> DocumentReference.update -> node_modules/@avada/core/build/repositories/shopRepository.js:162 — i.e. `shopDoc.ref.update(updateData)` in updateShop. The read that precedes it in the same function (lookupRawShop, :158) resolved, so the stall is on the write commit, not the read or auth. Firestore's gax default deadline is also 60s, so the RPC and the Cloud Run request expire at the same instant — the catch at webhookController.js:382 fires too late to change the response, which is why 24 of 27 produced no application log at all. Three checks rule out the alternatives: it is not document contention (27 failures span 24 distinct shop domains; the busiest shop in the window, thunghiemstore747.myshopify.com with 161 deliveries, failed exactly once), it is not a project-wide Firestore brownout (a DEADLINE_EXCEEDED sweep across all of avada-seo for 16:15–16:40Z returns 3 entries, all authgen2), and it is not VPC egress (packages/functions/src/config/vpcSettings.js:15 is PRIVATE_RANGES_ONLY, so Firestore never crosses the connector). The instance stayed healthy throughout — 2570 of 2597 requests returned 200 at a 0.10s median — but the write path grew a fat tail during the failure window (successes at 43.5s, 42.6s, 52.5s, 28.2s, 26.6s against a 0.10s baseline), so slow commits were completing just under the line and 27 crossed it.
 
 Confidence: `medium`
 
 ## Code
-- `packages/functions/src/handlers/exports/httpFunctions.js:81` — authGen2 onRequest declares memory/region/vpc but no timeoutSeconds, so the Cloud Run limit is the 60s default that every one of the 6 failures hit to within 1.1ms
-- `packages/functions/src/handlers/auth.js:76` — the only mount of shopifyAuth().routes() — the sole place /auth/webhook/shop/update is served, and the only point in this repo's src/ where a deadline/ack middleware can be inserted ahead of the vendored handler
-- `node_modules/@avada/core/build/controllers/webhookController.js:298` — the console.log that is the last thing all 6 stuck requests emitted; everything after it (:299 getShopByShopifyDomain, :305 updateShop, :313 updateOrCreateShopInfo) is Firestore I/O with no timeout
-- `node_modules/@avada/core/build/middleware/verifyWebhook.js:56` — verifyWebhook is synchronous HMAC over ctx.req.rawBody with no I/O and logs 'Error verify webhook' on mismatch — no such log exists for the 6, so the stall is downstream of auth, not in it
+- `packages/functions/src/handlers/exports/httpFunctions.js:82` — authGen2 onRequest declares memory/region/vpcSettings but no timeoutSeconds, leaving the Cloud Run 60s default that all 27 failures hit to within 18ms
+- `packages/functions/src/handlers/auth.js:76` — the only mount of shopifyAuth().routes() — the sole point in this repo's src/ where a deadline or queue-and-ACK can be inserted ahead of the vendored onShopUpdate
+- `node_modules/@avada/core/build/repositories/shopRepository.js:162` — shopDoc.ref.update(updateData) — the exact frame the 3 captured DEADLINE_EXCEEDED stacks bottom out on, with no timeout passed to the Firestore call
+- `node_modules/@avada/core/build/controllers/webhookController.js:305` — onShopUpdate's unconditional inline call to updateShop, second of three sequential unbounded Firestore RPCs on the webhook request path
+- `node_modules/@avada/core/build/controllers/webhookController.js:382` — the catch that logs 'Error processing shop update hook' — it runs only after the 60s gax deadline, i.e. after Cloud Run already answered 504, which is why 24 of 27 left no application log
+- `packages/functions/src/config/vpcSettings.js:15` — vpcConnectorEgressSettings PRIVATE_RANGES_ONLY — Firestore traffic does not traverse the VPC connector, ruling out connector throughput as the stall
 
 ## Evidence
-- 5000 matching entries: `(resource.labels.service_name="authgen2" OR resource.labels.function_name="authgen2") AND timestamp>="2026-08-07T13:52:00Z" AND timestamp<="2026-08-07T14:25:00Z" AND logName:"requests"`
-- 6 matching entries: `(resource.labels.service_name="authgen2" OR resource.labels.function_name="authgen2" OR resource.labels.job_name="authgen2") AND timestamp>="2026-08-07T13:52:57.462Z" AND timestamp<="2026-08-07T14:22:57.462Z" AND severity>=ERROR`
-- 5103 matching entries: `resource.labels.service_name="authgen2" AND timestamp>="2026-08-07T13:52:00Z" AND timestamp<="2026-08-07T14:25:00Z" AND logName:"stdout"`
-- 47 matching entries: `timestamp>="2026-08-07T14:00:00Z" AND timestamp<="2026-08-07T14:08:00Z" AND severity>=ERROR AND resource.labels.service_name!="authgen2"`
+- 27 matching entries: `(resource.labels.service_name="authgen2" OR resource.labels.function_name="authgen2" OR resource.labels.job_name="authgen2") AND timestamp>="2026-08-13T16:11:22.422Z" AND timestamp<="2026-08-13T16:41:22.422Z" AND httpRequest.status>=500`
+- 3 matching entries: `(resource.labels.service_name="authgen2" OR resource.labels.function_name="authgen2" OR resource.labels.job_name="authgen2") AND timestamp>="2026-08-13T16:11:22.422Z" AND timestamp<="2026-08-13T16:41:22.422Z" AND logName:"stderr"`
+- 2597 matching entries: `resource.labels.service_name="authgen2" AND timestamp>="2026-08-13T16:20:00Z" AND timestamp<="2026-08-13T16:35:00Z" AND logName:"requests"`
+- 2589 matching entries: `resource.labels.service_name="authgen2" AND timestamp>="2026-08-13T16:20:00Z" AND timestamp<="2026-08-13T16:35:00Z" AND logName:"stdout"`
+- 3 matching entries: `timestamp>="2026-08-13T16:15:00Z" AND timestamp<="2026-08-13T16:40:00Z" AND resource.labels.project_id="avada-seo" AND ("DEADLINE_EXCEEDED" OR "Deadline exceeded")`
 
 ## Job
 - analyze rounds: 1
-- cost: $4.78
-- tests: 927 tests, 6 failing · baseline 6 failing · reproduce check did not pass
-
-```
-packages/functions/src/handlers/auth.js | 38 +++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
-```
+- cost: $2.20
+- MR: https://gitlab.com/avada/seo/-/merge_requests/2175
 
 ## Verdict
 

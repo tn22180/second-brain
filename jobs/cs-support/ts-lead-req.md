@@ -371,9 +371,30 @@ ai-product-copy   fix/apc-swagger-deps-auth   270766e   5 file, +72 −14
 llm-ai-search-seo fix/aeo-swagger-secret      9c394de   1 file, +15
 ```
 
+### UPDATE 2026-08-14 — đã push, MR mở
+
+Tuan xác nhận đã set xong 2 CI variable. Push + tạo MR:
+
+| App | MR | Base | Commit |
+|---|---|---|---|
+| APC | https://gitlab.com/avada/ai-product-copy/-/merge_requests/188 | `master` | `270766e` |
+| AEO | https://gitlab.com/avada/llm-ai-search-seo/-/merge_requests/118 | `main` | `9c394de` |
+
+Cả hai `--remove-source-branch`, state `open`, **pipeline xanh, mergeable, không conflict**.
+
+APC đỏ lần đầu ở `docs_gate`: `route-coverage: no spec entry for GET /api/shopify/collection-options`.
+Không phải diff này — route vào từ `feature/FAL-568` (`eb7b9b6`, 10/08), docs-gate merge sau (!187),
+nên **mọi MR mở từ đó đều đỏ**. Vá bằng commit riêng `cab296d` (thêm entry vào
+`packages/functions/src/docs/swagger-shopify.yaml`), gate local `60 routes | 60 documented | PASS`.
+
+Ghi chú: tag `v1.6.28` (13/08) cũng đỏ, nhưng đỏ ở `push-react-artifacts:production` —
+`deploy-firebase:production` **success** trong khi container crash startup. Xanh/đỏ của pipeline
+không nói gì về revision đang serve.
+**Vẫn chưa tag → prod chưa đổi gì.** Bước 3 và 4 dưới đây còn nguyên.
+
 ### Việc còn lại — tay Tuan
 
-**1. Set CI variable (bắt buộc, không có bước này thì code vẫn 503).**
+**1. Set CI variable (bắt buộc, không có bước này thì code vẫn 503).** ✅ done 2026-08-14
 Giá trị nằm sẵn trong file, copy nguyên dòng `SWAGGER_JWT_SECRET=...`:
 
 | App | Đọc từ file | Paste vào CI variable |
@@ -384,7 +405,7 @@ Giá trị nằm sẵn trong file, copy nguyên dòng `SWAGGER_JWT_SECRET=...`:
 CI append cả biến vào `packages/functions/.env` lúc deploy
 (AEO `.gitlab-ci.yml:309-310`, APC `.gitlab-ci.yml:127-128`).
 
-**2. Push + MR.** APC base `master`, AEO base `main`.
+**2. Push + MR.** ✅ done 2026-08-14 — MR !188 (APC), !118 (AEO), link ở bảng trên.
 
 **3. Tag để deploy.** Chỉ tag mới deploy prod ở cả hai repo.
 `git fetch --tags` trước. APC tag hiện tại là `v1.6.x` (KHÔNG phải `v1.84.X` như

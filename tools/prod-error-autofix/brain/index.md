@@ -7,6 +7,129 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1t97xtj` · 2026-08-14 · BLOG · subscribebatcharticlesummary · no verified cause · — · inconclusive
+- `15f66sw` · 2026-08-14 · BLOG · api · no verified cause · — · inconclusive
+- `1szehrm` · 2026-08-14 · SEO · apigen2 · BigQuery rejected two fire-and-forget streaming inserts from falcon-event-tracker at 06:02:49Z and 06:03:07Z w · — · infra
+- `1bfed3n` · 2026-08-14 · SEO · recursivesubscribergen2 · Two distinct causes share this window: (a) the alerted line — one STARTUP TCP probe DEADLINE_EXCEEDED on a rec · — · infra
+- `kratks` · 2026-08-14 · SEO · scanissuessubscribergen2 · Infra, not code: the 2026-08-14T04:43:15Z prod deploy of avada-seo (UpdateFunction by tuannv@avadagroup.com) c · — · infra
+- `lnjtei` · 2026-08-14 · SEO · resetoptimizeschedulegen2 · Infra, not code: the 2026-08-14T04:42:30Z prod deploy of avada-seo created revision resetoptimizeschedulegen2- · — · infra
+- `b3r1nk` · 2026-08-14 · SEO · handlehooksubscribergen2 · Infra, not code: the 2026-08-14T04:42:30Z prod deploy of avada-seo created revision handlehooksubscribergen2-0 · — · infra
+- `1huzatk` · 2026-08-14 · SEO · updatespeedupexpiretimepublishergen2 · Infra, not code: the 2026-08-14T04:42:31Z prod deploy of avada-seo created revision updatespeedupexpiretimepub · — · infra
+- `hp9jv6` · 2026-08-14 · SEO · bulkauditfixproductgen2 · Infra, not code: the 2026-08-14T04:42:39Z prod deploy of avada-seo created revision bulkauditfixproductgen2-00 · — · infra
+- `1e1njfe` · 2026-08-14 · SEO · handleexportbrokenurlsgen2 · Infra, not code: the 2026-08-14T04:42:30Z prod deploy of avada-seo rolled out revision handleexportbrokenurlsg · — · infra
+- `yg48ak` · 2026-08-14 · SEO · handlesyncurlredirectsgen2 · Infra, not code: the 2026-08-14T04:42Z prod deploy of avada-seo created revision handlesyncurlredirectsgen2-00 · — · infra
+- `qejune` · 2026-08-14 · SEO · subscribeupdatenewsubscribercreditshandlergen2 · Infra, not code: the 2026-08-14T04:42:31Z prod deploy of avada-seo created revision subscribeupdatenewsubscrib · — · infra
+- `1qfuynm` · 2026-08-14 · SEO · handleexportresourcepaginatedgen2 · Infra, not code: the 2026-08-14T04:42:31Z prod deploy of avada-seo created revision handleexportresourcepagina · — · infra
+- `i4yn7s` · 2026-08-14 · SEO · handledeleteallredirectsgen2 · Infra, not code: the 2026-08-14T04:42:30Z prod deploy of avada-seo created revision handledeleteallredirectsge · — · infra
+- `1qtihyi` · 2026-08-14 · SEO · syncsubscribeactivechargegen2 · Infra, not code: the 2026-08-14T04:42:31Z prod deploy of avada-seo created revision syncsubscribeactivechargeg · — · infra
+- `lisw3f` · 2026-08-14 · SEO · handleprocessinternallinkreportgen2 · Infra, not code: during the 2026-08-14T04:4xZ prod deploy rollout of avada-seo, one cold-start container of ha · — · infra
+- `a62zk` · 2026-08-14 · SEO · tapaffiliateprocessgen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision tapaffiliateprocessgen2-00 · — · infra
+- `dw8unc` · 2026-08-14 · SEO · apigen2 · Infra, not code: during the 2026-08-14T04:0x–05:0xZ prod deploy window of avada-seo, apigen2 containers repeat · — · infra
+- `17pqsl7` · 2026-08-14 · SEO · optimizeproductsubscribergen2 · Infra, not code: the 2026-08-14T04:31:58Z prod deploy of avada-seo created revision optimizeproductsubscriberg · — · infra
+- `s01pkg` · 2026-08-14 · SEO · dailyjobspublishergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision dailyjobspublishergen2-003 · — · infra
+- `1udmr73` · 2026-08-14 · SEO · apiv2gen2 · Infra, not code: the 2026-08-14T04:25Z prod deploy of avada-seo created revision apiv2gen2-00325-pac, whose co · — · infra
+- `18hglhi` · 2026-08-14 · SEO · onrevertinternallinkupdategen2 · Infra, not code: the 2026-08-14T04:31:56Z prod deploy of avada-seo created revision onrevertinternallinkupdate · — · infra
+- `18794gq` · 2026-08-14 · SEO · revertimagecollectionsubscribergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision revertimagecollectionsubsc · — · infra
+- `192jvm9` · 2026-08-14 · SEO · handleprocessbatchrestoreshopsgen2 · Infra, not code: the 2026-08-14T04:31:43Z prod deploy of avada-seo created revision handleprocessbatchrestores · — · infra
+- `1f2282i` · 2026-08-14 · SEO · subscribedowngradebfcmbundlehandlergen2 · Infra, not code: the 2026-08-14T04:35Z prod deploy of avada-seo created revision subscribedowngradebfcmbundleh · — · infra
+- `3tnrcs` · 2026-08-14 · SEO · updatesitemapssubscribergen2 · Infra, not code: the 2026-08-14T04:35Z prod deploy of avada-seo created revision updatesitemapssubscribergen2- · — · infra
+- `14yc9bw` · 2026-08-14 · SEO · updatespeedupexpiretimesubscribergen2 · Infra, not code: the 2026-08-14T04:35Z prod deploy of avada-seo created revision updatespeedupexpiretimesubscr · — · infra
+- `2pbd9` · 2026-08-14 · SEO · handleapproveinternallinkbatchgen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision handleapproveinternallinkb · — · infra
+- `145obvc` · 2026-08-14 · SEO · toolsgen2 · Infra, not code: the 2026-08-14T04:25:46Z prod deploy of avada-seo created revision toolsgen2-00318-kuc, whose · — · infra
+- `13wx2gk` · 2026-08-14 · SEO · handleimportdatagen2 · Infra, not code: the 2026-08-14T04:25–04:36Z prod deploy of avada-seo created revision handleimportdatagen2-00 · — · infra
+- `w3e84n` · 2026-08-14 · SEO · webhookimagegen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision webhookimagegen2-00319-rum · — · infra
+- `shhovc` · 2026-08-14 · SEO · oncreatecouponusagesgen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision oncreatecouponusagesgen2-0 · — · infra
+- `l1ix4v` · 2026-08-14 · SEO · revertimagessubscribergen2 · Infra, not code: the 2026-08-14T04:31–04:32Z prod deploy of avada-seo rolled out revision revertimagessubscrib · — · infra
+- `d3p7y8` · 2026-08-14 · SEO · fixauditcontentgen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision fixauditcontentgen2-00149- · — · infra
+- `1n75rs6` · 2026-08-14 · SEO · onsyncurlredirectsupdategen2 · Infra, not code: the 2026-08-14T04:31–04:36Z prod deploy of avada-seo created revision onsyncurlredirectsupdat · — · infra
+- `apd2cs` · 2026-08-14 · SEO · runbulkdatashopifyexportgen2 · Infra, not code: the 2026-08-14T04:32Z prod deploy of avada-seo created revision runbulkdatashopifyexportgen2- · — · infra
+- `1jqc0d4` · 2026-08-14 · SEO · weeklybrokenlinkspublishergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision weeklybrokenlinkspublisher · — · infra
+- `1novipc` · 2026-08-14 · SEO · handlegenfaqsgen2 · Infra, not code: the 2026-08-14T04:2xZ prod deploy of avada-seo hit a platform-side container-start fault that · — · infra
+- `deue3s` · 2026-08-14 · SEO · ext-firestore-bigquery-export-fsexportbigquery · Not app code: the repo-managed Firebase extension instance `firestore-bigquery-export` (firebase/firestore-big · — · infra
+- `p7he52` · 2026-08-14 · SEO · backupthemesubscribergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision backupthemesubscribergen2- · — · infra
+- `1s88080` · 2026-08-14 · SEO · overwritesocialtagssubscribergen2 · Infra, not code: the 2026-08-14T04:25–04:47Z prod deploy of avada-seo hit a platform-side container-start faul · — · infra
+- `3wv547` · 2026-08-14 · SEO · embedappgen2 · Duplicate of the already-recorded fingerprint e9i6k0 (infra, no MR): the same platform-side container-start/fi · — · infra
+- `v78n8i` · 2026-08-14 · SEO · sidekickgen2 · Infra, not code: the 2026-08-14T04:25:45Z prod deploy of avada-seo created revision sidekickgen2-00002-det, an · — · infra
+- `17rms13` · 2026-08-14 · SEO · handleprocessinternallinkupdatepagecountsgen2 · Infra, not code: the 2026-08-14T04:31:45Z prod deploy of avada-seo created revision handleprocessinternallinku · — · infra
+- `qqn3ht` · 2026-08-14 · IMG-OPT · aiapi · Infra, not code: the single OPTIONS /sidekick/v1/speed/score 500 was rejected by Cloud Run at admission during · — · infra
+- `r1b6ut` · 2026-08-14 · SEO · handlegetbulkresourcegen2 · Infra, not code: the 2026-08-14T04:31:38Z prod deploy of avada-seo created revision handlegetbulkresourcegen2- · — · infra
+- `xtf9a9` · 2026-08-14 · SEO · handleprocessgenerateanchortextbatchgen2 · Infra, not code: the 2026-08-14T04:31:45Z prod deploy of avada-seo created revision handleprocessgenerateancho · — · infra
+- `164s3nq` · 2026-08-14 · SEO · matchreviewswithshopssubscribergen2 · Infra, not code: the 2026-08-14T04:31:51Z prod deploy of avada-seo created revision matchreviewswithshopssubsc · — · infra
+- `1mfv7pn` · 2026-08-14 · SEO · changelogtriggers-subscriptions · Infra, not code: the same platform-side container-start fault that swept avada-seo/us-central1 during the 2026 · — · infra
+- `1upz9gb` · 2026-08-14 · SEO · dailyjobssynccrisponestarshops · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision dailyjobssynccrisponestars · — · infra
+- `32rhxe` · 2026-08-14 · SEO · changelogtriggers-shopinfos · Infra, not code: the same platform-side container-filesystem fault that swept avada-seo/us-central1 during the · — · infra
+- `bn2rrq` · 2026-08-14 · SEO · weeklybrokenlinksreportpublishergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision weeklybrokenlinksreportpub · — · infra
+- `jj7ibe` · 2026-08-14 · SEO · resetproductoptimizepublishergen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision resetproductoptimizepublis · — · infra
+- `oljzqs` · 2026-08-14 · SEO · handleapproveallsuggestinternallinkgen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo rolled out revision handleapproveallsuggest · — · infra
+- `3ma0sz` · 2026-08-14 · SEO · webhookappsubscriptionupdategen2 · Infra, not code: the 2026-08-14T04:25:47Z prod deploy of avada-seo created revision webhookappsubscriptionupda · — · infra
+- `1s70qli` · 2026-08-14 · SEO · resetgen2 · Infra, not code: the 2026-08-14T04:25Z prod deploy of avada-seo hit a platform-side container-start fault that · — · infra
+- `1wpcrz3` · 2026-08-14 · SEO · publishbulkfaqsgen2 · Infra, not code: the 2026-08-14 04:31–04:47Z prod deploy of avada-seo hit a platform-side container-start faul · — · infra
+- `58n8b8` · 2026-08-14 · SEO · oncreateusergen2 · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z · — · infra
+- `wyqgny` · 2026-08-14 · SEO · changelogtriggers-shopinfos · Infra, not code: the same platform-side container-start/filesystem fault that swept avada-seo/us-central1 duri · — · infra
+- `1kyn3ri` · 2026-08-14 · SEO · handlerevertallinternallinksgen2 · Infra, not code: the deploy of revision handlerevertallinternallinksgen2-00318-xuw at 2026-08-14T04:31:47Z lan · — · infra
+- `10vnojp` · 2026-08-14 · SEO · webhookbulkoperationgen2 · Infra, not code: the same platform-side container-start fault that swept avada-seo/us-central1 during 2026-08- · — · infra
+- `ie0sn4` · 2026-08-14 · SEO · handlerevertinternallinkbatchgen2 · Infra, not code: the same platform-side container-start fault that hit avada-seo/us-central1 during 2026-08-14 · — · infra
+- `x6anmw` · 2026-08-14 · SEO · webhookpublishthemegen2 · Duplicate of fingerprint zod1y3 (already recorded infra, no MR): the same platform-side container-start fault  · — · infra
+- `zod1y3` · 2026-08-14 · SEO · webhookpublishthemegen2 · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 2026-08-14 0 · — · infra
+- `220y3n` · 2026-08-14 · SEO · changelogtriggers-shopinfos · Infra, not code: the same platform-side container-start/filesystem fault in avada-seo/us-central1 during the 2 · — · infra
+- `1p5r03h` · 2026-08-14 · SEO · scanspeedscoresubscriberv2gen2 · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 2026-08-14 0 · — · infra
+- `1ymh1bc` · 2026-08-14 · SEO · syncsubscribeactivecancelbfcmbundlegen2 · Infra, not code: the deploy of revision syncsubscribeactivecancelbfcmbundlegen2-00319-yas at 2026-08-14T04:25: · — · infra
+- `pr4klq` · 2026-08-14 · SEO · scanspeedscoresubscriberv2gen2 · Duplicate of fingerprint 6f0nn (already recorded infra, no MR): the same platform-side container-start fault i · — · infra
+- `1nne8x3` · 2026-08-14 · SEO · oncreateusergen2 · Infra, not code: the same platform-side container-start fault that hit avada-seo/us-central1 during 2026-08-14 · — · infra
+- `8a94wp` · 2026-08-14 · SEO · changelogtriggers-subscriptions · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during 2026-08-14T04:00–05:30Z · — · infra
+- `6f0nn` · 2026-08-14 · SEO · scanspeedscoresubscriberv2gen2 · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 2026-08-14 0 · — · infra
+- `5dup6h` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 during 2026-08-14T04:09Z– · — · infra
+- `v291h3` · 2026-08-14 · SEO · changelogtriggers-subscriptions · Duplicate of fingerprint q19goa (already recorded infra, no MR): the same platform-side container-start fault  · — · infra
+- `1tesetr` · 2026-08-14 · SEO · webhookcreateproductgen2 · Infra, not code: one cold-start container of webhookcreateproductgen2, started by a Cloud Run DEPLOYMENT_ROLLO · — · infra
+- `q12jxx` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-filesystem/startup fault in avada-seo/us-central1 during 2026-08-14 · — · infra
+- `q19goa` · 2026-08-14 · SEO · changelogtriggers-subscriptions · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z · — · infra
+- `1i16r90` · 2026-08-14 · SEO · extensiongen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 during the 04:16–04:40Z h · — · infra
+- `w77oic` · 2026-08-14 · SEO · optimizesubscriberv2gen2 · Duplicate of fingerprint 1wblodj (already recorded infra, no MR): the same platform-side container-start fault · — · infra
+- `1fgksqk` · 2026-08-14 · SEO · optimizestoresubscribergen2 · Infra, not code: the same platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z · — · infra
+- `1wblodj` · 2026-08-14 · SEO · optimizesubscriberv2gen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
+- `nxz67h` · 2026-08-14 · SEO · bulkauditfixapplygen2 · Duplicate of the already-recorded 2026-08-14 04:0x–05:3xZ platform fault in avada-seo/us-central1 (fingerprint · — · infra
+- `1t6fr9s` · 2026-08-14 · SEO · changelogtriggers-shopinfos · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
+- `6ya4nu` · 2026-08-14 · SEO · bulkauditfixdispatchgen2 · Duplicate of fingerprint 1w98ui1 (already recorded infra, no MR): the same platform-side container-start fault · — · infra
+- `1mzc7t9` · 2026-08-14 · BLOG · proxy · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 during the 04:2x–04:3xZ b · — · infra
+- `blfh15` · 2026-08-14 · BLOG · api · PUT /api/article/630025421087 for shop lGFvPaSOKCGOsGrvYOXi fails deterministically because the articleUpdate  · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
+- `14ywrzy` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
+- `1d04pkl` · 2026-08-14 · BLOG · api · no verified cause · — · inconclusive
+- `h47mgc` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
+- `1w98ui1` · 2026-08-14 · SEO · bulkauditfixdispatchgen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:14–04:45Z window · — · infra
+- `1db4z7z` · 2026-08-14 · SEO · optimizestoresubscribergen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
+- `1lwydlk` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
+- `1f08848` · 2026-08-14 · SEO · ext-firestore-bigquery-export-fsexportbigquery · Infra, not code: a platform-side Cloud Run scheduling fault in avada-seo/us-central1 during the 04:00–05:00Z h · — · infra
+- `16ubfhn` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-start/filesystem fault in avada-seo/us-central1 during the 04:00–05 · — · infra
+- `kjv3nd` · 2026-08-14 · SEO · extensiongen2 · Duplicate of fingerprint 1r74ll6 (already recorded infra, no MR): the same platform-side container-start fault · — · infra
+- `pva4gd` · 2026-08-14 · SEO · changelogtriggers-shops · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 during the 04:0x–04:3xZ h · — · infra
+- `koudd9` · 2026-08-14 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1r74ll6` · 2026-08-14 · SEO · extensiongen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
+- `l1uerj` · 2026-08-14 · BLOG · proxy · Duplicate of fingerprints j5n4n6 / mgvvdq (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerg · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
+- `1qrdito` · 2026-08-14 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `j5n4n6` · 2026-08-14 · BLOG · proxy · Shopify Admin GraphQL answered two isolated POSTs with HTTP 404 at 04:14:11Z and 04:16:34Z, and the storefront · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
+- `8g3u6t` · 2026-08-14 · SEO · onupdateshopgen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:09:45Z and 04: · — · infra
+- `1470mjt` · 2026-08-14 · SEO · authgen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:10:31Z and 04: · — · infra
+- `muzsov` · 2026-08-14 · SEO · proxygen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 killed proxygen2 cold starts o · — · infra
+- `1mprni` · 2026-08-14 · SEO · changelogtriggers-shops · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:12Z and 04:31Z · — · infra
+- `1bwfmw9` · 2026-08-14 · SEO · onupdateshopgen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:01Z and 04:26Z · — · infra
+- `1her4w8` · 2026-08-14 · SEO · authgen2 · Duplicate of fingerprints 1e908f9 / mumebf (already recorded infra, no MR): the same platform-side container-s · — · infra
+- `1l0d0ei` · 2026-08-14 · SEO · embedappgen2 · Duplicate of fingerprint e9i6k0 / 1ge62bd (already recorded infra, no MR): a platform-side container-filesyste · — · infra
+- `1mk24ih` · 2026-08-14 · SEO · onupdateshopgen2 · Duplicate of fingerprints mr1olj and 1bpp1pw (already recorded infra, no MR): the same platform-side container · — · infra
+- `mumebf` · 2026-08-14 · SEO · authgen2 · Duplicate of fingerprint 1e908f9 (already recorded infra, no MR): the same platform-side container-start fault · — · infra
+- `1ge62bd` · 2026-08-14 · SEO · embedappgen2 · Duplicate of fingerprint e9i6k0 (already recorded infra, no MR): a platform-side container-filesystem fault in · — · infra
+- `e9i6k0` · 2026-08-14 · SEO · embedappgen2 · A platform-side container-filesystem fault in avada-seo/us-central1 between 04:05:08Z and 04:27:57Z on 2026-08 · — · infra
+- `17wg4ve` · 2026-08-14 · SEO · partnerintegrationsubscribergen2 · Infra: a platform-side container-start fault in avada-seo/us-central1 between 2026-08-14T03:52Z and ~05:30Z ma · — · infra
+- `15mknix` · 2026-08-14 · SEO · partnerintegrationsubscribergen2 · Infra: a platform-side container-start fault in avada-seo/us-central1 between 04:01Z and 04:26Z on 2026-08-14  · — · infra
+- `1e908f9` · 2026-08-14 · SEO · authgen2 · A platform-side container-start fault in avada-seo/us-central1 between 04:05:25Z and 04:19:26Z on 2026-08-14 s · — · infra
+- `1bpp1pw` · 2026-08-14 · SEO · onupdateshopgen2 · A platform-side container-filesystem fault in avada-seo/us-central1 between 04:01Z and 04:16Z on 2026-08-14 ma · — · infra
+- `mr1olj` · 2026-08-14 · SEO · onupdateshopgen2 · Infra: a platform-side container-start fault in avada-seo/us-central1 between 04:01Z and 04:15Z on 2026-08-14  · — · infra
+- `1p5r2c8` · 2026-08-14 · BLOG · syncsubscribeactivecharge · Duplicate of fingerprint 1hhuvvv (already recorded infra, no MR): the same single cold-start container of sync · — · infra
+- `1hhuvvv` · 2026-08-14 · BLOG · syncsubscribeactivecharge · One syncsubscribeactivecharge cold-start container (instance 001548f72995ac61…, revision -00124-jag) failed to · — · infra
+- `1nxcmmh` · 2026-08-14 · SEO · sidekickgen2 · Shop Pk6T1NRT6nSPiMJhzGVf's stored Shopify offline token was granted before `read_locales` was added to the ap · https://gitlab.com/avada/seo/-/merge_requests/2198 · mr_open
+- `1q1aqq3` · 2026-08-14 · SEO · proxygen2 · GET /proxy/sitemap/products.xml for roljo.myshopify.com returned 500 because getRedirectTracer's underlying li · https://gitlab.com/avada/seo/-/merge_requests/2195 · mr_open
+- `1a6kcum` · 2026-08-14 · SEO · apisagen2 · apisagen2 instance 001548f729dfe2… was OOM-killed at 2048 MiB while serving GET /apiSa/scanFeatureWorking/page · — · infra
+- `fdchua` · 2026-08-14 · BLOG · api · Duplicate of fingerprint r2v3gh (MR https://gitlab.com/avada/blogs/-/merge_requests/878 open, unmerged — line  · https://gitlab.com/avada/blogs/-/merge_requests/878 · mr_open
+- `r2v3gh` · 2026-08-14 · BLOG · api · GET /api/article/629392670984 returned 500 because articleController.getOne issues the shopLocales Shopify Adm · https://gitlab.com/avada/blogs/-/merge_requests/878 · mr_open
 - `xg7e5b` · 2026-08-13 · SEO · apisagen2 · packages/functions/src/controllers/devController.js references the identifier `shopifyConfig` but the file has · https://gitlab.com/avada/seo/-/merge_requests/2192 · mr_open
 - `6lewzd` · 2026-08-13 · SEO · apigen2 · no verified cause · — · inconclusive
 - `1iaehe` · 2026-08-13 · AEO · apiSa · Shopify Admin REST GET /admin/api/2026-XX/shop.json returned HTTP 402 Payment Required for the frozen shop 3bv · — · inconclusive
@@ -30,13 +153,13 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `a4t42q` · 2026-08-12 · SEO · apigen2 · packages/functions/src/controllers/bulkAuditFixController.js calls `publishTopic(...)` in revertBulkFix (and r · https://gitlab.com/avada/seo/-/merge_requests/2181 · mr_open
 - `154s6rb` · 2026-08-12 · BLOG · api · Shopify Admin GraphQL answered a `files(first:250)` page POST with HTTP 502 for shop LNcuFl5eNNlAlRh7dUDq at 2 · — · deferred
 - `1tb355r` · 2026-08-12 · SEO · apigen2 · packages/functions/src/controllers/devController.js uses `shopifyConfig` at two call sites but has no `import  · https://gitlab.com/avada/seo/-/merge_requests/2180 · mr_open
-- `1l9y5gr` · 2026-08-12 · SEO · apigen2 · The merge of feat/worker-pubsub-migration (d71f665015, master 2026-08-11T08:49:48Z) deleted the `import appCon · — · inconclusive
+- `1l9y5gr` · 2026-08-14 · SEO · apigen2 · packages/functions/src/controllers/devController.js uses the identifier `CHECKLIST_KEY` in the `done_checklist · https://gitlab.com/avada/seo/-/merge_requests/2199 · mr_open
 - `rpe1y2` · 2026-08-12 · BLOG · api · getProductsGraphQL interpolates the merchant's raw search text into a double-quoted GraphQL string literal, so · — · deferred
 - `ri5pmt` · 2026-08-12 · SEO · apisagen2 · Merge d71f665015 (feat/worker-pubsub-migration, master 2026-08-11T08:49:48Z) deleted `import appConfig from '@ · — · inconclusive
 - `1lqxi03` · 2026-08-12 · BLOG · proxy · The single Shopify Admin GraphQL call in getArticlesByTagWithPagination (tag.service.js:246) is issued through · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
 - `17l3oan` · 2026-08-12 · BLOG · api · Duplicate of fingerprint 1re07yj (MR https://gitlab.com/avada/blogs/-/merge_requests/859 open, unmerged — a445 · https://gitlab.com/avada/blogs/-/merge_requests/859 · mr_open
 - `6g2iqd` · 2026-08-13 · BLOG · auth · POST /auth/webhook/shop/update awaits three unbounded Firestore round-trips inside @avada/core's onShopUpdate  · — · deferred
-- `i9jsmj` · 2026-08-12 · SEO · apisagen2 · The merge of feat/worker-pubsub-migration (d71f665015, master 2026-08-11T08:49:48Z) deleted the `import appCon · — · inconclusive
+- `i9jsmj` · 2026-08-14 · SEO · apisagen2 · packages/functions/src/controllers/devController.js calls `resolveBrokenLinks(ctx, shop)` in the `resolve_brok · https://gitlab.com/avada/seo/-/merge_requests/2196 · mr_open
 - `9ukw9f` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model prefixed its featured-image JSON with a prose sentence ("Given the extremely sparse knowl · — · deferred
 - `4kz4kp` · 2026-08-12 · SEO · apigen2 · PUT /api/redirects/resolve returns 500 because handleResolveRedirectSkipError's update-path catch handler resp · https://gitlab.com/avada/seo/-/merge_requests/2107 · mr_open
 - `1cbmty8` · 2026-08-12 · SEO · apisagen2 · GET /apiSa/dev/shop-faq-setting returns 500 because shopGetFaqSetting builds its Shopify client with a bare in · https://gitlab.com/avada/seo/-/merge_requests/2178 · mr_open
@@ -99,7 +222,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1qmdvrl` · 2026-08-12 · BLOG · api · GET /api/article/:id opened without a `locale` or `primary` query param makes articleController.getOne pass `u · https://gitlab.com/avada/blogs/-/merge_requests/863 · mr_open
 - `g91yns` · 2026-08-12 · SEO · retriggeroptimizepublishergen2 · One cold-start container of retriggeroptimizepublishergen2 (instance 001548f72986fb78…) never bound :8080 and  · — · infra
 - `1n79ojv` · 2026-08-12 · BLOG · proxy · Shopify's storefront does not serve a just-published article immediately, and fetchRenderedArticleHtml's retry · https://gitlab.com/avada/blogs/-/merge_requests/862 · mr_open
-- `1dlgm1s` · 2026-08-12 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages passes the base64 *string* returned by sharpCompressImage into uploadToCloudStora · — · inconclusive
+- `1dlgm1s` · 2026-08-14 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages passes the base64 *string* from sharpCompressImage into uploadToCloudStorage (whi · — · inconclusive
 - `u2coqc` · 2026-08-12 · BLOG · reviewupdatesschedule · reviewUpdatesSchedule calls puppeteer.launch() with no args, no explicit timeout and no retry, so when Chrome  · https://gitlab.com/avada/blogs/-/merge_requests/861 · mr_open
 - `dlfokk` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model emitted a raw unescaped double quote inside the JSON string value of `body` (`Our tagline · — · infra
 - `s0kn2e` · 2026-08-12 · BLOG · api · The alert is a swallowed, non-fatal per-image failure: OpenRouter's image fetcher got HTTP 404 for two cdn.sho · https://gitlab.com/avada/blogs/-/merge_requests/860 · mr_open
@@ -115,7 +238,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `gzw4fx` · 2026-08-12 · BLOG · api · Duplicate of fingerprint w6i1j5 (MR https://gitlab.com/avada/blogs/-/merge_requests/856 open, unmerged): this  · https://gitlab.com/avada/blogs/-/merge_requests/856 · mr_open
 - `w6i1j5` · 2026-08-12 · BLOG · api · A ~700 ms Shopify Admin API auth brownout at 2026-08-05T08:20:52.8–53.5Z hit one api instance (001548f72910…)  · https://gitlab.com/avada/blogs/-/merge_requests/856 · mr_open
 - `iropn8` · 2026-08-12 · BLOG · api · seoProxyApi's catch classifies severity solely from `e.response?.status`, so a transport-level failure (axios  · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
-- `15hvwoe` · 2026-08-12 · BLOG · api · no verified cause · — · inconclusive
+- `15hvwoe` · 2026-08-14 · BLOG · api · POST /api/tools/genAi returns {success:false} because toolsYouTubeController.generateContent parses the OpenRo · https://gitlab.com/avada/blogs/-/merge_requests/879 · mr_open
 - `1j6q02h` · 2026-08-12 · BLOG · api · PUT /api/dev_zone?type=sync-products-blog dereferences the request body's `listProductId` with no validation,  · https://gitlab.com/avada/blogs/-/merge_requests/855 · mr_open
 - `66acoy` · 2026-08-12 · SEO · updatespeedupexpiretimesubscribergen2 · The every-2-days updateSpeedUpExpireTimePublisherGen2 cron published all 166 chunk messages (8258 shops / 50)  · — · infra
 - `h4rn6s` · 2026-08-12 · BLOG · api · readTemplateData parses Shopify theme JSON templates with bare JSON.parse after stripping only the FIRST /* */ · https://gitlab.com/avada/blogs/-/merge_requests/854 · mr_open
@@ -129,7 +252,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `klsiut` · 2026-08-04 · SEO · apisagen2 · GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request  · — · inconclusive
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
-- `1h0gjn4` · 2026-08-04 · SEO · apigen2 · Shopify REST answered `metafield.list` for shop LW7GWp7zmfDtdJfQhXjH with HTTP 429 during the GET /api/analysi · — · inconclusive
+- `1h0gjn4` · 2026-08-14 · SEO · apigen2 · Shopify REST `metafield.list` answered HTTP 429 for shop f7gyAstbmRKIprVvNT24 during GET /api/analysis/page/69 · — · inconclusive
 - `1mv41mw` · 2026-08-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
@@ -189,7 +312,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `ch47c4` · 2026-08-01 · SEO · apigen2 · Duplicate of fingerprint h9cev0 (MR https://gitlab.com/avada/seo/-/merge_requests/2095 open, unmerged): the br · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
 - `jphxvx` · 2026-08-01 · SEO · lighthouseauditrunnergen2 · lighthouseauditrunnerGen2 is declared memory: '4GiB' (packages/functions/src/handlers/exports/httpFunctions.js · — · infra
 - `13ctxrk` · 2026-08-01 · SEO · lighthouseauditrunnergen2 · lighthouseauditrunnerGen2 is declared memory: '4GiB' while a single mobile/densen4G Lighthouse+Chrome audit of · — · infra
-- `2vji03` · 2026-08-12 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `2vji03` · 2026-08-14 · SEO · proxygen2 · no verified cause · — · inconclusive
 - `egp052` · 2026-08-01 · BLOG · api · afterInstall re-reads the shop from Firestore by domain while @avada/core is still creating that shop doc, so  · https://gitlab.com/avada/blogs/-/merge_requests/813 · mr_open
 - `1dzotmb` · 2026-08-01 · SEO · reconcilependingfinalizegen2 · reconcilePendingFinalizeGen2 is declared at memory: '512MiB' while this repo's shared src/ import graph needs  · — · infra
 - `n9axd7` · 2026-08-02 · BLOG · dailyjobssynccrisponestarshops · The hardcoded Crisp plugin credential in packages/functions/src/services/config/crisp.js (identifier 97b91091- · https://gitlab.com/avada/blogs/-/merge_requests/816 · mr_open
@@ -197,7 +320,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1svzmym` · 2026-08-01 · SEO · dailyjobspublishergen2 · Duplicate of fingerprint 1ihmdly (MR https://gitlab.com/avada/seo/-/merge_requests/2096 open, unmerged): clean · https://gitlab.com/avada/seo/-/merge_requests/2096 · mr_open
 - `1ihmdly` · 2026-08-01 · SEO · dailyjobspublishergen2 · cleanEmailNotify never filters: its predicate `validateEmailFormat(email.trim()) ? email.trim() : emailShop` r · https://gitlab.com/avada/seo/-/merge_requests/2096 · mr_open
 - `h9cev0` · 2026-07-31 · SEO · apigen2 · The browser sent a `__session` cookie that is not a valid Avada-encrypted session, and @avada/core's decryptTe · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
-- `5id62v` · 2026-08-12 · SEO · apigen2 · All 5 POST /api/audit-agent/fix-issue 500s in the window are shop TEVUnmwqU1jDURnq6IOo hitting a Shopify Admin · — · inconclusive
+- `5id62v` · 2026-08-14 · SEO · apigen2 · POST /api/audit-agent/fix-issue with issueType FAQS_ASSESSMENT for collection 331936399548 (shop J8OixlUUiVj6K · https://gitlab.com/avada/seo/-/merge_requests/2197 · mr_open
 - `1jt9dai` · 2026-07-31 · SEO · lighthouseauditrunnergen2 · One audit request to lighthouseauditrunnerGen2 sat queued for its caller's full 120s budget and was never plac · — · infra
 - `yt88f3` · 2026-07-31 · BLOG · apiv2 · createChatModel builds every LangGraph ChatOpenAI with `streaming: true`, so createFeaturedImageNode's non-str · — · deferred
 - `997lb2` · 2026-07-31 · BLOG · api · genIdeas asks OpenRouter for an unconstrained free-text completion (getAIResponse → getCompletion with format  · — · deferred
@@ -205,7 +328,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `oivd0n` · 2026-08-04 · BLOG · api · A one-off HTTP 500 from the upstream Avada SEO proxy (https://seo.apps.avada.io/proxy/updateOvrList) hit seoPr · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
 - `1ik3o0v` · 2026-08-04 · BLOG · subscribesummarynewpublishedarticle · generateAndSaveLocaleSummary references an undeclared variable `savePromises`, so every call throws ReferenceE · https://gitlab.com/avada/blogs/-/merge_requests/834 · mr_open
 - `y82dik` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
-- `1n4avro` · 2026-08-12 · SEO · authgen2 · 0.12% of Shopify shop/update webhook deliveries (6 of 5103 in 32 min) stall past authGen2's 60s Cloud Run requ · — · inconclusive
+- `1n4avro` · 2026-08-14 · SEO · authgen2 · During 2026-08-13T16:24–16:31Z the single authgen2 instance (001548f7293cac2d1f94…) hit a Firestore write-comm · https://gitlab.com/avada/seo/-/merge_requests/2175 · mr_open
 - `15lpfvb` · 2026-07-31 · SEO · apigen2 · OpenRouter aborted generation mid-output (finish_reason=error) for google/gemini-2.5-flash-lite on the meta_ta · https://gitlab.com/avada/seo/-/merge_requests/2093 · mr_open
 - `wyd91p` · 2026-08-03 · BLOG · apiv2 · OpenRouter answers HTTP 200 and then emits a 429 'temporarily rate-limited upstream' error frame inside the al · https://gitlab.com/avada/blogs/-/merge_requests/822 · mr_open
 - `10ydl1h` · 2026-08-03 · BLOG · api · Duplicate of fingerprint pboq3f (MR https://gitlab.com/avada/blogs/-/merge_requests/826 open, unmerged — fix c · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
@@ -217,8 +340,8 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `lajh7i` · 2026-08-03 · BLOG · proxy · no verified cause · — · inconclusive
 - `xhe0fj` · 2026-07-31 · BLOG · api · Duplicate of fingerprint rq3qf8 / 1w64e0z (MR 810 open, unmerged): Shopify Admin GraphQL answered one transien · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
 - `rq3qf8` · 2026-07-31 · BLOG · api · Shopify Admin GraphQL answered one transient HTTP 503 to shop FqpPuSM3XKz0LLkZXe24's shopLocales query, and sh · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
-- `1f3smxv` · 2026-07-31 · BLOG · proxy · Shopify's Admin GraphQL API returned a one-off HTTP 503 for two healthy shops, and the storefront tag path cal · — · deferred
-- `100ms51` · 2026-08-12 · SEO · apigen2 · GET /api/resource-report computes its report inline by scanning the shop's entire Shopify catalog (all 4 resou · — · inconclusive
+- `1f3smxv` · 2026-08-14 · BLOG · proxy · A one-off Shopify Admin GraphQL HTTP 503 on the single `articles` query in getArticlesByTagWithPagination beca · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
+- `100ms51` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `pboq3f` · 2026-08-03 · BLOG · api · During a 13.5-hour intermittent OpenRouter rate limit on Google's Gemini SKUs, getCompletion's last-attempt fa · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `ri78d8` · 2026-07-31 · SEO · apisagen2 · no verified cause · — · inconclusive
 - `epfkly` · 2026-08-01 · BLOG · reviewupdatesschedule · Every run of reviewUpdatesSchedule since Chrome was restored on the container (2026-07-31) dies in getPageRevi · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open

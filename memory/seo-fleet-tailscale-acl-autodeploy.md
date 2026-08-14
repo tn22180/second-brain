@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: a3f0f490-5c60-457e-82b7-5860fe12e2f5
-  modified: 2026-08-13T07:22:17.199Z
+  modified: 2026-08-14T08:38:02.559Z
 ---
 
 Auto-deploy to the Gen2 follower boxes needs central (ansible control node) to SSH box1/box2
@@ -17,6 +17,15 @@ tailnet ACL (admin console `login.tailscale.com/admin/acls`, NOT repo), set 2026
 - Kept a `check` rule `autogroup:member → tag:worker-box` so the dev Mac fallback still SSHes boxes
   (a TAGGED box no longer matches `autogroup:self`, so the default self-SSH rule stops covering it).
 - tailnet is the **grants**-based schema: `tests`/`sshTests` blocks rejected (`unknown field dst/sshUser`) → omit them, verify live instead.
+
+**Gotcha 3 — SSHing INTO central (dev Mac → central), hit 2026-08-14 after a power outage:**
+the `ssh` block had NO rule with `dst: [tag:deploy]`. Central is `tag:deploy`, so `autogroup:self`
+never matches it (self = user-owned nodes only) → `tailnet policy does not permit you to SSH to this
+node`. Before central was tagged it was self-owned and the default member→self rule covered it;
+tagging it (or a re-auth that re-applies the tag) removes that coverage. Fix = add
+`{action: check, src: [autogroup:member], dst: [tag:deploy], users: [avada, autogroup:nonroot]}`,
+then connect with `tailscale ssh avada@100.87.235.36` (check mode needs the tailscale client for the
+browser re-auth). A power outage can also drop a node's tag entirely → re-add in Machines → Edit ACL tags.
 
 Two gotchas that made the first tests fail even with the rule saved:
 1. **box1 had Tailscale SSH server OFF** → `Permission denied (publickey)` (fell through to plain sshd,

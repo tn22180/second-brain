@@ -3,32 +3,46 @@ service: apigen2
 message: HTTP 500 GET /api/dev
 app: SEO
 repo: seo
-date: 2026-08-12T18:59:31.242Z
-status: inconclusive
-attempt: 1
+date: 2026-08-14T03:05:02.947Z
+status: mr_open
+attempt: 2
 
 # SEO · apigen2 · 1l9y5gr
 
-**Outcome.** fix blocked at only_tests_changed
+**Outcome.** MR opened: https://gitlab.com/avada/seo/-/merge_requests/2199
 
-**Root cause.** The merge of feat/worker-pubsub-migration (d71f665015, master 2026-08-11T08:49:48Z) deleted the `import appConfig from '@functions/config/app'` line from devController.js while keeping `const {hookUrl} = appConfig;` as the first statement of testOnly(), so every Dev Zone /api/dev?x=... call threw ReferenceError before reaching the switch.
+**Root cause.** packages/functions/src/controllers/devController.js uses the identifier `CHECKLIST_KEY` in the `done_checklist` branch of testOnly but the file never imports it from '@functions/const/seoIssues', so every GET /api/dev?x=done_checklist throws ReferenceError and returns 500.
 
-**Mechanism.** DevZone page for minhpt-store-15.myshopify.com issued 6 GET /api/dev calls (4× x=get_worker_health, 2× x=get_worker_jobs) at 02:41:44–02:41:53Z. All 6 route to testOnly (packages/functions/src/controllers/devController.js:194). At the deployed revision the function's first statement destructured `appConfig`, an identifier no longer imported after d71f665015 — prod stack: `ReferenceError: appConfig is not defined at testOnly (/workspace/lib/controllers/devController.js:127:7)` (lib line ≠ src line; symbol match). The throw happens before the `switch (x)`, so neither `case 'get_worker_jobs'` (:1792) nor `case 'get_worker_health'` (:1801) ever ran — the worker fleet was never contacted. Koa's unhandledError handler returned 500. Latency 0.20–1.12s, consistent with failing immediately after getShopById/initShopify, not with a fleet timeout. Already fixed on master: 8e06eab2dd (2026-08-12T02:52:16Z, 11 min after this alert) restored the import; 8de1543ebb then deleted the dead `hookUrl` line plus the import and added the missing MIGRATED_TOPICS import. Current HEAD c271bfc0df contains both.
+**Mechanism.** The Dev Zone page for hhwings.myshopify.com (shop drphDXJQ4bhpWcMftsJn) issued 4 GET /api/dev?x=done_checklist calls at 01:21:46–01:22:03Z. All route to testOnly (packages/functions/src/controllers/devController.js:194), which dispatches on ctx.query.x and enters `case 'done_checklist'` (:1385). Building the updateChecklist payload evaluates the computed keys `[`${CHECKLIST_KEY}.scanning`]` (:1390) and `[`${CHECKLIST_KEY}.lastScanAt`]` (:1391). `CHECKLIST_KEY` is exported from packages/functions/src/const/seoIssues.js:42 and imported by localStorageController.js:6, seoController.js:76, recalcChecklistScore.js:1, internalTools.js:10 — but devController.js has no import for it (grep over the file's 162 import lines returns zero hits for 'seoIssues'; the only two occurrences of the symbol are the two uses). Node therefore throws `ReferenceError: CHECKLIST_KEY is not defined`, exactly as prod reports: 8 stderr lines (4× [api] + 4× [unhandledError]) with stack `at /workspace/lib/controllers/devController.js:1431:17 ... at async testOnly (/workspace/lib/controllers/devController.js:144:14)` (lib line ≠ src line; symbol match). Koa's unhandledError handler answered 500 with a 1028-byte body. Latency 0.45–0.71s across 3 distinct instances — consistent with failing right after getShopById/initShopify, not with a Firestore or Shopify stall; Audit.getChecklistId never ran and no checklist doc was written. The `done_checklist` case was added whole by merge 23716a3f07 (2026-07-28) without the accompanying import — same defect family as fingerprints 1tb355r/xg7e5b (`shopifyConfig` not defined) and attempt 1 of this fingerprint (`appConfig` not defined), all in this same file.
 
 Confidence: `high`
 
 ## Code
-- `packages/functions/src/controllers/devController.js:194` — testOnly(ctx) — the Dev Zone action dispatcher named in the prod stack (lib/controllers/devController.js:127). At the deployed revision its first line was `const {hookUrl} = appConfig;` with no import; that line is gone at HEAD (removed by 8de1543ebb).
-- `packages/functions/src/controllers/devController.js:1792` — case 'get_worker_jobs' — the branch the 2 failing get_worker_jobs requests never reached.
-- `packages/functions/src/controllers/devController.js:1801` — case 'get_worker_health' — the branch the 4 failing get_worker_health requests never reached.
+- `packages/functions/src/controllers/devController.js:1390` — `[`${CHECKLIST_KEY}.scanning`]` — first evaluation of the undefined identifier; this is the line the prod stack maps to (lib:1431).
+- `packages/functions/src/controllers/devController.js:1391` — second use of `CHECKLIST_KEY` in the same updateChecklist payload.
+- `packages/functions/src/controllers/devController.js:194` — testOnly(ctx) — the handler named in the prod stack (lib:144); dispatches on ctx.query.x.
+- `packages/functions/src/controllers/devController.js:1385` — `case 'done_checklist':` — the branch the 4 failing requests entered.
+- `packages/functions/src/const/seoIssues.js:42` — `export const CHECKLIST_KEY = 'avada-seo-checklist';` — the missing import's source.
+- `packages/functions/src/controllers/localStorageController.js:6` — the correct import form (`import {CHECKLIST_KEY, SPEED_SCORE_KEY} from '@functions/const/seoIssues';`) that devController.js lacks.
+- `packages/functions/src/repositories/localStorageRepository.js:6` — updateChecklist's own module imports CHECKLIST_KEY, showing the constant is the intended field prefix for this write.
 
 ## Evidence
-- 12 matching entries: `(resource.labels.service_name="apigen2" OR resource.labels.function_name="apigen2") AND timestamp>="2026-08-12T02:26:48.306Z" AND timestamp<="2026-08-12T02:56:48.306Z" AND logName:"stderr" AND textPayload:"appConfig is not defined"`
-- 6 matching entries: `(resource.labels.service_name="apigen2" OR resource.labels.function_name="apigen2") AND timestamp>="2026-08-12T02:26:48.306Z" AND timestamp<="2026-08-12T02:56:48.306Z" AND httpRequest.status>=500`
+- 8 matching entries: `(resource.labels.service_name="apigen2" OR resource.labels.function_name="apigen2") AND timestamp>="2026-08-14T01:06:48.341Z" AND timestamp<="2026-08-14T01:36:48.341Z" AND logName:"stderr" AND textPayload:"CHECKLIST_KEY is not defined"`
+- 4 matching entries: `(resource.labels.service_name="apigen2" OR resource.labels.function_name="apigen2") AND timestamp>="2026-08-14T01:06:48.341Z" AND timestamp<="2026-08-14T01:36:48.341Z" AND httpRequest.status>=500`
+- 8 matching entries: `(resource.labels.service_name="apigen2" OR resource.labels.function_name="apigen2") AND timestamp>="2026-08-14T01:06:48.341Z" AND timestamp<="2026-08-14T01:36:48.341Z" AND logName:"stderr" AND textPayload:"GET /api/dev"`
 
 ## Job
 - analyze rounds: 1
-- cost: $9.17
+- cost: $3.61
+- branch: `fix/prod-seo-1l9y5gr-a2`
+- fix commit: `97e28a71f4d6f75b9978e84fd7b0b0b284dc5bd9`
+- MR: https://gitlab.com/avada/seo/-/merge_requests/2199
+- tests: 1037 tests, 6 failing · baseline 6 failing · reproduce test fails without the fix
+
+```
+packages/functions/src/controllers/devController.js | 1 +
+ 1 file changed, 1 insertion(+)
+```
 
 ## Verdict
 

@@ -133,3 +133,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Dev Zone token gate server-side chặn luôn save của chính card cấp token → chicken-and-egg; đã revert, action unrestricted tạm thời
 - [ ] (×1) Minify là feature đang sunset ở SEO — banner warning trong card minification chỉ hiện với shop còn bật, doc sunset đã vào `minification.mdx` của docs.avada.io
 - [ ] (×1) fleet-control chuyển từ local sang hosting + Google auth + domain Cloudflare để cả team view; bullboard giữ làm shared-infra khi retire old-stack
+
+### memory candidates 2026-08-14
+- [ ] (×1) `cloudflared` service ở central đọc config từ `/etc/cloudflared`, không phải `~/.cloudflared` — `service install` fail "Cannot determine default configuration path" nếu để ở home
+- [ ] (×1) Cloudflare Access không thay thế basic-auth tầng app — pass Google IdP xong vẫn 401 tới khi xoá `WORKER_DASHBOARD_PASSWORD` khỏi `/etc/seo-fleet-control.env`
+- [ ] (×1) Redis fleet nghe port **6380** (container `seo-redis`), không phải 6379 — `redis-cli` mặc định fail "Connection refused"
+- [ ] (×1) Banner sunset ở seo phải render trước feature gate, không thì shop free không thấy thông báo retire (bug minify 2026-08-14)
+- [ ] (×1) Commit "mất" ở seo hay nằm trên branch của worktree — check `git worktree list` trước khi kết luận master mất code
