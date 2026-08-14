@@ -109,6 +109,7 @@ Started: 2026-08-13
 | 32 | Title `Features` / `Tools` to hơn (`headingLg`) + thêm gap dưới | inline | ✅ | 0/5 | clean | `14e32d8ddf` |
 | 33 | `ShopSummary` gom về 1 cột | inline | ✅ | 0/5 | clean | `14e32d8ddf` |
 | 34 | Badge plan cạnh `Shop ID`, bỏ hàng `Plan` riêng | inline | ✅ | 0/5 | clean | `41cb585994` |
+| 35 | Mở nhiều container cùng lúc (`handleToggleCollapsible` chỉ lật key của nó) | inline | ✅ | 0/5 | clean | `89084c1bf4` |
 
 
 ### Log
