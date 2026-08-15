@@ -1,13 +1,13 @@
-fingerprint: 1dlgm1s
-service: createPreviewImages
-message: RangeError: Maximum call stack size exceeded
+fingerprint: 1f5odgw
+service: auth
+message: InvalidOAuthError: Invalid OAuth callback.
 app: IMG-OPT
 repo: avada-image-optimizer
-date: 2026-08-15T07:57:00.374Z
+date: 2026-08-14T16:02:42.450Z
 status: inconclusive
-attempt: 3
+attempt: 1
 
-# IMG-OPT · createPreviewImages · 1dlgm1s
+# IMG-OPT · auth · 1f5odgw
 
 **Outcome.** timeout: killed after 480000ms
 

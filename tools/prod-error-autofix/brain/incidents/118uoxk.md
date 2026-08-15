@@ -1,13 +1,13 @@
-fingerprint: 6g2iqd
+fingerprint: 118uoxk
 service: auth
-message: HTTP 504 POST /auth/webhook/shop/update
+message: The request has been terminated because it has reached the maximum request timeout. To change this limit, see <https://cloud.google.com/run/docs/configuring/request-timeout>
 app: BLOG
 repo: blogs
-date: 2026-08-14T16:37:52.630Z
+date: 2026-08-14T20:38:05.425Z
 status: inconclusive
 attempt: 1
 
-# BLOG · auth · 6g2iqd
+# BLOG · auth · 118uoxk
 
 **Outcome.** timeout: killed after 480000ms
 

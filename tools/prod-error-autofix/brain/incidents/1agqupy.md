@@ -1,13 +1,13 @@
-fingerprint: 1dlgm1s
-service: createPreviewImages
-message: RangeError: Maximum call stack size exceeded
-app: IMG-OPT
-repo: avada-image-optimizer
-date: 2026-08-15T07:57:00.374Z
+fingerprint: 1agqupy
+service: apigen2
+message: HTTP 500 GET /api/history-optimize/count
+app: SEO
+repo: seo
+date: 2026-08-14T22:59:24.694Z
 status: inconclusive
-attempt: 3
+attempt: 1
 
-# IMG-OPT · createPreviewImages · 1dlgm1s
+# SEO · apigen2 · 1agqupy
 
 **Outcome.** timeout: killed after 480000ms
 

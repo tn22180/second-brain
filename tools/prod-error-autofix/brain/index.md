@@ -7,6 +7,15 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `4f3kp8` · 2026-08-15 · SEO · handlespeedupbackgroundgen2 · no verified cause · — · inconclusive
+- `1ciqzvj` · 2026-08-15 · SEO · resolveallredirectsubscribergen2 · no verified cause · — · inconclusive
+- `dea93l` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
+- `1agqupy` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
+- `118uoxk` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
+- `sp18eo` · 2026-08-14 · BLOG · api · GET /api/settings failed for shop gddoilEQDA3qDbQch9xb because the bare, unretried `shopify.asset.get(themeId, · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
+- `1f5odgw` · 2026-08-14 · IMG-OPT · auth · no verified cause · — · inconclusive
+- `1e4p2an` · 2026-08-14 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `ge6iq5` · 2026-08-14 · AEO · proxy · no verified cause · — · inconclusive
 - `1t97xtj` · 2026-08-14 · BLOG · subscribebatcharticlesummary · no verified cause · — · inconclusive
 - `15f66sw` · 2026-08-14 · BLOG · api · no verified cause · — · inconclusive
 - `1szehrm` · 2026-08-14 · SEO · apigen2 · BigQuery rejected two fire-and-forget streaming inserts from falcon-event-tracker at 06:02:49Z and 06:03:07Z w · — · infra
@@ -158,7 +167,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `ri5pmt` · 2026-08-12 · SEO · apisagen2 · Merge d71f665015 (feat/worker-pubsub-migration, master 2026-08-11T08:49:48Z) deleted `import appConfig from '@ · — · inconclusive
 - `1lqxi03` · 2026-08-12 · BLOG · proxy · The single Shopify Admin GraphQL call in getArticlesByTagWithPagination (tag.service.js:246) is issued through · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
 - `17l3oan` · 2026-08-12 · BLOG · api · Duplicate of fingerprint 1re07yj (MR https://gitlab.com/avada/blogs/-/merge_requests/859 open, unmerged — a445 · https://gitlab.com/avada/blogs/-/merge_requests/859 · mr_open
-- `6g2iqd` · 2026-08-13 · BLOG · auth · POST /auth/webhook/shop/update awaits three unbounded Firestore round-trips inside @avada/core's onShopUpdate  · — · deferred
+- `6g2iqd` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
 - `i9jsmj` · 2026-08-14 · SEO · apisagen2 · packages/functions/src/controllers/devController.js calls `resolveBrokenLinks(ctx, shop)` in the `resolve_brok · https://gitlab.com/avada/seo/-/merge_requests/2196 · mr_open
 - `9ukw9f` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model prefixed its featured-image JSON with a prose sentence ("Given the extremely sparse knowl · — · deferred
 - `4kz4kp` · 2026-08-12 · SEO · apigen2 · PUT /api/redirects/resolve returns 500 because handleResolveRedirectSkipError's update-path catch handler resp · https://gitlab.com/avada/seo/-/merge_requests/2107 · mr_open
@@ -222,7 +231,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1qmdvrl` · 2026-08-12 · BLOG · api · GET /api/article/:id opened without a `locale` or `primary` query param makes articleController.getOne pass `u · https://gitlab.com/avada/blogs/-/merge_requests/863 · mr_open
 - `g91yns` · 2026-08-12 · SEO · retriggeroptimizepublishergen2 · One cold-start container of retriggeroptimizepublishergen2 (instance 001548f72986fb78…) never bound :8080 and  · — · infra
 - `1n79ojv` · 2026-08-12 · BLOG · proxy · Shopify's storefront does not serve a just-published article immediately, and fetchRenderedArticleHtml's retry · https://gitlab.com/avada/blogs/-/merge_requests/862 · mr_open
-- `1dlgm1s` · 2026-08-14 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages passes the base64 *string* from sharpCompressImage into uploadToCloudStorage (whi · — · inconclusive
+- `1dlgm1s` · 2026-08-15 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
 - `u2coqc` · 2026-08-12 · BLOG · reviewupdatesschedule · reviewUpdatesSchedule calls puppeteer.launch() with no args, no explicit timeout and no retry, so when Chrome  · https://gitlab.com/avada/blogs/-/merge_requests/861 · mr_open
 - `dlfokk` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model emitted a raw unescaped double quote inside the JSON string value of `body` (`Our tagline · — · infra
 - `s0kn2e` · 2026-08-12 · BLOG · api · The alert is a swallowed, non-fatal per-image failure: OpenRouter's image fetcher got HTTP 404 for two cdn.sho · https://gitlab.com/avada/blogs/-/merge_requests/860 · mr_open
@@ -374,7 +383,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
 - `ct2hgz` · 2026-08-12 · IMG-OPT · apiSa · Shop 3ddd6b-2.myshopify.com's stored offline access token ***REMOVED-SECRET*** stopped being · — · inconclusive
-- `a4bayk` · 2026-08-13 · IMG-OPT · createPreviewImages · getLargestImage picks the shop's largest Shopify file by ORIGINAL_UPLOAD_SIZE under query "media_type:IMAGE",  · — · inconclusive
+- `a4bayk` · 2026-08-14 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
 - `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open
 - `12qs3xc` · 2026-07-31 · BLOG · proxy · Four shops that uninstalled the app still have their shop doc and stale accessToken in Firestore, so every cra · https://gitlab.com/avada/blogs/-/merge_requests/799 · mr_open
