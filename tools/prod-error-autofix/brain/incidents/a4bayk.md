@@ -3,9 +3,9 @@ service: createPreviewImages
 message: TypeError [ERR_INVALID_ARG_TYPE]: The first argument must be of type string or an instance of Buffer, ArrayBuffer, or Array or an Array-like Object. Received undefined
 app: IMG-OPT
 repo: avada-image-optimizer
-date: 2026-08-14T13:27:38.470Z
+date: 2026-08-15T14:27:53.013Z
 status: inconclusive
-attempt: 7
+attempt: 8
 
 # IMG-OPT · createPreviewImages · a4bayk
 

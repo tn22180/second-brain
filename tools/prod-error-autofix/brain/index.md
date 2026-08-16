@@ -7,13 +7,17 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `17ij74c` · 2026-08-16 · BLOG · api · articleController.create calls handleRetryOnError without passing `data`, so when Shopify's articleCreate answ · https://gitlab.com/avada/blogs/-/merge_requests/885 · mr_open
+- `g2hxcg` · 2026-08-16 · BLOG · proxy · no verified cause · — · inconclusive
+- `2t79bo` · 2026-08-15 · SEO · apigen2 · @avada/core 4.8.2's setSession assumes the decrypted `__session` cookie is an object; when a client presents a · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
+- `1abkxna` · 2026-08-15 · SEO · proxygen2 · GET /proxy/sitemap/collections.xml for pom-pom-london.myshopify.com returned 500 because trace-redirect@1.0.6, · https://gitlab.com/avada/seo/-/merge_requests/2195 · mr_open
 - `4f3kp8` · 2026-08-15 · SEO · handlespeedupbackgroundgen2 · no verified cause · — · inconclusive
 - `1ciqzvj` · 2026-08-15 · SEO · resolveallredirectsubscribergen2 · no verified cause · — · inconclusive
 - `dea93l` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `1agqupy` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `118uoxk` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
 - `sp18eo` · 2026-08-14 · BLOG · api · GET /api/settings failed for shop gddoilEQDA3qDbQch9xb because the bare, unretried `shopify.asset.get(themeId, · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
-- `1f5odgw` · 2026-08-14 · IMG-OPT · auth · no verified cause · — · inconclusive
+- `1f5odgw` · 2026-08-15 · IMG-OPT · auth · no verified cause · — · inconclusive
 - `1e4p2an` · 2026-08-14 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `ge6iq5` · 2026-08-14 · AEO · proxy · no verified cause · — · inconclusive
 - `1t97xtj` · 2026-08-14 · BLOG · subscribebatcharticlesummary · no verified cause · — · inconclusive
@@ -231,7 +235,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1qmdvrl` · 2026-08-12 · BLOG · api · GET /api/article/:id opened without a `locale` or `primary` query param makes articleController.getOne pass `u · https://gitlab.com/avada/blogs/-/merge_requests/863 · mr_open
 - `g91yns` · 2026-08-12 · SEO · retriggeroptimizepublishergen2 · One cold-start container of retriggeroptimizepublishergen2 (instance 001548f72986fb78…) never bound :8080 and  · — · infra
 - `1n79ojv` · 2026-08-12 · BLOG · proxy · Shopify's storefront does not serve a just-published article immediately, and fetchRenderedArticleHtml's retry · https://gitlab.com/avada/blogs/-/merge_requests/862 · mr_open
-- `1dlgm1s` · 2026-08-15 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
+- `1dlgm1s` · 2026-08-16 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages hands sharpCompressImage's base64 STRING to uploadToCloudStorage, which requires  · — · inconclusive
 - `u2coqc` · 2026-08-12 · BLOG · reviewupdatesschedule · reviewUpdatesSchedule calls puppeteer.launch() with no args, no explicit timeout and no retry, so when Chrome  · https://gitlab.com/avada/blogs/-/merge_requests/861 · mr_open
 - `dlfokk` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model emitted a raw unescaped double quote inside the JSON string value of `body` (`Our tagline · — · infra
 - `s0kn2e` · 2026-08-12 · BLOG · api · The alert is a swallowed, non-fatal per-image failure: OpenRouter's image fetcher got HTTP 404 for two cdn.sho · https://gitlab.com/avada/blogs/-/merge_requests/860 · mr_open
@@ -383,7 +387,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
 - `ct2hgz` · 2026-08-12 · IMG-OPT · apiSa · Shop 3ddd6b-2.myshopify.com's stored offline access token ***REMOVED-SECRET*** stopped being · — · inconclusive
-- `a4bayk` · 2026-08-14 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
+- `a4bayk` · 2026-08-15 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
 - `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open
 - `12qs3xc` · 2026-07-31 · BLOG · proxy · Four shops that uninstalled the app still have their shop doc and stale accessToken in Firestore, so every cra · https://gitlab.com/avada/blogs/-/merge_requests/799 · mr_open

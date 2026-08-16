@@ -3,9 +3,9 @@ service: auth
 message: InvalidOAuthError: Invalid OAuth callback.
 app: IMG-OPT
 repo: avada-image-optimizer
-date: 2026-08-14T16:02:42.450Z
+date: 2026-08-15T16:27:17.058Z
 status: inconclusive
-attempt: 1
+attempt: 2
 
 # IMG-OPT · auth · 1f5odgw
 
