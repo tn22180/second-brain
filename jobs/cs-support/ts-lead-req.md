@@ -18,6 +18,28 @@ mà verifySwaggerToken mount global ở handlers/api.js:64 nên jwt đó mở c�
 ai biết shop domain là gọi đc POST /api/credit, PUT /api/shop, /api/generate, /publish
 bên aeo làm đúng r (getIntegrationKey(accessToken) → 403), e bê mẫu đó sang nhé
 
+**FEEDBACK**
+1. aeo /proxy/swagger-token giờ trả 503 "SWAGGER_JWT_SECRET is not configured"
+đúng chỗ a đoán hôm qua, nhưng mới có guard chứ env vẫn chưa set
+5 shop tesbros, freelandco, wacoal22, cart-tek, d0x0kt-ez đều 503
+e set SWAGGER_JWT_SECRET trong cloud functions prod của aeo giúp a nhé
+
+2. apc thì endpoint lên rồi, k còn 404 như hôm qua
+nhưng shop thật vào là 500 hết, a test partsbaba-in, caseteroid-world, hunny-life, abrandz, iyanhk
+shop k tồn tại mới ra 404 shop not found, thiếu ?shop thì 400
+nên nhiều khả năng apc cũng thiếu SWAGGER_JWT_SECRET, mà bên này k có guard nên nó văng 500
+
+3. chỗ vá auth apc a chưa thấy đâu e ơi
+gọi ?shop= k kèm token gì vẫn đi thẳng vào lookup shop, k 401/403 gì cả
+ai biết url là mint được jwt của shop đó
+
+4. thêm 1 cái nữa e check giúp a
+aeo /proxy/* giờ trả 401 unauthorized access hết, shop nào cũng vậy
+a thử cả 2 token đang có, kể cả token đang chạy prod
+đây là đường của 2 tool aeo còn sống, giờ chết nốt
+token integration aeo có bị revoke hay đổi k e
+
+apc /proxy/checkInstalled thì vẫn 200 bình thường nhé
 ---
 
 ## Findings (2026-08-13, trước khi làm)
@@ -444,3 +466,122 @@ gcloud logging read 'resource.type="cloud_run_revision"
 4. 4 file dead code trong APC import module không tồn tại — xoá hoặc sửa.
 5. `ai-product-copy/CLAUDE.md:51` ghi sai tag format (`v1.84.X` → thực tế `v1.6.x`).
 6. Siết integration key ↔ shop nếu muốn bịt rủi ro tồn dư ở Task A.
+
+---
+
+## Trả lời FEEDBACK — 2026-08-17
+
+**Việc lớn nhất: repo đã migrate sang `git.avada.net`. 2 MR hôm 14/08 mở trên `gitlab.com` là host chết.**
+AEO may mắn còn commit (mirror giữ được), APC thì `master` bị force-update mất luôn merge của tao.
+Local remote đã đổi sang `https://git.avada.net/avada/{llm-ai-search-seo,ai-product-copy}.git`.
+
+### ⚠ Không được set SWAGGER_JWT_SECRET cho APC prod lúc này
+
+APC prod (`v1.6.29` = `f17084b`) đang chạy `swaggerAuth.js` **bản cũ, không check key**.
+Hiện nó 500 chỉ vì thiếu secret. Set secret vào = mint token sống ngay → bất kỳ ai biết
+shop domain mở được toàn bộ `/api/*`. **Merge nhánh vá trước, set secret sau.**
+
+### Từng mục
+
+**1. AEO 503 — CI var chưa tới prod.** Đo `gcloud functions describe proxy --project=seo-on-aeo`:
+19 env var, **không có** `SWAGGER_JWT_SECRET` (chỉ in tên biến). Prod đang chạy `v1.6.17`
+(tag 17/08 11:34+07, khớp `updateTime` 04:47Z) — đã có guard của tao. Nguyên nhân gần như chắc:
+var set trên `gitlab.com`, mà CI giờ chạy ở `git.avada.net` → phải set lại `PRODUCTION_ENV_FILE`
+ở host mới rồi tag lại. Set tay bằng `gcloud functions deploy --update-env-vars` sẽ bị deploy sau ghi đè.
+
+**2. APC 500 — đúng, cùng bệnh.** Revision `proxy-00194-caw` (14/08 03:58) có 32 env var,
+không có `SWAGGER_JWT_SECRET`. `api-00218-nik` cũng vậy. Prod hết đóng băng nhờ tunglv commit
+`3dced4c fix/dep` (14/08 10:52+07) khai đúng 5 dep — trùng phần dep trong nhánh cũ của tao.
+
+**3. Vá auth chưa có trên prod vì chưa từng merge ở host mới.** `origin/master` ở `git.avada.net`
+vẫn là `exchangeToken` chỉ nhận `?shop=`. Dựng lại nhánh trên master mới, bỏ phần dep (tunglv làm rồi),
+chỉ còn auth:
+
+```
+branch  fix/apc-swagger-auth-integration-key   7df65c8   3 file, +92 −7
+MR      https://git.avada.net/avada/ai-product-copy/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Fapc-swagger-auth-integration-key
+test    acceptance 10/10 | jest 6 suite / 119 test | docs-gate PASS (61 routes / 61 documented)
+```
+
+**4. Token integration KHÔNG bị revoke.** Log `proxy` 3 ngày: 401×9, **403×0**, 429×0, 500×0, 200×100.
+Token sai → 403 sau khi query Firestore; ở đây 0 cái 403 và 9 cái 401 đều trả trong **3-4 ms**,
+tức trúng nhánh đầu `if (!accessToken)` (`validateAccessToken.js:16-20`) — **header
+`X-SEO-Access-Token` không tới function**, chưa hề đọc tới key. Cần biết client gửi header tên gì
+và gọi URL nào để chốt. FAL-580 (`verifyAppProxy`, 401) chưa merge vào `main`, không phải thủ phạm.
+
+### 🔴 Rò credential trong log prod AEO (phát hiện ngoài lề, nặng hơn cả 4 mục trên)
+
+`packages/functions/src/services/shopifyService.js:42`
+
+```js
+console.log('init Shopify', shopifyDomain, accessToken);
+```
+
+In thẳng Shopify Admin token (`shpat_…`) của **mọi shop** vào Cloud Logging. Mẫu lúc 07:22 hôm nay
+có token của `bloomskinsstore`, `itpartnersitalia`, `sdive0-cu`. Ai có quyền Logs Viewer trên
+`seo-on-aeo` đọc được, và log giữ theo retention. APC không dính. Cần xoá dòng này + cân nhắc
+xoay token các shop đã lộ.
+
+### Nhánh đã push lên git.avada.net — 2026-08-17
+
+`glab` chưa auth host mới nên chưa tạo được MR; branch đã push, link dưới là form tạo MR.
+
+| # | Repo | Branch | Nội dung | Test |
+|---|---|---|---|---|
+| 1 | APC | `fix/apc-drop-token-log` (`2e81df0`) | xoá log token + doc 2 route thiếu | jest 6/6 · 119/119, docs-gate PASS |
+| 2 | APC | `fix/apc-swagger-auth-integration-key` (`3f08db2`) | vá auth swagger-token | acceptance 10/10, jest 119/119 |
+| 3 | AEO | `fix/aeo-drop-token-log` (`cb1e822`) | xoá log token | jest 20 suite/227 test = y hệt baseline `origin/main` |
+
+**Merge #1 trước #2.** `master` APC đang thiếu spec cho `GET /api/health` và
+`GET /api/shopify/collection-options` → docs-gate đỏ với *mọi* MR. #1 mang theo 2 entry đó;
+#2 cố tình không mang để khỏi đụng nhau, nên #2 còn đỏ docs-gate cho tới khi #1 vào.
+
+```
+https://git.avada.net/avada/ai-product-copy/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Fapc-drop-token-log
+https://git.avada.net/avada/ai-product-copy/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Fapc-swagger-auth-integration-key
+https://git.avada.net/avada/llm-ai-search-seo/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Faeo-drop-token-log
+```
+
+Rò token dính **cả hai app**, không riêng AEO như báo cáo đầu — APC là
+`console.log('token', shopifyDomain, accessToken)` (`shopifyService.js:35`), label khác nên grep
+đầu tiên miss. Prod APC log lúc 08:32 hôm nay có token của `ym0sgj-gj`. Xoá code chỉ chặn rò mới;
+token đã nằm trong log cũ thì phải xoay hoặc chờ hết retention.
+
+---
+
+## ĐÓNG — 2026-08-17, đã lên prod
+
+Merge + tag + deploy do Tuan. Smoke test đo trên prod sau cutover 10:31Z:
+
+| | AEO `seo-on-aeo` | APC `ai-product-copy` |
+|---|---|---|
+| Deploy | 10:29:24Z, versionId 120, ACTIVE | `proxy-00195-tip` @10:28:44Z |
+| Serving == latestCreated | Gen1, không áp dụng | **MATCH** (proxy + api) |
+| `SWAGGER_JWT_SECRET` | có (19→20 env) | có (32→33 env) |
+
+Lỗ hổng đóng, đo bằng HTTP thật:
+
+```
+                                           AEO   APC
+/proxy/swagger-token  không param          400   400   "Missing ?accessToken"
+/proxy/swagger-token  ?shop= trần ← lỗ cũ  400   400   không mint nữa
+/proxy/swagger-token  accessToken sai      403   403   "Invalid access token"
+/proxy/checkInstalled (control)            200   200
+/api/health, /api/shops  Bearer giả         -    401   fail closed
+```
+
+Happy path (accessToken thật → 200 + JWT) Tuan tự chạy, OK.
+
+Rò token dừng: 10:31Z→10:53Z, >200 invocation mỗi app, **0 dòng `shpat_`** ở cả 2 project.
+Log **cũ** vẫn còn token — chưa xử lý.
+
+### Còn mở
+
+1. **Token đã lộ trong log cũ** — xoay token các shop đã xuất hiện, hoặc chờ hết retention.
+   Sink prod-error có thể đã copy đi nơi khác, đáng kiểm.
+2. **Item 4 (AEO 401)** — đo prod: không header → 401, token sai → **403**. Tool ra 401 nghĩa là
+   header `X-SEO-Access-Token` không tới function. Không phải revoke. Cần xem client gửi header gì.
+3. **Chỉ AEO và APC đã migrate sang `git.avada.net`.** 16 repo còn lại trong `projects/Falcon/`
+   vẫn trỏ `gitlab.com` — kiểm trước khi mở MR, remote cũ vẫn fetch/push được nên hỏng im lặng.
+4. Các mục cũ ở "Việc nên làm riêng" chưa động: gác revision-đang-serve trong CI, audit dep các app
+   khác, eslint APC, 4 file dead code, tag format sai trong `ai-product-copy/CLAUDE.md:51`.

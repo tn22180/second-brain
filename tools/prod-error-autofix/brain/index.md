@@ -7,6 +7,18 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `37aerf` · 2026-08-17 · AEO · cleanupAiReferralVisitsScheduler · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — the 2026-08-17T10:29:22.8 · — · infra
+- `47n20c` · 2026-08-17 · BLOG · api · Not a request failure: shopifyRetryGraphQL logs every attempt failure at logger.error (packages/functions/src/ · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
+- `16nkrtf` · 2026-08-17 · BLOG · apiv2 · The OpenRouter model closed its metadata object with a trailing comma (`"...today!",\n}`), and createArticleMe · https://gitlab.com/avada/blogs/-/merge_requests/887 · mr_open
+- `1pez2pf` · 2026-08-17 · IMG-OPT · apiSa · All 11 alerted ERRORs are one shop — 6djfuf-1a.myshopify.com (shopId IQp3Y1BEXlfH66ZEFcsB) — whose stored offl · — · inconclusive
+- `1t95lvv` · 2026-08-17 · AEO · aggregateAiReferralsScheduler · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — a second UpdateFunction o · — · infra
+- `1hq8j7p` · 2026-08-17 · AEO · authSa · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — a second UpdateFunction o · — · infra
+- `ualqkr` · 2026-08-17 · AEO · aeoAuditRescanSubscriber · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — a second UpdateFunction o · — · infra
+- `3dzffb` · 2026-08-17 · AEO · auth · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — a second UpdateFunction o · — · infra
+- `85s1po` · 2026-08-17 · AEO · changelogTriggers-shops · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — a second UpdateFunction o · — · infra
+- `1pzp7dr` · 2026-08-17 · IMG-OPT · scanSpeedScoreSubscriberV2 · Not a runtime failure: the single ERROR is a Cloud Functions gen2 deploy — UpdateFunction on scanSpeedScoreSub · — · infra
+- `xeycw` · 2026-08-16 · BLOG · api · PUT /api/article/28987719791 for shop oU1eLddMkUdpnYAYISPu failed because the unretried shopLocales Shopify Ad · https://gitlab.com/avada/blogs/-/merge_requests/886 · mr_open
+- `xosts1` · 2026-08-16 · BLOG · proxy · no verified cause · — · inconclusive
 - `17ij74c` · 2026-08-16 · BLOG · api · articleController.create calls handleRetryOnError without passing `data`, so when Shopify's articleCreate answ · https://gitlab.com/avada/blogs/-/merge_requests/885 · mr_open
 - `g2hxcg` · 2026-08-16 · BLOG · proxy · no verified cause · — · inconclusive
 - `2t79bo` · 2026-08-15 · SEO · apigen2 · @avada/core 4.8.2's setSession assumes the decrypted `__session` cookie is an object; when a client presents a · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
@@ -106,7 +118,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1mzc7t9` · 2026-08-14 · BLOG · proxy · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 during the 04:2x–04:3xZ b · — · infra
 - `blfh15` · 2026-08-14 · BLOG · api · PUT /api/article/630025421087 for shop lGFvPaSOKCGOsGrvYOXi fails deterministically because the articleUpdate  · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
 - `14ywrzy` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
-- `1d04pkl` · 2026-08-14 · BLOG · api · no verified cause · — · inconclusive
+- `1d04pkl` · 2026-08-17 · BLOG · api · The Blog editor fires several concurrent PUT /api/article/:id saves for the same article, and because prepareG · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
 - `h47mgc` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
 - `1w98ui1` · 2026-08-14 · SEO · bulkauditfixdispatchgen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:14–04:45Z window · — · infra
 - `1db4z7z` · 2026-08-14 · SEO · optimizestoresubscribergen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
@@ -386,7 +398,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `3349gs` · 2026-07-31 · BLOG · api · shop.recentOpenedArticles keeps gids of articles that no longer resolve in Shopify, and getShopifyArticleById  · https://gitlab.com/avada/blogs/-/merge_requests/802 · mr_open
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
-- `ct2hgz` · 2026-08-12 · IMG-OPT · apiSa · Shop 3ddd6b-2.myshopify.com's stored offline access token ***REMOVED-SECRET*** stopped being · — · inconclusive
+- `ct2hgz` · 2026-08-16 · IMG-OPT · apiSa · no verified cause · — · inconclusive
 - `a4bayk` · 2026-08-15 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
 - `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open

@@ -27,7 +27,13 @@ Mục 1+2 → **MR !2204** (avada/seo). Bật prod: `FLEET_SPILL_ENABLED=true` s
 | # | Task | Agent / Model | Status | Rounds | Sec | Notes |
 |---|------|---------------|--------|--------|-----|-------|
 | A1 | Mục 1: drift-test tier↔RAM band | inline | ✅ | 0/5 | clean | 23/23 pass, 29 dòng test-only |
-| A2 | Mục 2: spill GCF theo memory (`worker:mem`) | inline + cavecrew-reviewer | ✅ | 0/5 | clean | 72/72 pass, reviewer no-issues, isolated |
+| A2 | Mục 2: spill GCF theo memory (`worker:mem`) | inline + cavecrew-reviewer | ✅ | 0/5 | clean | 72/72 pass, reviewer no-issues, isolated. **MR !2204 merged, deploy v1.85.64 prod OK** |
+| Adoc | Item a: docs feature-spill (đóng docs_gate gap) | inline | ✅ | 0/5 | clean | `docs/features/worker-fleet-spill.md`, docs-gate PASS |
+| A4 | Mục 4: khách mới bật worker job (test cohort) | inline + cavecrew-reviewer | ✅ | 0/5 | clean | `installationService:73` → `NEW_SHOP_WORKER_JOBS` (11 job nhẹ/core, né heavy 4GB — Tony chốt test trước). Drift-guarded, 74/74 pass |
+| A3 | Mục 3: deploy functions + worker song song | inline + cavecrew-reviewer | ✅ | 0/5 | accepted | `.gitlab-ci.yml` deploy_worker→ mọi prod tag, `allow_failure:true`. Blast radius: mọi release đụng box (Tony chốt) |
+
+**Adoc+A3+A4 → MR !2210** (avada/seo → master). Verify: worker jest 72/72, eslint clean, `glab ci lint` valid, docs-gate PASS, reviewer no-issues.
+Ops sau merge: (1) bật `FLEET_SPILL_ENABLED=true` prod — pair với A4 (khách mới full job + spill OFF = job nặng chờ BullMQ `wait`); (2) memory `seo-master-no-detect-worker` sẽ sai sau merge (worker giờ deploy mọi tag) — update khi merged.
 
 ### Log
 

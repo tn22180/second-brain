@@ -140,3 +140,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Redis fleet nghe port **6380** (container `seo-redis`), không phải 6379 — `redis-cli` mặc định fail "Connection refused"
 - [ ] (×1) Banner sunset ở seo phải render trước feature gate, không thì shop free không thấy thông báo retire (bug minify 2026-08-14)
 - [ ] (×1) Commit "mất" ở seo hay nằm trên branch của worktree — check `git worktree list` trước khi kết luận master mất code
+
+### memory candidates 2026-08-17
+- [ ] (×1) Ollama Cloud không hỗ trợ prompt caching trên bất kỳ model nào và không có Gemini — khác OpenRouter, phải tính lại cost khi so sánh model gen content
+- [ ] (×1) Chi phí OpenRouter key SEO = $342.96/tháng (filter 2026-08) — baseline khi cân nhắc đổi provider
+- [ ] (×1) seo alt-text default model = `gemma-4-26b` (commit `4c3307365c`), thay model cũ sau eval 30 sản phẩm thật
+- [ ] (×1) Worker fleet — shop mới nhận test cohort chứ không nhận toàn bộ migrated jobs; deploy worker gắn với tag (commit `1696228c02`, `7fcacc2c34`)
+- [ ] (×1) Migrate repo sang git.avada.net phải migrate kèm repo artifacts (`avada-seo-react-app-artifacts`) và set lại CI variables + runner — không tự đi theo
