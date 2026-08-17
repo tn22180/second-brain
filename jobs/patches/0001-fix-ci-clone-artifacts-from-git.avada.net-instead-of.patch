@@ -1,0 +1,36 @@
+From 91dc5e4896990b5e6e22429b9db769e32aeb28de Mon Sep 17 00:00:00 2001
+From: Thomas <thomas@avada.io>
+Date: Wed, 12 Aug 2026 10:34:35 +0000
+Subject: [PATCH] fix(ci): clone artifacts from git.avada.net instead of
+ gitlab.com
+
+[skip ci]
+---
+ .gitlab-ci.yml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 33a014fb8b..657762f518 100755
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -2031,7 +2031,7 @@ push-react-artifacts:production:
+   before_script: []
+ 
+   script:
+-    - git clone https://gitlab-ci-token:$GIT_ACCESS_TOKEN@gitlab.com/avada/avada-seo-react-app-artifacts.git
++    - git clone https://gitlab-ci-token:$GIT_ACCESS_TOKEN@git.avada.net/avada/artifacts/avada-seo-react-app-artifacts.git
+     - git config --global user.email "ci@avada.io"
+     - git config --global user.name "CI/CD"
+     - ls
+@@ -2062,7 +2062,7 @@ deploy-react:production:
+   # A global `npm install -g firebase-tools` would pull gal@9 and fail to authenticate.
+   script:
+     - npm install -g firebase-tools@13.35.1
+-    - git clone https://gitlab-ci-token:$GIT_ACCESS_TOKEN@gitlab.com/avada/avada-seo-react-app-artifacts.git
++    - git clone https://gitlab-ci-token:$GIT_ACCESS_TOKEN@git.avada.net/avada/artifacts/avada-seo-react-app-artifacts.git
+     - ls
+     - cp -rf avada-seo-react-app-artifacts/static/* static/
+     - ./node_modules/.bin/firebase deploy --only hosting  -m "Pipeline $CI_PIPELINE_ID, build $CI_BUILD_ID" --non-interactive --project "$FIREBASE_PROJECT_ID" --force
+-- 
+2.48.1
+
