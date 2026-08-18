@@ -49,7 +49,10 @@ Ollama plan: **Free** (Light usage, 1 concurrent) → all Ollama calls sequentia
 | 4 | Run Ollama bench, sequential, Free-plan safe | inline | ✅ | 0/5 | clean | 16 runs, 1 hard fail (nemotron vision) |
 | 5 | Compare + write the report into this file | inline | ✅ | 0/5 | clean | see Report |
 | 6 | Delete probe files, verify repo diff is clean | inline | ✅ | 0/5 | clean | harness copied to scratchpad first |
-
+7: có lấy được usage của ollama còn lại bằng key này không
+8: đảm bảo khách không bị lỗi và chậm quá nhiều khi chuyển giữa openriuter and ollama
+9: chuyển các model mới test cho cả openrouter lẫn ollama cho đồng bộ luôn nhé
+10: xem Context length 262K tokens của gemma4 có đáp ứng được phần gen FAQ + Content không?
 ### Ollama model shortlist (Free plan)
 
 | Role | Candidates | Usage tier |
@@ -364,3 +367,267 @@ Fixtures kéo từ collection `analysis` prod (read-only, shopID đã hash): 30 
 9 cái có ảnh, tiêu đề đa ngôn ngữ (Ả Rập, Pháp, Anh). Chấm bằng luật đo được, không dùng LLM judge:
 pass-rate schema, độ dài meta title/description, focus_keyword có xuất hiện không, **trung thành
 ngôn ngữ theo unicode script**, HTML sanity, latency p50/p95, $/1000.
+
+---
+
+## Vòng 2 — audit content trên Ollama Cloud Pro ($20), 2026-08-18
+
+Key Pro thật (`.env` OLLAMA_API_KEY, sha8 `ed14eccf`). Input = prompt **thật** của app, dump từ
+`evalProducts.js --dump-payloads` (90 payload = 30 sản phẩm merchant thật × 3 task), nên OpenRouter
+và Ollama nhận byte giống hệt nhau. Baseline = `google/gemini-3-flash-preview` (`CONTENT_MODAL`).
+
+### Chặn 1 — Ollama Cloud bỏ qua JSON Schema, đã re-verify trên key Pro
+
+| variant | cách đưa schema | kết quả |
+|---|---|---|
+| A | không đưa (đúng hành vi app hôm nay) | 0/5 model đúng shape |
+| B | `format: <JSON Schema>` trong `/api/chat` | **0/5** — output byte giống hệt A |
+| C | nhét schema vào system prompt | 4/5 pass |
+
+Kết luận: đổi provider **không phải đổi một dòng model id**. Phải sửa
+`generateOpenRouterStructuredText` để inline schema vào prompt — tức đổi luôn input cho OpenRouter.
+
+### Chặn 2 — defect có sẵn của app, bài test lôi ra
+
+`generateKeyword` (`chains.js:289-299`): prompt viết `Pick ONE best primary keyword` (số ít), schema
+lại là `{keywords: string[]}`. Cả 5 model Ollama trả `{"primary_keyword": "..."}` — làm đúng prompt.
+`response_format` của OpenRouter đang che lỗi này. Đổi provider, hoặc OpenRouter đổi cách enforce,
+là vỡ. Thực tế mọi model đều trả đúng 1 keyword (30/30) nên sửa prompt cho khớp schema là đủ.
+
+### Chặn 3 — latency (30 sản phẩm, p50 / p95)
+
+| task | baseline | gemma4:31b | mistral-large-3:675b | deepseek-v4-flash |
+|---|---|---|---|---|
+| `keywords` | 1918 / 9704 | 1417 / 4222 | 1228 / 2047 | 2874 / 4484 |
+| `meta_tags` | 2199 / 11834 | 1967 / 4431 | 1819 / 2265 | **39710 / 63117** |
+| `generate_description` | 5136 / 9922 | 4530 / 11665 | 10053 / 24172 | 12485 / 66169 |
+
+`deepseek-v4-flash` loại: `meta_tags` trung bình **5431 output token** (cap 8060) cho một meta title
+56 token — reasoning không tắt được; 7/30 fail parse; vượt `timeout: 60000` ở `packages/assets/src/helpers.js:68`.
+`deepseek-v4-pro` (113s) và `glm-5.1` (79s) đã loại từ smoke, cùng lý do.
+`kimi-k3`: `402 "uses extra usage only (not included plan usage)"` — ngoài quota gói $20.
+
+### Chặn 4 — chất lượng `generate_description` (output đổ thẳng cho merchant, app không strip gì)
+
+| model | fence ``` | meta-talk | sạch |
+|---|---|---|---|
+| baseline gemini-3-flash | 0 | 1 | **29/30** |
+| deepseek-v4-flash | 3 | 0 | 27/30 |
+| gemma4:31b | 0 | 6 | 24/30 |
+| mistral-large-3:675b | **27** | 1 | **2/30** |
+
+`mistral-large-3` loại: 27/30 bọc ```` ```html ````. `generateOpenRouterText` (`openrouter/index.js:119`)
+**không** strip fence — chỉ bản structured mới strip (`:190-193`). Fence sẽ vào thẳng mô tả sản phẩm.
+
+Caveat thật: fixture có `body_html: ''`, nên câu mở đầu kiểu "Since the current BODY is empty, I will…"
+bị thổi lên cho **mọi** model. Sản phẩm thật phần lớn có mô tả. Chênh lệch 24/30 vs 29/30 vẫn có thật,
+nhưng con số tuyệt đối cao hơn thực tế.
+
+### Kết quả
+
+Chỉ `gemma4:31b` sống sót: 90/90 đúng schema, nhanh hơn baseline cả 3 task, chất lượng meta/keyword
+ngang. Trả giá: meta-talk 6/30 ở `generate_description` (baseline 1/30), và bắt buộc sửa code inline schema.
+
+**Chưa đo được: quota.** Ollama không trả header quota nào (`/api/chat` 200, không `x-ratelimit-*`).
+Chỉ biết trần khi ăn 429, mà 429 của Ollama là reject thẳng, không xếp hàng.
+OpenRouter key SEO: `usage_monthly` $209.61 (1–18/08), lifetime $1246.80.
+
+---
+
+## Vòng 3 — luồng fix-all end-to-end, 10 page thật, 2026-08-18
+
+Harness `probe-ollama-harness/fixLoop.js`. Dùng **code thật**: `calculateScore` (scorer axyseo),
+`fixIssueByType`, `chains.js`. Chỉ vòng lặp là chép từ `productWorker.js:356-425` (fix tuần tự,
+re-score sau mỗi vòng, `MAX_FIX_ATTEMPTS=8`, timeout 60s/issue).
+
+Fixture: 10 doc `aiFixJobs` thật từ prod (read-only) — mang đúng `{pageData, keyword, analysisData,
+lang}` mà luồng fix nhận, gồm `body_html` (488–15,408 ký tự) và `seoAnalysisPage`. shopID hash lại.
+
+**Giới hạn phải nói rõ:** loại 2 field vì cần dịch vụ ngoài, không chạy offline được —
+`url` (`generateUrl` → `isHandleExists`, cần Shopify + Firestore check trùng handle) và
+`faqs` (`generateFaqAudit` → `getFaqs` → `initShopify`, `services/openAI/index.js:437`).
+Còn `metaTags` + `content` = 11 issue id, đúng phần AI sinh nội dung.
+
+### Kết quả — hòa
+
+| | baseline `gemini-3-flash` | `gemma4:31b` |
+|---|---|---|
+| issue | 28 → **6** | 28 → **6** |
+| attempts | 52 | 47 |
+| LLM calls | 73 | 76 |
+| wall | 701s | 684s |
+| score TB | 76.3 → **84.5** | 76.3 → **84.1** |
+| fix failures | 0 | 1 (`textLength: fetch failed`) |
+
+Theo từng page: gemma tốt hơn 2, kém hơn 2, bằng 6. n=10 → nhiễu, không phải tín hiệu.
+
+Issue không model nào dứt được: `textLength` (baseline 4 / gemma 2), `keyphraseDensity` (2 / 3),
+`relatedKeywordsDensity` (0 / 1).
+
+### Phát hiện về CHÍNH APP, không liên quan chọn model
+
+**Vòng lặp fix không có điều kiện dừng khi không tiến triển.** `productWorker.js:368` chỉ dừng khi
+hết issue fixable hoặc chạm `MAX_FIX_ATTEMPTS=8`. Đo được:
+
+- **5/10 page (baseline) và 4/10 (gemma) chạy hết 8 vòng.**
+- Page `f2898d10`: 8 vòng, issue **2→2**, score **77→77**, đốt **17 call** (gemma 19), 124s (gemma 196s).
+  Không cải thiện một điểm nào.
+
+Thêm một điều kiện dừng "score không tăng sau 2 vòng liên tiếp" sẽ cắt được lượng call này, và nó
+tiết kiệm ở **mọi** provider — nhiều hơn phần chênh giữa hai model.
+
+---
+
+## Vòng 4 — task 7→10, 2026-08-18
+
+Nhánh `feat/audit-content-ollama-gemma4`, tiếp trên MR !2158.
+
+### Task 7 — có đọc được usage/quota của Ollama bằng chính key này không? **CÓ**
+
+Vòng 2 ghi "Ollama không trả header quota nào" — đúng phần header, nhưng **kết luận suy ra từ đó
+thì sai**: có endpoint riêng. `GET https://ollama.com/api/usage` + `Authorization: Bearer <key>`:
+
+```json
+{"activity": {"cost": "0.00000", "period": {"type": "last_4_weeks", ...}},
+ "limits": {"session": {"usage": 0.042, "models": [{"name": "gemma4:31b", "request_count": 140}]},
+            "weekly":  {"usage": 0.064, "models": [...]}}}
+```
+
+- `limits.session.usage` / `limits.weekly.usage` = **phân số 0..1** của trần 5 giờ và trần tuần.
+- `request_count` tách theo model.
+- `activity.cost` = tiền extra-usage ngoài gói (đang $0).
+- Query param bị bỏ qua — `?period=`, `?type=` trả y hệt. Payload cố định.
+
+Đã rà 16 surface; chỉ `/api/usage`, `/api/tags`, `/v1/models` sống. `/api/ps` 401, còn lại 404.
+
+**Quy đổi ra số call thật** (`ollama-quota-delta.py`, 30 payload merchant thật, đo trước/sau):
+
+| | |
+|---|---|
+| 30 call `gemma4:31b` | session 0.042 → **0.043** (+0.1%), weekly không nhúc nhích |
+| token TB | in 513 / out 211 mỗi call |
+| suy ra trần session (5h) | **~30.000 call** audit |
+
+Độ chính xác: `usage` chỉ 3 chữ số thập phân, nên ở n=30 khoảng thật là 20k–60k call/5h.
+Bậc độ lớn 10⁴ là chắc. **Gói Pro $20 không phải giới hạn cho volume audit của app** — còn xa mới tới.
+
+Hệ quả cho thiết kế: breaker không cần đoán mù nữa. Đọc `/api/usage` là biết còn bao nhiêu **trước**
+khi ăn 429. Chưa nối vào code vòng này (xem "Chưa làm").
+
+### Task 8 — khách có bị lỗi / chậm khi chuyển provider không? **CÓ, và đã sửa**
+
+Lỗi thật, không phải giả định: **không bên nào đặt timeout cho `fetch`.** Không có
+`AbortController` trong `services/ollama/index.js` lẫn `services/openrouter/index.js`.
+
+Chỗ này chết người vì `productWorker.js:74`:
+
+```js
+function withTimeout(promise, ms, label) {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(...))]);
+}
+```
+
+`Promise.race` **bỏ rơi** promise chứ không huỷ được `fetch` bên dưới. Nên Ollama treo → hết sạch
+60s ngân sách của issue → fix hỏng → **fallback OpenRouter không bao giờ được gọi**. Fallback chỉ
+tồn tại trên giấy ở đúng kịch bản cần nó nhất.
+
+Còn cộng thêm: `504` nằm trong `RETRYABLE_STATUS`, retry chờ `delay(10000)` — treo 30s → chờ 10s →
+treo 30s = 70s, một mình đã vượt 60s.
+
+**Đo trước khi sửa** (`measureSwitch.js`, 4-6 payload meta_tags thật, Ollama treo 30s):
+
+| điều kiện | p50 TRƯỚC | p50 SAU |
+|---|---|---|
+| Ollama khoẻ | 1221ms | 2786ms |
+| Ollama 429 → OpenRouter | 6858ms | 2898ms |
+| **Ollama treo 30s → OpenRouter** | **81.660ms** — vượt 21,7s | **31.723ms** — còn dư 28,3s |
+
+Trước khi sửa, đúng kịch bản cần fallback nhất thì fallback vô dụng: fix hỏng, merchant thấy lỗi.
+
+**Sửa:** một deadline cho cả lượt gọi Ollama kể cả retry, cắt bằng `AbortController`.
+
+- `config/ollama.js` — `timeoutMs: Number(process.env.OLLAMA_TIMEOUT_MS) || 25000`.
+  25s vì p95 đo được của task nặng nhất (`generate_description`) là 11,7s, còn chừa chỗ cho fallback.
+- `services/ollama/index.js` — `dueAt` set 1 lần lúc vào, truyền qua retry nên **retry không nới
+  được ngân sách**; retry chỉ chạy khi `budgetLeft() > 10000`.
+- Timeout mang `status = 'ETIMEDOUT'`, **cố ý không phải** quota status: provider chậm không nói lên
+  gói hết hạn mức, nên chỉ fallback cho call đó, không mở circuit 5h cho mọi call khác.
+
+Test `testTimeout.js` — 6/6 PASS:
+
+```
+PASS Ollama treo -> vẫn trả kết quả (fallback)
+PASS fetch bị ABORT thật, không chỉ bỏ rơi promise  abort=1
+PASS tổng thời gian < 60s (ngân sách productWorker)  5628ms
+PASS Ollama bị cắt đúng hạn (~4000ms, không treo vô hạn)  5628ms
+PASS treo KHÔNG latch cooldown 5h  cooldown=null
+```
+
+`testFallback.js` cũ vẫn 7/7 PASS. Jest: 895 pass, 2 fail có sẵn từ trước
+(`shopify2026Client`, `workListStore` — không liên quan AI routing).
+
+**Giới hạn của phép đo phải nói rõ:** mock "treo" trong `measureSwitch.js` là `setTimeout` thuần,
+**không nghe `signal`**, nên C chỉ đo được nửa "không cho retry nới ngân sách" của bản sửa. Nửa
+"abort thật" do `testTimeout.js` đo, ở đó mock có nghe `signal` và cắt đúng hạn (`abort=1`). Với
+socket treo thật, deadline cắt ở 25s — còn tốt hơn con số 31,7s đo được ở đây.
+
+Một lỗi trong chính bản sửa, tự bắt được khi review diff: `clearTimeout` ban đầu đặt ở `finally`
+bọc mỗi `fetch`, mà `fetch` resolve ngay khi có header — body vẫn đọc **sau** đó, không còn ai canh.
+Đã dời timer ra bọc cả phần đọc body (`readOrTimeout`).
+
+### Task 9 — đồng bộ model hai bên
+
+`google/gemma-4-31b-it` có thật trong catalog OpenRouter (đã check `/api/v1/models`):
+262K ctx, vision + structured, **$0.10/$0.34 mỗi M token** so với `gemini-3-flash-preview`
+$0.50/$3.00 → rẻ hơn **5× input, 8.8× output**.
+
+Đổi: fallback `text` + `structured` từ `gemini-3-flash-preview` → `gemma-4-31b-it`, cùng dòng với
+primary `gemma4:31b` bên Ollama. Fallback giờ đổi **provider mà không đổi luôn hành vi model**
+giữa chừng một lượt fix.
+
+**Image alt cố ý KHÔNG đồng bộ.** Đo trực tiếp 20 ảnh (`altOr31vs26.js`) trước khi quyết:
+
+| | p50 | p95 | $in/M |
+|---|---|---|---|
+| `gemma-4-26b-a4b-it` (đang chạy prod) | **1593ms** | **2795ms** | **$0.07** |
+| `gemma-4-31b-it` (nếu đồng bộ) | 1799ms | 6246ms | $0.10 |
+
+26b nhanh hơn mọi phân vị, rẻ hơn, và đã đo trên 100 ảnh thật hôm 17/08. Đổi sang 31b chỉ để cho
+"đối xứng" là bỏ một model đã đo lấy một model chưa đo. Giữ 26b.
+
+(31b có thắng 1 điểm đáng ghi: ảnh "Abbigliamento Premaman" 31b đọc ra "maternity wear", 26b chỉ
+thấy "summer outfits". Không đủ để đổi, nhưng đáng nhớ nếu sau này alt cần hiểu ngữ cảnh sâu hơn.)
+
+### Task 10 — 262K context của gemma4 có đủ cho FAQ + Content không? **Thừa xa**
+
+`/api/show` xác nhận `gemma4.context_length = 262144`.
+
+Prompt **thật** của app (đo trên 30 payload merchant + 10 fixture fix-loop):
+
+| task | prompt max |
+|---|---|
+| `keywords` | ~320 token |
+| `meta_tags` | ~478 token |
+| `generate_description` | ~869 token |
+| `faq_keyword` (chạy thật) | **759 token** in, 222 out |
+| page `body_html` to nhất (15.408 ký tự) | ~3.850 token |
+
+262K / ~5K worst case = **thừa hơn 50×**. Context không phải giới hạn của luồng này.
+
+Rủi ro thật không phải "262K có đủ không" mà là **cắt âm thầm**: `services/ollama/index.js:47` chỉ
+gửi `num_predict`, không gửi `num_ctx`, mà default cổ điển của Ollama là cửa sổ 4096. Nếu cloud áp
+default đó thì prompt content hôm nay đã **mất đầu prompt mà không báo lỗi**. Đã test needle
+(mã đặt ở **đầu** prompt, nơi cửa sổ trượt nuốt trước):
+
+| mục tiêu | inTok thật | nhớ mã? |
+|---|---|---|
+| 1K | 773 | CÓ |
+| 5K | 3.673 | CÓ |
+| 20K | 14.623 | CÓ |
+| 60K | 43.823 | CÓ |
+
+`prompt_eval_count` tăng tuyến tính, needle sống ở 43.8K token → **không cắt**. Không có bug ẩn.
+
+Chốt: FAQ + Content **không** bị chặn bởi context. Chặn thật vẫn là **output cap + 60s timeout**
+như vòng 3 đã đo (page 15.408 ký tự chạm trần 8192 token output 2 lần).
+
