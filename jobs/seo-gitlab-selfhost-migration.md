@@ -337,7 +337,7 @@ Không đổi: `.npmrc` / `.yarnrc.yml` trỏ `registry.avada.io`, không liên 
 `packages/functions/docs/seo-worker/WORKER-SDK.vi.md:58,1282` trỏ `worker-sdk` — repo đó
 chưa lên self-host, giữ nguyên.
 
-## Bước 5 — Repo artifacts sang self-host — SEED XONG 2026-08-18, chờ 2 thao tác tay
+## Bước 5 — Repo artifacts sang self-host — **XONG 2026-08-18**
 
 **Bắt buộc, không phải tuỳ chọn.** Đã thử phương án "để artifacts ở gitlab.com" và nó chết:
 
@@ -410,16 +410,47 @@ widget chết. `chunkReloadGuard` chỉ cứu được các build **sau** khi MR
 `assets-manifest.json` được stamp lại toàn bộ về `2026-08-18` cho khớp cây đã seed —
 entry trỏ file không tồn tại sẽ làm lần prune sau tính sai.
 
-### Còn lại 2 việc, cả hai cần quyền tay người
+### Hai điều kiện tiên quyết — XONG 2026-08-18
 
-1. **Bật `allow_force_push` cho `main`** (project 391). Hiện `push=Maintainers`,
-   `allow_force_push=false` → `git push --force origin pushed:main` của job **bị từ chối**.
-   Role thì đủ (`ci-cd` Owner, `ci`/`tuannv` Maintainer), vướng đúng cái cờ.
-   Đánh đổi: nới bảo vệ nhánh mặc định của repo build-output. Không ai đọc history của nó,
-   và chính thiết kế yêu cầu ghi đè mỗi deploy; `resource_group: artifact-push` chặn race,
-   không chặn job sai.
-2. **Force-push `seed-live` → `main`.** Không fast-forward được (lịch sử không liên quan tới
-   bản import 08-07). Chỉ đổi 1 ref, vài giây.
+1. **`allow_force_push` cho `main`** (project 391) đã bật. Trước đó `false`, job
+   `git push --force origin pushed:main` sẽ bị từ chối và pipeline chết ở stage
+   `push-react-artifact` (đứng **trước** `deploy-react`, nên hosting không hỏng —
+   chỉ là không deploy prod được). Role vốn đã đủ (`ci-cd` Owner, `ci`/`tuannv` Maintainer).
+2. **`main` đã reseed**, `0dc4a560` → `c748e502`, **13 870 file**.
+   Push là **fast-forward chứ không force**: commit `e9c20c7b` được tạo bằng
+   `git commit-tree <tree của seed> -p 0dc4a560`, giữ nguyên lịch sử cũ làm parent.
+   Không cần chờ cờ ở mục 1. Object gần như đã nằm sẵn trên server (đẩy cùng `seed-live`)
+   nên push xong trong vài giây.
+
+`.gitignore` bị rơi khi dựng lại cây từ closure — đã bù bằng `c748e502`. Thiếu nó thì
+`git add -A` của job hốt lại `.DS_Store`/`node_modules`/`*.log` đúng như trước.
+
+### Kiểm chứng cuối
+
+`prune-stale-assets.js` chạy dry-run trên cây đã seed, build giả = 590 file live:
+
+```
+retention:     14 days (cutoff 2026-08-04)
+protected:     2026-08-18 (newest 2 deploy dates)
+incoming build: 590 files
+archive before: 13870 files
+pruned:        0 files, 0.00 GB (dry run, nothing changed)
+```
+
+Đúng như thiết kế: cả 13 870 file đều stamp `2026-08-18` nên nằm trong cửa sổ, không
+xoá gì ở deploy đầu. Chúng rụng dần sau **2026-09-01** khi không build nào còn tham chiếu.
+
+### Trạng thái chốt
+
+| | |
+|---|---|
+| `seo` master | `a87eb5d866` — đã merge !2148 |
+| !2156 | đã đóng (bị !2148 thay thế) |
+| artifacts `main` | `c748e502`, 13 870 file, force-push đã mở |
+| artifacts `seed-live` | `f79abf4`, **giữ làm điểm khôi phục** tới khi deploy prod đầu tiên xanh |
+
+Sau deploy prod đầu tiên thành công thì xoá `seed-live`, xoá `scratchpad/artifacts` (1.3 GB)
+và `scratchpad/seed`.
 
 ### Chi phí thật (đo 2026-08-18)
 
