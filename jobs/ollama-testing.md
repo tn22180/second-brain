@@ -631,3 +631,72 @@ default đó thì prompt content hôm nay đã **mất đầu prompt mà không 
 Chốt: FAQ + Content **không** bị chặn bởi context. Chặn thật vẫn là **output cap + 60s timeout**
 như vòng 3 đã đo (page 15.408 ký tự chạm trần 8192 token output 2 lần).
 
+
+---
+
+## Vòng 5 — faqsAssessment 500, 2026-08-18
+
+Hai lỗi **độc lập** chồng lên nhau; sửa cái thứ nhất mới lộ cái thứ hai.
+
+### Lỗi 1 — `TypeError` khi resolve resource id (đã sửa, commit `5082104649`)
+
+`generateFaqAudit` gọi `getFaqs` với `id: pageData.analysisId`, không bao giờ set
+`productId`/`collectionId`/`pageId`/`articleId` (`chains.js:326-334`). Ba helper prompt gọi thẳng
+`.includes('gid')` lên giá trị đó. `analysisId` có doc lưu **number**, có doc **thiếu hẳn**:
+
+```
+TypeError: (productId || req?.id).includes is not a function
+TypeError: Cannot read properties of undefined (reading 'includes')
+```
+
+Ném **trước khi gọi Shopify**. `getResourceFactsForMeta:475` đã normalize đúng sẵn — nâng thành
+`resolveShopifyId` dùng chung cho cả 4 helper. `getPromptArticle` còn không fallback về `req.id`,
+đang gửi `owner_id: undefined` sang Shopify.
+
+Test mới: 4 helper × (id number / id thiếu / GID) = 12 case. **8/12 fail trên code cũ** (đã stash
+bản sửa chạy lại để chắc test bắt đúng bug).
+
+### Lỗi 2 — key OpenRouter chết trong `.env.local`
+
+Sau khi hết `TypeError`, lỗi thành `[openAI:getFaqs] 6FFrhDPLyN9t8mLeRT8r User not found.`
+
+Nhìn như Shopify auth. **Không phải.** `UnauthorizedResponseError` là class của `@openrouter/sdk`;
+`getFaqs` try/catch quanh cả phần gọi AI nên 401 của OpenRouter đội tên nó.
+
+Loại trừ từng lớp, đo chứ không đoán:
+
+| kiểm tra | kết quả |
+|---|---|
+| `SHOPIFY_ACCESS_TOKEN_KEY` local vs staging | trùng (`6d736b91`) |
+| shop `6FFrhDPLyN9t8mLeRT8r` trên `avad-seo-staging` | có, `linhnguyen11.myshopify.com` |
+| `accessTokenHash` giải mã bằng key local | OK → `shpat_…` |
+| `shopify.shop.get()` | **200 OK**, plan partner_test |
+
+Thủ phạm: **emulator nạp `.env.local` đè `.env`**.
+
+```
+.env         OPENROUTER sha8 7ccb3a4b len 73 → 200, còn $45.81 hạn mức ngày
+.env.local   OPENROUTER sha8 b0544b66 len 91 → 401 {"error":{"message":"User not found.","code":401}}
+```
+
+Khớp từng chữ với lỗi thật. Đã copy key từ `.env` sang `.env.local`, backup
+`.env.local.bak-openrouter-401`, verify lại 200. Rà nốt: chỉ còn `INTERNAL_REDIS_TOKEN` (thiếu ở
+`.env.local`) và `SLACK_ENT_CHANNEL_ID` (rỗng) lệch — không liên quan.
+
+Đã xác nhận chạy được.
+
+### Bài học ghi vào memory
+
+- [[seo-env-local-beats-env]] — `.env.local` thắng `.env`; và tra class lỗi thuộc SDK nào trước khi
+  tin cái prefix trong log.
+- [[seo-prod-token-key-committed]] — phát hiện kèm, xem dưới.
+
+### ⚠️ Phát hiện bảo mật (báo cáo, KHÔNG tự sửa)
+
+`packages/functions/src/commands/fixProBackToFree.js:95` hardcode literal 32 ký tự truyền vào
+`prepareShopData`. Fingerprint `ee21a87f/32` — **trùng đúng** `SHOPIFY_ACCESS_TOKEN_KEY` trong
+`PRODUCTION_ENV_FILE`. Nằm trong **6 commit**, còn cả trong `packages/functions/lib/`.
+
+Key này giải mã access token Shopify của **mọi** merchant prod. Xoá dòng vô nghĩa — key đã trong
+lịch sử git. Phải rotate key prod + re-encrypt `accessTokenHash` toàn bộ `shops`. Đụng dữ liệu
+prod nên dừng ở báo cáo.
