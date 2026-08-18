@@ -59,9 +59,9 @@ Ollama plan: **Free** (Light usage, 1 concurrent) → all Ollama calls sequentia
 | 10 | Context 262K của gemma4 đủ cho gen FAQ + Content không | inline | ✅ | 0/5 | clean | Thừa >50×; needle test 43.8k token không cắt. Không cần đổi code |
 | 11 | Fix `faqsAssessment` 500 — `analysisId` TypeError | inline | ✅ | 0/5 | clean | `resolveShopifyId` cho 4 helper; 8/12 test fail trên code cũ |
 | 12 | Fix `faqsAssessment` 500 (lớp 2) — key OpenRouter chết | inline | ✅ | 0/5 | clean | `.env.local` đè `.env`; file local, không vào commit |
-
+| 13 | Mọi function dùng Ollama phải có backup qua OpenRouter | inline | ✅ | 0/5 | clean | 6/6 pass khi chặn sạch Ollama; bỏ retry 10s/call |
+| 14 | Alert Slack khi Ollama chạm 50/75/99% → `#fleet-alert` | inline | ✅ | 0/5 | clean | cron 15 phút, 8 test ngưỡng; **cần set `SLACK_FLEET_ALERT_CHANNEL_ID`** |
 Task 1–6 = vòng 1 (khảo sát Free plan). Task 7–10 = yêu cầu bổ sung sau khi có key Pro.
-Task 11–12 = lỗi phát sinh khi test thật trên staging, không nằm trong brief gốc.
 
 ### Việc còn mở (không phải task đã chạy)
 
@@ -758,3 +758,84 @@ Giữ `gemma4:31b` chạy staging 1 để lấy số trên traffic thật. **Ch�
 mà đổi provider thì mất prompt caching của OpenRouter (input rẻ hơn 10× ở call có cache).
 Việc đáng làm hơn cả hai: thêm điều kiện dừng cho vòng lặp fix — cắt được nhiều call hơn phần
 chênh giữa hai model.
+
+
+---
+
+## Vòng 6 — task 13 + 14, 2026-08-18
+
+### Task 13 — mọi function dùng Ollama đều có backup OpenRouter
+
+Rà tĩnh: chỉ `services/aiContent/index.js` import service Ollama. Mọi chỗ khác
+(`chains.js`, `fixMainContentAsync`, `MODEL_LADDER`) đều đi qua dispatcher, cả 3 route
+(`text` / `structured` / `imageAlt`) đều bọc `withOpenRouterFallback`.
+
+Chứng minh bằng đo, không tin đọc code: `noOllamaCoverage.js` chặn sạch `ollama.com` ở tầng fetch
+(ECONNREFUSED — **không** phải quota status, nên circuit không mở, mỗi case phải tự fallback).
+
+**6/6 PASS**, 6 lần gọi Ollama đều hỏng → toàn bộ kết quả do OpenRouter phục vụ. Harness assert
+luôn "Ollama có được gọi và có hỏng" để phép thử không thể pass nhờ… bỏ qua Ollama.
+
+#### Lỗi lộ ra khi đo: mỗi lần fallback trả 10 giây vô ích
+
+`ollama thử=2` mỗi case — `chat()` retry 1 lần với `delay(10000)`, và `getOllamaImageAlt` còn có
+vòng retry riêng mặc định **3 lần**. Nghĩa là Ollama chết → mỗi call ngồi ngủ 10–30s rồi mới hỏi
+OpenRouter. Tệ hơn: ECONNREFUSED không phải quota status → **circuit không bao giờ mở** → trả thuế
+này cho *mọi* call suốt thời gian sự cố, không phải một lần.
+
+Sửa: `DEFAULT_RETRIES = 0`. Retry cùng một provider vừa chết luôn tệ hơn hỏi ngay một provider khoẻ.
+`retries` vẫn là tham số cho ai cần; OpenRouter (fallback cuối) giữ nguyên retry.
+
+| case | có retry | bỏ retry |
+|---|---|---|
+| meta_title | 12.978ms | **539ms** |
+| keywords | 11.463ms | **1.442ms** |
+| image alt | 12.207ms | **1.324ms** |
+| content | 30.033ms | **7.260ms** |
+
+Commit `df00e440fb`.
+
+### Task 14 — alert Slack 50 / 75 / 99%
+
+`ollamaQuotaAlertGen2` — cron **15 phút**, đọc `/api/usage`, bắn `#fleet-alert` khi `session` (5h)
+hoặc `weekly` vượt ngưỡng. 15 phút vì một lượt bulk fix có thể ăn hết window 5h; check hằng ngày
+thì báo xong mọi call đã fallback từ đời nào.
+
+File mới: `services/ollama/quotaAlert.js`, `repositories/ollamaQuotaAlertRepository.js`,
+`handlers/cron/ollamaQuotaAlert.js`. Commit `5253a417ae`.
+
+Hai chỗ dễ sai, đều có test (8/8 pass):
+
+1. `usage >= ngưỡng` trần trụi sẽ **bắn lại mỗi 15 phút** suốt phần còn lại của window → mỗi ngưỡng
+   chỉ bắn một lần rồi ghi nhớ.
+2. Ollama không trả mốc bắt đầu window → suy ra reset bằng việc **usage tụt xuống** so với lần đọc
+   trước (usage của rolling window chỉ tụt khi nó roll). Thiếu cái này thì từ window thứ hai trở đi
+   alert **câm vĩnh viễn**.
+
+Ngưỡng chỉ được ghi là "đã bắn" **sau khi Slack nhận**, nên Slack chết thì lần sau báo lại chứ
+không nuốt mất cảnh báo.
+
+State ở `internals/ollamaQuotaAlert` — một doc dùng chung toàn app, **cố ý không scope theo shopID**
+như phần còn lại của codebase, vì subscription Ollama là một tài khoản chung.
+
+Dry-run với usage thật (session 1.5%, weekly 6.7% → 0 alert, đúng), rồi ép số:
+
+```
+🟡 Ollama Cloud — hạn mức phiên 5 giờ đã qua 50%
+• Đang dùng: 52%
+• Model nhiều nhất: gemma4:31b (17), kimi-k2.6 (6)
+• Extra-usage ngoài gói: $0.00000
+Chạm trần thì mọi call audit tự chuyển sang OpenRouter (không hỏng, chỉ đổi model).
+```
+
+Chạy lại y hệt → **không gửi lại**. Reset window → bắn lại từ đầu. Dùng `Math.floor` chứ không
+`round`: 99,5% mà hiện "100%" là nói dối rằng đã cạn.
+
+### ⚠️ Cần mày làm: set `SLACK_FLEET_ALERT_CHANNEL_ID`
+
+Bot `falcon_bot` chỉ list được 13 channel, không thấy `fleet-alert` (3 channel đang cấu hình cũng
+không có trong list → thiếu scope `groups:read`). Nên tao **không tự lấy được channel ID**.
+
+Hiện đang fallback về `SLACK_ERROR_CHANNEL_ID` (`C0BEHGV1ST1`) — alert vẫn tới, nhưng sai chỗ.
+Cần thêm `SLACK_FLEET_ALERT_CHANNEL_ID=<id kênh fleet-alert>` vào `PRODUCTION_ENV_FILE`
+(và `STAGING_ENV_FILE` nếu muốn test), rồi mời `falcon_bot` vào kênh đó.
