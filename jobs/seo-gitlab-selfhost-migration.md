@@ -144,19 +144,63 @@ Tag đã bị xoá rồi tạo lại trên gitlab.com. Lấy bản gitlab.com l�
 **`master` trên gitlab.com nhảy 2 lần trong 30 phút phiên này** (`90034c49` → `5e226d21`).
 Team đang làm việc bình thường. Mọi con số ở đây là ảnh chụp, đối soát lại ngay trước cutover.
 
-## Bước 1 — Bịt chảy máu: bật push mirror gitlab.com → self-host **ngay**
+## Bước 1 — Đồng bộ seo lên self-host — **XONG 2026-08-18**
 
-Làm trước mọi thứ khác. Mỗi ngày trôi qua là thêm commit + MR phân kỳ.
+Làm thẳng bằng một lần push thay vì bật push mirror. Kết quả đo lại sau khi push:
 
-Push mirror chỉ đẩy một chiều gitlab.com → self-host, **sẽ đè `master` ở self-host**, tức
-**xoá commit `91dc5e48`**. Patch đã cứu ở Bước 0, nên đi tiếp được.
+| | gitlab.com | self-host |
+|---|---|---|
+| Branch | 1904 | **1904** — thiếu 0, dư 0 |
+| Tag | 4324 | **4324** |
+| `master` | `70b5bd5d5b` | **`70b5bd5d5b`** |
 
-Trên gitlab.com bật mirror: **Settings → Repository → Mirroring repositories**,
-direction **Push**, URL `https://git.avada.net/avada/seo.git`, method Password, user + PAT
-self-host. Bật **Keep divergent refs = off** để mirror ép đồng bộ.
+Phân kỳ hai chiều đã hết. `91dc5e48` bị ghi đè đúng chủ đích — nội dung nằm trong gitlab.com
+MR !2213 và `jobs/patches/0001-fix-ci-clone-artifacts-*.patch`.
 
-**Đây là thao tác ghi đè lịch sử ở self-host — xác nhận đã có patch `91dc5e48` trong tay
-trước khi bật.**
+Lệnh dùng (token qua credential helper, không bao giờ nằm trên command line):
+
+```bash
+cd ~/Documents/second-brain/projects/Falcon/seo
+set -a; source ~/Documents/second-brain/jobs/.env; set +a
+git -c credential.helper='!f() { echo username=oauth2; echo password=$GLAB_SELF_HOST; }; f' \
+  push --force https://git.avada.net/avada/seo.git \
+  'refs/remotes/origin/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
+```
+
+### Ba cái bẫy đã vấp, ghi lại để repo sau khỏi mất thời gian
+
+1. **Repo local đang shallow.** `.git/shallow` 188 dòng → mọi ref bị
+   `[remote rejected] (shallow update not allowed)`. Sửa: `git fetch --unshallow origin`.
+   `.git` phình 295 MB → 398 MB.
+
+2. **`git push` KHÔNG hỗ trợ negative refspec.** Chỉ `fetch` mới có (từ git 2.29).
+   `'^refs/remotes/origin/HEAD'` bị bỏ qua **im lặng**, git cố tạo branch tên `HEAD`,
+   GitLab trả `You cannot create a branch with an invalid name` và **decline nguyên lô
+   atomic** — 0 ref lên dù output chỉ liệt kê vài dòng rejected.
+   Sửa: `git remote set-head origin -d` (khôi phục bằng `-a`).
+
+3. **`pre-receive hook declined` ở đây là báo động giả.** Không phải push rule — self-host là
+   CE, không có push rules. Nó chỉ là hệ quả của lô atomic bị từ chối. Push riêng một branch
+   thành công ngay; đó là cách phân biệt.
+
+**Đối soát bằng số, đừng tin output push.** Output có thể bị cắt và trông như đã lên một phần:
+
+```bash
+git ls-remote --heads <host> | wc -l
+git ls-remote --tags  <host> | grep -cv '\^{}'
+```
+
+### 3 branch rác đã xoá trên self-host
+
+`falcon-bot/1785998751.371569`, `falcon-bot/1786033730.679729`, `fix/slack-1785939023` —
+đã bị xoá trên gitlab.com từ trước, và cả 3 **đều đã merge vào `master`** nên không mất commit
+nào. Xoá qua API, HTTP 204. Nhờ vậy push không cần `--prune`.
+
+### Nếu vẫn muốn push mirror cho giai đoạn chuyển tiếp
+
+gitlab.com → **Settings → Repository → Mirroring repositories**, direction **Push**,
+URL `https://git.avada.net/avada/seo.git`, method Password, user + PAT self-host,
+**Keep divergent refs = off**. Chỉ cần nếu team còn merge vào gitlab.com trước lúc cutover.
 
 ## Bước 2 — Đưa commit CI fix lên gitlab.com (nơi team đang làm việc)
 
@@ -183,14 +227,38 @@ Nội dung MR:
 ở self-host đang stale ~7 ngày. Merge sớm thì pipeline vẫn đang chạy trên gitlab.com sẽ đẩy
 `static/` cũ lên hosting production. Merge sau khi reseed artifacts (Bước 5).
 
-## Bước 3 — ~~Chứng minh CI chạy được trên self-host~~ — ĐÃ ĐÓNG
+## Bước 3 — Chứng minh CI chạy được trên self-host — **XONG 2026-08-18**
 
-Không cần smoke test riêng nữa. **`joy`, `blogs`, `avada-image-optimizer` đang deploy production
-thật từ git.avada.net**, cùng image, cùng kiểu job, trace 31 KB – 354 KB. CI self-host đã được
-chứng minh ở quy mô lớn hơn mọi smoke test.
+Pipeline seo thật đầu tiên trên self-host: **207833, `success`**, từ MR self-host
+[!2154](https://git.avada.net/avada/seo/-/merge_requests/2154)
+(branch `chore/selfhost-ci-verify`, base `91dc5e48`, chính là diff cutover).
 
-Branch thử `test/selfhost-ci-smoke` đã **xoá** (HTTP 204) cùng worktree tạm. Job `smoke:selfhost`
-không đi vào MR nào.
+```
+job=343223 docs_gate  status=success  runner=4  dur=17s  trace=4230B
+
+Using effective pull policy of [always] for container
+  registry.gitlab.com/anhnt34/avada-docker-image-cicd:wasm2-node-20-19-5
+$ node scripts/docs-gate/index.js
+docs-gate/citations: 90 living docs | 439 anchored checked | 1167 shorthand skipped
+docs-gate/mirror-parity: 69 pair(s) compared | 69 .claude | 69 .agent
+docs-gate: PASS
+Job succeeded
+```
+
+Chốt được:
+- **Runner self-host pull được image ở `registry.gitlab.com`** — dòng `Using effective pull
+  policy` là bằng chứng trực tiếp. Không cần `DOCKER_AUTH_CONFIG`, không cần mirror registry.
+- Diff cutover hợp lệ trên nền self-host: lint `valid: true`, pipeline xanh.
+- Job rơi vào runner 4 (khỏe), trace đầy đủ — không dính 10/13.
+
+Trước đó `joy`, `blogs`, `avada-image-optimizer` đã deploy production thật từ self-host
+(trace 31 KB – 354 KB), nên CI self-host vốn đã được chứng minh ở quy mô fleet.
+
+**Dọn sau khi test:** đóng MR !2154 và xoá branch `chore/selfhost-ci-verify`. Không merge nó —
+merge sẽ đẻ thêm một commit chỉ có ở self-host, đúng cái bẫy `91dc5e48` đang phải gỡ. Thay đổi
+này đã nằm trong gitlab.com MR !2213 và sẽ theo mirror chảy xuống.
+
+Branch thử cũ `test/selfhost-ci-smoke` đã xoá (HTTP 204). Job `smoke:selfhost` không đi vào MR nào.
 
 Đã đo được trên đường đi, vẫn còn giá trị:
 - **Push branch thường không kích hoạt job nào.** Cả file chỉ có 1 job stage `check` là
@@ -269,32 +337,106 @@ Không đổi: `.npmrc` / `.yarnrc.yml` trỏ `registry.avada.io`, không liên 
 `packages/functions/docs/seo-worker/WORKER-SDK.vi.md:58,1282` trỏ `worker-sdk` — repo đó
 chưa lên self-host, giữ nguyên.
 
-## Bước 5 — Đồng bộ lại repo artifacts
+## Bước 5 — Repo artifacts sang self-host — SEED XONG 2026-08-18, chờ 2 thao tác tay
 
-Bản self-host stale 7 ngày. Ngay trước cutover, seed lại từ cây hiện tại của gitlab.com:
+**Bắt buộc, không phải tuỳ chọn.** Đã thử phương án "để artifacts ở gitlab.com" và nó chết:
 
-```bash
-set -a; source /Users/nguyentuan/Documents/second-brain/jobs/.env; set +a
+```
+GIT_ACCESS_TOKEN trong CI vars self-host:
+  git.avada.net -> HTTP 200
+  gitlab.com    -> HTTP 401
 
-git clone --depth 1 --branch main \
-  "https://oauth2:<PAT-gitlab.com>@gitlab.com/avada/artifacts/avada-seo-react-app-artifacts.git" \
-  /tmp/seo-artifacts
-cd /tmp/seo-artifacts
-du -sh .                 # kích thước cây thật
-
-rm -rf .git
-git init -b main
-git add -A
-git commit -m "Reseed from gitlab.com avada/artifacts/avada-seo-react-app-artifacts @ main
-
-Repository is a CI state store for built static/ assets; history carries no value,
-so it is truncated at each reseed."
-git remote add origin "https://oauth2:$GLAB_SELF_HOST@git.avada.net/avada/artifacts/avada-seo-react-app-artifacts.git"
-git push --force -u origin main
+git ls-remote https://gitlab-ci-token:$T@gitlab.com/avada/avada-seo-react-app-artifacts.git
+  remote: HTTP Basic: Access denied.
+  fatal: Authentication failed
 ```
 
-`--force` ở đây ghi đè `main` của repo artifacts trên self-host. Đúng ý đồ — repo này là state
-store, không phải lịch sử cần giữ — nhưng vẫn là ghi đè, chạy có chủ đích.
+Biến đó là token của **git.avada.net** (tên `CI CD`), không phải gitlab.com — ai đó đã đổi từ
+trước. Nên `master` self-host hiện tại, vẫn clone từ gitlab.com, **sẽ 401 ngay lần deploy
+production đầu tiên**. Chưa nổ chỉ vì chưa ai tag release trên self-host.
+
+Giữ artifacts ở gitlab.com thì phải đổi token về PAT gitlab.com, sửa path (`avada/...` là path
+cũ sống nhờ redirect, path thật là `avada/artifacts/...`), **và không archive được project
+gitlab.com** — archive là read-only, `push-react-artifacts:production` ghi vào sẽ fail.
+
+### Seed đã lên self-host — XONG 2026-08-18, branch `seed-live`
+
+Cách đầu tiên (một orphan commit chứa cả archive) **chết**, giữ lại đây vì nó là cái bẫy:
+
+```
+Writing objects: 100% (25358/25358), 292.57 MiB | 14.80 MiB/s, done.
+fatal: the remote end hung up unexpectedly
+error: RPC failed; HTTP 524 curl 22 The requested URL returned error: 524
+```
+
+524 là Cloudflare hết hạn chờ origin. Chẩn đoán đúng: **không phải giới hạn dung lượng, mà là
+thời gian origin xử lý pack** (`index-pack` + hook). Đo được:
+
+| push | file | thời gian |
+|---|---|---|
+| 35 MB, 606 object | 590 | 69s ✅ |
+| 25 MB batch | 1438 | fail 139s · fail 195s · **OK 114s** |
+| 25 MB batch | 2404 | fail 145s · **OK 49s** |
+| 25 MB batch | 2057 | fail 165s · 137s · 142s ❌ |
+
+Cùng kích thước mà 49s–195s → biến thiên theo tải server, 524 luôn rơi ở mốc 137–195s.
+Không cần grey-cloud DNS, chỉ cần chia nhỏ.
+
+Cấu hình chạy được: batch **8 MB**, retry **10** lần cách nhau 15s, `--no-thin`
+(đẩy object đầy đủ thay vì delta — server khỏi phải resolve, đó mới là chỗ tốn giây).
+Kết quả **63 push, 2 lần fail, median 15s, max 99s**, xong toàn bộ.
+
+### Seed chứa gì — đủ cửa sổ retention 14 ngày, không thủng
+
+Seed **không** phải cả archive. Là **union closure của mọi deploy trong 14 ngày**:
+
+- Lấy `static/standalone.html` + `static/embed-template.html` ở từng commit của archive
+  gitlab.com qua API (rẻ; deepen shallow clone sẽ kéo về nguyên build output mỗi commit).
+- 39 deploy từ 2026-08-04 → 89 entrypoint riêng biệt, 0 cái thiếu trong archive.
+- Duyệt đệ quy import từ 89 entrypoint đó → **13 870 file / 568.0 MB**.
+
+| tập | file | MB |
+|---|---|---|
+| build prod hiện tại | 590 | 34.7 |
+| **union 14 ngày (đã seed)** | **13 870** | **568.0** |
+| archive gitlab.com đầy đủ | 25 352 | 1 028.6 |
+
+Vì sao phải đủ 14 ngày chứ không chỉ build hiện tại: `deploy-react:production` copy archive
+**đè lên** build rồi mới `firebase deploy --only hosting`, nên **Hosting phục vụ đúng những gì
+archive có**. Merchant còn giữ `index.html` của build cũ mà chunk bị thiếu thì 404 →
+widget chết. `chunkReloadGuard` chỉ cứu được các build **sau** khi MR merge, không cứu
+được tab đang mở hôm nay.
+
+`assets-manifest.json` được stamp lại toàn bộ về `2026-08-18` cho khớp cây đã seed —
+entry trỏ file không tồn tại sẽ làm lần prune sau tính sai.
+
+### Còn lại 2 việc, cả hai cần quyền tay người
+
+1. **Bật `allow_force_push` cho `main`** (project 391). Hiện `push=Maintainers`,
+   `allow_force_push=false` → `git push --force origin pushed:main` của job **bị từ chối**.
+   Role thì đủ (`ci-cd` Owner, `ci`/`tuannv` Maintainer), vướng đúng cái cờ.
+   Đánh đổi: nới bảo vệ nhánh mặc định của repo build-output. Không ai đọc history của nó,
+   và chính thiết kế yêu cầu ghi đè mỗi deploy; `resource_group: artifact-push` chặn race,
+   không chặn job sai.
+2. **Force-push `seed-live` → `main`.** Không fast-forward được (lịch sử không liên quan tới
+   bản import 08-07). Chỉ đổi 1 ref, vài giây.
+
+### Chi phí thật (đo 2026-08-18)
+
+| | |
+|---|---|
+| gitlab.com | 723 commit, **3037 MB** |
+| clone `--depth 1` | **1.3 GB** tổng (tree 25 363 file, `.git` 296 MB) |
+| self-host trước seed | 19 commit, 1596 MB, chậm 10 ngày (HEAD `0dc4a560`, 08-07), 16 980 file |
+| seed đã đẩy | 13 870 file, 568 MB |
+| Đĩa còn trống lúc chạy | 14 GB / 228 GB |
+
+Clone đầy đủ là ~3 GB + tree ~1.1 GB — đó là lý do lần trước hết dung lượng. `--depth 1` là
+điểm khác biệt.
+
+Script dùng lại được, nằm ở `scratchpad/`: `collect_entries.py` (entrypoint theo commit),
+`closure.py` (duyệt import), `build_seed.py`, `stage_seed2.py` (push theo batch có retry).
+Xong việc thì xoá `scratchpad/artifacts` (1.3 GB) và `scratchpad/seed`.
 
 ## Bước 6 — Cutover
 
