@@ -11,9 +11,13 @@ Khi vol nhiều thì m đk 2-3 tk.
 
 ## Progress
 
-Started: 2026-08-17
-Repo: `projects/Falcon/seo` · branch `feat/cs-grants-features` (HEAD `40cb89c127`)
-Classification: **spike** — output is a comparison + recommendation, probe code is throwaway.
+Started: 2026-08-17 · cập nhật 2026-08-18
+Repo: `projects/Falcon/seo`
+- Vòng 1 (task 1–6): branch `feat/cs-grants-features` (HEAD `40cb89c127`), diff repo = 0.
+- Vòng 2–5 (task 7–12): branch `feat/audit-content-ollama-gemma4` → **MR !2158**, 6 commit.
+
+Classification: bắt đầu là **spike** (task 1–6: so sánh + khuyến nghị, code probe vứt đi).
+Từ task 7 trở đi thành **bounded** — có sửa code thật vào `src/`, có test, có MR.
 Ollama plan: **Free** (Light usage, 1 concurrent) → all Ollama calls sequential, run budget capped.
 
 > `TaskCreate` is not available in this session; this file is the single tracker.
@@ -49,10 +53,26 @@ Ollama plan: **Free** (Light usage, 1 concurrent) → all Ollama calls sequentia
 | 4 | Run Ollama bench, sequential, Free-plan safe | inline | ✅ | 0/5 | clean | 16 runs, 1 hard fail (nemotron vision) |
 | 5 | Compare + write the report into this file | inline | ✅ | 0/5 | clean | see Report |
 | 6 | Delete probe files, verify repo diff is clean | inline | ✅ | 0/5 | clean | harness copied to scratchpad first |
-7: có lấy được usage của ollama còn lại bằng key này không
-8: đảm bảo khách không bị lỗi và chậm quá nhiều khi chuyển giữa openriuter and ollama
-9: chuyển các model mới test cho cả openrouter lẫn ollama cho đồng bộ luôn nhé
-10: xem Context length 262K tokens của gemma4 có đáp ứng được phần gen FAQ + Content không?
+| 7 | Đọc được usage/quota Ollama còn lại bằng key này không | inline | ✅ | 0/5 | clean | CÓ — `GET /api/usage`; 30 call = 0.1% trần session → ~30k call/5h |
+| 8 | Khách không lỗi / chậm khi chuyển OpenRouter ↔ Ollama | inline | ✅ | 1/5 | fixed | Lỗi thật: không có timeout. p50 treo 81.660ms → 31.723ms |
+| 9 | Đồng bộ model mới test cho cả OpenRouter lẫn Ollama | inline | ✅ | 0/5 | clean | text/structured → `gemma-4-31b-it`; image alt cố ý giữ 26b |
+| 10 | Context 262K của gemma4 đủ cho gen FAQ + Content không | inline | ✅ | 0/5 | clean | Thừa >50×; needle test 43.8k token không cắt. Không cần đổi code |
+| 11 | Fix `faqsAssessment` 500 — `analysisId` TypeError | inline | ✅ | 0/5 | clean | `resolveShopifyId` cho 4 helper; 8/12 test fail trên code cũ |
+| 12 | Fix `faqsAssessment` 500 (lớp 2) — key OpenRouter chết | inline | ✅ | 0/5 | clean | `.env.local` đè `.env`; file local, không vào commit |
+
+Task 1–6 = vòng 1 (khảo sát Free plan). Task 7–10 = yêu cầu bổ sung sau khi có key Pro.
+Task 11–12 = lỗi phát sinh khi test thật trên staging, không nằm trong brief gốc.
+
+### Việc còn mở (không phải task đã chạy)
+
+| Việc | Mức | Ghi chú |
+|---|---|---|
+| Rotate `SHOPIFY_ACCESS_TOKEN_KEY` prod | 🔴 bảo mật | Hardcode ở `fixProBackToFree.js:95`, trong 6 commit + `lib/`. Mở được token mọi merchant prod. Cần re-encrypt toàn bộ `shops` |
+| Bỏ hunk `.gitlab-ci.yml` khỏi MR !2158 | 🟠 chặn merge | 4 ref staging-1 đang trỏ vào nhánh này; không được vào `master` như hiện tại |
+| Nối `/api/usage` vào breaker | 🟡 cải tiến | Task 7 chứng minh đọc được quota trước; hiện breaker vẫn chờ ăn 429 mới latch |
+| Thêm điều kiện dừng "score không tăng 2 vòng" | 🟡 cải tiến | Vòng 3 đo: 5/10 page đốt hết 8 vòng, 1 page 17 call đổi 0 điểm. Tiết kiệm ở **mọi** provider |
+| `generateKeyword` prompt vs schema lệch | 🟡 defect | `chains.js:289-299`: prompt "ONE best primary keyword" nhưng schema `{keywords: []}` |
+| 2 suite jest fail sẵn | ⚪ nền | `shopify2026Client`, `workListStore` — có trước, không liên quan AI routing |
 ### Ollama model shortlist (Free plan)
 
 | Role | Candidates | Usage tier |
@@ -278,9 +298,10 @@ OpenAI. No call site points at it today, so nothing is broken in production righ
 - Security check: **clean**. Net repo diff is zero, so there is nothing to leak. Result files under
   the scratchpad were scanned for `.env` secret literals: 0 hits.
 
-## COMPLETE
+## COMPLETE — vòng 1 (task 1–6)
 
 All 6 tasks ✅, 0 rounds burned, no task hit the 5-round cap.
+(Trạng thái task 7–12 xem bảng Tasks ở trên; tổng kết cuối file.)
 
 Final verification:
 
@@ -700,3 +721,40 @@ Khớp từng chữ với lỗi thật. Đã copy key từ `.env` sang `.env.loc
 Key này giải mã access token Shopify của **mọi** merchant prod. Xoá dòng vô nghĩa — key đã trong
 lịch sử git. Phải rotate key prod + re-encrypt `accessTokenHash` toàn bộ `shops`. Đụng dữ liệu
 prod nên dừng ở báo cáo.
+
+
+---
+
+## Tổng kết (2026-08-18)
+
+**12/12 task ✅.** 1 round bị đốt (task 8 — bản sửa đầu tiên clear timer quá sớm, tự bắt khi
+review diff). Không task nào chạm trần 5 vòng.
+
+### Câu trả lời cho yêu cầu của sếp
+
+| Sếp hỏi | Trả lời đo được |
+|---|---|
+| Chuyển OpenRouter → Ollama Cloud | **Hoà**, không thắng. 10 page thật qua luồng fix thật: 28→6 issue cả hai bên, score TB 84.5 vs 84.1 |
+| $100 budget, 1 tài khoản đủ không | **Thừa xa.** Gói $20 Pro: 30 call = 0.1% trần session → ~30k call audit/5h |
+| Cơ chế fallback sang OpenRouter | **Xong.** Mọi route Ollama fallback; 402/403/429 mở circuit 5h, lỗi khác fallback lẻ |
+| Vol nhiều thì đăng ký 2–3 tài khoản | **Chưa cần.** Trần hiện tại chưa chạm; `/api/usage` đọc được số thật để quyết sau |
+
+### Giá trị thật thu được lại KHÔNG nằm ở chuyện đổi provider
+
+Ba lỗi có sẵn của app, lộ ra nhờ đi đo, và **cả ba đều ảnh hưởng bất kể dùng provider nào**:
+
+1. **Không provider nào có timeout** → `Promise.race` ở `productWorker.js:75` bỏ rơi promise chứ
+   không huỷ được fetch → 1 lần treo ăn sạch 60s ngân sách merchant, fallback vô dụng đúng lúc
+   cần nhất. Đã sửa.
+2. **`analysisId` number/thiếu làm sập luồng FAQ** trước cả khi gọi Shopify. Đã sửa + 12 test.
+3. **Vòng lặp fix không có điều kiện dừng khi không tiến triển** — 5/10 page đốt hết 8 vòng.
+   Chưa sửa, nằm ở "Việc còn mở".
+
+Cộng thêm 1 phát hiện bảo mật: key giải mã token Shopify prod bị commit vào repo.
+
+### Khuyến nghị
+
+Giữ `gemma4:31b` chạy staging 1 để lấy số trên traffic thật. **Chưa đẩy prod** — hai bên hoà,
+mà đổi provider thì mất prompt caching của OpenRouter (input rẻ hơn 10× ở call có cache).
+Việc đáng làm hơn cả hai: thêm điều kiện dừng cho vòng lặp fix — cắt được nhiều call hơn phần
+chênh giữa hai model.
