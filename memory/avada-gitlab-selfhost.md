@@ -1,11 +1,11 @@
 ---
 name: avada-gitlab-selfhost
-description: "Avada đã chuyển sang GitLab self-host git.avada.net từ 2026-08-09; 25 project đã lên, seo phân kỳ chưa cutover"
+description: "Avada dùng GitLab self-host git.avada.net từ 2026-08-09; seo đã cutover 2026-08-18, origin = git.avada.net"
 metadata: 
   node_type: memory
   type: project
   originSessionId: 2d25a023-2f18-4a64-8eef-a173ed27b2b3
-  modified: 2026-08-17T04:21:42.593Z
+  modified: 2026-08-18T00:00:00.000Z
 ---
 
 Avada chạy GitLab self-host tại `https://git.avada.net` — **19.1.0 Community Edition**
@@ -17,15 +17,13 @@ Avada chạy GitLab self-host tại `https://git.avada.net` — **19.1.0 Communi
 **Bảng "Repo → Firebase project" trong `second-brain/CLAUDE.md` vẫn ghi remote gitlab.com cho cả
 18 repo — đã sai.** Đừng đọc nó như nguồn sự thật về remote nữa; kiểm host thật trước khi kết luận.
 
-**seo chưa cutover, master phân kỳ hai chiều, không có push mirror.** Snapshot 2026-08-17:
-self-host `91dc5e48` (08-12, chỉ có ở đây — commit sửa CI clone artifacts), gitlab.com
-`90034c49` (08-17, team vẫn merge ở đây). Đã xong ở self-host: 119/119 CI var khớp, 9 runner
-online untagged, protected branch `master`. Chưa xong: CI chưa từng execute lần nào,
-`.gitlab-ci.yml:1` vẫn pull image từ `registry.gitlab.com/anhnt34/...` mà không có
-`DOCKER_AUTH_CONFIG`.
+**seo đã cutover 2026-08-18.** Trong clone local: `origin` = `https://git.avada.net/avada/seo.git`,
+remote gitlab.com bị đổi tên thành `gitlab-old`. Phân kỳ hai chiều đã hết —
+`gitlab-old/master...origin/master` = `0 21`, self-host là superset. MR mới mở ở self-host.
+Đã xong: 119/119 CI var khớp, 9 runner online untagged, protected branch `master`.
 
 Runbook đầy đủ: `jobs/seo-gitlab-selfhost-migration.md`. Token self-host đọc từ `jobs/.env`
 key `GLAB_SELF_HOST` (gitignored) — là Maintainer, **không phải admin**, endpoint admin trả 403
 vì thiếu scope `admin_mode`.
 
-Liên quan: [[seo-master-no-detect-worker]], [[gen2-deploy-silent-freeze]]
+Liên quan: [[seo-master-no-detect-worker]], [[gen2-deploy-silent-freeze]], [[avada-gitlab-host-migration]]

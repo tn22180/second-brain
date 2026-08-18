@@ -147,3 +147,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo alt-text default model = `gemma-4-26b` (commit `4c3307365c`), thay model cũ sau eval 30 sản phẩm thật
 - [ ] (×1) Worker fleet — shop mới nhận test cohort chứ không nhận toàn bộ migrated jobs; deploy worker gắn với tag (commit `1696228c02`, `7fcacc2c34`)
 - [ ] (×1) Migrate repo sang git.avada.net phải migrate kèm repo artifacts (`avada-seo-react-app-artifacts`) và set lại CI variables + runner — không tự đi theo
+
+### memory candidates 2026-08-18
+- [ ] (×1) Ollama Cloud breaker phải latch in-process song song Redis — Redis chỉ có ở prod, latch Redis-only là no-op ở stg/local
+- [ ] (×1) Gọi Ollama không bound timeout thì fallback OpenRouter không bao giờ chạy; đã bỏ retry khi có fallback (seo `00e57a17f1`, `df00e440fb`)
+- [ ] (×1) `gemma4:31b` (Ollama Cloud) chậm hơn `gemini-3-flash` đáng kể — tính latency vào quyết định đổi provider, không chỉ cost
+- [ ] (×1) seo cutover xong sang git.avada.net 2026-08-18 kèm repo artifacts; gitlab.com là mirror chết
+- [ ] (×1) Quota Ollama Cloud có alert Slack ở ngưỡng 50/75/99% (seo `5253a417ae`) — limit thì job đẩy Redis, check lại sau 5h

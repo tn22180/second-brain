@@ -15,12 +15,14 @@
 - [seo fleet Tailscale ACL auto-deploy](seo-fleet-tailscale-acl-autodeploy.md) — central=tag:deploy, box1/box2=tag:worker-box, accept rule → non-interactive SSH. Gotchas: box1 --ssh off, box2 was user-owned untagged, SSH-into-central needs dst:tag:deploy (autogroup:self ≠ tagged nodes).
 - [seo fleet→GCF spill](seo-fleet-gcf-spill.md) — dispatchWork 3 gates + spill theo MEMORY (MR2204): job.memoryMb > maxFreeMb (worker:mem hash). KHÔNG có ngưỡng queue tổng. Spill OFF ở prod tới khi FLEET_SPILL_ENABLED=true.
 - [fleet-control public hosting](fleet-control-public-hosting.md) — fleet.tuannv-dev.site via Cloudflare Tunnel(cloudflared@central)+Access(Google/OTP); config in /etc/cloudflared not ~; REDIS_PORT=6380; basic-auth off + ufw deny tailscale0:3900.
-- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE, 25 project đã lên từ 2026-08-09; seo chưa cutover, master phân kỳ 2 chiều. Bảng remote trong second-brain/CLAUDE.md đã sai.
+- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; seo đã cutover 2026-08-18, origin=git.avada.net, gitlab.com đổi tên gitlab-old. Bảng remote trong second-brain/CLAUDE.md đã sai.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
 - [AEO/APC đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — remote gitlab.com vẫn push được nhưng là mirror chết: MR merge xong prod không nhận; CI variable cũng không đi theo.
 - [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.
 - [seo .env.avada-seo local override](seo-env-avada-seo-local-override.md) — local-only override for hand-deploying fns to prod; canonical prod env = CI PRODUCTION_ENV_FILE. internalGen2 is a function, not an env.
+- [seo .env.local đè .env](seo-env-local-beats-env.md) — emulator ưu tiên .env.local; sửa .env mà quên file kia = chạy key chết, lỗi lại đội tên hàm bọc ngoài.
+- [PROD token key bị commit](seo-prod-token-key-committed.md) — fixProBackToFree.js:95 hardcode SHOPIFY_ACCESS_TOKEN_KEY prod, 6 commit, cần rotate.
 - [User profile: Tuan](user-profile.md) — Avada engineer, Shopify apps + Firebase + GCP cost/credit reporting; prefers Vietnamese, terse output.
 - [Lighthouse agentic-browsing](lighthouse-agentic-browsing.md) — score = mean audit applicable; WebMCP sau flag Chrome 150 nên PSI mù; llms.txt ở domain root là đòn bẩy duy nhất hôm nay.
 - [Credits, not tokens](credit-not-tokens.md) — Avada credit histories count credits per feature, never tokens; no token data exists upstream.

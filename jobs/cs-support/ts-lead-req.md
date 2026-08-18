@@ -39,6 +39,16 @@ a thử cả 2 token đang có, kể cả token đang chạy prod
 đây là đường của 2 tool aeo còn sống, giờ chết nốt
 token integration aeo có bị revoke hay đổi k e
 
+5. apc /api/dev-zone?type=genDone đang là fan-out
+devZoneController.js:14 gọi genDoneProcess(shopId), quét mọi bulkGenerateProcess của shop có isDone !== true rồi đánh dấu xong hết
+k nhận processId nên 1 lệnh là đóng luôn job đang chạy thật
+e thêm tham số processId cho nó đc k, để đóng đúng 1 process thôi
+cancelTranslate với reset sync thì ổn r, k phải sửa
+
+6. aeo shopifyController.js:590 thiếu optional chaining
+đang viết setting?.additionalFields.map(...), thiếu ?. trước .map
+shop cài trước 20/05/2026 mà bật isAdditionalFields lúc chưa lưu field nào thì route llms.txt legacy ném lỗi, trả 500
+e vá giúp a nhé
 apc /proxy/checkInstalled thì vẫn 200 bình thường nhé
 ---
 
@@ -585,3 +595,127 @@ Log **cũ** vẫn còn token — chưa xử lý.
    vẫn trỏ `gitlab.com` — kiểm trước khi mở MR, remote cũ vẫn fetch/push được nên hỏng im lặng.
 4. Các mục cũ ở "Việc nên làm riêng" chưa động: gác revision-đang-serve trong CI, audit dep các app
    khác, eslint APC, 4 file dead code, tag format sai trong `ai-product-copy/CLAUDE.md:51`.
+
+---
+
+## Đợt 2 — 2026-08-18
+
+### 1. AEO `GET /api/shop` trả `{"data":{}}` — ưu tiên
+
+`prepareShop` nhận `{doc, shop, isGetAccessToken}` nhưng `getShop` gọi `prepareShop(shop)`
+(`shopController.js:74`). Destructure một shop record trần → `shop === undefined` → default `{}`
+→ pick ra rỗng → **200 với data rỗng**. 3 call site còn lại trong cùng file đã truyền `{shop}`,
+`/proxy/shop` là một trong số đó — nên cùng shop bên kia ra đủ 23 trường.
+
+Vào từ `5877de5` (2026-04-17), im lặng 4 tháng vì status vẫn 200.
+
+Có `helpers/utils/prepareShop.js` thứ hai, signature `prepareShop(shop)` nhận shop trần, **0 file
+import** — chính nó làm lời gọi sai trông đúng. Đã xoá.
+
+```
+branch  fix/aeo-api-shop-empty   29702e3   3 file
+test    packages/functions/src/__tests__/shopControllerGetShop.test.js — 3 case
+        (đỏ 2/3 trên code cũ, xanh sau vá)
+suite   21 suite / 230 pass — 3 suite fail y hệt baseline origin/main
+```
+
+### 2. APC `GET /api/metafields` trả `200 {"success":false,"message":{}}`
+
+Log prod chỉ đúng chỗ:
+
+```
+[getMetafields] AVLsUEt7cf7BPXwZ3RhQ TypeError: Cannot read properties of undefined (reading 'toUpperCase')
+    at handleGetMetafield (/workspace/lib/helpers/graphql/graphQLShop.js:76:18)
+```
+
+Thiếu `?type` → `type.toUpperCase()` ném → catch trả `{success:false, message: error}`.
+Error object serialize ra JSON thành `{}`. Hai lỗi chồng nhau: thiếu validate, và báo lỗi mất nội dung.
+
+Spec ghi `type` là **optional** trong khi query GraphQL khai `MetafieldOwnerType!` — đó là lý do
+agent gọi thiếu. Đã sửa spec thành required + enum `[product, collection]`.
+
+```
+branch  fix/apc-metafields-type-validation   54d2a6f   3 file
+test    scratchpad/metafields.test.js — 5 case, chạy trên lib đã build
+        code cũ: 2/5 (case lỗi ra đúng `200 {"success":false,"message":{}}`)
+        code mới: 5/5 | jest 6/6 · 119/119 | docs-gate PASS
+```
+
+Đổi hành vi cần biết: lỗi Shopify thật giờ trả **500** thay vì 200. Caller FE duy nhất
+(`Settings/MultiChoiceList.js:111`) đã có try/catch + `handleError`, nên nó hiện lỗi thay vì
+render list rỗng.
+
+### Cùng bệnh, chưa đụng
+
+`message: error` / `error: err` — Error nhét thẳng vào JSON body, ra `{}`:
+
+```
+APC  shopifyController.js:87   getProductsStore
+     shopifyController.js:111  getCollectionsStore        GET /api/shopify/getCollections
+     shopifyController.js:141  getOneCollectionStore      GET /api/shopify/getOneCollection/:handle
+     shopifyController.js:163  getProductsByMetafield     GET /api/shopify/getProductsByMetafield
+     shopifyController.js:200  getShopifyItemsByIds
+AEO  customMarkdownController.js:104,146
+     additionalTxtFileController.js:142,215
+```
+
+9 route nữa cùng hình dạng "200 + success:false + lý do rỗng". Chưa sửa — nằm ngoài 2 việc được giao.
+
+---
+
+## Đợt 3 — FEEDBACK 5 + 6 (2026-08-18)
+
+Nhánh trước đó đã merge: AEO `cc3314e` (api/shop rỗng), APC `059caf3` (metafields).
+
+### 5. APC `/api/dev-zone?type=genDone` fan-out
+
+`genDoneProcess(shopId)` chỉ nhận shopId → `where('shopId','==',shopId)`, lọc `isDone !== true`,
+batch update tất cả thành `isDone: true`. Không có tham số nào thu hẹp. Endpoint không có guard
+nào khác ngoài session shop → 1 request đóng luôn job đang generate.
+
+Sửa: `genDone` bắt buộc `?processId`, đóng đúng 1 process, và **kiểm chủ sở hữu** (`shopId` của
+doc phải khớp caller — id lấy thẳng từ query string). Không tìm thấy / khác shop → 404.
+Sweep cũ giữ lại sau cờ `?all=true`; nút Dev Zone đổi sang gửi `all: true`, label "Gen done (all)".
+
+Kèm theo: package functions chưa có hạ tầng jest (chỉ có test cho scripts + docs-gate). Thêm
+`babel.config.js` gốc + `moduleNameMapper` `@functions` trong `jest.config.js`, bê nguyên từ
+`llm-ai-search-seo`. Babel resolve config theo cwd của build (`packages/functions`) nên output
+build không đổi — đã rebuild `lib` và diff để xác nhận.
+
+### 6. AEO `llms.txt` legacy — `additionalFields`
+
+`shopifyController.js:590`. Tony báo thiếu `?.` trước `.map`. Đúng là dòng đó hỏng, nhưng cơ chế
+khác với mô tả và **có 2 lỗi chứ không phải 1**:
+
+- `setting?.additionalFields.map(...)` — `?.` short-circuit **cả chain**, nên khi
+  `handleGetMetaObject` trả `null` (shop chưa có metaobject, hoặc **bất kỳ lỗi Shopify nào**)
+  biểu thức ra `undefined` và template in chuỗi `"undefined"` vào giữa file llms.txt. Không 500,
+  file bẩn.
+- Ném 500 khi `setting` có nhưng `additionalFields` không phải array: JSON lưu là `null`/object,
+  hoặc một row lưu thiếu `value` → `field.value.replace` ném.
+
+Kịch bản Tony mô tả (bật `isAdditionalFields` lúc chưa lưu field nào) thực ra **không ném**:
+`parseMetaObjectFields` default về `[]`. Trạng thái thật gây lỗi là `isAdditionalFields` (cờ trên
+Firestore shop doc) lệch với metaobject bên Shopify.
+
+Sửa bằng `Array.isArray(...) ? ... : []` + bỏ row không có `name` + `String(field.value ?? '')`.
+
+Log prod `seo-on-aeo` 7 ngày: không có entry `[getLlmTxt]` nào → route legacy này gần như không
+có traffic hiện tại, nên fix là phòng ngừa chứ chưa phải sự cố đang chảy máu.
+
+### Branch / test
+
+| App | Branch | Commit | Test |
+|---|---|---|---|
+| APC | `fix/apc-dev-zone-process-id` | `9589df3` | `devZone.test.js` 5 + `genDoneProcess.test.js` 6 — **10/11 đỏ trên code cũ**; suite 8/130; docs-gate 61/61 |
+| AEO | `fix/aeo-llms-txt-additional-fields` | `4774301` | `llmsTxtAdditionalFields.test.js` 5 — **4/5 đỏ trên code cũ** (`Cannot read properties of null/undefined`); suite 240 pass, 3 suite fail y baseline; docs-gate PASS |
+
+Chưa có MR (glab vẫn chưa auth git.avada.net), chưa tag → chưa lên prod.
+
+### Cần biết trước khi deploy
+
+- APC đổi hành vi FE: nút "Gen done" giờ gửi `all=true`. **Phải deploy assets cùng functions**,
+  không thì nút cũ ăn 400.
+- `cancelTranslate` và reset sync không đụng tới, đúng như Tony nói.
+- `DevZone.js:41` còn `console.log('shop', shop)` — không rò token (`prepareShop` strip
+  `accessToken`) nên để nguyên, ngoài scope.
