@@ -4,12 +4,17 @@ Design, 2026-08-19. Brief: `../../../../jobs/security/security.md`.
 
 A new `audit` command inside `prod-error-autofix`. Every morning at 06:00 local it walks the
 five apps in `src/registry.ts:37`, runs a security pass and a code-hygiene pass over each, and
-sends one Telegram message with what is **new since the last run**. When explicitly enabled it
-opens two merge requests per repo — one security, one cleanup — never mixed.
+sends one Telegram message with what is **new since the last run**.
 
-It shares this project's registry, worktrees, Telegram notifier, `claude -p` wrapper, sqlite
-state and rate gate. It does not touch the Slack pipeline, and it runs as its own launchd job so
-that a broken audit cannot take prod-error alerting down with it.
+**It does not fix anything and it opens no merge requests.** Scope decision taken 2026-08-19:
+the MRs this fleet already produces are not being reviewed, so a second source of unreviewed MRs
+makes the backlog worse rather than the code better. The audit reads and reports. A fix lane can
+be designed later, against a signal that has been watched for a while — that is a separate spec,
+not a flag left half-wired in this one.
+
+It shares this project's registry, worktrees, Telegram notifier, `claude -p` wrapper and sqlite
+state. It does not touch the Slack pipeline, and it runs as its own launchd job so that a broken
+audit cannot take prod-error alerting down with it.
 
 ## Why it lives here and not in its own tool
 
@@ -19,10 +24,9 @@ Everything the audit needs already exists in this repo and was earned the hard w
 |---|---|
 | Which repos, which base branch | `src/registry.ts:37`, re-derived from disk by `test/registry.disk.test.ts` |
 | An isolated checkout that never touches Tuan's working tree | `src/git/worktree.ts` |
-| A merge request with no GitLab API token | `src/git/openMr.ts` — git push options over the repo's own remote |
 | Headless Claude with cost and timeout accounting | `src/agent/claudeCli.ts` |
 | Telegram that can never fail a job | `src/notify/telegram.ts` |
-| Per-repo per-day MR caps | `src/state/rateGate.ts:38` |
+| Reclaiming worktrees a dead run left behind | `src/git/worktreeGc.ts` |
 | A launchd plist generated per machine | `src/setup/plist.ts` |
 | A `doctor` that refuses to say "ready" while a dependency is missing | `src/setup/doctor.ts` |
 
@@ -99,18 +103,18 @@ prepare   worktree from origin/<base>  →  ~/.cache/prod-autofix/wt/audit-<repo
   │ read-only tools      │ + audit rule set       │
   │ cwd = worktree       │        ↓               │
   │ loads repo CLAUDE.md │ agent triage, sonnet   │
-  │ + .claude/skills/    │ safe-to-delete? FP?    │
+  │ + .claude/skills/    │ real? false positive?  │
   └──────────┬───────────┴───────────┬────────────┘
              │                       │
         Lane C  SUPERVISOR — claude -p, sonnet
         reads both structured results + the ledger diff
-        writes the Telegram report, splits findings into two MR sets
+        writes the Telegram report
              │
-        ┌────┴────┐
-    Telegram    MR (only when AUDIT_MR_ENABLED=true)
-                audit/security-<repo>-<date>
-                audit/cleanup-<repo>-<date>
+          Telegram          worktree removed, nothing pushed
 ```
+
+The worktree is read-only in practice: no lane may write to it except the one generated eslint
+config, which is deleted before the worktree is torn down.
 
 Lane A and Lane B are independent and run concurrently within a job. Lane C waits for both.
 
@@ -164,36 +168,35 @@ Deterministic first, agent second.
 Run the repo's own binary — `node_modules/.bin/eslint` via the symlinked tree — with
 `--no-eslintrc -c .audit.eslintrc.json --format json --output-file <cache>/eslint-<repo>.json`
 over that repo's package source dirs. `--output-file` rather than stdout, for the reason
-measured above. The config file is deleted from the worktree before any MR diff is taken, so it
+measured above. The config file is deleted from the worktree as soon as the lane finishes, so it
 can never reach a branch.
 
 `no-undef` is the brief's *"thiếu import hàm hay biến"*: a symbol used with nothing importing or
 declaring it. `no-unused-vars` is the in-file half of *"code không dùng"*.
 
 **Step 2, agent triage.** `claude -p` sonnet, read-only, given the eslint JSON and asked one
-question per finding: is this safe to delete, or is it a false positive — re-exported, referenced
-by a dynamic `require()`, a deliberate placeholder. Output `{fp, verdict: 'delete'|'keep'|'unsure',
-reason}`. Only `delete` is eligible for the cleanup MR; `keep` and `unsure` are reported and
-nothing else.
+question per finding: is this real, or is it a false positive — re-exported, referenced by a
+dynamic `require()`, a deliberate placeholder. Output `{fp, verdict: 'real'|'false_positive'|
+'unsure', reason}`.
+
+Triage exists to keep the report honest, not to authorise anything. `false_positive` findings are
+dropped from the message and recorded in the ledger so they are not re-reported every morning;
+`real` and `unsure` are both reported, labelled as such. Nothing acts on any verdict.
 
 **Step 3, project-level dead code — off by default.** A new registry field `auditKnip: false` on
 every app. When a repo's knip config has been written and a human has read one run's output, that
-repo flips to `true` and knip's `files` and `exports` results join the report. It never feeds an
-MR, in any repo, in this phase.
+repo flips to `true` and knip's `files` and `exports` results join the report.
 
 ### Lane C — supervisor
 
 The third agent in the brief. It does not re-scan anything; it reads Lane A's findings, Lane B's
-triaged findings, and the ledger diff, and produces two things:
+triaged findings, and the ledger diff, and produces the Telegram message body in Vietnamese,
+matching the register of `buildMrMessage` (`src/notify/telegram.ts`).
 
-1. The Telegram message body, in Vietnamese, matching the register of
-   `buildMrMessage` (`src/notify/telegram.ts`).
-2. A split of findings into the security MR set and the cleanup MR set, with anything it is
-   unsure about assigned to neither.
-
-Orchestration around it is code — which lane ran, what failed, what the caps allow. The agent's
-job is judgement and prose, so a lane crash produces a report saying so rather than a missing
-message.
+Its judgement is ordering and compression: which of the new findings goes at the top, what a
+human needs to read at 06:00, what collapses into a count. Orchestration around it is code —
+which lane ran, what failed, what the ledger says — so a lane crash produces a report saying so
+rather than a missing message.
 
 ## The ledger — why this does not become noise in a week
 
@@ -215,8 +218,8 @@ CREATE TABLE IF NOT EXISTS audit_findings (
   severity      TEXT NOT NULL,
   first_seen_ms INTEGER NOT NULL,
   last_seen_ms  INTEGER NOT NULL,
-  status        TEXT NOT NULL,        -- 'open' | 'resolved' | 'mr_open' | 'accepted'
-  mr_url        TEXT
+  status        TEXT NOT NULL,        -- 'open' | 'resolved' | 'false_positive' | 'accepted'
+  verdict       TEXT                  -- Lane B triage, null for security findings
 );
 CREATE INDEX IF NOT EXISTS audit_findings_app ON audit_findings(app, status);
 CREATE INDEX IF NOT EXISTS audit_findings_seen ON audit_findings(last_seen_ms DESC);
@@ -272,44 +275,23 @@ still writes the ledger, and the next run's "new" set is correct.
 The `claude -p` cost of the run is appended as *quy đổi (chạy trên gói)* — the same wording
 already used — because `total_cost_usd` is an API equivalence, not money billed on this plan.
 
-## Merge requests
+## No merge requests, and no half-wired switch for them
 
-**Default off.** `AUDIT_MR_ENABLED=false`. The first weeks are report-only; a dead-code deletion
-that is wrong deletes code reached through a dynamic `require()`, and that is worth a few runs of
-watching before anything pushes on its own.
+The brief asked for two MRs per repo. That was cut on 2026-08-19: the MRs this fleet already
+opens are sitting unreviewed, and a scanner that adds ten more a day makes the queue worse, not
+the code better. The audit writes nothing to any branch.
 
-When enabled, per repo per day, at most one of each:
+This is a removal, not a disabled feature. There is **no `AUDIT_MR_ENABLED`**, no branch naming,
+no fix agent, no jest gate and no push path — a flag that is off still has to be maintained,
+still reads as "nearly working", and is the thing most likely to be flipped by accident on a
+machine nobody is watching at 06:00. `openMr` keeps its `fix/prod-` guard
+(`src/git/openMr.ts:112`) exactly as written, and `checkMrCaps` is untouched.
 
-- `audit/security-<repo>-<yyyymmdd>` — Lane A findings the fix agent could fix and prove.
-- `audit/cleanup-<repo>-<yyyymmdd>` — Lane B findings triaged `delete`.
+The audit therefore needs no write credentials at all, which also sidesteps the HTTPS credential
+question recorded under Known gaps.
 
-They are never one MR. A reviewer approving a security fix must not be approving twelve deletions
-in the same breath.
-
-Each MR gets **its own worktree** cut from the same `origin/<base>`, because two agents editing
-one tree produce one diff that cannot be split afterwards.
-
-Gates, all fail-closed:
-
-1. The repo's own jest must pass in that worktree. Not green → no push, finding stays `open`.
-2. The diff must touch only files the findings named. A file outside that set → no push.
-3. `.env*`, lockfiles, `.gitlab-ci.yml`, `firebase.json`, `.firebaserc`, `package.json` and
-   `.audit.eslintrc.json` are refused outright, matching the promise the README already makes.
-4. `checkMrCaps` (`src/state/rateGate.ts:38`) applies unchanged.
-
-**Cleanup MRs delete declarations, not files.** Phase 1 removes unused variables and constants
-inside a file. No file deletion, no export removal — those need the reachability analysis that
-knip has not yet earned in these repos.
-
-### One change to existing code
-
-`openMr` refuses any branch not starting with `fix/prod-` (`src/git/openMr.ts:112`). That guard
-becomes an allowlist of prefixes — `fix/prod-` and `audit/` — keeping the refusal for everything
-else and keeping the "never push onto the base branch" check exactly as it is. The guard is what
-stops a bug from pushing to `master`; it is widened by one entry, not removed.
-
-Branch names come from a new `auditBranchName(kind, repo, dateStr)` next to `branchNameFor`
-(`src/git/worktree.ts:36`).
+A fix lane, when it is wanted, gets its own spec — written against a signal that has been read
+for a few weeks, including how many of these findings turned out to be real.
 
 ## Scheduling
 
@@ -335,10 +317,9 @@ New environment variables, all with working defaults, following the existing nam
 | Var | Default | Why |
 |---|---|---|
 | `AUDIT_ENABLED` | `true` | Kill switch that does not need the plist unloaded |
-| `AUDIT_MR_ENABLED` | `false` | Report-only until the signal has been watched |
 | `AUDIT_SECURITY_MODEL` | `claude-opus-5` | A weak reviewer here costs more than it saves |
 | `AUDIT_TRIAGE_MODEL` | `claude-sonnet-5` | Judging a fixed list, not searching |
-| `AUDIT_SUPERVISOR_MODEL` | `claude-sonnet-5` | Prose and splitting, from structured input |
+| `AUDIT_SUPERVISOR_MODEL` | `claude-sonnet-5` | Ordering and prose, from structured input |
 | `AUDIT_SECURITY_TIMEOUT_MS` | `15m` | Whole-repo sweep, larger than the 6m diff review |
 | `AUDIT_TRIAGE_TIMEOUT_MS` | `6m` | |
 | `AUDIT_SUPERVISOR_TIMEOUT_MS` | `5m` | |
@@ -364,7 +345,6 @@ existing drift test:
 | Worktree cannot be created | App skipped, named in the message |
 | Lane C fails | Message is rendered by a plain code fallback from the structured results; findings are never lost to a prose failure |
 | Telegram fails | Logged; ledger still written |
-| jest fails in an MR worktree | No push; finding stays `open`; retried tomorrow |
 
 A worktree is always removed at the end of a job, and a run that dies mid-way leaves them for
 `worktreeGc` (`src/git/worktreeGc.ts`), which already exists because seven abandoned worktrees
@@ -382,22 +362,29 @@ root, which walks `projects/`:
 - eslint exit-code mapping: 0 clean, 1 findings, ≥2 failure.
 - Ledger classification: new / carried / resolved, and that `accepted` is never written by code.
 - Report rendering: zero findings, one app failing, digest day, and the "everything quiet" case.
-- Branch-name guard: `audit/security-seo-20260819` passes, `master` and `feature/x` refused.
-- MR file-scope gate: a diff touching a file no finding named is refused.
+- Worktree hygiene: `.audit.eslintrc.json` is gone from the worktree before teardown, and no
+  lane leaves a modified file behind — `git status --porcelain` in the worktree is empty at the
+  end of a job.
+- Secret redaction: a finding whose title carries a token-shaped string is reported by
+  `file:line` and kind, with the value stripped.
 - Registry drift: `auditLintPaths` resolve on disk, extending `test/registry.disk.test.ts`.
 
-Integration, behind `AUDIT_INTEGRATION=1`, read-only, never pushing: run the real eslint pass
-against one real repo and assert the JSON shape and a non-crashing exit.
+Integration, behind `AUDIT_INTEGRATION=1`, read-only: run the real eslint pass against one real
+repo and assert the JSON shape and a non-crashing exit. There is no push path to guard in a test
+because there is no push path.
 
 ## What this will not do
 
-- It will not merge, deploy, or open an MR while `AUDIT_MR_ENABLED` is false.
-- It will not touch a working checkout. Every read and write is in a worktree under
-  `~/.cache/prod-autofix/wt`.
-- It will not delete files or exports in phase 1.
+- It will not edit, commit, push, open an MR, merge or deploy. It has no code path that does.
+- It will not touch a working checkout. Everything happens in a worktree under
+  `~/.cache/prod-autofix/wt`, and the only file it writes there is the eslint config it deletes
+  again.
+- It will not delete code. Not a file, not an export, not a variable — a finding is a sentence in
+  a report and nothing more.
 - It will not "fix" a committed secret by deleting the line. A committed secret is burned: it is
   reported, named as needing rotation, and left for a human. Precedent: incident `n9axd7`.
-- It will not widen its diff to fix something it noticed outside a finding's scope.
+- It will not quote a secret it finds. The report carries `file:line` and what kind of credential
+  it is, never the value — the Telegram group is a wider audience than the repo.
 
 ## Known gaps, stated rather than hidden
 
@@ -420,16 +407,18 @@ against one real repo and assert the JSON shape and a non-crashing exit.
   | `avada-image-optimizer` | `https://gitlab.com/avada/avada-image-optimizer.git` |
 
   This contradicts the README, which states MRs are opened "over SSH" (`README.md:61`) — a claim
-  written before the `git.avada.net` cutover. It matters twice over:
+  written before the `git.avada.net` cutover. The credential half of it does not affect this
+  design, because the audit never pushes. The **staleness** half does:
 
-  **Credentials.** Every push authenticates over HTTPS. `credential.helper` resolves to
-  `osxkeychain` then `store` — the second is what a launchd job can actually use without a GUI
-  session; the first may not answer under a daemon. Before `AUDIT_MR_ENABLED` is turned on,
-  `doctor` must prove a non-interactive push can authenticate against **each** host, not assume
-  it. No credential is ever passed on a command line.
+  Every job starts with `git fetch origin <base>` and cuts a worktree from `origin/<base>`
+  (`src/git/worktree.ts`). A checkout still pointing at `gitlab.com` for a project that has moved
+  fetches a mirror that stopped receiving merges — so the audit would scan last month's code and
+  report findings that were fixed weeks ago, or miss ones that exist now. Nothing in the run
+  would look wrong. That failure mode has already bitten this fleet once, in the other direction:
+  merges pushed to the dead mirror never reached prod.
 
-  **Host drift.** A repo whose checkout still points at `gitlab.com` after that project migrated
-  turns every MR into a no-op: the push succeeds and the merged result never reaches prod. That
-  has already happened once in this fleet. `doctor` records the host each repo pushes to and
-  flags a change, rather than asserting a single correct host — two of the five legitimately
-  still live on gitlab.com today.
+  So `doctor` records the host each repo's `origin` resolves to and flags a **change** since the
+  last check, rather than asserting one correct host — two of the five legitimately still live on
+  gitlab.com today. A run additionally reports the age of `origin/<base>` per app; a base branch
+  whose newest commit is weeks old is either a quiet repo or a dead remote, and the report says
+  which one it cannot tell apart.
