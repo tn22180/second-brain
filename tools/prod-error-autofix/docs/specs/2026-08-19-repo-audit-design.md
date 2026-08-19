@@ -8,8 +8,16 @@ sends one Telegram message with what is **new since the last run**. When explici
 opens two merge requests per repo — one security, one cleanup — never mixed.
 
 It shares this project's registry, worktrees, Telegram notifier, `claude -p` wrapper, sqlite
-state and rate gate. It does not touch the Slack pipeline, and it runs as its own launchd job so
-that a broken audit cannot take prod-error alerting down with it.
+state and rate gate. It runs as its own launchd job so that a broken audit cannot take prod-error
+alerting down with it.
+
+**It arrives as the prod-error fix lane is switched off.** Decided 2026-08-19: the daemon keeps
+listening to `#prod-errors`, triaging and replying in the thread, but stops opening merge requests
+of its own — 58 sat unreviewed as of 2026-08-04, and an MR nobody reads is worse than no MR. So
+the audit is not a second source of unreviewed MRs stacked on the first; it replaces it. The
+review budget that existed for prod-error fixes now goes to audit MRs, which are smaller and
+easier to judge: a deletion of an unused constant either is unused or is not. That switch-off is
+a separate change to a live pipeline and is specced and shipped on its own, not folded in here.
 
 ## Why it lives here and not in its own tool
 
@@ -384,6 +392,10 @@ root, which walks `projects/`:
 - Report rendering: zero findings, one app failing, digest day, and the "everything quiet" case.
 - Branch-name guard: `audit/security-seo-20260819` passes, `master` and `feature/x` refused.
 - MR file-scope gate: a diff touching a file no finding named is refused.
+- Worktree hygiene: `.audit.eslintrc.json` is gone before any MR diff is taken, so it can never
+  reach a branch.
+- Secret redaction: a finding whose title carries a token-shaped string is reported by
+  `file:line` and kind, with the value stripped.
 - Registry drift: `auditLintPaths` resolve on disk, extending `test/registry.disk.test.ts`.
 
 Integration, behind `AUDIT_INTEGRATION=1`, read-only, never pushing: run the real eslint pass
@@ -398,6 +410,8 @@ against one real repo and assert the JSON shape and a non-crashing exit.
 - It will not "fix" a committed secret by deleting the line. A committed secret is burned: it is
   reported, named as needing rotation, and left for a human. Precedent: incident `n9axd7`.
 - It will not widen its diff to fix something it noticed outside a finding's scope.
+- It will not quote a secret it finds. The report carries `file:line` and what kind of credential
+  it is, never the value — the Telegram group is a wider audience than the repo.
 
 ## Known gaps, stated rather than hidden
 
@@ -428,8 +442,17 @@ against one real repo and assert the JSON shape and a non-crashing exit.
   `doctor` must prove a non-interactive push can authenticate against **each** host, not assume
   it. No credential is ever passed on a command line.
 
-  **Host drift.** A repo whose checkout still points at `gitlab.com` after that project migrated
-  turns every MR into a no-op: the push succeeds and the merged result never reaches prod. That
-  has already happened once in this fleet. `doctor` records the host each repo pushes to and
-  flags a change, rather than asserting a single correct host — two of the five legitimately
-  still live on gitlab.com today.
+  **Host drift, and it cuts both ways.** A repo whose checkout still points at `gitlab.com` after
+  that project migrated turns every MR into a no-op: the push succeeds and the merged result never
+  reaches prod. That has already happened once in this fleet.
+
+  The same stale remote also poisons the *scan*, which is the half easy to miss. Every job starts
+  from `git fetch origin <base>` (`src/git/worktree.ts`), so a dead mirror means the audit reads
+  last month's code — reporting findings that were fixed weeks ago and missing ones that exist
+  now, with nothing in the run looking wrong.
+
+  `doctor` records the host each repo's `origin` resolves to and flags a **change** since the last
+  check, rather than asserting one correct host — two of the five legitimately still live on
+  gitlab.com today. Each run also reports the age of `origin/<base>` per app; a base branch whose
+  newest commit is weeks old is either a quiet repo or a dead remote, and the report says which
+  one it cannot tell apart.
