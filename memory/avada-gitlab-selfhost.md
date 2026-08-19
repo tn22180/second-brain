@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2d25a023-2f18-4a64-8eef-a173ed27b2b3
-  modified: 2026-08-18T00:00:00.000Z
+  modified: 2026-08-19T00:00:00.000Z
 ---
 
 Avada chạy GitLab self-host tại `https://git.avada.net` — **19.1.0 Community Edition**
@@ -23,7 +23,11 @@ remote gitlab.com bị đổi tên thành `gitlab-old`. Phân kỳ hai chiều �
 Đã xong: 119/119 CI var khớp, 9 runner online untagged, protected branch `master`.
 
 Runbook đầy đủ: `jobs/seo-gitlab-selfhost-migration.md`. Token self-host đọc từ `jobs/.env`
-key `GLAB_SELF_HOST` (gitignored) — là Maintainer, **không phải admin**, endpoint admin trả 403
-vì thiếu scope `admin_mode`.
+key `GLAB_SELF_HOST` (gitignored) — là Maintainer (access_level 40, có scope `api`), **không phải
+admin**, endpoint admin trả 403 vì thiếu scope `admin_mode`.
+
+**API `git.avada.net` bị Cloudflare chặn theo User-Agent.** `urllib`/script mặc định trả
+`403 error code: 1010` trên **mọi** endpoint, kể cả `/user` — nhìn y hệt token hết quyền nhưng
+không phải. Gửi kèm UA trình duyệt (`Mozilla/5.0 …Chrome/…`) là qua ngay. Đừng đi rotate token.
 
 Liên quan: [[seo-master-no-detect-worker]], [[gen2-deploy-silent-freeze]], [[avada-gitlab-host-migration]]

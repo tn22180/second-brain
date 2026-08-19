@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `cfkgba` · 2026-08-18 · SEO · apigen2 · The browser's `__session` cookie for this merchant decrypts to the primitive number `39`, and @avada/core 4.8. · https://git.avada.net/avada/seo/-/merge_requests/2167 · mr_open
+- `bkoiz9` · 2026-08-18 · BLOG · api · no verified cause · — · inconclusive
+- `1ftb857` · 2026-08-18 · SEO · authgen2 · no verified cause · — · inconclusive
 - `129mzed` · 2026-08-18 · BLOG · api · The last 2 of 10 autosave PUTs on article 622246625622 sent a `tags` value Shopify rejected with userError fie · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
 - `1mnhmld` · 2026-08-18 · SEO · apigen2 · Shopify's `nodes(ids:)` query returns a null element for every gid that no longer resolves (deleted/unpublishe · https://git.avada.net/avada/seo/-/merge_requests/2164 · mr_open
 - `4ptq5b` · 2026-08-18 · BLOG · changelogtriggers-subscriptions · The first-ever deploy of gen2 Firestore trigger changelogTriggers-subscriptions was registered by firestore-bi · — · infra
@@ -412,7 +415,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
 - `ct2hgz` · 2026-08-18 · IMG-OPT · apiSa · The offline Shopify access token stored for shop 65rnj1-r6.myshopify.com is no longer valid at Shopify, so eve · — · inconclusive
-- `a4bayk` · 2026-08-17 · IMG-OPT · createPreviewImages · no verified cause · — · inconclusive
+- `a4bayk` · 2026-08-18 · IMG-OPT · createPreviewImages · sharpCompressImage returns {log} with no `base64` whenever it cannot produce a smaller buffer (unsupported for · — · inconclusive
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
 - `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open
 - `12qs3xc` · 2026-07-31 · BLOG · proxy · Four shops that uninstalled the app still have their shop doc and stale accessToken in Firestore, so every cra · https://gitlab.com/avada/blogs/-/merge_requests/799 · mr_open

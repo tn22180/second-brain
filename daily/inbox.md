@@ -154,3 +154,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) `gemma4:31b` (Ollama Cloud) chậm hơn `gemini-3-flash` đáng kể — tính latency vào quyết định đổi provider, không chỉ cost
 - [ ] (×1) seo cutover xong sang git.avada.net 2026-08-18 kèm repo artifacts; gitlab.com là mirror chết
 - [ ] (×1) Quota Ollama Cloud có alert Slack ở ngưỡng 50/75/99% (seo `5253a417ae`) — limit thì job đẩy Redis, check lại sau 5h
+
+### memory candidates 2026-08-19
+- [ ] (×1) SEO route AI qua nhiều account Ollama Cloud (pool) — quota saturation của 1 account ≠ exhaustion, chỉ fallback OpenRouter khi cả pool hết
+- [ ] (×1) `ollamaQuotaAlertGen2` cần memory 512Mb, default deploy fail
+- [ ] (×1) OpenRouter SDK error giữ API key trong object — phải flatten error trước khi log, đã fix ở seo `4b0d45fa53`
+- [ ] (×1) prod-error-autofix từ 2026-08-19 chỉ chạy lane live-scan/audit; lane auto-fix bug prod đã tắt vì output không được review
+- [ ] (×1) Bulk-fix (seo) cần điều kiện dừng khi attempt không tăng progress, không thì job stuck vô hạn (`5966902f71`)
