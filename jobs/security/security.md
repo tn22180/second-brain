@@ -22,7 +22,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 1 | Switch off the daemon's MR opening | general-purpose / sonnet | ✅ | 2/5 | clean | `4ee4f38`. Round 1 put the branch before the infra check — plan's own error. Fixed + 2 order-pinning tests added |
 | 2 | Registry `auditLintPaths` + `auditKnip` | general-purpose / haiku | ✅ | 1/5 | clean | `67ebd7b`. Routed off cavecrew-builder: it has no Bash and this task's acceptance is a test run |
 | 3 | eslint runner | general-purpose / sonnet | ✅ | 2/5 | clean | `92a0577`. Round 2: dropped a `'spawn'` failure member that nothing can produce, and corrected a comment claiming a balance-scan the parser does not do |
-| 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ⬜ | 0/5 | — | Line number deliberately not in the fingerprint |
+| 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ✅ | 1/5 | clean | `store.ts` verified additive-only against the live db. Spec corrected: an open MR is not a status |
 | 5 | Security lane | general-purpose / opus | ⬜ | 0/5 | — | Read-only tools; drop citations that do not resolve; redact secret values |
 | 6 | Triage lane | general-purpose / sonnet | ⬜ | 0/5 | — | |
 | 7 | Supervisor + report render | general-purpose / sonnet | ⬜ | 0/5 | — | Code fallback so a prose failure never loses a finding |
@@ -74,6 +74,23 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - Verified before dispatch (2026-08-20, against ai-product-copy): eslint is **6.8.0**, `-o/--output-file` exists and writes, exit is 1 when findings exist, and `filePath` in the JSON is absolute — so the `relative()` mapping is required, not cosmetic.
 - Rounds used: 2/5
 - Security check: **clean** — 2 new files. No secret, no network call, no new dependency; the only write is `.audit.eslintrc.json` inside the worktree, removed in a `finally`, with three tests covering the clean, parse-throw and runner-throw paths.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+#### ✅ Task 4: Finding ledger
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed
+- Plan:
+  - Goal: `classify(store, app, found, now)` returns `{fresh, carried, resolved, suppressed}` correctly across repeat runs, a finding keeps its `fp` when its line moves, and `accepted`/`false_positive` are never written by code. `bun test ./test/audit.ledger.test.ts` green and `bun run typecheck` clean.
+  - Files allowed: `src/audit/findingFp.ts` (new), `src/audit/ledger.ts` (new), `src/state/store.ts` (table + methods only), `test/audit.ledger.test.ts` (new). Nothing else.
+  - Approach: new `audit_findings` table in the existing `migrate()`, plus five dumb accessors on `Store`; the policy lives in `classify`, matching how `stateMachine` owns policy and `Store` owns rows. Rejected: a second sqlite file — the run needs one transactional view and `state.db` already migrates itself.
+  - Test command: `bun test ./test/audit.ledger.test.ts` **and** `bun run typecheck`.
+  - Risk: `migrate()` runs against the live `state.db`, which holds real alert rows. `CREATE TABLE IF NOT EXISTS` is additive and touches no existing table, but a mistake here is the one that could damage prod state. No `ALTER` on `alerts`, no `DROP`, no data migration.
+  - Rollback: `git revert`; the new table is inert and can be left in place, or dropped by hand.
+- Rounds used: 1/5
+- Security check: **clean** — `git diff src/state/store.ts` has **zero deletion lines**; no ALTER/DROP/DELETE/UPDATE against any existing table; all five tests open `Store(':memory:')`, never the real db.
+  - Constraint recorded while checking, for task 5 to honour: `audit_findings.title` is persisted to `state.db` on disk, so redaction has to happen where the finding is built, not on the way to Telegram. Written into the spec.
+- Deviation accepted: the agent put `FindingKind`/`FindingStatus`/`AuditFinding` in `ledger.ts` and had `store.ts` import them, mirroring `AlertStatus` living in `stateMachine.ts`. Keeps `Store` rows-only. Correct call.
+- Spec corrected as a result of implementing this: an open MR is **not** a finding status. A finding with an MR out is still in the code, so it stays `open` with an `mr_url` — as a status it would drop out of the resolved sweep and never be marked resolved when the merge lands.
 - Started: 2026-08-20 · Completed: 2026-08-20
 
 ### Process correction, 2026-08-20
