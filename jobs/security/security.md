@@ -182,6 +182,25 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - 35 tests, none of the original 26 changed an assertion.
 - Started: 2026-08-20 · Completed: 2026-08-20
 
+#### ✅ Task 10: 06:00 launchd job + doctor checks
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed
+- Plan:
+  - Goal: `renderAuditPlist()` produces a calendar one-shot at 06:00 with its own logs, and `doctor` gains three checks — remote-host drift, base-branch age, and a non-interactive push credential (only when MRs are on). `bun test ./test/setup.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/setup/plist.ts`, `src/setup/init.ts`, `src/setup/doctor.ts`, `test/setup.test.ts`. Nothing else.
+  - Approach: reuse `daemonPath` and `xmlEscape` unchanged; the three checks are pure functions taking their inputs, so they need nothing from `src/config.ts` — which task 9 owns and is editing concurrently. Rejected: `KeepAlive` on the audit job, which would restart a program that exits, in a loop.
+  - Test command: `bun test ./test/setup.test.ts` **and** `bun run typecheck`.
+  - Risk: the plist is what makes this run unattended. A wrong `StartCalendarInterval` means it never fires, or fires in a loop; both are silent. The push-credential check is the one that must not put a credential on a command line.
+  - Rollback: revert; the second plist is a separate file and can simply not be loaded.
+- Runs concurrently with task 9, which owns `src/config.ts` and `bin/autofix.ts`.
+- Rounds used: 1/5
+- Security check: **clean**. `init.ts` shows deletions but they are a hoist of `toolPaths`/`bunBin` so both plists share them — the `write()` never-overwrite path is intact. No credential is handled, constructed or echoed anywhere in the diff; a test asserts the detail string never carries a token-shaped value.
+- Plist verified: `StartCalendarInterval` Hour 6 Minute 0, no `KeepAlive`, no `RunAtLoad`, args end `audit --all`, logs `audit.log`/`audit.err.log`, own label `${label}-audit` because `launchctl` keys jobs by label and a shared one would replace the daemon's.
+
+**GAP, must be closed before `AUDIT_MR_ENABLED=true`.** `checkPushCredential` is a pure function taking `canPush`, and **nothing in `src/` computes it** — verified by grep, the only hits are the parameter and its own doc comment. So the spec's promise that "doctor must prove a non-interactive push can authenticate before MRs are enabled" is currently a function waiting for a caller, not a gate.
+
+Deliberately left unwired rather than faked: `git ls-remote` would prove *read* auth over HTTPS, which is not push auth, and reporting that as a pass would be worse than reporting nothing. Turning MRs on without closing this risks every audit MR failing at the push under launchd, where `osxkeychain` may not answer without a GUI session while `store` would.
+
 ### DECIDED — `blogs` could never produce an audit MR (option A, task 8b)
 
 Gate 1 is "the repo's own jest must pass". `src/verify/jest.ts:57-58` records that `blogs` master carries **three long-standing module-resolution suite failures**. So the `blogs` MR lane will refuse `tests_failed` every single morning, forever, and the report will not distinguish that from "the fix broke the tests".
