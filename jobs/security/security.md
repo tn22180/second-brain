@@ -162,13 +162,33 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - Kept, better than specified: untracked files are unioned into the scope gate. `git diff --name-only` alone misses a file the agent *created*, which would then slip past the check entirely. A created file is by definition outside the findings' file set, so it refuses as `out_of_scope`.
 - Kept: cleanup eligibility is re-derived at the push boundary (`rule === 'no-unused-vars' && verdict === 'delete'`) rather than trusted from task 6. Two independent barriers against the `no-undef` deletion.
 
-### OPEN DECISION — `blogs` can never produce an audit MR
+#### ✅ Task 8b: Jest gate compares against the base, not against green
+- Agent: general-purpose (opus) — it loosens a push gate
+- Status: ✅ completed — `2842b2a`
+- Plan:
+  - Goal: the jest gate refuses only on failures the base branch did **not** already have. `blogs`, whose master carries three long-standing module-resolution failures, can produce an MR again; a fix that breaks a previously-passing test still refuses. `bun test ./test/audit.mr.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/mr.ts`, `test/audit.mr.test.ts`. Nothing else.
+  - Approach: measure the baseline on the clean worktree *before* the agent edits anything, cached by `(repo, baseSha)` through `store.getBaseline`/`putBaseline` — the same shape `pipeline.ts:504-512` already uses. Rejected: skipping known-bad suites by name, which would go stale silently.
+  - Test command: `bun test ./test/audit.mr.test.ts` **and** `bun run typecheck`.
+  - Risk: this makes a push gate *weaker*. Getting the comparison backwards would push an MR that breaks tests. Mitigated by requiring a test for each direction, and by a baseline that fails to measure being treated as a refusal rather than as "no known failures".
+  - Rollback: revert; the gate returns to requiring green, and `blogs` returns to never producing an MR.
+- Chosen by Tuan 2026-08-20 (option A over "label the refusal" or "leave it").
+- Rounds used: 1/5
+- Security check: **clean**. Two files, and the semantics were verified by hand rather than taken on report, because this loosens a push gate:
+  - comparison direction: `jest.summary.failures.filter(f => !before.has(f))` — failures now that the base did not have. Right way round; backwards would have pushed MRs that break tests.
+  - ordering: baseline measured at `mr.ts:349`, fix agent runs at `:373` — measured **before** any edit, so it measures the base and not the fix.
+  - `no_baseline` refuses (`mr.ts:363`), and a failed measurement is never cached, so the next run retries rather than inheriting an empty set.
+- Gate order now: nothing_to_fix → worktree → **baseline** → agent → diff → scope → forbidden → jest-no-summary → new-failures → caps → openMr. Refusing on baseline *before* the agent means a run that can never push does not pay for one.
+- 35 tests, none of the original 26 changed an assertion.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+### DECIDED — `blogs` could never produce an audit MR (option A, task 8b)
 
 Gate 1 is "the repo's own jest must pass". `src/verify/jest.ts:57-58` records that `blogs` master carries **three long-standing module-resolution suite failures**. So the `blogs` MR lane will refuse `tests_failed` every single morning, forever, and the report will not distinguish that from "the fix broke the tests".
 
 This is a defect in the spec, not in the implementation — the agent built what was specified. The machinery to fix it already exists and is what the Slack pipeline uses: `measureBaseline` (`src/verify/smoke.ts:32`) plus `store.getBaseline`/`putBaseline` (`store.ts:444`/`451`), which compare a run against the base sha's *own* failures instead of demanding green.
 
-Not fixed unilaterally because it changes what the gate means. Awaiting Tuan's call; the MR lane is off by default (`AUDIT_MR_ENABLED=false`) so nothing is broken in the meantime.
+Tuan chose option A on 2026-08-20: change the gate to compare against the base rather than demand green. Implemented as task 8b above.
 
 ### Process correction, 2026-08-20
 
