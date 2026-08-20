@@ -1,6 +1,6 @@
 ---
 name: seo-master-no-detect-worker
-description: "seo master CI has NO detect_worker auto-deploy; prod worker redeploys ONLY on [deploy-worker] title"
+description: "LỖI THỜI về trigger (deploy giờ theo tag — xem seo-prod-deploy-by-tag); phần detect_worker + token vẫn đúng"
 metadata: 
   node_type: memory
   type: project
@@ -8,7 +8,11 @@ metadata:
   modified: 2026-07-31T09:23:22.371Z
 ---
 
-seo repo **master** `.gitlab-ci.yml` `deploy_worker` job = `only.variables: $CI_COMMIT_TITLE =~ /\[deploy-worker\]/`. There is **no `detect_worker` job on master** (0 occurrences). So a normal merge to master does NOT redeploy the self-hosted worker box — GCF gets it (`deploy_production` unconditional) but the worker box does not.
+> **Lỗi thời từ 2026-08-20 ở phần trigger.** `deploy_worker` giờ là `only: - tags`; merge master
+> không deploy gì. Xem [[seo-prod-deploy-by-tag]]. Phần `detect_worker` chỉ có trên
+> `feat/worker-pubsub-migration` và phần token GitLab bên dưới vẫn đúng.
+
+seo repo **master** `.gitlab-ci.yml` `deploy_worker` job (tới 2026-07-31) = `only.variables: $CI_COMMIT_TITLE =~ /\[deploy-worker\]/`. There is **no `detect_worker` job on master** (0 occurrences). So a normal merge to master does NOT redeploy the self-hosted worker box — GCF gets it (`deploy_production` unconditional) but the worker box does not.
 
 The fail-safe `detect_worker` auto-detection (scripts/detect-worker-affected.js → DEPLOY_WORKER=true/false, any error → redeploy) that the worktree CLAUDE.md / worker-fleet docs describe lives ONLY on branch `feat/worker-pubsub-migration` — not yet merged to master. The worktree's CLAUDE.md describes the feature-branch state, not master.
 

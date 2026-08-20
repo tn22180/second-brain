@@ -161,3 +161,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) OpenRouter SDK error giữ API key trong object — phải flatten error trước khi log, đã fix ở seo `4b0d45fa53`
 - [ ] (×1) prod-error-autofix từ 2026-08-19 chỉ chạy lane live-scan/audit; lane auto-fix bug prod đã tắt vì output không được review
 - [ ] (×1) Bulk-fix (seo) cần điều kiện dừng khi attempt không tăng progress, không thì job stuck vô hạn (`5966902f71`)
+
+### memory candidates 2026-08-20
+- [ ] (×1) `dispatchWork` phải nhận shop mới đọc được fleet toggle — thiếu shop thì job im lặng rơi về đường cũ (seo `514fe8d966`)
+- [ ] (×1) AI completion dừng ở token cap phải bị refuse, không được coi là output hợp lệ (seo `62e2722d0e`)
+- [ ] (×1) Stuck-job watchdog (bulk-fix, seo) cần 1GiB, default deploy không đủ (`e89be95704`)
+- [ ] (×1) Ollama không có API key → phải skip ở code, không dựa vào env trên box; box có key mà route vẫn fail là chuyện khác (`746efd8a78`)
+- [ ] (×1) Bulk AI fix phải stop job khi shop hết AI credit, không thì chạy tiếp vô ích (`f3d5d43c20`)

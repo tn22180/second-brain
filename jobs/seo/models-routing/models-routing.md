@@ -240,3 +240,90 @@ Ghi chú hạ tầng: API `git.avada.net` bị Cloudflare chặn theo User-Agent
 UA trình duyệt là qua.
 
 **Trạng thái: COMPLETE.**
+
+---
+
+## Task 6: guard truncation (2026-08-20)
+
+- Goal: một completion bị cắt ở trần token không bao giờ được trả về như một bản fix hợp lệ — nó throw.
+- Files allowed: `packages/functions/src/helpers/ai/truncatedCompletion.js` (mới), `packages/functions/src/services/ollama/index.js`, `packages/functions/src/services/openrouter/index.js`, tests tương ứng, `docs/features/ai-provider-routing.md`
+- Approach: chặn ở **route text của cả hai provider** — Ollama trả `done_reason: "length"` (đo thật 2026-08-20: `num_predict=24` → `"length"`, `2048` → `"stop"`), OpenRouter trả `choices[0].finish_reason === 'length'`. Bỏ phương án chặn ở `chains.js`: có 4 call site + `gsdAutoFill`, chặn ở provider là chỗ duy nhất không sót. Bỏ phương án cho `withOpenRouterFallback` rethrow thay vì fallback: số liệu prod cho thấy 66/77 fallback OpenRouter **không** cắt, nên fallback vẫn đáng.
+- Không đụng route structured (JSON.parse đã throw sẵn khi cắt) và imageAlt (cap 256, `parseAltSafely` trả '' khi JSON hỏng).
+- Test command: `npx jest --config <repo>/jest.config.js --rootDir <repo> --ci --forceExit packages/functions/src` → chỉ còn 2 fail pre-existing
+- Risk: `generateTextContent` giờ throw ở chỗ trước đây trả string cụt. Caller: `auditAgent/chains.js` (4 chỗ) + `gsdAutoFill/aiContent.js` (1). Cả hai đều muốn fail chứ không muốn ghi nội dung cụt. Tác dụng phụ: tỉ lệ fail của fix sẽ **tăng** — đó là lỗi vốn đã có, chỉ là trước đây bị nuốt.
+- Rollback: revert 1 commit.
+
+**Kết quả task 6:** 2 round (round 2 = jest hoist rule, biến trong `jest.mock` factory phải có tiền
+tố `mock`). 7 test mới. Full suite `2 failed, 118 passed / 982 passed, 984 total` — 2 fail
+pre-existing. `docs-gate: PASS` (485 anchored). Security §8: clean, 227+/2−, không secret, không
+file cấm, không dep mới.
+
+```
+62e2722d0e fix(ai): refuse a completion that stopped at the token cap
+```
+MR **!2177** https://git.avada.net/avada/seo/-/merge_requests/2177
+
+---
+
+## Task 7: controlKeywordsDensity sửa theo block (2026-08-20)
+
+- Goal: model chỉ sinh ra những block thật sự đổi; body trả về vẫn là full HTML và block không đụng tới **byte-identical**. Chất lượng đo bằng `MainContentAssessor`, không được thấp hơn đường cũ.
+- Files allowed: `packages/functions/src/helpers/auditAgent/htmlBlocks.js` (mới), `packages/functions/src/helpers/auditAgent/verifyBodyEdit.js` (mới), `packages/functions/src/config/auditAgentPrompts/keywordPrompts.js`, `packages/functions/src/services/auditAgent/chains.js`, tests, `docs/features/`
+- Approach: cheerio `{_useHtmlParser2, withStartIndices, withEndIndices}` lấy offset gốc → ghép lại bằng cắt chuỗi, **không** dựng lại bằng `$.html()` (đo 2026-08-20: `$.html()` đổi `&b=2`→`&amp;b=2`, chèn `<tbody>`, `data-k='v'`→`"v"`). Bỏ `parse5` trực tiếp dù offset đẹp hơn: transitive dep, khai thêm phải commit `yarn.lock`.
+- 4 cổng verify in-process, 0 API call: keyword count == target; word count ±10%; số `<a href>`/`<img src>` không giảm; `handleAnalysisMainContent` điểm mới ≥ cũ. Trượt bất kỳ cổng nào → rơi về đường viết-lại-toàn-bài hiện tại.
+- Test command: `npx jest --config <repo>/jest.config.js --rootDir <repo> --ci --forceExit packages/functions/src` → chỉ còn 2 fail pre-existing
+- Eval: **staging (`avad-seo-staging`) — Tuan chốt không đụng prod.** So bảng 7 assessment cũ/mới + output token.
+- Risk: block splice sai → body hỏng. Chặn bằng cổng 3 + byte-identical cho block không đụng. Prompt đổi → model có thể trả index sai; cổng 1 bắt được.
+- Rollback: revert; đường cũ vẫn nằm nguyên trong hàm làm fallback.
+
+**Kết quả task 7:** 45 test mới. Full suite `2 failed, 124 passed / 1068 passed, 1070 total` — 2 fail pre-existing. `docs-gate: PASS` (493 anchored). Security §8: clean, 1254+/5−, không secret, không file cấm, **không dep mới** (`jest.config.js` đã revert, không đụng).
+
+Eval trên **staging** (`avad-seo-staging`, `gemma4:31b`):
+
+| Body | Words | Score gốc | Whole-document | Blocks |
+|---|---|---|---|---|
+| 2106 từ (dài dựng từ body staging) | 2106 | 17.29 | **rejected**: count 26≠20, **trả 473/2106 từ** | **20.86** pass |
+| 351 từ | 351 | 17.29 | 17.29 | **20.86** |
+| 265 từ (plain text) | 265 | 17.29 | 17.29 | 17.29 (đã đúng target) |
+| 184 từ | 184 | 13.71 | 13.71 | **17.29** |
+
+Ca dài: block path 871 in / 262 out token, 2.5s — so với 3346 / 2857, 21.0s. Đường mới ≥ đường cũ ở mọi ca, không ca nào thấp hơn.
+
+Hai lỗi eval bắt được và đã sửa: (1) body plain-text không có tag → 0 block → giờ cắt theo dòng trống; (2) budget 6 block cố định không đủ gỡ 16 occurrence → giờ co giãn theo `diff`, trần cứng 20 block / 12000 ký tự.
+
+```
+e78831a03c fix(audit): edit the blocks a keyword fix touches, not the whole description
+```
+MR **!2179** https://git.avada.net/avada/seo/-/merge_requests/2179
+
+**Trạng thái: COMPLETE.**
+
+---
+
+## Task 8: generateDescriptionV1 theo block + gate cả đường rewrite (2026-08-20)
+
+4 issue: `textParagraphTooLong`, `textSentenceLength`, `subheadingsKeyword`, `textLength` — 39/63 lần timeout 60s còn lại. `mainContentAssessment` giữ nguyên đường viết-lại-toàn-bài (cố ý).
+
+Khác density: chỗ hỏng **tìm bằng máy** (>150 ký tự / >20 từ / subheading có keyword hay không), ngưỡng lấy từ chính prompt cũ. `checkIssueOutcome` là cổng mà điểm tổng không cho được: rewrite có thể nâng điểm tổng mà không đụng đúng đoạn đang fail, rồi vòng fix retry tới hết lượt.
+
+**Phát hiện lớn nhất từ eval: đường whole-document hoàn toàn không có cổng nào.** Trên 1 sản phẩm staging 351 từ:
+
+| Yêu cầu | Kết quả thật | Score (gốc 17.29) |
+|---|---|---|
+| rút ngắn đoạn | tạo ra **6 đoạn quá dài** từ 0, keyword 6→1 | **10.71** |
+| rút ngắn câu | **xoá sạch keyword** (6→0) | **10.14** |
+| chèn keyword vào subheading | body 351→249 từ (lệch 29%) | 17.29 |
+| kéo dài body | trả về **ngắn hơn**, 351→342 từ | 17.29 |
+
+Cả 4 đều được ghi vào sản phẩm vì không ai kiểm. Giờ gate cả fallback → trượt thì trả `description: ''` = "không fix", `productWorker` bỏ qua.
+
+`subheadingsKeyword` rõ nhất: đổi đúng 1 heading — 219 output token khi viết lại cả bài, **6 token** khi sửa block.
+
+Full suite `2 failed, 125 passed / 1083 passed, 1085 total` (2 pre-existing). `docs-gate: PASS` (496). Security §8 clean, 682+/10−, không dep mới.
+
+```
+989d60f214 fix(audit): block-edit the body-content issues, and gate the rewrite path
+```
+MR **!2183** https://git.avada.net/avada/seo/-/merge_requests/2183 → target `fix/keyword-density-block-edit` (stacked trên !2179, merge !2179 trước).
+
+**Trạng thái: COMPLETE.**
