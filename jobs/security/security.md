@@ -23,7 +23,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 2 | Registry `auditLintPaths` + `auditKnip` | general-purpose / haiku | ✅ | 1/5 | clean | `67ebd7b`. Routed off cavecrew-builder: it has no Bash and this task's acceptance is a test run |
 | 3 | eslint runner | general-purpose / sonnet | ✅ | 2/5 | clean | `92a0577`. Round 2: dropped a `'spawn'` failure member that nothing can produce, and corrected a comment claiming a balance-scan the parser does not do |
 | 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ✅ | 1/5 | clean | `store.ts` verified additive-only against the live db. Spec corrected: an open MR is not a status |
-| 5 | Security lane | general-purpose / opus | ⬜ | 0/5 | — | Read-only tools; drop citations that do not resolve; redact secret values |
+| 5 | Security lane | general-purpose / opus | ✅ | 1/5 | clean | Redaction verified by hand: 14/14, incl. `glpat-` and `sk-ant-api03-`. Spec corrected on tool list, schema and redaction scope |
 | 6 | Triage lane | general-purpose / sonnet | ⬜ | 0/5 | — | |
 | 7 | Supervisor + report render | general-purpose / sonnet | ⬜ | 0/5 | — | Code fallback so a prose failure never loses a finding |
 | 8 | MR lanes | general-purpose / opus | ⬜ | 0/5 | — | The only task that pushes. Every gate fails closed |
@@ -91,6 +91,25 @@ Tracking is this table only — this harness has no TaskCreate tool.
   - Constraint recorded while checking, for task 5 to honour: `audit_findings.title` is persisted to `state.db` on disk, so redaction has to happen where the finding is built, not on the way to Telegram. Written into the spec.
 - Deviation accepted: the agent put `FindingKind`/`FindingStatus`/`AuditFinding` in `ledger.ts` and had `store.ts` import them, mirroring `AlertStatus` living in `stateMachine.ts`. Keeps `Store` rows-only. Correct call.
 - Spec corrected as a result of implementing this: an open MR is **not** a finding status. A finding with an MR out is still in the code, so it stays `open` with an `mr_url` — as a status it would drop out of the resolved sweep and never be marked resolved when the merge lands.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+#### ✅ Task 5: Security lane
+- Agent: general-purpose (opus) — routing table sends security-sensitive work to opus; the cost of a wrong call here is a missed cross-shop leak
+- Status: ✅ completed
+- Plan:
+  - Goal: `runSecurityLane()` returns validated `SecurityFinding[]` from a read-only agent run, drops citations that do not resolve in the worktree (counting them), names a lane failure instead of reporting zero findings, and redacts secret values before the finding object exists. `bun test ./test/audit.security.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/securitySchema.ts` (new), `src/audit/securityLane.ts` (new), `test/audit.security.test.ts` (new). Nothing else.
+  - Approach: agent runs with `cwd` = worktree so each repo's own `CLAUDE.md` and `.claude/skills/security/` load; tools are `ANALYZE_TOOLS` minus the gcloud entry, no Edit/Write. Rejected: importing `extractJson` from `analysisSchema.ts` — verified 2026-08-20 that it rejects arrays outright (`!Array.isArray(parsed)`, `analysisSchema.ts:61`), and this lane answers with an array.
+  - Test command: `bun test ./test/audit.security.test.ts` **and** `bun run typecheck`.
+  - Risk: the lane reads whole prod repos. Two failure modes matter: an invented `file:line` that sends a reviewer hunting a bug that does not exist, and a real secret quoted verbatim into a finding that is then written to `state.db` and Telegram. Both are covered by tests rather than by trust.
+  - Rollback: delete the three new files; nothing imports them until task 9.
+- Redaction is a hard requirement here, not a nicety: `audit_findings.title` is persisted to disk (task 4), so stripping on the way out would be too late.
+- Rounds used: 1/5
+- Security check: **clean**. Three new files, no existing file modified, no network call, no new dependency. `SECURITY_TOOLS` carries no `Edit`/`Write`. Test fixtures use synthetic or vendor-doc example tokens, not live credentials — checked, since a secret hidden in a fixture is exactly what this check exists for.
+- Redaction verified independently rather than taken on report: 14 strings through `redactSecret`, 9 token-shaped and 5 ordinary, **14/14 correct**. The two that matter are `glpat-…` and `sk-ant-api03-…`, which a `_`-only separator would have leaked whole — this fleet issues the first and consumes the second. File paths, `risk-assessment-service` and `pk-lookup` pass through untouched.
+- Agent's report was wrong on one detail: it placed `ANALYZE_TOOLS` at `claudeCli.ts:136`; it is at **142**, as the spec said. Its substantive point stood — the constant has ten entries and the spec listed eight.
+- Carried into task 7: `SecurityLaneResult.hasSecuritySkill` now exists and `renderReport` must actually print it. The plan already tests for the string; the field feeding it did not exist until now.
+- Carried into task 9: `runSecurityLane` is a single shot bounded by wall clock only — this CLI build has no `--max-turns`. `AUDIT_SECURITY_TIMEOUT_MS` must be sized for `seo` (2491 lint-scoped files), not the median repo. Also decide whether to pass a brain slice at all: `input.brainSlice` feeds `appendSystemPrompt`, and the brain is currently ~23k against a 6000 budget.
 - Started: 2026-08-20 · Completed: 2026-08-20
 
 ### Process correction, 2026-08-20
