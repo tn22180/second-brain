@@ -1,0 +1,510 @@
+import {describe, expect, test} from 'bun:test';
+import {FIX_TOOLS, type ClaudeInvocation, type ClaudeResult} from '../src/agent/claudeCli';
+import {
+  AUDIT_FORBIDDEN_PATTERNS,
+  auditMrTitle,
+  buildAuditMrBody,
+  eligibleCleanup,
+  runBothMrLanes,
+  runMrLane,
+  type MrLaneDeps,
+  type MrLaneInput
+} from '../src/audit/mr';
+import type {RunResult, Runner} from '../src/gcloud/run';
+import {openMr} from '../src/git/openMr';
+import type {SecurityFinding} from '../src/audit/securitySchema';
+import type {TriageFinding, TriageVerdict} from '../src/audit/triage';
+
+/**
+ * Nothing in this file is allowed to reach git, a worktree, or a repo under
+ * `projects/Falcon/`. Every side effect is injected, and the push path is checked
+ * by asserting on the argv the fake runner was handed — never by running it.
+ */
+
+const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
+
+const PUSH_CREATED = `remote: View merge request for audit/security-seo-20260819:
+remote:   https://git.avada.net/avada/seo/-/merge_requests/2210
+To https://git.avada.net/avada/seo.git
+ * [new branch]      HEAD -> audit/security-seo-20260819`;
+
+const SEC_FILE = 'packages/functions/src/handlers/x.js';
+const LINT_FILE = 'packages/functions/src/const/default.js';
+
+const SECURITY: SecurityFinding[] = [
+  {
+    file: SEC_FILE,
+    line: 42,
+    severity: 'high',
+    category: 'shop_scoping',
+    title: 'query runs without a shopId filter',
+    why: 'any shop can read another shop, an attacker gets the whole collection',
+    fix: 'add where(shopId)'
+  }
+];
+
+const LINT: TriageFinding[] = [
+  {fp: 'aaa', file: LINT_FILE, line: 5, rule: 'no-unused-vars', message: "'CONTENT_TYPES' is defined but never used."},
+  {fp: 'bbb', file: 'packages/assets/src/keep.js', line: 9, rule: 'no-unused-vars', message: "'B' is defined but never used."},
+  {fp: 'ccc', file: 'packages/assets/src/undef.js', line: 3, rule: 'no-undef', message: "'admin' is not defined."}
+];
+
+const VERDICTS: TriageVerdict[] = [
+  {fp: 'aaa', verdict: 'delete', reason: 'no reference anywhere'},
+  {fp: 'bbb', verdict: 'keep', reason: 'reached by a dynamic require'},
+  // A `delete` on a no-undef finding: the repair there is an import, never a
+  // deletion, so the lane must refuse it whatever the agent voted.
+  {fp: 'ccc', verdict: 'delete', reason: 'the agent voted delete on a missing import'}
+];
+
+function input(over: Partial<MrLaneInput> = {}): MrLaneInput {
+  return {
+    appName: 'SEO',
+    repo: 'seo',
+    repoPath: '/repos/seo',
+    baseBranch: 'master',
+    worktreeRoot: '/cache/wt',
+    dateStr: '20260819',
+    model: 'claude-sonnet-5',
+    brainSlice: undefined,
+    testCmd: ['npx', 'jest', '--ci'],
+    security: SECURITY,
+    lint: LINT,
+    verdicts: VERDICTS,
+    nowMs: 1_755_000_000_000,
+    timeouts: {git: 1000, agent: 2000, jest: 3000},
+    ...over
+  };
+}
+
+interface Harness {
+  deps: MrLaneDeps;
+  argv: () => string[][];
+  pushArgs: () => string[];
+  invocations: () => ClaudeInvocation[];
+  created: () => string[];
+  removed: () => string[];
+  recorded: () => string[];
+}
+
+function harness(
+  over: {
+    diff?: string;
+    untracked?: string;
+    agent?: (inv: ClaudeInvocation) => ClaudeResult;
+    jestOk?: boolean;
+    jestSummary?: boolean;
+    worktreeFails?: boolean;
+    capped?: boolean;
+    pushCode?: number;
+    pushOutput?: string;
+  } = {}
+): Harness {
+  const argv: string[][] = [];
+  const invocations: ClaudeInvocation[] = [];
+  const created: string[] = [];
+  const removed: string[] = [];
+  const recorded: string[] = [];
+  let pushArgs: string[] = [];
+
+  const runner: Runner = async args => {
+    argv.push(args);
+    const joined = args.join(' ');
+    if (joined.includes('diff --name-only')) return ok({stdout: over.diff ?? `${SEC_FILE}\n`});
+    if (joined.includes('ls-files --others')) return ok({stdout: over.untracked ?? ''});
+    if (joined.includes('diff --cached')) return ok({stdout: `${SEC_FILE}\n`});
+    if (joined.includes('rev-parse HEAD')) return ok({stdout: 'cafe1234\n'});
+    if (joined.includes(' push ')) {
+      pushArgs = args;
+      return ok({code: over.pushCode ?? 0, stderr: over.pushOutput ?? PUSH_CREATED});
+    }
+    return ok();
+  };
+
+  const deps: MrLaneDeps = {
+    runner,
+    claude: async inv => {
+      invocations.push(inv);
+      return (
+        over.agent?.(inv) ?? {
+          ok: true,
+          text: '{"summary": "added the shopId filter"}',
+          costUsd: 0.4,
+          numTurns: 3,
+          sessionId: 's',
+          permissionDenials: [],
+          failure: undefined,
+          detail: undefined
+        }
+      );
+    },
+    createWorktree: async wt => {
+      if (over.worktreeFails) return {ok: false, detail: 'origin/master does not resolve'};
+      created.push(wt.dir);
+      return {ok: true, value: {dir: wt.dir, branch: wt.branch, baseSha: 'base1234'}};
+    },
+    linkNodeModules: async () => ({linked: ['node_modules'], missing: []}),
+    commitWip: async () => ({ok: true, sha: undefined, detail: undefined}),
+    removeWorktree: async ({dir}) => {
+      removed.push(dir);
+      return {ok: true, detail: undefined};
+    },
+    runJest: async () =>
+      over.jestSummary === false
+        ? {summary: undefined, timedOut: false, detail: 'could not read jest --json output (exit 1)'}
+        : {
+            summary: {
+              ok: over.jestOk ?? true,
+              totalTests: 164,
+              totalSuites: 12,
+              failures: over.jestOk === false ? ['a.test.js::x', 'b.test.js::y', 'c.test.js::z'] : [],
+              runtimeErrorSuites: 0
+            },
+            timedOut: false,
+            detail: undefined
+          },
+    openMr,
+    checkCaps: () =>
+      over.capped
+        ? {allowed: false, cap: 'mr_per_repo_per_day', detail: '2/2 MR cho seo trong 24h'}
+        : {allowed: true, cap: undefined, detail: undefined},
+    recordMr: repo => {
+      recorded.push(repo);
+    }
+  };
+
+  return {
+    deps,
+    argv: () => argv,
+    pushArgs: () => pushArgs,
+    invocations: () => invocations,
+    created: () => created,
+    removed: () => removed,
+    recorded: () => recorded
+  };
+}
+
+/** Any argv reaching the runner that would have contacted the remote. */
+const sawPush = (argv: string[][]): boolean => argv.some(a => a.includes('push'));
+
+describe('what the cleanup lane is allowed to touch', () => {
+  test('only no-unused-vars findings triaged delete are eligible', () => {
+    expect(eligibleCleanup(LINT, VERDICTS).map(f => f.fp)).toEqual(['aaa']);
+  });
+
+  test('a keep or an unsure verdict deletes nothing', () => {
+    const verdicts: TriageVerdict[] = [
+      {fp: 'aaa', verdict: 'unsure', reason: 'could not tell'},
+      {fp: 'bbb', verdict: 'keep', reason: 'dynamic require'}
+    ];
+    expect(eligibleCleanup(LINT, verdicts)).toEqual([]);
+  });
+
+  test('a fingerprint with no verdict at all is not eligible', () => {
+    expect(eligibleCleanup(LINT, [])).toEqual([]);
+  });
+});
+
+describe('runMrLane gates', () => {
+  test('the security lane pushes its own branch and reports the MR', async () => {
+    const h = harness();
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBeUndefined();
+    expect(res.pushed).toBe(true);
+    expect(res.mrUrl).toBe('https://git.avada.net/avada/seo/-/merge_requests/2210');
+    expect(res.branch).toBe('audit/security-seo-20260819');
+    expect(h.pushArgs().join(' ')).toContain('HEAD:refs/heads/audit/security-seo-20260819');
+    expect(h.pushArgs().join(' ')).toContain('merge_request.target=master');
+    // The credential helper's job. Nothing here may carry a token.
+    const flat = h.argv().flat().join(' ');
+    expect(flat).not.toMatch(/glpat-|oauth2:|--password|token=/);
+    // Counted only after the push landed, so a crash cannot lose the count.
+    expect(h.recorded()).toEqual(['seo']);
+  });
+
+  test('a diff touching a file no finding named is refused before any push', async () => {
+    const h = harness({diff: `${SEC_FILE}\npackages/functions/src/unrelated.js\n`});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('out_of_scope');
+    expect(res.pushed).toBe(false);
+    expect(res.detail).toContain('unrelated.js');
+    expect(sawPush(h.argv())).toBe(false);
+    expect(h.recorded()).toEqual([]);
+  });
+
+  test('a file the agent created is out of scope too — no finding can have named it', async () => {
+    const h = harness({untracked: 'packages/functions/src/__tests__/new.test.js\n'});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('out_of_scope');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  /**
+   * These reach the gate rather than the scope check because a `secret` finding
+   * legitimately names `.env` — that is exactly the case the list exists for.
+   */
+  test('forbidden files are refused outright even when a finding named them', async () => {
+    const forbidden = [
+      '.env',
+      '.env.local',
+      '.env.avada-seo',
+      'packages/functions/.env.production',
+      'yarn.lock',
+      'bun.lock',
+      'package-lock.json',
+      '.gitlab-ci.yml',
+      'firebase.json',
+      '.firebaserc',
+      'package.json',
+      'packages/functions/package.json',
+      '.audit.eslintrc.json'
+    ];
+    for (const file of forbidden) {
+      const h = harness({diff: `${file}\n`});
+      const res = await runMrLane(
+        {
+          ...input({security: [{...SECURITY[0]!, file}]}),
+          kind: 'security'
+        },
+        h.deps
+      );
+      expect({file, refusal: res.refusal}).toEqual({file, refusal: 'forbidden_file'});
+      expect(res.pushed).toBe(false);
+      expect(sawPush(h.argv())).toBe(false);
+    }
+  });
+
+  test('every forbidden pattern is anchored to a path segment, not a substring', () => {
+    const innocent = ['packages/functions/src/env.js', 'src/package.jsonc', 'docs/firebase.json.md'];
+    for (const p of innocent) {
+      expect({p, hit: AUDIT_FORBIDDEN_PATTERNS.some(re => re.test(p))}).toEqual({p, hit: false});
+    }
+  });
+
+  test('a red jest run means no push', async () => {
+    const h = harness({jestOk: false});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('tests_failed');
+    expect(res.pushed).toBe(false);
+    expect(res.detail).toContain('a.test.js::x');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('a jest that could not run at all is a failure, not a pass', async () => {
+    const h = harness({jestSummary: false});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('tests_failed');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('a hit MR cap refuses and nothing is pushed', async () => {
+    const h = harness({capped: true});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('capped');
+    expect(res.pushed).toBe(false);
+    expect(res.detail).toContain('2/2');
+    expect(sawPush(h.argv())).toBe(false);
+    expect(h.recorded()).toEqual([]);
+  });
+
+  test('an empty diff is its own refusal', async () => {
+    const h = harness({diff: '  \n'});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('no_changes');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('a worktree that could not be created stops before the agent', async () => {
+    const h = harness({worktreeFails: true});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('worktree_failed');
+    expect(h.invocations()).toHaveLength(0);
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('an agent failure is named and pushes nothing', async () => {
+    const h = harness({
+      agent: () => ({
+        ok: false,
+        text: '',
+        costUsd: 0.1,
+        numTurns: 1,
+        sessionId: undefined,
+        permissionDenials: [],
+        failure: 'timeout',
+        detail: 'killed after 2000ms'
+      })
+    });
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('agent_failed');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('a failed push is reported as a failed push, never as an MR', async () => {
+    const h = harness({pushCode: 1, pushOutput: 'remote: GitLab: You are not allowed to push code'});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('push_failed');
+    expect(res.pushed).toBe(false);
+    expect(res.mrUrl).toBeUndefined();
+    // The cap counts pushes that landed. A rejected one must not spend the day's quota.
+    expect(h.recorded()).toEqual([]);
+  });
+
+  test('nothing eligible means the lane never opens a worktree', async () => {
+    const h = harness();
+    const res = await runMrLane({...input({security: []}), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('nothing_to_fix');
+    expect(h.created()).toEqual([]);
+    expect(h.invocations()).toHaveLength(0);
+  });
+
+  test('the worktree is removed whether the lane pushed or refused', async () => {
+    const pushedRun = harness();
+    await runMrLane({...input(), kind: 'security'}, pushedRun.deps);
+    expect(pushedRun.removed()).toHaveLength(1);
+
+    const refusedRun = harness({jestOk: false});
+    await runMrLane({...input(), kind: 'security'}, refusedRun.deps);
+    expect(refusedRun.removed()).toHaveLength(1);
+  });
+});
+
+describe('the fix agent the lane runs', () => {
+  test('it edits inside the worktree and nowhere else', async () => {
+    const h = harness();
+    await runMrLane({...input(), kind: 'security'}, h.deps);
+    const inv = h.invocations()[0]!;
+
+    expect(inv.cwd).toBe('/cache/wt/seo-security-20260819');
+    expect(inv.addDirs).toEqual([]);
+    expect(inv.permissionMode).toBe('acceptEdits');
+    expect(inv.allowedTools).toEqual(FIX_TOOLS);
+  });
+
+  test('the prompt names the files the findings named, and forbids the rest', async () => {
+    const h = harness();
+    await runMrLane({...input(), kind: 'security'}, h.deps);
+    const prompt = h.invocations()[0]!.prompt;
+
+    expect(prompt).toContain(SEC_FILE);
+    expect(prompt).toContain('shopId');
+    expect(prompt).toContain('.env');
+    expect(prompt).toContain('package.json');
+  });
+
+  test('the cleanup prompt deletes declarations, never files or exports', async () => {
+    const h = harness({diff: `${LINT_FILE}\n`});
+    await runMrLane({...input(), kind: 'cleanup'}, h.deps);
+    const prompt = h.invocations()[0]!.prompt;
+
+    expect(prompt).toContain(LINT_FILE);
+    expect(prompt).toContain('CONTENT_TYPES');
+    expect(prompt).toMatch(/do not delete (any )?file/i);
+    expect(prompt).toMatch(/export/i);
+    // The findings the triage did not clear must not be in front of the agent.
+    expect(prompt).not.toContain('packages/assets/src/undef.js');
+    expect(prompt).not.toContain('packages/assets/src/keep.js');
+  });
+});
+
+describe('the two lanes', () => {
+  test('two branches and two worktrees — one diff can never carry both', async () => {
+    const h = harness({diff: `${SEC_FILE}\n${LINT_FILE}\n`});
+    const both = await runBothMrLanes(input(), h.deps);
+
+    expect(both.security.branch).toBe('audit/security-seo-20260819');
+    expect(both.cleanup.branch).toBe('audit/cleanup-seo-20260819');
+    expect(both.security.branch).not.toBe(both.cleanup.branch);
+    expect(both.security.worktreeDir).not.toBe(both.cleanup.worktreeDir);
+    expect(h.created()).toEqual(['/cache/wt/seo-security-20260819', '/cache/wt/seo-cleanup-20260819']);
+  });
+
+  /**
+   * The scope of each lane is its own findings: the security lane must refuse a
+   * deletion smuggled into its diff and the cleanup lane must refuse a code change,
+   * which is what keeps a reviewer's approval meaning one thing.
+   */
+  test('neither lane accepts the other lane\'s file', async () => {
+    const h = harness({diff: `${SEC_FILE}\n${LINT_FILE}\n`});
+    const both = await runBothMrLanes(input(), h.deps);
+
+    expect(both.security.refusal).toBe('out_of_scope');
+    expect(both.security.detail).toContain(LINT_FILE);
+    expect(both.cleanup.refusal).toBe('out_of_scope');
+    expect(both.cleanup.detail).toContain(SEC_FILE);
+    expect(sawPush(h.argv())).toBe(false);
+  });
+
+  test('the cap is read per lane, so the cleanup lane refuses on its own', async () => {
+    const h = harness({capped: true, diff: `${LINT_FILE}\n`});
+    const res = await runMrLane({...input(), kind: 'cleanup'}, h.deps);
+
+    expect(res.refusal).toBe('capped');
+    expect(res.branch).toBe('audit/cleanup-seo-20260819');
+    expect(sawPush(h.argv())).toBe(false);
+  });
+});
+
+describe('the MR body', () => {
+  test('a security MR says what it is and that nobody has reviewed it', () => {
+    const body = buildAuditMrBody({
+      kind: 'security',
+      appName: 'SEO',
+      dateStr: '20260819',
+      security: SECURITY,
+      cleanup: [],
+      agentSummary: 'added the shopId filter',
+      jestLine: '164 tests, 0 failing'
+    });
+    expect(body).toContain(`${SEC_FILE}:42`);
+    expect(body).toContain('shop_scoping');
+    expect(body).toContain('reviewed by a person');
+  });
+
+  test('a secret value never reaches the MR body or its title', () => {
+    const leaky: SecurityFinding = {
+      ...SECURITY[0]!,
+      title: 'token shpat_<fixture> is committed',
+      why: 'the value shpat_<fixture> is in the tree',
+      fix: 'rotate shpat_<fixture>'
+    };
+    const body = buildAuditMrBody({
+      kind: 'security',
+      appName: 'SEO',
+      dateStr: '20260819',
+      security: [leaky],
+      cleanup: [],
+      agentSummary: 'moved shpat_<fixture> out of the tree',
+      jestLine: 'x'
+    });
+    expect(body).not.toContain('shpat_<fixture>');
+    expect(body).toContain('<redacted>');
+    expect(auditMrTitle('security', 'SEO', 1)).not.toContain('shpat_');
+  });
+
+  test('a cleanup MR counts the declarations and names the rule', () => {
+    const body = buildAuditMrBody({
+      kind: 'cleanup',
+      appName: 'SEO',
+      dateStr: '20260819',
+      security: [],
+      cleanup: [LINT[0]!],
+      agentSummary: 'removed one unused constant',
+      jestLine: '164 tests, 0 failing'
+    });
+    expect(body).toContain(`${LINT_FILE}:5`);
+    expect(body).toContain('no-unused-vars');
+    expect(body).toMatch(/no file was deleted|không xoá file|declaration/i);
+  });
+});

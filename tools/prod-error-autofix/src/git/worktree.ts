@@ -38,6 +38,18 @@ export function branchNameFor(appName: string, fingerprint: string, attempt: num
   return `fix/prod-${app}-${fingerprint}${suffix}`;
 }
 
+/**
+ * The daily audit's branches. One per kind, never one shared: a reviewer approving
+ * a security fix must not be approving a batch of deletions in the same diff.
+ *
+ * Repo and date are sanitised rather than trusted — a stray character in either
+ * would otherwise reach `git push` as part of a ref name.
+ */
+export function auditBranchName(kind: 'security' | 'cleanup', repo: string, dateStr: string): string {
+  const slug = repo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `audit/${kind}-${slug}-${dateStr.replace(/[^0-9]/g, '')}`;
+}
+
 export function worktreeDirFor(worktreeRoot: string, repo: string, fingerprint: string, attempt: number): string {
   return join(worktreeRoot, `${repo}-${fingerprint}${attempt > 1 ? `-a${attempt}` : ''}`);
 }

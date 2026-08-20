@@ -106,10 +106,19 @@ export function buildCreateMrUrl(webUrl: string, branch: string, baseBranch: str
   return `${webUrl}/-/merge_requests/new?${q.toString()}`;
 }
 
+/**
+ * The last thing between a bug in the callers and a push to `master`.
+ *
+ * An allowlist, and it is widened by adding an entry — never by relaxing the test:
+ * `fix/prod-` is the Slack pipeline, `audit/` the daily sweep. Nothing else pushes,
+ * and the separate refusal to push onto the base branch still applies on top.
+ */
+const ALLOWED_BRANCH_PREFIXES = ['fix/prod-', 'audit/'];
+
 export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): Promise<OpenMrResult> {
   const git = (args: string[]) => runner(['git', '-C', input.worktreeDir, ...args], input.timeoutMs);
 
-  if (!input.branch.startsWith('fix/prod-')) {
+  if (!ALLOWED_BRANCH_PREFIXES.some(prefix => input.branch.startsWith(prefix))) {
     return {
       ok: false,
       mrUrl: undefined,
@@ -117,7 +126,7 @@ export async function openMr(input: OpenMrInput, runner: Runner = spawnRunner): 
       fixSha: undefined,
       pushed: false,
       failure: 'refused',
-      detail: `branch ${input.branch} is not a fix/prod-* branch`
+      detail: `branch ${input.branch} is not under ${ALLOWED_BRANCH_PREFIXES.join(' or ')}`
     };
   }
   if (input.branch === input.baseBranch) {

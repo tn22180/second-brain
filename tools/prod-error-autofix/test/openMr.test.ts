@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'bun:test';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {buildCreateMrUrl, buildMrBody, isCreateLinkOnly, openMr, parseCreateLink, parseMrUrl, remoteToWebUrl, singleLine, type OpenMrInput} from '../src/git/openMr';
-import {branchNameFor, commitWip, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
+import {auditBranchName, branchNameFor, commitWip, linkNodeModules, parseWorktreeList, worktreeDirFor} from '../src/git/worktree';
 
 const ok = (over: Partial<RunResult> = {}): RunResult => ({code: 0, stdout: '', stderr: '', timedOut: false, ...over});
 
@@ -57,6 +57,21 @@ describe('branch and worktree naming', () => {
   test('branch is namespaced, lowercased and attempt-aware', () => {
     expect(branchNameFor('BLOG', '1a2b3c', 1)).toBe('fix/prod-blog-1a2b3c');
     expect(branchNameFor('IMG-OPT', 'zz9', 2)).toBe('fix/prod-img-opt-zz9-a2');
+  });
+
+  test('the two audit lanes get two branch names, one per kind', () => {
+    expect(auditBranchName('security', 'seo', '20260819')).toBe('audit/security-seo-20260819');
+    expect(auditBranchName('cleanup', 'seo', '20260819')).toBe('audit/cleanup-seo-20260819');
+    expect(auditBranchName('security', 'seo', '20260819')).not.toBe(auditBranchName('cleanup', 'seo', '20260819'));
+  });
+
+  test('an audit branch name stays inside the audit/ namespace whatever the caller passes', () => {
+    expect(auditBranchName('cleanup', 'llm-ai-search-seo', '2026-08-19')).toBe(
+      'audit/cleanup-llm-ai-search-seo-20260819'
+    );
+    expect(auditBranchName('security', 'AI Product/Copy', '20260819')).toBe(
+      'audit/security-ai-product-copy-20260819'
+    );
   });
 
   test('worktree dirs are under the cache root, never in a repo', () => {
@@ -175,6 +190,39 @@ describe('openMr', () => {
     const {runner} = gitRunner();
     const res = await openMr(input({branch: 'fix/prod-x', baseBranch: 'fix/prod-x'}), runner);
     expect(res.failure).toBe('refused');
+  });
+
+  test('an audit branch is allowed through the guard', async () => {
+    for (const branch of ['audit/security-seo-20260819', 'audit/cleanup-seo-20260819']) {
+      const {runner, pushArgs} = gitRunner();
+      const res = await openMr(input({branch}), runner);
+      expect(res.failure).not.toBe('refused');
+      expect(pushArgs().join(' ')).toContain(`HEAD:refs/heads/${branch}`);
+    }
+  });
+
+  /**
+   * The guard is an allowlist of two prefixes, not a blocklist. `audit` and
+   * `fix/prod` without their separators are in here on purpose: a near miss must
+   * refuse like anything else, because this check is the last thing between a bug
+   * in the audit lane and a push to master.
+   */
+  test('everything outside the allowlist is still refused, and never reaches a push', async () => {
+    for (const branch of ['master', 'main', 'feature/x', 'hotfix/y', 'audit', 'auditx/y', 'fix/prod', 'develop']) {
+      const {runner, pushArgs} = gitRunner();
+      const res = await openMr(input({branch}), runner);
+      expect(res.failure).toBe('refused');
+      expect(pushArgs()).toEqual([]);
+    }
+  });
+
+  test('pushing onto the base branch is still refused, allowlisted prefix or not', async () => {
+    for (const branch of ['master', 'audit/security-seo-20260819']) {
+      const {runner, pushArgs} = gitRunner();
+      const res = await openMr(input({branch, baseBranch: branch}), runner);
+      expect(res.failure).toBe('refused');
+      expect(pushArgs()).toEqual([]);
+    }
   });
 
   /**
