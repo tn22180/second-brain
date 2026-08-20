@@ -1,9 +1,29 @@
 import {describe, expect, test} from 'bun:test';
+import {mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {findingFp} from '../src/audit/findingFp';
 import type {AuditFinding, LedgerDiff} from '../src/audit/ledger';
 import {renderReport, type AppReportInput, type ReportInput} from '../src/audit/report';
 import {runSupervisor} from '../src/audit/supervisor';
 import type {ClaudeResult, ClaudeRunner} from '../src/agent/claudeCli';
+
+const TELEGRAM_LIMIT = 4096;
+
+// Same shape eslint's `no-unused-vars` produces on a first run — an empty
+// ledger means every one of these is `fresh`. Measured 2026-08-20: 856 of them
+// for one app rendered to 121998 bytes against Telegram's 4096-char cap.
+function hygieneFinding(app: string, i: number): AuditFinding {
+  return finding({
+    app,
+    kind: 'hygiene',
+    file: `packages/functions/src/const/file${i}.js`,
+    line: i,
+    rule: 'no-unused-vars',
+    title: `'UNUSED_${i}' is defined but never used`,
+    severity: 'low'
+  });
+}
 
 function finding(over: Partial<AuditFinding> & {app: string; file: string; rule: string; title: string}): AuditFinding {
   return {
@@ -194,6 +214,60 @@ describe('renderReport', () => {
     expect(text).toContain('.claude/skills');
     expect(text).toContain('Lane lỗi');
     expect(text).toContain('quy đổi (chạy trên gói)');
+  });
+
+  test('856 fresh findings on an empty-ledger first run still render under the Telegram limit', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'audit-report-'));
+    const fullReportPath = join(dir, 'apc-full.txt');
+    try {
+      const findings = Array.from({length: 856}, (_, i) => hygieneFinding('APC', i));
+      const apps: AppReportInput[] = [app({appName: 'APC', ledger: ledger({fresh: findings})})];
+      const text = renderReport({...BASE, apps, fullReportPath});
+
+      expect(text.length).toBeLessThanOrEqual(TELEGRAM_LIMIT);
+      // The header count must still say 856 — the cap hides detail lines, it
+      // must never understate how many findings actually exist.
+      expect(text).toContain('856 mới');
+      // No silent cap: the message must say how many findings it did not list.
+      expect(text).toMatch(/\d+ phát hiện không hiện/);
+      expect(text).toContain(fullReportPath);
+
+      const onDisk = readFileSync(fullReportPath, 'utf8');
+      for (const f of findings) expect(onDisk).toContain(f.title);
+    } finally {
+      rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
+  test('a high-severity security finding behind 800 hygiene ones survives the cap', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'audit-report-'));
+    const fullReportPath = join(dir, 'apc-full.txt');
+    try {
+      const hygiene = Array.from({length: 800}, (_, i) => hygieneFinding('APC', i));
+      const securityFinding = finding({
+        app: 'APC',
+        kind: 'security',
+        file: 'packages/functions/src/webhooks/handleOrder.js',
+        line: 12,
+        rule: 'authn',
+        title: 'HMAC check bị comment out trên webhook order',
+        severity: 'high'
+      });
+      const findings = [...hygiene, securityFinding];
+      const apps: AppReportInput[] = [app({appName: 'APC', ledger: ledger({fresh: findings})})];
+      const text = renderReport({...BASE, apps, fullReportPath});
+
+      expect(text.length).toBeLessThanOrEqual(TELEGRAM_LIMIT);
+      expect(text).toContain('handleOrder.js:12');
+      expect(text).toContain('HMAC check bị comment out trên webhook order');
+    } finally {
+      rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
+  test('a small report has no cap artefacts on a quiet day', () => {
+    const text = renderReport(BASE);
+    expect(text).not.toMatch(/phát hiện không hiện/);
   });
 });
 
