@@ -117,6 +117,21 @@ export function replyInfra(input: ReplyBase & {analysis: Analysis | undefined; d
     .join('\n');
 }
 
+/** The fix lane is switched off. Analysed and reported like any other run — no MR follows. */
+export function replyFixDisabled(input: ReplyBase & {analysis: Analysis}): string {
+  return [
+    `*${input.appName}* · \`${input.fingerprint}\``,
+    '',
+    `*Nguyên nhân.* ${input.analysis.rootCause}`,
+    `*Cơ chế.* ${input.analysis.mechanism}`,
+    '',
+    citations(input.analysis),
+    '',
+    'Auto-fix đang tắt từ 2026-08-19 — phân tích tới đây, không mở MR.',
+    'Bật lại: `AUTOFIX_FIX_ENABLED=true`.'
+  ].join('\n');
+}
+
 /**
  * The branch is on the remote but no MR exists — the push option did not take.
  *

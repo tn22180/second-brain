@@ -33,6 +33,8 @@ function makeCfg(over: Record<string, string> = {}): Config {
     AUTOFIX_CACHE_ROOT: join(ROOT, 'cache'),
     AUTOFIX_BRAIN_ROOT: join(ROOT, 'brain'),
     AUTOFIX_REPOS_ROOT: join(ROOT, 'repos'),
+    // These tests assert the MR path.
+    AUTOFIX_FIX_ENABLED: 'true',
     ...over
   });
 }
@@ -329,6 +331,28 @@ describe('paths that must not open an MR', () => {
     // Analysis ran; the fix stage never did.
     expect(claudeCalls).toHaveLength(1);
     expect(ranArgs.some(a => a.join(' ').includes(' push '))).toBe(false);
+  });
+
+  // The fix switch and the infra branch both stop before a fix, and both were
+  // once the same branch. They answer different questions, so the order between
+  // them is load-bearing and is pinned here in both directions.
+  test('with the fix lane off, an app error stops at fix_disabled', async () => {
+    const res = await runPipeline(
+      deps({claude: fakeClaude({analysis: ANALYSIS}), cfg: makeCfg({AUTOFIX_FIX_ENABLED: 'false'})}),
+      alertMessage()
+    );
+    expect(res.status).toBe('fix_disabled');
+    expect(res.mrUrl).toBeUndefined();
+    expect(ranArgs.some(a => a.join(' ').includes(' push '))).toBe(false);
+  });
+
+  test('with the fix lane off, an infra alert still reports as infra', async () => {
+    const res = await runPipeline(
+      deps({claude: fakeClaude({analysis: {...ANALYSIS, isInfra: true}}), cfg: makeCfg({AUTOFIX_FIX_ENABLED: 'false'})}),
+      alertMessage({kind: 'infra', message: 'Memory limit of 1024 MiB exceeded with 1046 MiB used'})
+    );
+    expect(res.status).toBe('infra');
+    expect(posted[0]).toContain('không auto-fix');
   });
 
   test('a gcloud auth failure blocks before any model call', async () => {

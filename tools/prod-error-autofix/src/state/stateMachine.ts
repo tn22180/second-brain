@@ -25,7 +25,8 @@ export type AlertStatus =
   | 'needs_human'
   | 'blocked'
   | 'unknown_app'
-  | 'deferred';
+  | 'deferred'
+  | 'fix_disabled';
 
 export type DecisionReason =
   | 'first_seen'
@@ -42,7 +43,8 @@ export type DecisionReason =
   | 'unknown_app'
   | 'retry_after_block'
   | 'retry_after_defer'
-  | 'merge_state_unknown';
+  | 'merge_state_unknown'
+  | 'fix_disabled';
 
 export interface AlertRecord {
   fingerprint: string;
@@ -173,6 +175,11 @@ export function decide(input: DecideInput): Decision {
 
     case 'infra':
       return quiet('infra', 'infra_no_autofix', input);
+
+    // Analysed once, reported once. Re-running costs a full ANALYZE for an answer
+    // already in the thread, so a repeat alert is silent until the switch is back on.
+    case 'fix_disabled':
+      return quiet('fix_disabled', 'fix_disabled', input, {reply: false});
 
     case 'needs_human':
       return quiet('needs_human', 'needs_human', input, {reply: false});

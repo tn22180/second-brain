@@ -106,6 +106,7 @@ export interface Config {
   models: Models;
   timeouts: Timeouts;
   paths: Paths;
+  fixEnabled: boolean;
 }
 
 export class ConfigError extends Error {
@@ -207,7 +208,11 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
       worktreeRoot: join(cacheRoot, 'wt'),
       jobsRoot: join(cacheRoot, 'jobs'),
       reposRoot
-    }
+    },
+    // Off since 2026-08-19. The daemon still triages and still replies in the
+    // thread; it stops opening MRs, because 58 were sitting unreviewed and an MR
+    // nobody reads is worse than no MR. Audit MRs are the reviewed lane now.
+    fixEnabled: env.AUTOFIX_FIX_ENABLED === 'true'
   };
 }
 

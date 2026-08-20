@@ -63,6 +63,12 @@ describe('buildConfig', () => {
     expect(() => buildConfig({...base, AUTOFIX_MR_PER_HOUR: 'lots'})).toThrow(/must be a number/);
     expect(buildConfig({...base, AUTOFIX_MR_PER_HOUR: '9'}).caps.mrPerHour).toBe(9);
   });
+
+  test('the fix lane is off unless AUTOFIX_FIX_ENABLED says otherwise', () => {
+    expect(buildConfig({...base}).fixEnabled).toBe(false);
+    expect(buildConfig({...base, AUTOFIX_FIX_ENABLED: 'true'}).fixEnabled).toBe(true);
+    expect(buildConfig({...base, AUTOFIX_FIX_ENABLED: 'false'}).fixEnabled).toBe(false);
+  });
 });
 
 describe('redact', () => {

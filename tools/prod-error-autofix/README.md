@@ -15,6 +15,10 @@ Design: `docs/specs/2026-07-30-prod-error-autofix-design.md`. Brief: `../../jobs
   capacity and cost decisions; it measures them, suggests a tier, and stops.
 - **Will not** touch your working trees. Every fix happens in a worktree under
   `~/.cache/prod-autofix/wt`, cut from `origin/<base>`.
+- **Fix lane is off by default** (`AUTOFIX_FIX_ENABLED` unset, since 2026-08-19). The daemon
+  still triages every alert and still replies in its thread with the full analysis; it does
+  not push a branch or open an MR. 58 MRs sat unreviewed as of 2026-08-04 — an MR nobody reads
+  is worse than no MR. Set `AUTOFIX_FIX_ENABLED=true` to turn the MR path back on.
 
 ## Install
 

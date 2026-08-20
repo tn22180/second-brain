@@ -214,6 +214,15 @@ describe('inconclusive and blocked', () => {
   });
 });
 
+describe('fix switch', () => {
+  test('a job parked by the fix switch is quiet and does not re-run', () => {
+    const d = decide(input({existing: record({status: 'fix_disabled'})}));
+    expect(d.run).toBe(false);
+    expect(d.nextStatus).toBe('fix_disabled');
+    expect(d.reason).toBe('fix_disabled');
+  });
+});
+
 describe('exhaustiveness', () => {
   test('every status produces a decision', () => {
     const statuses: AlertStatus[] = [

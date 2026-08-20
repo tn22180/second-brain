@@ -443,6 +443,22 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
     return await finish('infra', 'infra class, no autofix', {replied});
   }
 
+  // After the infra check, not before: an infra alert has its own answer ("lỗi hạ
+  // tầng, không auto-fix") and a tier decision behind it. Ordered the other way
+  // round, the shipped default (fixEnabled false) would relabel every infra alert
+  // as fix_disabled and tell the thread to flip a switch that would not help.
+  if (!cfg.fixEnabled) {
+    const replied = await say(
+      reply.replyFixDisabled({fingerprint, appName: alert.appName, attempt, analysis: verified})
+    );
+    await learn(deps, {
+      app, alert, fingerprint, attempt, analysis: verified, status: 'fix_disabled',
+      outcome: 'fix lane disabled — analysed and reported, no MR',
+      rounds: analysis.rounds.length, costUsd, message: input.message
+    });
+    return await finish('fix_disabled', 'fix lane disabled', {replied});
+  }
+
   // Two fingerprints, one defect. Checked here because it needs the citations, and the
   // citations are what ANALYZE produces — the analysis cost is already spent, but the fix,
   // the smoke run, a second MR and a second review are not.

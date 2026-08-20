@@ -7,6 +7,7 @@ import {postReply} from '../src/slack/post';
 import {
   replyBlocked,
   replyCapped,
+  replyFixDisabled,
   replyGateFailed,
   replyInconclusive,
   replyInfra,
@@ -312,6 +313,16 @@ describe('reply text', () => {
 
   test('infra says explicitly that it will not auto-fix', () => {
     expect(replyInfra({...base, analysis, detail: undefined})).toContain('không auto-fix');
+  });
+
+  test('the fix-disabled reply says why and where the analysis stops', () => {
+    const text = replyFixDisabled({...base, appName: 'SEO', fingerprint: 'abc123', analysis});
+    expect(text).toContain('SEO');
+    expect(text).toContain('abc123');
+    // The analysis is the whole point of still running — it has to be in there.
+    expect(text).toContain(analysis.rootCause.slice(0, 30));
+    // And it must not imply an MR is coming.
+    expect(text).not.toMatch(/merge_request|MR đã mở/);
   });
 
   test('a blocked gate lists the new failures and the branch holding the work', () => {
