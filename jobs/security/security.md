@@ -26,7 +26,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 5 | Security lane | general-purpose / opus | ✅ | 1/5 | clean | Redaction verified by hand: 14/14, incl. `glpat-` and `sk-ant-api03-`. Spec corrected on tool list, schema and redaction scope |
 | 6 | Triage lane | general-purpose / sonnet | ✅ | 2/5 | clean | `8257b0e`. Round 2: a `no-undef` finding could reach `deletable`, which would have deleted the line that *uses* the symbol |
 | 7 | Supervisor + report render | general-purpose / sonnet | ✅ | 1/5 | clean | `83de9f3`. Redacts again at render, incl. the `file` path and lane-failure detail |
-| 8 | MR lanes | general-purpose / opus | ⬜ | 0/5 | — | The only task that pushes. Every gate fails closed |
+| 8 | MR lanes | general-purpose / opus | ✅ | 1/5 | clean | `c8f8e2d`. 63 tests, none pushes. **Open decision: the green-jest gate makes `blogs` structurally unable to ever produce an MR** |
 | 9 | `audit` command + orchestration | general-purpose / sonnet | ⬜ | 0/5 | — | |
 | 10 | 06:00 plist + doctor checks | general-purpose / sonnet | ⬜ | 0/5 | — | Calendar one-shot, never KeepAlive |
 | 11 | README + this table | inline | ⬜ | 0/5 | — | README:61 claims SSH; the remotes are HTTPS across two hosts |
@@ -146,9 +146,9 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - The plan's Task 7 pseudo-tests used an illustrative per-app shape (`{...SEO, securityLane: 'timeout'}`) that matches no real type from tasks 4–6. The agent built `AppReportInput`/`ReportInput` from the actual `LedgerDiff`/`AuditFinding` types instead. Correct call — `AuditFinding` already unifies security and hygiene findings via `kind`.
 - Started: 2026-08-20 · Completed: 2026-08-20
 
-#### 🔄 Task 8: MR lanes
+#### ✅ Task 8: MR lanes
 - Agent: general-purpose (opus) — the only task with a push path
-- Status: 🔄 in-progress
+- Status: ✅ completed — `c8f8e2d`
 - Plan:
   - Goal: `runMrLane()` refuses before pushing on any of: a diff touching a file no finding named, a forbidden file, a red jest run, or a hit cap — each with a named refusal. `openMr` accepts `audit/` branches and still refuses everything else. `bun test ./test/audit.mr.test.ts ./test/openMr.test.ts` green, `bun run typecheck` clean.
   - Files allowed: `src/git/openMr.ts` (guard only), `src/git/worktree.ts` (add `auditBranchName`), `src/audit/mr.ts` (new), `test/openMr.test.ts`, `test/audit.mr.test.ts` (new). Nothing else.
@@ -157,9 +157,18 @@ Tracking is this table only — this harness has no TaskCreate tool.
   - Risk: highest of the eleven. A wrong scope gate pushes an agent's unrelated edits; a wrong cleanup deletes live code reached by a dynamic `require()`; a wrong guard pushes to `master`. Mitigation is that nothing here runs at all until task 9 wires it behind `AUDIT_MR_ENABLED=false`, and every test is hermetic — no test may perform a real push.
   - Rollback: revert the commit. `openMr`'s guard returns to a single prefix; no branch can have been created because the feature is off by default.
 - Depends on tasks 5 and 6, both committed (`27b630e`, `8257b0e`). Runs concurrently with task 7, which owns different files.
-- Rounds used: 0/5
-- Security check: —
-- Started: 2026-08-20
+- Rounds used: 1/5
+- Security check: **clean**, verified line by line because this is the push task. `openMr.ts` changes the guard and nothing else — the base-branch refusal is byte-for-byte unchanged. `worktree.ts` has zero deletion lines. `mr.ts` handles no token: the remotes are HTTPS and authentication is the ambient credential helper's job. Tests are hermetic — zero real `spawn`, no repo under `projects/Falcon/` read, and refusal tests assert no `push` argv ever reached the fake runner.
+- Kept, better than specified: untracked files are unioned into the scope gate. `git diff --name-only` alone misses a file the agent *created*, which would then slip past the check entirely. A created file is by definition outside the findings' file set, so it refuses as `out_of_scope`.
+- Kept: cleanup eligibility is re-derived at the push boundary (`rule === 'no-unused-vars' && verdict === 'delete'`) rather than trusted from task 6. Two independent barriers against the `no-undef` deletion.
+
+### OPEN DECISION — `blogs` can never produce an audit MR
+
+Gate 1 is "the repo's own jest must pass". `src/verify/jest.ts:57-58` records that `blogs` master carries **three long-standing module-resolution suite failures**. So the `blogs` MR lane will refuse `tests_failed` every single morning, forever, and the report will not distinguish that from "the fix broke the tests".
+
+This is a defect in the spec, not in the implementation — the agent built what was specified. The machinery to fix it already exists and is what the Slack pipeline uses: `measureBaseline` (`src/verify/smoke.ts:32`) plus `store.getBaseline`/`putBaseline` (`store.ts:444`/`451`), which compare a run against the base sha's *own* failures instead of demanding green.
+
+Not fixed unilaterally because it changes what the gate means. Awaiting Tuan's call; the MR lane is off by default (`AUDIT_MR_ENABLED=false`) so nothing is broken in the meantime.
 
 ### Process correction, 2026-08-20
 
