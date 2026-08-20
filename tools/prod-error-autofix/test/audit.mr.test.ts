@@ -85,6 +85,10 @@ interface Harness {
   created: () => string[];
   removed: () => string[];
   recorded: () => string[];
+  /** `worktree` / `baseline` / `agent` / `jest`, in the order the lane asked for them. */
+  events: () => string[];
+  baselineRuns: () => number;
+  cached: () => Array<[string, string[]]>;
 }
 
 function harness(
@@ -94,6 +98,13 @@ function harness(
     agent?: (inv: ClaudeInvocation) => ClaudeResult;
     jestOk?: boolean;
     jestSummary?: boolean;
+    /** Exact failing keys the post-fix run reports. Beats `jestOk`. */
+    jestFailures?: string[];
+    /** Failing keys the base branch already had. */
+    baseFailures?: string[];
+    /** The base branch's jest never produced a summary. */
+    baselineFails?: boolean;
+    baseSha?: string;
     worktreeFails?: boolean;
     capped?: boolean;
     pushCode?: number;
@@ -105,6 +116,9 @@ function harness(
   const created: string[] = [];
   const removed: string[] = [];
   const recorded: string[] = [];
+  const events: string[] = [];
+  const baselines = new Map<string, string[]>();
+  let baselineRuns = 0;
   let pushArgs: string[] = [];
 
   const runner: Runner = async args => {
@@ -124,6 +138,7 @@ function harness(
   const deps: MrLaneDeps = {
     runner,
     claude: async inv => {
+      events.push('agent');
       invocations.push(inv);
       return (
         over.agent?.(inv) ?? {
@@ -140,8 +155,9 @@ function harness(
     },
     createWorktree: async wt => {
       if (over.worktreeFails) return {ok: false, detail: 'origin/master does not resolve'};
+      events.push('worktree');
       created.push(wt.dir);
-      return {ok: true, value: {dir: wt.dir, branch: wt.branch, baseSha: 'base1234'}};
+      return {ok: true, value: {dir: wt.dir, branch: wt.branch, baseSha: over.baseSha ?? 'base1234'}};
     },
     linkNodeModules: async () => ({linked: ['node_modules'], missing: []}),
     commitWip: async () => ({ok: true, sha: undefined, detail: undefined}),
@@ -149,20 +165,36 @@ function harness(
       removed.push(dir);
       return {ok: true, detail: undefined};
     },
-    runJest: async () =>
-      over.jestSummary === false
-        ? {summary: undefined, timedOut: false, detail: 'could not read jest --json output (exit 1)'}
-        : {
-            summary: {
-              ok: over.jestOk ?? true,
-              totalTests: 164,
-              totalSuites: 12,
-              failures: over.jestOk === false ? ['a.test.js::x', 'b.test.js::y', 'c.test.js::z'] : [],
-              runtimeErrorSuites: 0
-            },
-            timedOut: false,
-            detail: undefined
-          },
+    runJest: async () => {
+      events.push('jest');
+      if (over.jestSummary === false) {
+        return {summary: undefined, timedOut: false, detail: 'could not read jest --json output (exit 1)'};
+      }
+      const failures =
+        over.jestFailures ?? (over.jestOk === false ? ['a.test.js::x', 'b.test.js::y', 'c.test.js::z'] : []);
+      return {
+        summary: {
+          ok: failures.length === 0,
+          totalTests: 164,
+          totalSuites: 12,
+          failures,
+          runtimeErrorSuites: 0
+        },
+        timedOut: false,
+        detail: undefined
+      };
+    },
+    measureBaseline: async () => {
+      events.push('baseline');
+      baselineRuns += 1;
+      return over.baselineFails
+        ? {ok: false, failures: [], detail: 'jest died before it printed any json'}
+        : {ok: true, failures: over.baseFailures ?? [], detail: undefined};
+    },
+    getBaseline: (repo, baseSha) => baselines.get(`${repo}@${baseSha}`),
+    putBaseline: (repo, baseSha, failures) => {
+      baselines.set(`${repo}@${baseSha}`, failures);
+    },
     openMr,
     checkCaps: () =>
       over.capped
@@ -180,7 +212,10 @@ function harness(
     invocations: () => invocations,
     created: () => created,
     removed: () => removed,
-    recorded: () => recorded
+    recorded: () => recorded,
+    events: () => events,
+    baselineRuns: () => baselineRuns,
+    cached: () => [...baselines.entries()]
   };
 }
 
@@ -377,6 +412,110 @@ describe('runMrLane gates', () => {
     const refusedRun = harness({jestOk: false});
     await runMrLane({...input(), kind: 'security'}, refusedRun.deps);
     expect(refusedRun.removed()).toHaveLength(1);
+  });
+});
+
+/**
+ * The gate is "did this diff break anything", not "is the repo green". `blogs`
+ * master carries three module-resolution suite failures (src/verify/jest.ts:57-58),
+ * so a green bar would refuse that repo's MR every morning forever and the report
+ * could not tell that apart from a fix that broke the tests.
+ */
+describe('the jest gate compares against the base branch', () => {
+  const BLOGS_MASTER = [
+    'packages/functions/test/a.test.js::<suite did not run>',
+    'packages/functions/test/b.test.js::<suite did not run>',
+    'packages/functions/test/c.test.js::<suite did not run>'
+  ];
+
+  test('failures the base branch already had do not refuse the push', async () => {
+    const h = harness({baseFailures: BLOGS_MASTER, jestFailures: BLOGS_MASTER});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBeUndefined();
+    expect(res.pushed).toBe(true);
+    expect(res.mrUrl).toBe('https://git.avada.net/avada/seo/-/merge_requests/2210');
+  });
+
+  test('a baseline failure the fix happened to clear is not a refusal either', async () => {
+    const h = harness({baseFailures: BLOGS_MASTER, jestFailures: BLOGS_MASTER.slice(1)});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBeUndefined();
+    expect(res.pushed).toBe(true);
+  });
+
+  test('a failure the base did not have refuses, and no push argv is ever built', async () => {
+    const h = harness({
+      baseFailures: BLOGS_MASTER,
+      jestFailures: [...BLOGS_MASTER, 'packages/functions/test/x.test.js::adds the shopId filter']
+    });
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('tests_failed');
+    expect(res.pushed).toBe(false);
+    expect(res.detail).toContain('x.test.js::adds the shopId filter');
+    // The three the base already had must not be named as if the fix caused them.
+    expect(res.detail).not.toContain('a.test.js');
+    expect(sawPush(h.argv())).toBe(false);
+    expect(h.recorded()).toEqual([]);
+  });
+
+  test('a baseline that could not be measured refuses — unmeasured is not "nothing failing"', async () => {
+    const h = harness({baselineFails: true, jestFailures: []});
+    const res = await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(res.refusal).toBe('no_baseline');
+    expect(res.pushed).toBe(false);
+    expect(res.detail).toContain('jest died before it printed any json');
+    expect(sawPush(h.argv())).toBe(false);
+    // Nothing unmeasurable is ever written to the cache; the next run measures again.
+    expect(h.cached()).toEqual([]);
+  });
+
+  test('an unmeasurable baseline stops before the fix agent is paid for', async () => {
+    const h = harness({baselineFails: true});
+    await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    expect(h.invocations()).toHaveLength(0);
+  });
+
+  test('the baseline is measured on the clean worktree, before the agent edits anything', async () => {
+    const h = harness({baseFailures: BLOGS_MASTER, jestFailures: BLOGS_MASTER});
+    await runMrLane({...input(), kind: 'security'}, h.deps);
+
+    // A baseline taken after the edits measures the fix, not the base.
+    expect(h.events()).toEqual(['worktree', 'baseline', 'agent', 'jest']);
+  });
+
+  test('the baseline is cached by (repo, base sha) — the second lane does not re-run it', async () => {
+    const h = harness({diff: `${SEC_FILE}\n${LINT_FILE}\n`, baseFailures: BLOGS_MASTER});
+    await runBothMrLanes(input(), h.deps);
+
+    expect(h.created()).toHaveLength(2);
+    expect(h.baselineRuns()).toBe(1);
+    expect(h.cached()).toEqual([['seo@base1234', BLOGS_MASTER]]);
+  });
+
+  test('a different base sha is a different baseline', async () => {
+    const first = harness({baseSha: 'aaaa1111', baseFailures: BLOGS_MASTER});
+    await runMrLane({...input(), kind: 'security'}, first.deps);
+    expect(first.cached()).toEqual([['seo@aaaa1111', BLOGS_MASTER]]);
+
+    const second = harness({baseSha: 'bbbb2222', baseFailures: []});
+    await runMrLane({...input(), kind: 'security'}, second.deps);
+    expect(second.cached()).toEqual([['seo@bbbb2222', []]]);
+  });
+
+  test('the MR body still reports what jest did, plus what the base was already failing', async () => {
+    const h = harness({baseFailures: BLOGS_MASTER, jestFailures: BLOGS_MASTER});
+    await runMrLane({...input(), kind: 'security'}, h.deps);
+    // `openMr` puts the description in the commit body — a push option cannot hold
+    // a line break.
+    const commit = h.argv().find(a => a.includes('commit'))?.join(' ') ?? '';
+
+    expect(commit).toContain('164 tests');
+    expect(commit).toContain('baseline 3 failing');
   });
 });
 

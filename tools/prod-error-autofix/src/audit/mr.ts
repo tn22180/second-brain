@@ -6,6 +6,7 @@ import {auditBranchName, type WorktreeInput, type WorktreeResult} from '../git/w
 import {FORBIDDEN_PATTERNS} from '../git/worktreeStatus';
 import type {RateVerdict} from '../state/rateGate';
 import type {JestRun, JestRunInput} from '../verify/jest';
+import type {BaselineInput, BaselineResult} from '../verify/smoke';
 import {redactSecret, type SecurityFinding} from './securitySchema';
 import type {TriageFinding, TriageVerdict} from './triage';
 
@@ -31,6 +32,7 @@ export type MrRefusal =
   | 'no_changes'
   | 'out_of_scope'
   | 'forbidden_file'
+  | 'no_baseline'
   | 'tests_failed'
   | 'capped'
   | 'push_failed'
@@ -88,6 +90,11 @@ export interface MrLaneDeps {
     runner: Runner
   ) => Promise<{ok: boolean; detail: string | undefined}>;
   runJest: (input: JestRunInput, runner: Runner) => Promise<JestRun>;
+  /** `measureBaseline` from `verify/smoke`. Run on the worktree before the agent edits it. */
+  measureBaseline: (input: BaselineInput, runner: Runner) => Promise<BaselineResult>;
+  /** `Store.getBaseline` / `Store.putBaseline`, bound by the caller — no live store reaches this file. */
+  getBaseline: (repo: string, baseSha: string) => string[] | undefined;
+  putBaseline: (repo: string, baseSha: string, failures: string[], nowMs: number) => void;
   openMr: (input: OpenMrInput, runner: Runner) => Promise<OpenMrResult>;
   /** `checkMrCaps` bound to the store and the caps by the caller. */
   checkCaps: (repo: string, nowMs: number) => RateVerdict;
@@ -331,6 +338,38 @@ export async function runMrLane(
     // baseline that cannot run reads as a red one.
     await deps.linkNodeModules({repoPath: input.repoPath, worktreeDir});
 
+    // The only moment this worktree is both known-needed and still clean: measured
+    // after the agent has run, a "baseline" measures the fix instead of the base.
+    // Cached per (repo, base sha) because both lanes cut from the same commit and
+    // one repo's suite takes minutes.
+    const baseSha = worktree.value.baseSha;
+    let baseline = deps.getBaseline(input.repo, baseSha);
+    let baselineDetail: string | undefined;
+    if (!baseline) {
+      const measured = await deps.measureBaseline(
+        {repoPath: worktreeDir, testCmd: input.testCmd, timeoutMs: input.timeouts.jest},
+        deps.runner
+      );
+      if (measured.ok) {
+        baseline = measured.failures;
+        deps.putBaseline(input.repo, baseSha, baseline, input.nowMs);
+      } else {
+        baselineDetail = measured.detail;
+      }
+    }
+    // Fail closed, the same stance `smokeGate` takes on `no_baseline`: an unmeasured
+    // base is not "nothing was failing". Refused here rather than after the agent so
+    // a run that can never push does not pay for one.
+    if (!baseline) {
+      return {
+        ...base,
+        refusal: 'no_baseline',
+        detail:
+          `could not measure ${input.repo}@${baseSha.slice(0, 8)}, so a pre-existing failure ` +
+          `cannot be told from one this diff caused: ${baselineDetail ?? 'no detail'}`
+      };
+    }
+
     const agent = await deps.claude({
       prompt: kind === 'security' ? buildSecurityFixPrompt(input) : buildCleanupPrompt(input, cleanup),
       model: input.model,
@@ -389,16 +428,35 @@ export async function runMrLane(
       {repoPath: worktreeDir, testCmd: input.testCmd, extraArgs: [], timeoutMs: input.timeouts.jest},
       deps.runner
     );
-    // A jest that could not run is not a pass. The audit MR has no baseline to
-    // compare against — the daemon's baseline is per fingerprint — so the bar here
-    // is green, and a repo whose base branch is already red never gets an audit MR.
-    if (!jest.summary || !jest.summary.ok) {
-      const detail = jest.summary
-        ? `${jest.summary.failures.length} failing: ${jest.summary.failures.slice(0, 5).join(', ')}`
-        : jest.detail ?? 'jest did not produce a readable result';
-      return {...base, costUsd, files, refusal: 'tests_failed', detail};
+    // A jest that could not run is not a pass — there is no comparison to make.
+    if (!jest.summary) {
+      return {
+        ...base,
+        costUsd,
+        files,
+        refusal: 'tests_failed',
+        detail: jest.detail ?? 'jest did not produce a readable result'
+      };
     }
-    const jestLine = `${jest.summary.totalTests} tests, ${jest.summary.failures.length} failing`;
+    // Green is the wrong bar, not a stricter one. `blogs` master carries three
+    // module-resolution suite failures (src/verify/jest.ts:57-58), so demanding green
+    // refuses that repo's MR every morning forever and the report cannot tell that
+    // apart from a fix that broke the tests. The question is whether THIS diff broke
+    // something, which is the comparison `smokeGate` already makes for the Slack lane.
+    const before = new Set(baseline);
+    const newFailures = jest.summary.failures.filter(f => !before.has(f)).sort();
+    if (newFailures.length) {
+      return {
+        ...base,
+        costUsd,
+        files,
+        refusal: 'tests_failed',
+        detail: `${newFailures.length} test(s) fail that passed on the base commit: ${newFailures.slice(0, 5).join(', ')}`
+      };
+    }
+    const jestLine =
+      `${jest.summary.totalTests} tests, ${jest.summary.failures.length} failing · ` +
+      `baseline ${baseline.length} failing`;
 
     const cap = deps.checkCaps(input.repo, input.nowMs);
     if (!cap.allowed) {
