@@ -24,7 +24,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 3 | eslint runner | general-purpose / sonnet | ✅ | 2/5 | clean | `92a0577`. Round 2: dropped a `'spawn'` failure member that nothing can produce, and corrected a comment claiming a balance-scan the parser does not do |
 | 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ✅ | 1/5 | clean | `store.ts` verified additive-only against the live db. Spec corrected: an open MR is not a status |
 | 5 | Security lane | general-purpose / opus | ✅ | 1/5 | clean | Redaction verified by hand: 14/14, incl. `glpat-` and `sk-ant-api03-`. Spec corrected on tool list, schema and redaction scope |
-| 6 | Triage lane | general-purpose / sonnet | ⬜ | 0/5 | — | |
+| 6 | Triage lane | general-purpose / sonnet | ✅ | 2/5 | clean | `8257b0e`. Round 2: a `no-undef` finding could reach `deletable`, which would have deleted the line that *uses* the symbol |
 | 7 | Supervisor + report render | general-purpose / sonnet | ⬜ | 0/5 | — | Code fallback so a prose failure never loses a finding |
 | 8 | MR lanes | general-purpose / opus | ⬜ | 0/5 | — | The only task that pushes. Every gate fails closed |
 | 9 | `audit` command + orchestration | general-purpose / sonnet | ⬜ | 0/5 | — | |
@@ -111,6 +111,37 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - Carried into task 7: `SecurityLaneResult.hasSecuritySkill` now exists and `renderReport` must actually print it. The plan already tests for the string; the field feeding it did not exist until now.
 - Carried into task 9: `runSecurityLane` is a single shot bounded by wall clock only — this CLI build has no `--max-turns`. `AUDIT_SECURITY_TIMEOUT_MS` must be sized for `seo` (2491 lint-scoped files), not the median repo. Also decide whether to pass a brain slice at all: `input.brainSlice` feeds `appendSystemPrompt`, and the brain is currently ~23k against a 6000 budget.
 - Started: 2026-08-20 · Completed: 2026-08-20
+
+#### ✅ Task 6: Triage lane
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed — `8257b0e`
+- Plan:
+  - Goal: `runTriage()` returns a verdict for **every** finding it was given, only `delete` is eligible for the cleanup MR, a verdict for a fingerprint that was never sent is discarded, and a finding the agent skipped comes back `unsure`. `bun test ./test/audit.triage.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/triage.ts` (new), `test/audit.triage.test.ts` (new). Nothing else.
+  - Approach: reuse `extractJsonArray` (`securitySchema.ts:86`, exported by task 5) rather than write a third JSON extractor; read-only tools; every default points the safe way. Rejected: letting the agent's array be the answer directly — an id it invented would then authorise a deletion.
+  - Test command: `bun test ./test/audit.triage.test.ts` **and** `bun run typecheck`.
+  - Risk: this verdict is what task 8 will turn into a deletion. `delete` on something reached by a dynamic `require()` removes live code. Hence: unknown id discarded, missing verdict is `unsure`, and only an explicit `delete` counts.
+  - Rollback: delete the two new files; nothing imports them until task 9.
+- Rounds used: 2/5
+- Security check: **clean** — two new files, no existing file modified, `TRIAGE_TOOLS` carries no `Edit`/`Write`, no network call, no secret literal.
+- **Round 2, found on review — the one that mattered.** The prompt lumped `no-undef` in with `no-unused-vars` and offered the same `delete/keep/unsure` vocabulary for both, and `deletable` was any `delete` vote. But `no-undef` means a symbol is *used* with nothing defining or importing it: the repair is to add an import. A `delete` verdict on one, carried into task 8, would have deleted the line that uses the symbol. Fixed two ways — the prompt now says so, and `deletable` is filtered to `no-unused-vars` fingerprints regardless of how the agent voted, so a bad prompt alone cannot re-open it. Test added.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+#### 🔄 Task 7: Supervisor + report render
+- Agent: general-purpose (sonnet)
+- Status: 🔄 in-progress
+- Plan:
+  - Goal: `renderReport()` is a pure function producing the Vietnamese Telegram body from structured results, and `runSupervisor()` falls back to it on any agent failure so a prose failure can never lose a finding. `bun test ./test/audit.report.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/report.ts` (new), `src/audit/supervisor.ts` (new), `test/audit.report.test.ts` (new). Nothing else.
+  - Approach: code renders, agent only orders and compresses. Rejected: letting the agent be the sole path to a message — one timeout at 06:00 would then mean no report at all on a morning findings existed.
+  - Test command: `bun test ./test/audit.report.test.ts` **and** `bun run typecheck`.
+  - Risk: this is the only thing Tuan actually reads. Two failure modes: going silent on a quiet run (looks identical to a broken run) and burying a real finding under carried-over noise.
+  - Rollback: delete the three new files; nothing imports them until task 9.
+- Must print the `blogs` gap: `SecurityLaneResult.hasSecuritySkill` exists as of task 5 and the plan already tests for the string `.claude/skills`.
+- Dispatched while task 6 was still finishing. `src/audit/triage.ts` already exports `Verdict` and `TriageVerdict`; task 7 imports them and is forbidden from touching that file.
+- Rounds used: 0/5
+- Security check: —
+- Started: 2026-08-20
 
 ### Process correction, 2026-08-20
 
