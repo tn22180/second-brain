@@ -11,6 +11,13 @@ import type {Config} from './config';
  *   testCmd                every repo has a root jest.config.js and jest at the root,
  *                          but only some declare a `test` script — `npx jest` at the
  *                          repo root is the one command that works across all five
+ *   auditLintPaths         repo-relative dirs to lint (see AppSpec interface for
+ *                          per-app list). Counts from 2026-08-20: seo has 1092+1394+5
+ *                          files across functions, assets, scripttag. Excluded on
+ *                          purpose: copyright has no src/ (one generated file);
+ *                          seo dashboard src has zero .js; blogs editor has no src.
+ *   auditKnip              knip needs a per-repo config; false until one exists and
+ *                          a human has read a run.
  *
  * `test/registry.disk.test.ts` re-derives these from the repos and fails on drift.
  */
@@ -25,6 +32,14 @@ export interface AppSpec {
   testCmd: string[];
   /** Where the alert wiring lives — provenance for the brain and for drift checks. */
   alertHandler: string;
+  /**
+   * Repo-relative dirs the audit lints. Only the packages holding hand-written
+   * app code: `copyright` and `dashboard` are generated or vendor trees and
+   * would drown the report.
+   */
+  auditLintPaths: string[];
+  /** knip needs a per-repo config; false until one exists and a human has read a run. */
+  auditKnip: boolean;
 }
 
 export interface App extends AppSpec {
@@ -41,7 +56,9 @@ export const APPS: readonly AppSpec[] = [
     prodProject: 'avada-seo',
     defaultBranch: 'master',
     testCmd: JEST,
-    alertHandler: ALERT_HANDLER
+    alertHandler: ALERT_HANDLER,
+    auditLintPaths: ['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src'],
+    auditKnip: false
   },
   {
     appName: 'BLOG',
@@ -49,7 +66,9 @@ export const APPS: readonly AppSpec[] = [
     prodProject: 'avada-blog-app',
     defaultBranch: 'master',
     testCmd: JEST,
-    alertHandler: ALERT_HANDLER
+    alertHandler: ALERT_HANDLER,
+    auditLintPaths: ['packages/functions/src', 'packages/assets/src', 'packages/avadaseo/src'],
+    auditKnip: false
   },
   {
     appName: 'APC',
@@ -57,7 +76,9 @@ export const APPS: readonly AppSpec[] = [
     prodProject: 'ai-product-copy',
     defaultBranch: 'master',
     testCmd: JEST,
-    alertHandler: ALERT_HANDLER
+    alertHandler: ALERT_HANDLER,
+    auditLintPaths: ['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src'],
+    auditKnip: false
   },
   {
     // The only one that is not `master`. Branching a fix off master here would
@@ -67,7 +88,9 @@ export const APPS: readonly AppSpec[] = [
     prodProject: 'seo-on-aeo',
     defaultBranch: 'main',
     testCmd: JEST,
-    alertHandler: ALERT_HANDLER
+    alertHandler: ALERT_HANDLER,
+    auditLintPaths: ['packages/functions/src', 'packages/assets/src'],
+    auditKnip: false
   },
   {
     appName: 'IMG-OPT',
@@ -75,7 +98,9 @@ export const APPS: readonly AppSpec[] = [
     prodProject: 'app-plaza-image-optimizer',
     defaultBranch: 'master',
     testCmd: JEST,
-    alertHandler: ALERT_HANDLER
+    alertHandler: ALERT_HANDLER,
+    auditLintPaths: ['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src'],
+    auditKnip: false
   }
 ];
 

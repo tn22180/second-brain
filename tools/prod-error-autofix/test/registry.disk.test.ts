@@ -55,3 +55,18 @@ describe('registry matches the repos on disk', () => {
     expect(existsSync(join(app.repoPath, 'jest.config.js'))).toBe(true);
   });
 });
+
+describe('audit configuration', () => {
+  test('every auditLintPaths entry exists on disk', () => {
+    for (const app of listApps(cfg)) {
+      expect(app.auditLintPaths.length).toBeGreaterThan(0);
+      for (const rel of app.auditLintPaths) {
+        expect(existsSync(join(app.repoPath, rel))).toBe(true);
+      }
+    }
+  });
+
+  test('knip is off everywhere until a repo config has been read by a human', () => {
+    for (const app of listApps(cfg)) expect(app.auditKnip).toBe(false);
+  });
+});
