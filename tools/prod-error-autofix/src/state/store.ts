@@ -3,6 +3,7 @@ import {mkdirSync} from 'node:fs';
 import {dirname} from 'node:path';
 import type {ErrorKind} from '../fingerprint';
 import type {AlertRecord, AlertStatus} from './stateMachine';
+import type {AuditFinding, FindingKind, FindingStatus} from '../audit/ledger';
 
 /**
  * Everything durable lives here: which fingerprints we have seen, what happened
@@ -112,6 +113,47 @@ export interface AlertPatch {
   verdict?: string;
 }
 
+export interface AuditFindingRow extends AuditFinding {
+  status: FindingStatus;
+  firstSeenMs: number;
+  lastSeenMs: number;
+  mrUrl: string | undefined;
+}
+
+interface RawAuditFinding {
+  fp: string;
+  app: string;
+  kind: string;
+  file: string;
+  line: number;
+  rule: string;
+  title: string;
+  severity: string;
+  verdict: string | null;
+  first_seen_ms: number;
+  last_seen_ms: number;
+  status: string;
+  mr_url: string | null;
+}
+
+function toAuditFindingRow(r: RawAuditFinding): AuditFindingRow {
+  return {
+    fp: r.fp,
+    app: r.app,
+    kind: r.kind as FindingKind,
+    file: r.file,
+    line: r.line,
+    rule: r.rule,
+    title: r.title,
+    severity: r.severity,
+    verdict: opt(r.verdict),
+    status: r.status as FindingStatus,
+    firstSeenMs: r.first_seen_ms,
+    lastSeenMs: r.last_seen_ms,
+    mrUrl: opt(r.mr_url)
+  };
+}
+
 export class Store {
   private readonly db: Database;
 
@@ -183,6 +225,24 @@ export class Store {
         event_id TEXT PRIMARY KEY,
         at_ms    INTEGER NOT NULL
       )`);
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS audit_findings (
+        fp            TEXT PRIMARY KEY,
+        app           TEXT NOT NULL,
+        kind          TEXT NOT NULL,
+        file          TEXT NOT NULL,
+        line          INTEGER NOT NULL,
+        rule          TEXT,
+        title         TEXT NOT NULL,
+        severity      TEXT NOT NULL,
+        verdict       TEXT,
+        first_seen_ms INTEGER NOT NULL,
+        last_seen_ms  INTEGER NOT NULL,
+        status        TEXT NOT NULL,
+        mr_url        TEXT
+      )`);
+    this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_app ON audit_findings(app, status)');
+    this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_seen ON audit_findings(last_seen_ms DESC)');
   }
 
   /** `ADD COLUMN` is the only in-place schema change sqlite allows, and it is not idempotent. */
@@ -447,5 +507,67 @@ export class Store {
 
   pruneSeenEvents(beforeMs: number): number {
     return this.db.query('DELETE FROM seen_events WHERE at_ms < ?').run(beforeMs).changes;
+  }
+
+  // ---- audit findings ---------------------------------------------------------
+
+  getAuditFinding(fp: string): AuditFindingRow | undefined {
+    const raw = this.db.query('SELECT * FROM audit_findings WHERE fp = ?').get(fp) as RawAuditFinding | null;
+    return raw ? toAuditFindingRow(raw) : undefined;
+  }
+
+  /**
+   * `status` only ever becomes 'open' here — on first sight, or on a row coming
+   * back from 'resolved'. A row a human marked 'accepted' / 'false_positive'
+   * keeps that status through every later sighting; only `setAuditFindingStatus`
+   * can move it, which `classify` never calls with either of those values.
+   */
+  upsertAuditFinding(finding: AuditFinding, nowMs: number): void {
+    this.db
+      .query(
+        `INSERT INTO audit_findings
+           (fp, app, kind, file, line, rule, title, severity, verdict, first_seen_ms, last_seen_ms, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+         ON CONFLICT(fp) DO UPDATE SET
+           app = excluded.app,
+           kind = excluded.kind,
+           file = excluded.file,
+           line = excluded.line,
+           rule = excluded.rule,
+           title = excluded.title,
+           severity = excluded.severity,
+           verdict = excluded.verdict,
+           last_seen_ms = excluded.last_seen_ms,
+           status = CASE WHEN status = 'resolved' THEN 'open' ELSE status END`
+      )
+      .run(
+        finding.fp,
+        finding.app,
+        finding.kind,
+        finding.file,
+        finding.line,
+        finding.rule,
+        finding.title,
+        finding.severity,
+        finding.verdict ?? null,
+        nowMs,
+        nowMs
+      );
+  }
+
+  /** What `classify` diffs the next sweep against: still open, not yet accounted for. */
+  openAuditFindings(app: string): AuditFindingRow[] {
+    const rows = this.db
+      .query("SELECT * FROM audit_findings WHERE app = ? AND status = 'open'")
+      .all(app) as RawAuditFinding[];
+    return rows.map(toAuditFindingRow);
+  }
+
+  setAuditFindingStatus(fp: string, status: FindingStatus): void {
+    this.db.query('UPDATE audit_findings SET status = ? WHERE fp = ?').run(status, fp);
+  }
+
+  setAuditFindingMr(fp: string, url: string): void {
+    this.db.query('UPDATE audit_findings SET mr_url = ? WHERE fp = ?').run(url, fp);
   }
 }
