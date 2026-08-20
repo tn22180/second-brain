@@ -27,7 +27,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 6 | Triage lane | general-purpose / sonnet | ✅ | 2/5 | clean | `8257b0e`. Round 2: a `no-undef` finding could reach `deletable`, which would have deleted the line that *uses* the symbol |
 | 7 | Supervisor + report render | general-purpose / sonnet | ✅ | 1/5 | clean | `83de9f3`. Redacts again at render, incl. the `file` path and lane-failure detail |
 | 8 | MR lanes | general-purpose / opus | ✅ | 1/5 | clean | `c8f8e2d`. 63 tests, none pushes. **Open decision: the green-jest gate makes `blogs` structurally unable to ever produce an MR** |
-| 9 | `audit` command + orchestration | general-purpose / sonnet | ⬜ | 0/5 | — | |
+| 9 | `audit` command + orchestration | general-purpose / sonnet | ✅ | 1/5 | clean | `b9b1ec7`. Security timeout raised 15m→20m off measured file counts; no brain slice passed |
 | 10 | 06:00 plist + doctor checks | general-purpose / sonnet | ⬜ | 0/5 | — | Calendar one-shot, never KeepAlive |
 | 11 | README + this table | inline | ⬜ | 0/5 | — | README:61 claims SSH; the remotes are HTTPS across two hosts |
 
@@ -209,9 +209,62 @@ This is a defect in the spec, not in the implementation — the agent built what
 
 Tuan chose option A on 2026-08-20: change the gate to compare against the base rather than demand green. Implemented as task 8b above.
 
+## COMPLETE — 2026-08-20
+
+12 tasks (11 planned + 8b, added when implementing task 8 exposed a spec defect). Total rounds
+used: 16 across 12 tasks, cap 5 per task, none hit the cap.
+
+**Final gates, run on the committed tree:**
+
+```
+$ bun run typecheck
+$ tsc --noEmit
+exit=0
+
+$ bun test ./test
+ 675 pass
+ 9 skip
+ 5 fail
+ 1730 expect() calls
+Ran 689 tests across 39 files.
+```
+
+The 5 failures are `test/brainSlice.test.ts`, pre-existing and unrelated — see Open findings.
+
+**Whole-branch security check** (`858ac02..HEAD`, 49 files, +6688/-31): **fixed**.
+- No secret on a command line, in a log, or in a new logging call.
+- No forbidden file in the branch: no `.env`, no lockfile, no `.gitlab-ci.yml`, no
+  `firebase.json`, no `.firebaserc`, no `package.json`.
+- No new dependency, no new outbound host.
+- Every token-shaped string in the branch is a test assertion. Five were provably synthetic. One
+  was GitHub's canonical example PAT — almost certainly not live, but not provable by inspection,
+  and a fixture that looks real teaches a reviewer to skim past one that is. Replaced with an
+  obviously fake value. That is what makes this verdict `fixed` rather than `clean`.
+- Shop-scoping and request-input checks do not apply: this is a CLI tool, not a request handler.
+- Blast radius, stated: task 1 changes live Slack-pipeline behaviour and task 4 migrates the live
+  `state.db`. The `store.ts` diff was verified to have zero deletion lines and no `ALTER`/`DROP`/
+  `DELETE`/`UPDATE` against any existing table.
+
+**Two things must happen by hand — neither is done:**
+1. `launchctl stop com.tn22180.prod-error-autofix && launchctl start …` — the fix-lane switch-off
+   does not take effect until the daemon restarts.
+2. `bun run bin/autofix.ts init` then load `<label>-audit.plist` — the 06:00 job does not exist
+   on this machine until that is done.
+
 ### Process correction, 2026-08-20
 
 Tasks 1 and 2 were reviewed with `bun test ./test` only. `bun run typecheck` was not run, and it was red: the `DecisionReason` reply map stopped being exhaustive once `fix_disabled` existed (`src/slack/reply.ts:219`), and a `worktreeGc` fixture stopped satisfying `App` once the registry gained two fields (`test/worktreeGc.test.ts:12`). Neither surfaces in a test run. Caught by the Task 3 agent, fixed in `876d89c`. **Every task from here runs `bun test ./test` AND `bun run typecheck` before it is called done.**
+
+### Open findings — carried out of this job
+
+**1. The push-credential gate is unwired.** `checkPushCredential` has no caller computing
+`canPush`, so nothing proves a non-interactive push can authenticate. **Blocks
+`AUDIT_MR_ENABLED=true`**; harmless while MRs are off. Left unwired rather than faked: a
+`git ls-remote` proves *read* auth over HTTPS, and reporting that as a pass is worse than
+reporting nothing.
+
+**2. `store.setAuditFindingMr` has no test.** The MR-URL back-write is implemented in `job.ts`
+and exercised by no test. Low risk, but it is untested surface on the push path.
 
 ### Open findings, not caused by this work
 
