@@ -31,8 +31,8 @@ bun run bin/autofix.ts doctor        # says exactly what is still wrong
 ```
 
 `doctor` is the contract. It checks the five things outside this codebase that the daemon
-depends on — `claude`, `gcloud`, `git` over SSH, the Slack app, and a checkout of every app
-repo — and refuses to say "ready" until each one answers. Every check in it is a failure that
+depends on — `claude`, `gcloud`, `git` and its credential helper, the Slack app, and a checkout
+of every app repo — and refuses to say "ready" until each one answers. Every check in it is a failure that
 has actually happened here; when one of them is wrong the symptom is always the same, alerts
 coming back `blocked` or `inconclusive` hours later in a log nobody is reading.
 
@@ -62,7 +62,27 @@ Point `AUTOFIX_REPOS_ROOT` at it.
 `avada-prod-error-alert` into the Slack channel — `doctor` reports which repos have the handler
 and which do not. An app without it belongs out of `src/registry.ts`.
 
-**5. Nothing for GitLab.** MRs are opened with git push options over SSH; no API token is used.
+**5. Nothing for GitLab — but the remotes are HTTPS, not SSH.** MRs are opened with git push
+options; no API token is used. This section used to say "over SSH", which was true before the
+`git.avada.net` cutover and is not true now. Read on 2026-08-20:
+
+| repo | `origin` (push) |
+|---|---|
+| `seo` | `https://git.avada.net/avada/seo.git` (`gitlab-old` still points at gitlab.com) |
+| `ai-product-copy` | `https://git.avada.net/avada/ai-product-copy.git` |
+| `llm-ai-search-seo` | `https://git.avada.net/avada/llm-ai-search-seo.git` |
+| `blogs` | `https://gitlab.com/avada/blogs.git` |
+| `avada-image-optimizer` | `https://gitlab.com/avada/avada-image-optimizer.git` |
+
+Two of the five legitimately still live on gitlab.com, so nothing here asserts a single correct
+host — `doctor` records each repo's host and flags a *change*. A checkout left pointing at a host
+its project has migrated away from fetches a mirror that stopped receiving merges: pushes appear
+to succeed and never reach prod, and any sweep of that tree reads last month's code with nothing
+in the run looking wrong.
+
+Authentication is the ambient credential helper's job; nothing in this codebase handles a token.
+`credential.helper` resolves to `osxkeychain` then `store` — under launchd only the second is
+usable without a GUI session.
 
 ### Onboarding another app
 
