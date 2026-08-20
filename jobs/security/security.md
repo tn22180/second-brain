@@ -25,7 +25,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ✅ | 1/5 | clean | `store.ts` verified additive-only against the live db. Spec corrected: an open MR is not a status |
 | 5 | Security lane | general-purpose / opus | ✅ | 1/5 | clean | Redaction verified by hand: 14/14, incl. `glpat-` and `sk-ant-api03-`. Spec corrected on tool list, schema and redaction scope |
 | 6 | Triage lane | general-purpose / sonnet | ✅ | 2/5 | clean | `8257b0e`. Round 2: a `no-undef` finding could reach `deletable`, which would have deleted the line that *uses* the symbol |
-| 7 | Supervisor + report render | general-purpose / sonnet | ⬜ | 0/5 | — | Code fallback so a prose failure never loses a finding |
+| 7 | Supervisor + report render | general-purpose / sonnet | ✅ | 1/5 | clean | `83de9f3`. Redacts again at render, incl. the `file` path and lane-failure detail |
 | 8 | MR lanes | general-purpose / opus | ⬜ | 0/5 | — | The only task that pushes. Every gate fails closed |
 | 9 | `audit` command + orchestration | general-purpose / sonnet | ⬜ | 0/5 | — | |
 | 10 | 06:00 plist + doctor checks | general-purpose / sonnet | ⬜ | 0/5 | — | Calendar one-shot, never KeepAlive |
@@ -127,9 +127,9 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - **Round 2, found on review — the one that mattered.** The prompt lumped `no-undef` in with `no-unused-vars` and offered the same `delete/keep/unsure` vocabulary for both, and `deletable` was any `delete` vote. But `no-undef` means a symbol is *used* with nothing defining or importing it: the repair is to add an import. A `delete` verdict on one, carried into task 8, would have deleted the line that uses the symbol. Fixed two ways — the prompt now says so, and `deletable` is filtered to `no-unused-vars` fingerprints regardless of how the agent voted, so a bad prompt alone cannot re-open it. Test added.
 - Started: 2026-08-20 · Completed: 2026-08-20
 
-#### 🔄 Task 7: Supervisor + report render
+#### ✅ Task 7: Supervisor + report render
 - Agent: general-purpose (sonnet)
-- Status: 🔄 in-progress
+- Status: ✅ completed — `83de9f3`
 - Plan:
   - Goal: `renderReport()` is a pure function producing the Vietnamese Telegram body from structured results, and `runSupervisor()` falls back to it on any agent failure so a prose failure can never lose a finding. `bun test ./test/audit.report.test.ts` green, `bun run typecheck` clean.
   - Files allowed: `src/audit/report.ts` (new), `src/audit/supervisor.ts` (new), `test/audit.report.test.ts` (new). Nothing else.
@@ -139,6 +139,24 @@ Tracking is this table only — this harness has no TaskCreate tool.
   - Rollback: delete the three new files; nothing imports them until task 9.
 - Must print the `blogs` gap: `SecurityLaneResult.hasSecuritySkill` exists as of task 5 and the plan already tests for the string `.claude/skills`.
 - Dispatched while task 6 was still finishing. `src/audit/triage.ts` already exports `Verdict` and `TriageVerdict`; task 7 imports them and is forbidden from touching that file.
+- Rounds used: 1/5
+- Security check: **clean** — three new files, no existing file modified, no network call, no secret literal.
+- Better than specified, kept: it redacts again at render — including `f.file` and each lane-failure `detail`. Task 5 deliberately spared `file` at construction because a blunt rule that eats `packages/functions/src/handlers/pubsub/handleProdErrorAlert.js` is a rule someone turns off. Doing it at the render boundary covers that case anyway, and the 14-string probe already proved real paths survive untouched.
+- Carried into task 9: `AppReportInput` needs `openFindings: AuditFinding[]`, because `LedgerDiff` carries only `fresh` plus counts and the Monday digest needs the full open backlog. Task 9 fills it from `store.openAuditFindings(app)` on digest days.
+- The plan's Task 7 pseudo-tests used an illustrative per-app shape (`{...SEO, securityLane: 'timeout'}`) that matches no real type from tasks 4–6. The agent built `AppReportInput`/`ReportInput` from the actual `LedgerDiff`/`AuditFinding` types instead. Correct call — `AuditFinding` already unifies security and hygiene findings via `kind`.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+#### 🔄 Task 8: MR lanes
+- Agent: general-purpose (opus) — the only task with a push path
+- Status: 🔄 in-progress
+- Plan:
+  - Goal: `runMrLane()` refuses before pushing on any of: a diff touching a file no finding named, a forbidden file, a red jest run, or a hit cap — each with a named refusal. `openMr` accepts `audit/` branches and still refuses everything else. `bun test ./test/audit.mr.test.ts ./test/openMr.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/git/openMr.ts` (guard only), `src/git/worktree.ts` (add `auditBranchName`), `src/audit/mr.ts` (new), `test/openMr.test.ts`, `test/audit.mr.test.ts` (new). Nothing else.
+  - Approach: widen the branch guard to an allowlist of exactly two prefixes rather than removing it, and gate the push behind four fail-closed checks in a fixed order. Rejected: dropping the guard and relying on the caller — that guard is the last thing standing between a bug and `master`.
+  - Test command: `bun test ./test/audit.mr.test.ts`, `bun test ./test/openMr.test.ts`, `bun run typecheck`.
+  - Risk: highest of the eleven. A wrong scope gate pushes an agent's unrelated edits; a wrong cleanup deletes live code reached by a dynamic `require()`; a wrong guard pushes to `master`. Mitigation is that nothing here runs at all until task 9 wires it behind `AUDIT_MR_ENABLED=false`, and every test is hermetic — no test may perform a real push.
+  - Rollback: revert the commit. `openMr`'s guard returns to a single prefix; no branch can have been created because the feature is off by default.
+- Depends on tasks 5 and 6, both committed (`27b630e`, `8257b0e`). Runs concurrently with task 7, which owns different files.
 - Rounds used: 0/5
 - Security check: —
 - Started: 2026-08-20
