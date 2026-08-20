@@ -209,6 +209,58 @@ This is a defect in the spec, not in the implementation — the agent built what
 
 Tuan chose option A on 2026-08-20: change the gate to compare against the base rather than demand green. Implemented as task 8b above.
 
+## Reopened 2026-08-20 — first real dry-run broke two things
+
+`bun run bin/autofix.ts audit --app=APC --dry-run` produced a **122 KB** report and a timed-out
+triage lane. Both are tool defects, found only by running it for real.
+
+#### ✅ Task 12a: Cap the report to what Telegram will accept
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed — `a0962e9` + `98184cf`
+- Plan:
+  - Goal: the rendered message is always ≤ 4096 characters, never silently truncated, and the full
+    unabridged report is written to disk and named in the message. `bun test ./test/audit.report.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/report.ts`, `test/audit.report.test.ts`. Nothing else.
+  - Approach: order by severity, cap, and state the count dropped. Rejected: splitting into several
+    Telegram messages — the spec's "one message per run" exists because five notifications at 06:00
+    is five nobody reads, and 209 would be worse.
+  - Test command: `bun test ./test/audit.report.test.ts` **and** `bun run typecheck`.
+  - Risk: a cap that hides the worst finding is worse than no report. Severity ordering has to put
+    security above hygiene, and the dropped count must never be silent.
+  - Rollback: revert; the report goes back to being undeliverable.
+- Measured: first APC run rendered 122 KB against Telegram's 4096-character hard limit. `sendTelegram`
+  returns failure rather than throwing, so the run would have reported success and delivered nothing.
+- Rounds used: 2/5. Round 2 was mine, not the agent's: it reported that `run.ts` passed no
+  `fullReportPath`, so the capped message would have named a file nobody wrote — the feature
+  half-delivered. Wired through `AuditRunConfig` to `<cacheRoot>/audit-<date>.md` (`98184cf`).
+- Security check: **clean**. Two new fields, no secret, no network, no new dependency; findings were
+  already redacted at construction and again at render.
+- Verified independently rather than on report — 856 synthetic findings through `renderReport`:
+  `4050 chars (≤4096)`, both high-severity security findings **at the top ahead of all 854 hygiene
+  lines**, header still `856 mới`, `Còn 802 phát hiện không hiện ở đây, xem đầy đủ tại <path>`, and
+  the on-disk copy at 64006 bytes holding all 854.
+
+#### ✅ Task 12b: Chunk the triage lane
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed — `ef8fe54`
+- Plan:
+  - Goal: `runTriage` splits its findings into batches so no single agent call carries a backlog, a
+    failed batch degrades to `unsure` for that batch only, and every input finding still gets exactly
+    one verdict. `bun test ./test/audit.triage.test.ts` green, `bun run typecheck` clean.
+  - Files allowed: `src/audit/triage.ts`, `test/audit.triage.test.ts`. Nothing else.
+  - Approach: fixed-size batches, sequential; merge verdicts by `fp`. Rejected: raising the timeout —
+    851 findings in one prompt is a context problem, not a patience problem.
+  - Test command: `bun test ./test/audit.triage.test.ts` **and** `bun run typecheck`.
+  - Risk: the safe defaults from task 6 must survive batching — an unknown `fp` still discarded, a
+    missing verdict still `unsure`, `no-undef` still never deletable.
+  - Rollback: revert; triage times out again on any large backlog.
+- Measured: `killed after 360000ms` with 851 findings in one call, so `deletable` was empty and every
+  finding came back `unsure`.
+- Rounds used: 1/5. Batch size 50, sequential, 16 tests.
+- Security check: **clean**. Better than asked: fingerprint validation is scoped **per batch**
+  (`triage.ts:218`), so an id bleeding in from a neighbouring batch's answer is discarded, not just
+  an invented one.
+
 ## COMPLETE — 2026-08-20
 
 12 tasks (11 planned + 8b, added when implementing task 8 exposed a spec defect). Total rounds
