@@ -17,6 +17,8 @@ function app(over: Partial<App> = {}): App {
     defaultBranch: 'master',
     testCmd: ['npx', 'jest', '--ci'],
     alertHandler: 'x.js',
+    auditLintPaths: ['packages/functions/src'],
+    auditKnip: false,
     ...over
   };
 }

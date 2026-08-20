@@ -227,6 +227,10 @@ export function replyRepeat(input: ReplyBase & {
     unknown_app: '❔ App này không có trong registry của autofix.',
     job_in_flight: '⏳ Đang chạy job cho fingerprint này.',
     inconclusive_cooldown: '❓ Chưa chốt được root cause; chờ đủ 24h mới xem lại.',
+    // Unreachable in practice: `decide` returns this reason with reply:false, so a
+    // repeat alert on a parked fingerprint stays silent. Present because the map is
+    // exhaustive over DecisionReason, and a wrong-but-quiet string beats a cast.
+    fix_disabled: '',
     first_seen: '',
     inconclusive_retry: '',
     retry_after_block: '',
