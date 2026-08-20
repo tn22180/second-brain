@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test';
-import {buildTriagePrompt, runTriage} from '../src/audit/triage';
+import {buildTriagePrompt, runTriage, TRIAGE_BATCH_SIZE} from '../src/audit/triage';
 import type {TriageFinding, TriageInput} from '../src/audit/triage';
 import type {ClaudeInvocation, ClaudeResult, ClaudeRunner} from '../src/agent/claudeCli';
 
@@ -42,6 +42,31 @@ const INPUT: Omit<TriageInput, 'findings'> = {
   timeoutMs: 600_000,
   brainSlice: undefined
 };
+
+function makeFindings(n: number): TriageFinding[] {
+  return Array.from({length: n}, (_, i) => ({
+    fp: `f${i}`,
+    file: `packages/functions/src/gen${i}.js`,
+    line: i + 1,
+    rule: 'no-unused-vars',
+    message: `'X${i}' is defined but never used`
+  }));
+}
+
+/** The findings JSON block only — cuts off before "## Answer", whose fixed
+ * template line (`{"fp": "<the fp from above>", ...}` — see buildTriagePrompt)
+ * would otherwise count as one more finding that was never actually sent. */
+function findingsBlock(prompt: string): string {
+  return prompt.slice(0, prompt.indexOf('## Answer'));
+}
+
+function fpCountInPrompt(prompt: string): number {
+  return (findingsBlock(prompt).match(/"fp":/g) ?? []).length;
+}
+
+function fpsInPrompt(prompt: string): string[] {
+  return [...findingsBlock(prompt).matchAll(/"fp":\s*"([^"]+)"/g)].map(m => m[1]!);
+}
 
 describe('runTriage', () => {
   test('only delete verdicts are eligible for the cleanup MR', async () => {
@@ -167,4 +192,84 @@ test('a delete verdict on a no-undef finding is never deletable', async () => {
   expect(r.deletable.map(v => v.fp)).toEqual(['d1']);
   // Still reported, just not actionable.
   expect(r.verdicts.map(v => v.fp).sort()).toEqual(['d1', 'u1']);
+});
+
+// Reproduces the measured failure: 851 findings handed to one `claude -p` call
+// died with "killed after 360000ms" and lost every verdict. Batching must turn
+// that one call into several, none of them anywhere near 851 findings wide.
+describe('batching (measured failure: 851 findings, one call, killed after 360000ms)', () => {
+  test('851 findings are split across several calls, none over the batch size', async () => {
+    const findings = makeFindings(851);
+    const calls: ClaudeInvocation[] = [];
+    const claude: ClaudeRunner = async inv => {
+      calls.push(inv);
+      return ok('[]');
+    };
+    const r = await runTriage({findings, ...INPUT}, claude);
+    expect(r.ok).toBe(true);
+    expect(calls.length).toBeGreaterThan(1);
+    expect(calls.length).toBe(Math.ceil(851 / TRIAGE_BATCH_SIZE));
+    for (const c of calls) expect(fpCountInPrompt(c.prompt)).toBeLessThanOrEqual(TRIAGE_BATCH_SIZE);
+  });
+
+  test('every input finding still gets exactly one verdict, in input order, no duplicates', async () => {
+    const findings = makeFindings(851);
+    const claude: ClaudeRunner = async () => ok('[]');
+    const r = await runTriage({findings, ...INPUT}, claude);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.verdicts.map(v => v.fp)).toEqual(findings.map(f => f.fp));
+    expect(new Set(r.verdicts.map(v => v.fp)).size).toBe(851);
+  });
+
+  test('a small run (3 findings) still makes exactly one call', async () => {
+    const calls: ClaudeInvocation[] = [];
+    const claude: ClaudeRunner = async inv => {
+      calls.push(inv);
+      return ok('[]');
+    };
+    await runTriage({findings: THREE, ...INPUT}, claude);
+    expect(calls.length).toBe(1);
+  });
+
+  test('one bad batch degrades to unsure for that batch only — the rest survive', async () => {
+    const findings = makeFindings(TRIAGE_BATCH_SIZE * 3);
+    let callIndex = -1;
+    const claude: ClaudeRunner = async inv => {
+      callIndex++;
+      if (callIndex === 1) return failed('timeout', 'killed after 360000ms');
+      // Every finding in every OK batch votes delete, so a surviving batch is
+      // trivially distinguishable from one that fell back to unsure.
+      const fps = fpsInPrompt(inv.prompt);
+      return ok(JSON.stringify(fps.map(fp => ({fp, verdict: 'delete', reason: 'gone'}))));
+    };
+    const r = await runTriage({findings, ...INPUT}, claude);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.batchFailures).toHaveLength(1);
+    expect(r.batchFailures![0]!.failure).toBe('timeout');
+
+    const batch2 = findings.slice(TRIAGE_BATCH_SIZE, TRIAGE_BATCH_SIZE * 2);
+    for (const f of batch2) {
+      expect(r.verdicts.find(v => v.fp === f.fp)!.verdict).toBe('unsure');
+    }
+    const batch1 = findings.slice(0, TRIAGE_BATCH_SIZE);
+    const batch3 = findings.slice(TRIAGE_BATCH_SIZE * 2);
+    for (const f of [...batch1, ...batch3]) {
+      expect(r.verdicts.find(v => v.fp === f.fp)!.verdict).toBe('delete');
+    }
+    expect(r.deletable.map(v => v.fp).sort()).toEqual([...batch1, ...batch3].map(f => f.fp).sort());
+  });
+
+  test('every batch failing is still a named lane failure, not a silent "nothing to delete"', async () => {
+    const findings = makeFindings(TRIAGE_BATCH_SIZE * 2 + 5);
+    const claude: ClaudeRunner = async () => failed('timeout', 'killed after 360000ms');
+    const r = await runTriage({findings, ...INPUT}, claude);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.failure).toBe('timeout');
+    expect(r.batchFailures).toHaveLength(3);
+    expect(r.totalBatches).toBe(3);
+    expect(r.detail).toContain('3/3');
+  });
 });
