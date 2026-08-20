@@ -19,8 +19,8 @@ Tracking is this table only — this harness has no TaskCreate tool.
 
 | # | Task | Agent / Model | Status | Rounds | Sec | Notes |
 |---|------|---------------|--------|--------|-----|-------|
-| 1 | Switch off the daemon's MR opening | general-purpose / sonnet | ⬜ | 0/5 | — | Touches the live pipeline. `!allowMr` currently falls into the infra branch (pipeline.ts:438) — needs its own status, not that one |
-| 2 | Registry `auditLintPaths` + `auditKnip` | cavecrew-builder / haiku | ⬜ | 0/5 | — | |
+| 1 | Switch off the daemon's MR opening | general-purpose / sonnet | ✅ | 2/5 | clean | `4ee4f38`. Round 1 put the branch before the infra check — plan's own error. Fixed + 2 order-pinning tests added |
+| 2 | Registry `auditLintPaths` + `auditKnip` | general-purpose / haiku | ✅ | 1/5 | clean | `67ebd7b`. Routed off cavecrew-builder: it has no Bash and this task's acceptance is a test run |
 | 3 | eslint runner | general-purpose / sonnet | ⬜ | 0/5 | — | Config must be written inside the worktree; read machine output from a file, not stdout |
 | 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ⬜ | 0/5 | — | Line number deliberately not in the fingerprint |
 | 5 | Security lane | general-purpose / opus | ⬜ | 0/5 | — | Read-only tools; drop citations that do not resolve; redact secret values |
@@ -33,4 +33,34 @@ Tracking is this table only — this harness has no TaskCreate tool.
 
 ### Log
 
-Nothing executed yet. Spec and plan committed; awaiting the execution-mode choice.
+#### ✅ Task 1: Switch off the prod-error daemon's MR opening
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed — `4ee4f38`
+- Plan:
+  - Goal: with `AUTOFIX_FIX_ENABLED` unset, a prod-error alert is still analysed and still answered in its Slack thread, and no branch is pushed and no MR is opened. `bun test ./test` green.
+  - Files allowed: `src/config.ts`, `src/state/stateMachine.ts`, `src/pipeline.ts`, `src/slack/reply.ts`, `test/config.test.ts`, `test/stateMachine.test.ts`, `test/slack.test.ts`, `test/pipeline.test.ts` (fixture only), `.env.example`, `README.md`. Nothing else.
+  - Approach: a dedicated `fix_disabled` status + `replyFixDisabled`, branching before the infra check at `pipeline.ts:438`. Rejected: reusing `allowMr:false`, which falls into the infra branch and would file every prod error as infra and say so in the thread.
+  - Test command: `bun test ./test` — all green, including the existing pipeline tests once their config fixture sets `fixEnabled: true`.
+  - Risk: this is the live Slack pipeline. Getting the state machine wrong either re-analyses every repeat alert (cost) or goes silent on real errors (worse). The daemon is NOT restarted by this task — that stays manual.
+  - Rollback: `git revert` the single commit, then `launchctl stop/start com.tn22180.prod-error-autofix`. No data migration: `fix_disabled` rows read back as an unknown status only if the revert lands while rows exist, so the revert must also clear them — `UPDATE alerts SET status='inconclusive' WHERE status='fix_disabled'`.
+- Rounds used: 1/5 — round 1 shipped a defect the agent itself reported: the `fix_disabled` branch was placed BEFORE the infra check, so at the shipped default (`fixEnabled:false`) a genuine infra alert would report as `fix_disabled` with the wrong reply. The plan's own stated invariant was self-contradictory; the fix is to order infra first.
+- Security check: **clean** — 10 files, 82 insertions. No secret literal, no new log call, no lockfile/CI/firebase/.env touched (`.env.example` is the tracked template and is in scope).
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+#### ✅ Task 2: Registry auditLintPaths + auditKnip
+- Agent: general-purpose (haiku) — routing table said cavecrew-builder, but that agent has no Bash and this task's acceptance is a test run
+- Status: ✅ completed — `67ebd7b`
+- Plan:
+  - Goal: `listApps(cfg)` returns `auditLintPaths` that all resolve on disk and `auditKnip === false` for all five apps; `bun test ./test/registry.disk.test.ts` green.
+  - Files allowed: `src/registry.ts`, `test/registry.disk.test.ts`. Nothing else.
+  - Approach: add both fields to `AppSpec` with the paths counted off disk on 2026-08-20; extend the existing drift test. Rejected: globbing `packages/*` — it would pull in `copyright` (no `src/`, one generated file) and `seo/packages/dashboard/src` (0 `.js`).
+  - Test command: `bun test ./test/registry.disk.test.ts` — green.
+  - Risk: low, additive. A wrong path means the audit silently lints nothing for that package — which is why the test asserts existence rather than trusting the list.
+  - Rollback: revert the commit; nothing reads these fields until task 9.
+- Rounds used: 1/5
+- Security check: **clean** — 2 files, 45 insertions, additive registry data only.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+### Open findings, not caused by this work
+
+- **`brain budget` is ~4x over on every app.** Measured 2026-08-20: SEO 23473, BLOG 23805, APC 23326, AEO 23289, IMG-OPT 23323 — against a 6000 budget. `test/brainSlice.test.ts` fails 5 tests because of it, and has since before this job started; neither `src/brain/*` nor that test is in either task's diff. Every prod-error job currently loads an oversized slice. Not fixed here — it is its own task and Tuan has not been asked yet.
