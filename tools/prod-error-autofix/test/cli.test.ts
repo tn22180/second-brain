@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, test} from 'bun:test';
 import {mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, resolve} from 'node:path';
 import {recordCandidate} from '../src/agent/learn';
 import {buildConfig, type Config} from '../src/config';
 import {
@@ -60,6 +60,19 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(ROOT, {recursive: true, force: true});
+});
+
+describe('bin/autofix.ts --help', () => {
+  // `--help` returns before `buildConfig()` runs, so this is the one path that can
+  // spawn the real entrypoint without a config, a claude process, or any network
+  // call — it only proves the `audit` case was wired into the usage text.
+  test('documents the audit command', async () => {
+    const bin = resolve(import.meta.dir, '..', 'bin', 'autofix.ts');
+    const proc = Bun.spawn(['bun', bin, '--help'], {stdout: 'pipe', stderr: 'pipe'});
+    const [stdout] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+    expect(stdout).toContain('audit [--all]');
+    expect(stdout).toContain('--dry-run');
+  });
 });
 
 describe('status', () => {

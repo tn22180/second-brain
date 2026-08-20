@@ -69,6 +69,38 @@ describe('buildConfig', () => {
     expect(buildConfig({...base, AUTOFIX_FIX_ENABLED: 'true'}).fixEnabled).toBe(true);
     expect(buildConfig({...base, AUTOFIX_FIX_ENABLED: 'false'}).fixEnabled).toBe(false);
   });
+
+  test('the audit sweep is on by default, its MR lane is off', () => {
+    const cfg = buildConfig(base);
+    expect(cfg.audit.enabled).toBe(true);
+    expect(cfg.audit.mrEnabled).toBe(false);
+    expect(buildConfig({...base, AUDIT_ENABLED: 'false'}).audit.enabled).toBe(false);
+    expect(buildConfig({...base, AUDIT_MR_ENABLED: 'true'}).audit.mrEnabled).toBe(true);
+  });
+
+  test('audit models default to opus for security, sonnet for triage and supervisor', () => {
+    const cfg = buildConfig(base);
+    expect(cfg.audit.models).toEqual({security: 'claude-opus-5', triage: 'claude-sonnet-5', supervisor: 'claude-sonnet-5'});
+    expect(buildConfig({...base, AUDIT_SECURITY_MODEL: 'x'}).audit.models.security).toBe('x');
+  });
+
+  test('audit timeouts default per the spec, security sized above the flat 15m for seo', () => {
+    const cfg = buildConfig(base);
+    expect(cfg.audit.timeouts).toEqual({
+      securityMs: 20 * 60_000,
+      triageMs: 6 * 60_000,
+      supervisorMs: 5 * 60_000,
+      eslintMs: 10 * 60_000,
+      jobMs: 45 * 60_000,
+      runMs: 150 * 60_000
+    });
+    expect(buildConfig({...base, AUDIT_SECURITY_TIMEOUT_MS: '999'}).audit.timeouts.securityMs).toBe(999);
+  });
+
+  test('the digest lands on Monday by default', () => {
+    expect(buildConfig(base).audit.digestWeekday).toBe(1);
+    expect(buildConfig({...base, AUDIT_DIGEST_WEEKDAY: '3'}).audit.digestWeekday).toBe(3);
+  });
 });
 
 describe('redact', () => {

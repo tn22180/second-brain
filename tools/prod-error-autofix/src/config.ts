@@ -78,6 +78,35 @@ export interface Timeouts {
   staleJobMs: number;
 }
 
+export interface AuditModels {
+  security: string;
+  triage: string;
+  supervisor: string;
+}
+
+export interface AuditTimeouts {
+  securityMs: number;
+  triageMs: number;
+  supervisorMs: number;
+  eslintMs: number;
+  /** Per-app ceiling. */
+  jobMs: number;
+  /** Whole-run ceiling — what actually bounds a 06:00 sweep of all five apps. */
+  runMs: number;
+}
+
+export interface AuditSettings {
+  /** Kill switch that does not need the plist unloaded. */
+  enabled: boolean;
+  /** Report-only until the signal has been watched. */
+  mrEnabled: boolean;
+  models: AuditModels;
+  timeouts: AuditTimeouts;
+  /** `Date#getDay()` value — 1 = Monday. Full digest of every open finding, so a
+   * backlog nobody has been reading gets put back in front of a human once a week. */
+  digestWeekday: number;
+}
+
 export interface Paths {
   projectRoot: string;
   brainRoot: string;
@@ -107,6 +136,7 @@ export interface Config {
   timeouts: Timeouts;
   paths: Paths;
   fixEnabled: boolean;
+  audit: AuditSettings;
 }
 
 export class ConfigError extends Error {
@@ -212,7 +242,43 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     // Off since 2026-08-19. The daemon still triages and still replies in the
     // thread; it stops opening MRs, because 58 were sitting unreviewed and an MR
     // nobody reads is worse than no MR. Audit MRs are the reviewed lane now.
-    fixEnabled: env.AUTOFIX_FIX_ENABLED === 'true'
+    fixEnabled: env.AUTOFIX_FIX_ENABLED === 'true',
+    audit: {
+      enabled: env.AUDIT_ENABLED !== 'false',
+      mrEnabled: env.AUDIT_MR_ENABLED === 'true',
+      models: {
+        security: env.AUDIT_SECURITY_MODEL || 'claude-opus-5',
+        triage: env.AUDIT_TRIAGE_MODEL || 'claude-sonnet-5',
+        supervisor: env.AUDIT_SUPERVISOR_MODEL || 'claude-sonnet-5'
+      },
+      timeouts: {
+        // Spec's own table starts from 15m ("whole-repo sweep, larger than the 6m
+        // diff review"), sized off a flat "bigger than a diff" heuristic with no
+        // per-app spread in view. Read off disk 2026-08-20, `seo`'s lint-scoped
+        // tree (auditLintPaths, registry.ts) is 1092+1394+5 = 2491 files against
+        // APC's 180+331+1 = 512 — 4.9x. A single-shot lane bounded only by wall
+        // clock (this CLI build has no --max-turns) sized for the median repo
+        // starves the biggest, highest cross-shop-risk app of the time to finish
+        // every morning. 20m keeps `seo` inside the 45m AUDIT_JOB_TIMEOUT_MS
+        // ceiling with room for hygiene (eslint + triage, ~16m) running alongside
+        // it, without inflating the four smaller repos' budget for no reason.
+        securityMs: num(env, 'AUDIT_SECURITY_TIMEOUT_MS', 20 * MINUTE),
+        triageMs: num(env, 'AUDIT_TRIAGE_TIMEOUT_MS', 6 * MINUTE),
+        supervisorMs: num(env, 'AUDIT_SUPERVISOR_TIMEOUT_MS', 5 * MINUTE),
+        // Deterministic, not an agent call — 10m is generous even for seo's 1090
+        // lint-scoped files (registry.ts).
+        eslintMs: num(env, 'AUDIT_ESLINT_TIMEOUT_MS', 10 * MINUTE),
+        // Ceiling per app: security(20m) dominates since it runs concurrently with
+        // hygiene(eslint 10m + triage 6m = 16m), so 45m still leaves headroom for
+        // worktree setup and, when AUDIT_MR_ENABLED, the MR lane's own agent+jest run.
+        jobMs: num(env, 'AUDIT_JOB_TIMEOUT_MS', 45 * MINUTE),
+        // Five apps at the per-app ceiling would be 3h45 and land mid-morning; this
+        // is what actually bounds a 06:00 run, and a run that hits it reports the
+        // apps it finished rather than running long past when anyone reads it.
+        runMs: num(env, 'AUDIT_RUN_TIMEOUT_MS', 150 * MINUTE)
+      },
+      digestWeekday: num(env, 'AUDIT_DIGEST_WEEKDAY', 1)
+    }
   };
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import {homedir} from 'node:os';
 import {join} from 'node:path';
+import {buildAuditRunConfig, buildAuditRunDeps, runAudit} from '../src/audit/run';
 import {buildConfig, ConfigError, loadEnv, PROJECT_ROOT, redact} from '../src/config';
 import {
   brainBudget,
@@ -37,6 +38,9 @@ const USAGE = `autofix — prod error → MR
                               dựng install: .env, thư mục cache, skeleton brain, plist cho máy này
   doctor [--quick]            soi mọi thứ daemon cần: claude, gcloud, git SSH, Slack, từng repo app
   daemon                      nghe #prod-errors và chạy pipeline (launchd chạy lệnh này)
+  audit [--all] [--app=SEO] [--dry-run]
+                              quét bảo mật + hygiene 1 hoặc cả 5 app (launchd 06:00 chạy 'audit --all');
+                              --dry-run: in report, KHÔNG ghi ledger, KHÔNG mở MR, KHÔNG gửi Telegram
   status                      queue, cap còn lại, 10 incident gần nhất
   dry-run <file> [--prompt]   feed alert giả: in registry + fingerprint + brain slice, KHÔNG gọi model
   run <ts|slack-url>          chạy pipeline trên đúng 1 message trong channel (CÓ thể mở MR thật)
@@ -257,6 +261,37 @@ async function main(argv: string[]): Promise<void> {
         return;
       }
       fail('dùng: autofix brain budget|candidates|promote');
+    }
+
+    case 'audit': {
+      if (!cfg.audit.enabled) fail('audit: AUDIT_ENABLED=false — tắt bằng .env, không phải bằng unload plist');
+      const isDryRun = args.includes('--dry-run');
+      const onlyApp = args.find(a => a.startsWith('--app='))?.slice('--app='.length);
+      // A dry run must not touch the real ledger or the real MR caps: its own
+      // in-memory store means `classify` still runs — the report is real — but
+      // nothing it writes survives the process, and `--dry-run` forces the MR
+      // lane and Telegram off regardless of what .env says.
+      const auditStore = isDryRun ? new Store(':memory:') : store;
+      const runCfg = {
+        ...buildAuditRunConfig(cfg, now(), onlyApp),
+        mrEnabled: isDryRun ? false : cfg.audit.mrEnabled,
+        telegram: isDryRun ? undefined : cfg.telegram
+      };
+      if (!runCfg.apps.length) fail(`audit: không có app nào khớp --app=${onlyApp}`);
+
+      console.log(
+        `audit${isDryRun ? ' (dry-run)' : ''} · ${runCfg.apps.map(a => a.appName).join(', ')} · ` +
+          `mr ${runCfg.mrEnabled ? 'ON' : 'off'} · digest ${runCfg.digest ? 'có' : 'không'}`
+      );
+
+      const result = await runAudit(runCfg, buildAuditRunDeps(cfg, auditStore));
+
+      console.log(`\n${result.message}`);
+      if (result.stoppedEarly) {
+        console.log(`\n(dừng sớm — vượt AUDIT_RUN_TIMEOUT_MS, ${result.apps.length}/${runCfg.apps.length} app chạy xong)`);
+      }
+      if (result.telegram && !result.telegram.ok) console.log(`\ntelegram lỗi: ${result.telegram.detail}`);
+      return;
     }
 
     case 'daemon': {
