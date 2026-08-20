@@ -1,3 +1,4 @@
+import {join} from 'node:path';
 import {spawnClaude} from '../agent/claudeCli';
 import type {Config} from '../config';
 import {spawnRunner} from '../gcloud/run';
@@ -31,6 +32,12 @@ export interface AuditRunConfig extends AuditJobSettings {
   /** Absent when Telegram is not configured — same degraded-mode contract as the daemon. */
   telegram: TelegramConfig | undefined;
   supervisor: {model: string; timeoutMs: number};
+  /**
+   * Where the unabridged report goes when the message has to be capped. Telegram
+   * rejects anything past 4096 characters, and the first APC run rendered 122 KB —
+   * without this the capped message names a file nobody wrote.
+   */
+  fullReportPath: string;
 }
 
 export interface AuditRunDeps {
@@ -124,7 +131,8 @@ export async function runAudit(cfg: AuditRunConfig, deps: AuditRunDeps): Promise
     date: cfg.dateStr,
     apps: results.map(r => r.report),
     digest: cfg.digest,
-    costUsd
+    costUsd,
+    fullReportPath: cfg.fullReportPath
   };
 
   let message: string;
@@ -169,7 +177,8 @@ export function buildAuditRunConfig(cfg: Config, nowMs: number, onlyApp?: string
     mr: {model: cfg.models.fix, agentTimeoutMs: cfg.timeouts.fixMs, jestTimeoutMs: cfg.timeouts.jestMs},
     runTimeoutMs: cfg.audit.timeouts.runMs,
     telegram: cfg.telegram,
-    supervisor: {model: cfg.audit.models.supervisor, timeoutMs: cfg.audit.timeouts.supervisorMs}
+    supervisor: {model: cfg.audit.models.supervisor, timeoutMs: cfg.audit.timeouts.supervisorMs},
+    fullReportPath: join(cfg.paths.cacheRoot, `audit-${dateStr}.md`)
   };
 }
 

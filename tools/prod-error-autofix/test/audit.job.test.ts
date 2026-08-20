@@ -184,6 +184,7 @@ function runConfig(over: Partial<AuditRunConfig> = {}): AuditRunConfig {
     runTimeoutMs: 10 * 60_000,
     telegram: {botToken: 't', chatId: 'c', threadId: undefined},
     supervisor: {model: 'claude-sonnet-5', timeoutMs: 2000},
+    fullReportPath: '/cache/audit-2026-08-19.md',
     ...over
   };
 }
