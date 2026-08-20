@@ -223,7 +223,8 @@ CREATE TABLE IF NOT EXISTS audit_findings (
   severity      TEXT NOT NULL,
   first_seen_ms INTEGER NOT NULL,
   last_seen_ms  INTEGER NOT NULL,
-  status        TEXT NOT NULL,        -- 'open' | 'resolved' | 'mr_open' | 'accepted'
+  status        TEXT NOT NULL,        -- 'open' | 'resolved' | 'false_positive' | 'accepted'
+  verdict       TEXT,                 -- Lane B triage, null for security findings
   mr_url        TEXT
 );
 CREATE INDEX IF NOT EXISTS audit_findings_app ON audit_findings(app, status);
@@ -247,8 +248,21 @@ The daily message carries the new findings in full and one line each for carried
 Every Monday the message is a full digest of everything open — so a backlog someone stopped
 reading about is put back in front of them once a week rather than never.
 
-`accepted` is set by hand, by a human, and suppresses a finding permanently. Nothing in the
-pipeline may write `accepted` on its own.
+`accepted` is set by hand, by a human, and suppresses a finding permanently. `false_positive` is
+the same channel for "the scanner is wrong here". Nothing in the pipeline may write either on its
+own — a test asserts it.
+
+**An open MR is not a status.** An earlier draft of this table had `mr_open` alongside `open`;
+implementing it on 2026-08-20 showed that to be wrong. A finding with an MR out is still present
+in the code, so it must stay `open` — otherwise the resolved sweep, which only walks open rows,
+can never mark it resolved on the day the merge lands and the code goes away. The MR is recorded
+in `mr_url` next to the status, not instead of it.
+
+**Findings are redacted before they are persisted, not on the way out.** `title` lands in
+`state.db` on disk, so a secret value quoted by the security lane would be written to disk even
+if the Telegram message later strips it. Redaction therefore happens at the lane boundary, where
+the finding is constructed, and everything downstream — ledger, report, MR body — only ever sees
+the redacted form.
 
 ## Report
 
