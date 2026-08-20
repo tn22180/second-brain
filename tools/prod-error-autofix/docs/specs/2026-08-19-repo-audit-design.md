@@ -331,7 +331,14 @@ one tree produce one diff that cannot be split afterwards.
 
 Gates, all fail-closed:
 
-1. The repo's own jest must pass in that worktree. Not green → no push, finding stays `open`.
+1. The repo's own jest must show **no failure the base branch did not already have**. Not
+   "must be green": `blogs` master carries three long-standing module-resolution suite failures
+   (`src/verify/jest.ts:57-58`), so a green bar would make that app structurally incapable of ever
+   producing an MR — refusing `tests_failed` every morning, indistinguishable from a fix that
+   broke something. The baseline is measured on the clean worktree before the fix agent runs and
+   cached by `(repo, baseSha)`, the same way `pipeline.ts:500-515` already does it. A baseline
+   that could not be measured refuses, exactly as `smokeGate` refuses on `no_baseline` — an
+   unanswered question is not a passed gate. A new failure → no push, finding stays `open`.
 2. The diff must touch only files the findings named. A file outside that set → no push.
 3. `.env*`, lockfiles, `.gitlab-ci.yml`, `firebase.json`, `.firebaserc`, `package.json` and
    `.audit.eslintrc.json` are refused outright, matching the promise the README already makes.
