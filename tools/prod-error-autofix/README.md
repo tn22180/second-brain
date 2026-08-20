@@ -281,3 +281,113 @@ AUTOFIX_INTEGRATION=1 bun test ./test/integration.*    # real gcloud, git, jest,
 Run `bun test ./test`, not `bun test` — from the repo root the latter walks `projects/` and hangs.
 
 The integration tests are read-only: they never post to Slack, never push, and never open an MR.
+
+## The daily audit
+
+A second job in this repo, on its own launchd schedule. At 06:00 local it walks the five apps in
+`src/registry.ts`, sweeps each for security and code-hygiene problems, and sends **one** Telegram
+message carrying what is **new since the last run**.
+
+```bash
+bun run bin/autofix.ts audit --all              # what the 06:00 job runs
+bun run bin/autofix.ts audit --app=SEO          # one app
+bun run bin/autofix.ts audit --all --dry-run    # prints the report; writes nothing
+```
+
+`--dry-run` swaps in an in-memory store and forces the MR lane and Telegram off regardless of
+`.env`, so the report is real but nothing it learns survives the process.
+
+### One job, three lanes
+
+Per app, in a worktree cut from `origin/<base>` and removed in a `finally`:
+
+- **Security** — `claude -p` on opus, read-only tools, `cwd` set to the worktree so that repo's
+  own `CLAUDE.md` and `.claude/skills/security/` load. Four of the five have such a skill;
+  `blogs` has no `.claude/skills/` at all, and the report says so every run rather than hiding it.
+- **Hygiene** — the repo's own eslint 6.8 run with a rule set the repo does not have (`no-undef`,
+  `no-unused-vars`; the repos extend `google`+`prettier` and enable neither), then a sonnet pass
+  that judges which findings are real. eslint cannot see a dynamic `require()`, a re-export or a
+  deliberate placeholder.
+- **Supervisor** — orders and compresses the other two into the message. It is never the only
+  path to one: any agent failure falls back to a rendered-from-code report, so a timeout at 06:00
+  cannot mean silence on a morning that had findings.
+
+Lanes A and B run concurrently within an app; apps run sequentially.
+
+### Why it does not repeat itself
+
+The same five unused constants would otherwise be reported every morning until someone deleted
+them, and the message would be muted inside a week. `audit_findings` in the existing `state.db`
+fingerprints each finding on `app|file|rule|normalised-title` — **not** the line number, so an
+edit above a finding does not resurface it as new. The daily message carries new findings in
+full, one count line each for carried and resolved, and a full backlog digest on Mondays.
+
+`accepted` and `false_positive` suppress a finding permanently and are only ever written by a
+person. A test asserts no code path writes them.
+
+### Merge requests
+
+**Off by default** (`AUDIT_MR_ENABLED` unset). When on, at most one security MR and one cleanup
+MR per repo per day, on two branches from two worktrees — a reviewer approving a security fix
+must not be approving twelve deletions in the same breath.
+
+Every gate fails closed, and all of them run before the push:
+
+| gate | refuses when |
+|---|---|
+| baseline | the base commit's own jest failures cannot be measured |
+| scope | the diff touches a file no finding named — including one the agent *created* |
+| forbidden | `.env*`, any lockfile, `.gitlab-ci.yml`, `firebase.json`, `.firebaserc`, `package.json`, `.audit.eslintrc.json` |
+| tests | a test fails **that passed on the base commit** |
+| caps | the per-repo per-day MR cap is spent |
+
+The jest gate compares against the base rather than demanding green: `blogs` master carries three
+long-standing module-resolution failures, so a green bar would make that app structurally
+incapable of ever producing an MR — refusing every morning, indistinguishable from a fix that
+broke something.
+
+Cleanup removes declarations, never files or exports, and only `no-unused-vars` findings are ever
+eligible. A `no-undef` finding is a *missing import*: deleting to "fix" one would remove the line
+that uses the symbol. That is enforced twice, in the triage lane and again at the push boundary.
+
+**Before turning MRs on:** `doctor`'s `checkPushCredential` currently has no caller computing its
+`canPush` input, so nothing yet proves a non-interactive push can authenticate. All five remotes
+are HTTPS and `credential.helper` resolves to `osxkeychain` then `store` — under launchd only the
+second is usable without a GUI session. Wire that probe first, or expect every MR to die at the
+push with nobody watching.
+
+### Findings never carry a secret value
+
+A security finding is reported as `file:line` plus what kind of credential it is. Redaction runs
+where the finding is *constructed*, not on the way out, because the title is persisted to
+`state.db` — stripping it at the Telegram boundary would already be too late. It is applied again
+at render. Patterns separate on `[_-]`, not `_`: an earlier pass keyed on `_` alone let `glpat-…`
+and `sk-ant-api03-…` through whole, and this fleet issues the first and consumes the second.
+
+A committed secret is never "fixed" by deleting the line. It is reported, named as needing
+rotation, and left to a person.
+
+### Configuration
+
+`AUDIT_ENABLED` (default `true`) is the kill switch — use it rather than unloading the plist.
+`AUDIT_MR_ENABLED` (default `false`). Models default to opus for security, sonnet for triage and
+the supervisor.
+
+`AUDIT_SECURITY_TIMEOUT_MS` is 20m, not the 15m first drafted: the lane is a single shot bounded
+by wall clock alone (this CLI build has no `--max-turns`) and `seo`'s lint-scoped tree is 2491
+files against `ai-product-copy`'s 512. Sizing it off the median repo starves the largest, which
+is also the one with the most cross-shop surface. `AUDIT_JOB_TIMEOUT_MS` is 45m per app and
+`AUDIT_RUN_TIMEOUT_MS` 150m for the whole sweep; a run that hits the cap reports which apps
+finished.
+
+No brain slice is passed to any lane. Measured 2026-08-20, every app's slice is 23289–23805
+tokens against a 6000 budget — roughly 4x over. `bun run bin/autofix.ts brain budget` is what
+says so, and it currently fails; feeding that into every lane of every app every morning is a
+real cost for no measured benefit.
+
+### Scheduling
+
+`init` writes a second plist, `<label>-audit`, with `StartCalendarInterval` at 06:00, its own
+`audit.log`/`audit.err.log`, and no `KeepAlive` — a calendar one-shot, not a listener; `KeepAlive`
+on a program that exits restarts it in a loop. It is a separate `launchctl` job from the daemon
+on purpose: a broken audit must not take prod-error alerting down with it.
