@@ -252,7 +252,19 @@ Package lists read off disk on 2026-08-19 — `seo` has five packages, `blogs` f
   auditKnip: boolean;
 ```
 
-Per app: `seo` `['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src']`; `blogs` `['packages/functions/src', 'packages/assets/src']`; `ai-product-copy` `['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src']`; `llm-ai-search-seo` `['packages/functions/src', 'packages/assets/src']`; `avada-image-optimizer` `['packages/functions/src', 'packages/assets/src', 'packages/scripttag/src']`. Every app gets `auditKnip: false`.
+Counted on disk 2026-08-20 (`.js`/`.jsx` under each `packages/*/src`):
+
+| app | auditLintPaths | files |
+|---|---|---|
+| `seo` | `packages/functions/src`, `packages/assets/src`, `packages/scripttag/src` | 1092 + 1394 + 5 |
+| `blogs` | `packages/functions/src`, `packages/assets/src`, `packages/avadaseo/src` | 441 + 1025 + 623 |
+| `ai-product-copy` | `packages/functions/src`, `packages/assets/src`, `packages/scripttag/src` | 180 + 331 + 1 |
+| `llm-ai-search-seo` | `packages/functions/src`, `packages/assets/src` | 342 + 716 |
+| `avada-image-optimizer` | `packages/functions/src`, `packages/assets/src`, `packages/scripttag/src` | 429 + 619 + 5 |
+
+Excluded and why: `copyright` in three repos has no `src/` and holds one generated file; `seo/packages/dashboard/src` has **0** `.js`; `blogs/packages/editor` has no `src/`. `blogs/packages/avadaseo/src` is 623 files of hand-written app code and **is** in scope — an earlier draft of this plan left it out.
+
+Every app gets `auditKnip: false`.
 
 - [ ] **Step 4: Run it and watch it pass**
 
