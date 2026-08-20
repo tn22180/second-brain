@@ -124,10 +124,13 @@ Lane A and Lane B are independent and run concurrently within a job. Lane C wait
 
 ### Lane A — security
 
-`claude -p` with the read-only tool set, modelled on `ANALYZE_TOOLS` (`src/agent/claudeCli.ts:142`):
-`Read`, `Grep`, `Glob`, `Bash(git log:*)`, `Bash(git diff:*)`, `Bash(rg:*)`, `Bash(ls:*)`,
-`Bash(cat:*)`. No `Edit`, no `Write`, no network. `cwd` is the worktree so the repo's own
-`CLAUDE.md` and `.claude/skills/security/` load.
+`claude -p` with the read-only tool set, derived as `ANALYZE_TOOLS` minus the gcloud entry
+(`src/agent/claudeCli.ts:142`). That constant holds **ten** tools, not the eight an earlier draft
+of this section listed: `Read`, `Grep`, `Glob`, `Bash(git log:*)`, `Bash(git show:*)`,
+`Bash(git diff:*)`, `Bash(gcloud logging read:*)`, `Bash(rg:*)`, `Bash(cat:*)`, `Bash(ls:*)`.
+Dropping the gcloud one leaves nine — a sweep reads code, not logs. No `Edit`, no `Write`, no
+network, and `permissionMode: 'default'`, matching `analyze` (`src/agent/analyze.ts:160`).
+`cwd` is the worktree so the repo's own `CLAUDE.md` and `.claude/skills/security/` load.
 
 Scope is the **whole repo**, not a diff — this is a sweep, not a review of one change. To keep it
 bounded the prompt names the surfaces that matter for a Shopify app with Firestore:
@@ -142,9 +145,24 @@ bounded the prompt names the surfaces that matter for a Shopify app with Firesto
    or a full request header.
 5. Unauthenticated or wrongly-authenticated endpoints, webhook handlers with no HMAC check.
 
-Output is a JSON array validated against a schema — `{file, line, severity, title, why, fix}` —
-the same discipline `src/agent/analysisSchema.ts` already applies. Prose instead of JSON is a
-failed lane, not a lane with no findings.
+Output is a JSON array validated against a schema — `{file, line, severity, category, title, why,
+fix}` — the same discipline `src/agent/analysisSchema.ts` already applies, though not the same
+function: `extractJson` there rejects arrays outright (`analysisSchema.ts:61`), so this lane has
+its own extractor. `category` is one of `shop_scoping`, `untrusted_input`, `secret`,
+`secret_in_log`, `authn`, `other`; the report and the MR split both need it to tell a leaked
+credential from a missing `where(shopId)`. Prose instead of JSON is a failed lane, not a lane with
+no findings.
+
+**Redaction happens inside validation**, as each finding is constructed, so no caller can forget
+it. It covers `title`, `why` and `fix`, and deliberately **not** `file`: the path is what makes a
+finding actionable and is what the existence check runs on, and a blunt rule that eats
+`packages/functions/src/handlers/pubsub/handleProdErrorAlert.js` is a rule someone switches off. A
+credential embedded in a *filename* would therefore survive — judged an acceptable trade, recorded
+so it is a decision rather than an oversight.
+
+The token patterns separate on `[_-]`, not `_`. A first pass used `_` alone and let `glpat-…` and
+`sk-ant-api03-…` through whole — this fleet issues the first from `git.avada.net` and consumes the
+second. Verified 2026-08-20 against fourteen strings, nine token-shaped and five ordinary.
 
 **Severity is capped at what a sweep can prove.** A finding whose `file:line` does not resolve in
 the worktree is dropped before it reaches the report; an agent that invents a citation to look
