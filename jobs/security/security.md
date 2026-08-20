@@ -21,7 +21,7 @@ Tracking is this table only — this harness has no TaskCreate tool.
 |---|------|---------------|--------|--------|-----|-------|
 | 1 | Switch off the daemon's MR opening | general-purpose / sonnet | ✅ | 2/5 | clean | `4ee4f38`. Round 1 put the branch before the infra check — plan's own error. Fixed + 2 order-pinning tests added |
 | 2 | Registry `auditLintPaths` + `auditKnip` | general-purpose / haiku | ✅ | 1/5 | clean | `67ebd7b`. Routed off cavecrew-builder: it has no Bash and this task's acceptance is a test run |
-| 3 | eslint runner | general-purpose / sonnet | ⬜ | 0/5 | — | Config must be written inside the worktree; read machine output from a file, not stdout |
+| 3 | eslint runner | general-purpose / sonnet | ✅ | 2/5 | clean | `92a0577`. Round 2: dropped a `'spawn'` failure member that nothing can produce, and corrected a comment claiming a balance-scan the parser does not do |
 | 4 | Ledger `audit_findings` + fingerprint | general-purpose / sonnet | ⬜ | 0/5 | — | Line number deliberately not in the fingerprint |
 | 5 | Security lane | general-purpose / opus | ⬜ | 0/5 | — | Read-only tools; drop citations that do not resolve; redact secret values |
 | 6 | Triage lane | general-purpose / sonnet | ⬜ | 0/5 | — | |
@@ -60,6 +60,25 @@ Tracking is this table only — this harness has no TaskCreate tool.
 - Rounds used: 1/5
 - Security check: **clean** — 2 files, 45 insertions, additive registry data only.
 - Started: 2026-08-20 · Completed: 2026-08-20
+
+#### ✅ Task 3: eslint runner
+- Agent: general-purpose (sonnet)
+- Status: ✅ completed — `92a0577`
+- Plan:
+  - Goal: `runEslint()` returns repo-relative `LintFinding[]` from a real eslint run, maps exit 0/1 to success and ≥2 to a named failure, survives junk printed ahead of the JSON, and always deletes the config it wrote. `bun test ./test/audit.eslint.test.ts` green.
+  - Files allowed: `src/audit/eslint.ts` (new), `test/audit.eslint.test.ts` (new). Nothing else.
+  - Approach: write `.audit.eslintrc.json` into the worktree, invoke the repo's own `node_modules/.bin/eslint` with `--no-eslintrc -c <that> --format json --output-file`, delete the config in a `finally`. Rejected: reading stdout — the knip spike proved a repo module can log at require time ahead of the JSON.
+  - Test command: `bun test ./test/audit.eslint.test.ts` — green, hermetic, injected `Runner`.
+  - Risk: low, nothing calls it until task 9. The one real hazard is the written config escaping into a branch, which the `finally` and a test both cover.
+  - Rollback: delete the two new files; nothing imports them yet.
+- Verified before dispatch (2026-08-20, against ai-product-copy): eslint is **6.8.0**, `-o/--output-file` exists and writes, exit is 1 when findings exist, and `filePath` in the JSON is absolute — so the `relative()` mapping is required, not cosmetic.
+- Rounds used: 2/5
+- Security check: **clean** — 2 new files. No secret, no network call, no new dependency; the only write is `.audit.eslintrc.json` inside the worktree, removed in a `finally`, with three tests covering the clean, parse-throw and runner-throw paths.
+- Started: 2026-08-20 · Completed: 2026-08-20
+
+### Process correction, 2026-08-20
+
+Tasks 1 and 2 were reviewed with `bun test ./test` only. `bun run typecheck` was not run, and it was red: the `DecisionReason` reply map stopped being exhaustive once `fix_disabled` existed (`src/slack/reply.ts:219`), and a `worktreeGc` fixture stopped satisfying `App` once the registry gained two fields (`test/worktreeGc.test.ts:12`). Neither surfaces in a test run. Caught by the Task 3 agent, fixed in `876d89c`. **Every task from here runs `bun test ./test` AND `bun run typecheck` before it is called done.**
 
 ### Open findings, not caused by this work
 
