@@ -353,6 +353,69 @@ export function formatDoctor(report: DoctorReport): string {
   return lines.join('\n');
 }
 
+export interface RemoteCheckResult {
+  /** Repo names whose origin host differs from the last recorded reading. */
+  changed: string[];
+}
+
+/**
+ * Flags a remote HOST change since the last check — never asserts one correct host.
+ *
+ * Verified 2026-08-20: `seo`, `ai-product-copy` and `llm-ai-search-seo` push to
+ * `git.avada.net`; `blogs` and `avada-image-optimizer` still push to `gitlab.com`, and
+ * both are legitimate today (spec "Known gaps"). A checkout still pointed at a host the
+ * project migrated away from fetches a dead mirror: the audit would scan last month's
+ * code and report findings already fixed, with nothing in the run looking wrong. A repo
+ * with no prior reading has nothing to compare against, so it is not a change.
+ */
+export function checkRemotes(input: {previous: Record<string, string>; current: Record<string, string>}): RemoteCheckResult {
+  const changed: string[] = [];
+  for (const [repo, host] of Object.entries(input.current)) {
+    const prior = input.previous[repo];
+    if (prior !== undefined && prior !== host) changed.push(repo);
+  }
+  return {changed};
+}
+
+/**
+ * A stale `origin/<base>` and a dead remote look identical from a fetch-then-inspect
+ * check — both leave the branch's newest commit old. Saying "stale" would be a guess;
+ * the line says it cannot tell the two apart, matching the spec's "Known gaps" note.
+ */
+export function describeBaseAge(input: {repo: string; ageDays: number}): string {
+  return (
+    `${input.repo}: origin/<base> newest commit is ${input.ageDays}d old — ` +
+    'a quiet repo and a dead remote look the same from here; cannot tell which.'
+  );
+}
+
+export interface PushCredentialResult {
+  ok: boolean;
+  detail: string;
+}
+
+/**
+ * Whether a non-interactive (launchd) push can authenticate — never handles a token
+ * itself. `canPush` is the caller's own probe outcome (e.g. a `git push --dry-run`
+ * against a throwaway ref) and `helpers` are `credential.helper` names, not secret
+ * values, so nothing here can put a credential on a command line or in a log.
+ *
+ * Verified 2026-08-20: all five remotes are HTTPS, and `credential.helper` resolves to
+ * `osxkeychain` then `store`. `store` is what a launchd job can use without a GUI
+ * session; `osxkeychain` may not answer under a daemon. When `mrEnabled` is false this
+ * check does not apply and must not fail the doctor — the MR lane defaults off.
+ */
+export function checkPushCredential(input: {mrEnabled: boolean; helpers: string[]; canPush: boolean}): PushCredentialResult {
+  if (!input.mrEnabled) return {ok: true, detail: 'AUDIT_MR_ENABLED is false — push credential not required'};
+  if (input.canPush) return {ok: true, detail: `non-interactive push authenticated (helpers: ${input.helpers.join(', ') || 'none'})`};
+  return {
+    ok: false,
+    detail:
+      `non-interactive push could not authenticate (helpers: ${input.helpers.join(', ') || 'none'}) — ` +
+      'osxkeychain may not answer under launchd; `store` (or an unlocked login keychain) has to be reachable without a GUI session'
+  };
+}
+
 /** Keys in `.env.example` that carry no default, so an install without them cannot start. */
 export function requiredEnvKeys(exampleText: string): string[] {
   const out: string[] = [];

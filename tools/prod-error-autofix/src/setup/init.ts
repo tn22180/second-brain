@@ -2,7 +2,7 @@ import {chmodSync, existsSync, mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {resolveClaudeBin} from '../agent/claudeCli';
 import {appNames} from '../registry';
-import {DAEMON_TOOLS, installHint, renderPlist, resolvePlistInput} from './plist';
+import {DAEMON_TOOLS, installHint, renderAuditPlist, renderPlist, resolvePlistInput} from './plist';
 import {readExample} from './doctor';
 
 /**
@@ -34,6 +34,9 @@ export interface InitResult {
   steps: InitStep[];
   plistPath: string;
   label: string;
+  /** The 06:00 audit job's own plist, generated alongside the daemon's (spec "Scheduling"). */
+  auditPlistPath: string;
+  auditLabel: string;
   /** Printed after the steps: what the operator still has to do by hand. */
   next: string[];
 }
@@ -124,6 +127,15 @@ export function initInstall(input: InitInput): InitResult {
     }
   }
 
+  // Resolved once against the operator's own PATH, but only these names — the plist
+  // gets their directories, never the whole shell PATH. Shared by both plists: the
+  // audit job spawns the same tools (git, claude, npx, node) the daemon does.
+  const toolPaths = [
+    resolveClaudeBin(input.env),
+    ...DAEMON_TOOLS.map(t => Bun.which(t, {PATH: input.env.PATH}) ?? '')
+  ].filter(Boolean);
+  const bunBin = input.env.AUTOFIX_BUN_BIN || process.execPath;
+
   const plistPath = join(input.projectRoot, 'launchd', `${input.label}.plist`);
   const plist = renderPlist(
     resolvePlistInput({
@@ -132,16 +144,28 @@ export function initInstall(input: InitInput): InitResult {
       label: input.label,
       serviceAccount: input.serviceAccount,
       env: input.env,
-      bunBin: input.env.AUTOFIX_BUN_BIN || process.execPath,
-      // Resolved against the operator's own PATH, but only these names — the plist gets
-      // their directories, never the whole shell PATH.
-      toolPaths: [
-        resolveClaudeBin(input.env),
-        ...DAEMON_TOOLS.map(t => Bun.which(t, {PATH: input.env.PATH}) ?? '')
-      ].filter(Boolean)
+      bunBin,
+      toolPaths
     })
   );
   write(steps, plistPath, plist, {force: input.forcePlist});
+
+  // A distinct label and file: `launchctl` keys jobs by label, and a shared one would
+  // mean loading the audit job unloads or replaces the daemon's.
+  const auditLabel = `${input.label}-audit`;
+  const auditPlistPath = join(input.projectRoot, 'launchd', `${auditLabel}.plist`);
+  const auditPlist = renderAuditPlist(
+    resolvePlistInput({
+      projectRoot: input.projectRoot,
+      cacheRoot: input.cacheRoot,
+      label: auditLabel,
+      serviceAccount: input.serviceAccount,
+      env: input.env,
+      bunBin,
+      toolPaths
+    })
+  );
+  write(steps, auditPlistPath, auditPlist, {force: input.forcePlist});
 
   if (!input.serviceAccount) {
     next.push(
@@ -151,8 +175,9 @@ export function initInstall(input: InitInput): InitResult {
   }
   next.push('`autofix doctor` để soi lại toàn bộ');
   next.push(`nạp job:\n${installHint(input.label, plistPath)}`);
+  next.push(`nạp job audit (06:00, một lần/ngày):\n${installHint(auditLabel, auditPlistPath)}`);
 
-  return {steps, plistPath, label: input.label, next};
+  return {steps, plistPath, label: input.label, auditPlistPath, auditLabel, next};
 }
 
 export function formatInit(result: InitResult): string {

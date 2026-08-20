@@ -107,6 +107,86 @@ export function renderPlist(input: PlistInput): string {
   ].join('\n');
 }
 
+/** Same shape as the daemon plist input — the audit job differs only in schedule, args and logs. */
+export type AuditPlistInput = PlistInput;
+
+/**
+ * The 06:00 audit job's launchd plist.
+ *
+ * `StartCalendarInterval` instead of `RunAtLoad`+`KeepAlive`: the audit is a one-shot
+ * (`bun run … audit --all`) that exits when the sweep finishes, and `KeepAlive` on a
+ * program that exits restarts it in a loop rather than waiting for tomorrow (spec
+ * "Scheduling", 2026-08-19). Separate `audit.log`/`audit.err.log` so its output never
+ * interleaves with the daemon's in one file.
+ */
+export function renderAuditPlist(input: AuditPlistInput): string {
+  const s = (v: string) => `<string>${xmlEscape(v)}</string>`;
+  const serviceAccount = input.serviceAccount
+    ? [
+        '',
+        '        <!--',
+        '          Every gcloud call runs as this service account. A user credential expires on',
+        '          the org session policy and a daemon cannot answer a reauth prompt; a service',
+        '          account has no such expiry.',
+        '        -->',
+        '        <key>CLOUDSDK_CORE_ACCOUNT</key>',
+        `        ${s(input.serviceAccount)}`
+      ]
+    : [];
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+    '<plist version="1.0">',
+    '<dict>',
+    '    <key>Label</key>',
+    `    ${s(input.label)}`,
+    '',
+    '    <key>ProgramArguments</key>',
+    '    <array>',
+    `        ${s(input.bunBin)}`,
+    '        <string>run</string>',
+    `        ${s(input.entrypoint)}`,
+    '        <string>audit</string>',
+    '        <string>--all</string>',
+    '    </array>',
+    '',
+    '    <key>WorkingDirectory</key>',
+    `    ${s(input.workingDirectory)}`,
+    '',
+    '    <!--',
+    '      PATH has to carry git, claude, npx and node explicitly: launchd starts with a',
+    '      minimal environment, and the audit spawns eslint, the fix agent and git same as',
+    '      the daemon does.',
+    '    -->',
+    '    <key>EnvironmentVariables</key>',
+    '    <dict>',
+    '        <key>HOME</key>',
+    `        ${s(input.home)}`,
+    ...serviceAccount,
+    '        <key>PATH</key>',
+    `        ${s(input.path)}`,
+    '    </dict>',
+    '',
+    '    <!-- One-shot on a calendar. No KeepAlive: this program is meant to exit. -->',
+    '    <key>StartCalendarInterval</key>',
+    '    <dict>',
+    '        <key>Hour</key>',
+    '        <integer>6</integer>',
+    '        <key>Minute</key>',
+    '        <integer>0</integer>',
+    '    </dict>',
+    '',
+    '    <key>StandardOutPath</key>',
+    `    ${s(join(input.logDir, 'audit.log'))}`,
+    '    <key>StandardErrorPath</key>',
+    `    ${s(join(input.logDir, 'audit.err.log'))}`,
+    '</dict>',
+    '</plist>',
+    ''
+  ].join('\n');
+}
+
 /**
  * The directories launchd must be told about explicitly, and nothing else.
  *

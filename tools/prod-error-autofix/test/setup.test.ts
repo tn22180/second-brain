@@ -5,9 +5,9 @@ import {delimiter, join} from 'node:path';
 import {buildConfig, type Config} from '../src/config';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {appNames} from '../src/registry';
-import {doctor, formatDoctor, requiredEnvKeys, type CheckStatus} from '../src/setup/doctor';
+import {checkPushCredential, checkRemotes, describeBaseAge, doctor, formatDoctor, requiredEnvKeys, type CheckStatus} from '../src/setup/doctor';
 import {initInstall} from '../src/setup/init';
-import {daemonPath, renderPlist, resolvePlistInput, xmlEscape} from '../src/setup/plist';
+import {daemonPath, renderAuditPlist, renderPlist, resolvePlistInput, xmlEscape} from '../src/setup/plist';
 
 let ROOT: string;
 
@@ -68,6 +68,60 @@ describe('renderPlist', () => {
 
   test('xmlEscape does not double-escape', () => {
     expect(xmlEscape('a & <b>')).toBe('a &amp; &lt;b&gt;');
+  });
+});
+
+describe('renderAuditPlist', () => {
+  const base = {
+    label: 'com.avada.prod-error-autofix-audit',
+    bunBin: '/Users/x/.bun/bin/bun',
+    entrypoint: '/srv/autofix/bin/autofix.ts',
+    workingDirectory: '/srv/autofix',
+    home: '/Users/x',
+    path: '/a:/b',
+    logDir: '/Users/x/.cache/prod-autofix',
+    serviceAccount: undefined
+  };
+
+  test('the audit job is a one-shot on a calendar, not a KeepAlive listener', () => {
+    const xml = renderAuditPlist(base);
+    expect(xml).toContain('<key>StartCalendarInterval</key>');
+    expect(xml).toContain('<key>Hour</key>');
+    expect(xml).toContain('<integer>6</integer>');
+    expect(xml).toContain('<key>Minute</key>');
+    expect(xml).toContain('<integer>0</integer>');
+    // KeepAlive on a program that exits restarts it in a loop.
+    expect(xml).not.toContain('<key>KeepAlive</key>');
+    expect(xml).not.toContain('<key>RunAtLoad</key>');
+  });
+
+  test('it runs audit --all, not daemon', () => {
+    const xml = renderAuditPlist(base);
+    expect(xml).toContain('<string>audit</string>');
+    expect(xml).toContain('<string>--all</string>');
+    expect(xml).not.toContain('<string>daemon</string>');
+  });
+
+  test('its logs do not collide with the daemon logs', () => {
+    const xml = renderAuditPlist(base);
+    expect(xml).toContain('audit.log');
+    expect(xml).toContain('audit.err.log');
+    expect(xml).not.toContain('daemon.log');
+    expect(xml).not.toContain('daemon.err.log');
+  });
+
+  test('PATH still carries git, claude, npx and node explicitly', () => {
+    // launchd starts with a minimal environment; the audit job spawns eslint, the fix
+    // agent and git exactly like the daemon does.
+    const xml = renderAuditPlist(base);
+    expect(xml).toContain('<key>PATH</key>');
+    expect(xml).toContain('<string>/a:/b</string>');
+  });
+
+  test('the service account is pinned per-job when given, same as the daemon plist', () => {
+    const xml = renderAuditPlist({...base, serviceAccount: 'bot@proj.iam.gserviceaccount.com'});
+    expect(xml).toContain('<key>CLOUDSDK_CORE_ACCOUNT</key>');
+    expect(xml).toContain('<string>bot@proj.iam.gserviceaccount.com</string>');
   });
 });
 
@@ -205,6 +259,25 @@ describe('initInstall', () => {
     expect(readFileSync(first.plistPath, 'utf8')).toBe('hand-edited');
     run({forcePlist: true});
     expect(readFileSync(first.plistPath, 'utf8')).toContain('<plist version="1.0">');
+  });
+
+  test('also writes the audit job plist, under its own label so it is a separate launchd job', () => {
+    const r = run();
+    expect(r.auditLabel).toBe('com.test.autofix-audit');
+    expect(r.auditPlistPath).toBe(join(ROOT, 'project', 'launchd', 'com.test.autofix-audit.plist'));
+    const xml = readFileSync(r.auditPlistPath, 'utf8');
+    expect(xml).toContain('<string>com.test.autofix-audit</string>');
+    expect(xml).toContain('<string>audit</string>');
+    expect(xml).toContain('<key>StartCalendarInterval</key>');
+  });
+
+  test('never overwrites an existing audit plist either', () => {
+    const first = run();
+    writeFileSync(first.auditPlistPath, 'hand-edited');
+    run();
+    expect(readFileSync(first.auditPlistPath, 'utf8')).toBe('hand-edited');
+    run({forcePlist: true});
+    expect(readFileSync(first.auditPlistPath, 'utf8')).toContain('<plist version="1.0">');
   });
 
   test('without a service account it says why that matters', () => {
@@ -451,5 +524,65 @@ describe('doctor', () => {
   test('the report tells you whether you can start, not just what it found', async () => {
     const report = await doctor({cfg: cfgFor(), runner: allGood, quick: true, env: {HOME: ROOT}});
     expect(formatDoctor(report)).toContain('chạy được');
+  });
+});
+
+describe('checkRemotes', () => {
+  // Read on 2026-08-20: seo/APC/AEO on git.avada.net, blogs/img-opt on gitlab.com. Two
+  // of five legitimately still live on gitlab.com, so the check records the host and
+  // flags a CHANGE rather than asserting one correct host.
+  test('a remote host change since the last check is flagged', () => {
+    const r = checkRemotes({previous: {seo: 'gitlab.com'}, current: {seo: 'git.avada.net'}});
+    expect(r.changed).toEqual(['seo']);
+  });
+
+  test('an unchanged host is not flagged, even though it is not on git.avada.net', () => {
+    const r = checkRemotes({
+      previous: {blogs: 'gitlab.com', seo: 'git.avada.net'},
+      current: {blogs: 'gitlab.com', seo: 'git.avada.net'}
+    });
+    expect(r.changed).toEqual([]);
+  });
+
+  test('a repo with no prior reading is not a change — there is nothing to compare against', () => {
+    const r = checkRemotes({previous: {}, current: {seo: 'git.avada.net'}});
+    expect(r.changed).toEqual([]);
+  });
+});
+
+describe('describeBaseAge', () => {
+  test('a stale base branch is reported as ambiguous, not as an error', () => {
+    const r = describeBaseAge({repo: 'blogs', ageDays: 45});
+    expect(r).toContain('45');
+    // A dead mirror and a quiet repo look identical from here; say so.
+    expect(r).toMatch(/quiet|không phân biệt|cannot tell/i);
+  });
+
+  test('names the repo', () => {
+    expect(describeBaseAge({repo: 'seo', ageDays: 2})).toContain('seo');
+  });
+});
+
+describe('checkPushCredential', () => {
+  test('doctor refuses to call MRs ready without a non-interactive push credential', () => {
+    const r = checkPushCredential({mrEnabled: true, helpers: ['osxkeychain'], canPush: false});
+    expect(r.ok).toBe(false);
+  });
+
+  test('mrEnabled false means the check does not apply and cannot fail the doctor', () => {
+    const r = checkPushCredential({mrEnabled: false, helpers: [], canPush: false});
+    expect(r.ok).toBe(true);
+  });
+
+  // Verified 2026-08-20: all five remotes are HTTPS, credential.helper resolves to
+  // osxkeychain then store — store is what a launchd job can use without a GUI session.
+  test('a push that actually succeeds non-interactively is ok', () => {
+    const r = checkPushCredential({mrEnabled: true, helpers: ['osxkeychain', 'store'], canPush: true});
+    expect(r.ok).toBe(true);
+  });
+
+  test('never puts a credential value in the detail string', () => {
+    const r = checkPushCredential({mrEnabled: true, helpers: ['osxkeychain'], canPush: false});
+    expect(r.detail).not.toMatch(/ghp_|shpat_|shpca_|sk-|Bearer /);
   });
 });
