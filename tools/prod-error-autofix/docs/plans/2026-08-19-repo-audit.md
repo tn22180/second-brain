@@ -34,7 +34,7 @@ The daemon keeps listening, triaging and replying. It stops pushing branches and
 **Files:**
 - Modify: `src/config.ts` — add `fixEnabled`
 - Modify: `src/state/stateMachine.ts` — handle status `fix_disabled`
-- Modify: `src/state/store.ts:88` — add `fix_disabled` to `AlertStatus`
+- Modify: `src/state/stateMachine.ts:15` — add `fix_disabled` to `AlertStatus`, and `fix_disabled` to `DecisionReason` (`stateMachine.ts:30`). Both unions live here, not in `store.ts`
 - Modify: `src/pipeline.ts:435-443` — branch before the infra check
 - Modify: `src/slack/reply.ts` — add `replyFixDisabled`
 - Modify: `.env.example`, `README.md`
@@ -97,7 +97,7 @@ Expected: FAIL — no case for `fix_disabled`.
 - [ ] **Step 7: Handle the status**
 
 ```ts
-// src/state/store.ts — add to the AlertStatus union
+// src/state/stateMachine.ts — add to BOTH unions (AlertStatus:15, DecisionReason:30)
   | 'fix_disabled'
 
 // src/state/stateMachine.ts, in the switch on existing.status
