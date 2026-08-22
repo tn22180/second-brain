@@ -93,7 +93,7 @@ function addCost(a: number | undefined, b: number | undefined): number | undefin
 }
 
 function emptyLedger(): LedgerDiff {
-  return {fresh: [], carried: 0, resolved: 0, suppressed: 0};
+  return {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: []};
 }
 
 function securityToFinding(app: App, f: SecurityFinding): AuditFinding {

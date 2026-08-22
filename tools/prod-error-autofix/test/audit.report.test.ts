@@ -36,7 +36,7 @@ function finding(over: Partial<AuditFinding> & {app: string; file: string; rule:
 }
 
 function ledger(over: Partial<LedgerDiff> = {}): LedgerDiff {
-  return {fresh: [], carried: 0, resolved: 0, suppressed: 0, ...over};
+  return {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: [], ...over};
 }
 
 function app(over: Partial<AppReportInput> & {appName: string}): AppReportInput {

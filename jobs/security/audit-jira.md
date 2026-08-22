@@ -34,7 +34,9 @@ tới 2026-08-04, đó là lý do task 1 của job trước tắt nó đi.
 |---|------|---------------|--------|--------|-----|-------|
 | 1 | `jira_key` trên `audit_findings` + accessor | inline | ✅ | 1/5 | clean | Mirror `mr_url` / `setAuditFindingMr`. Migration verify trên bản copy của `state.db` thật |
 | 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. `IMG-OPT` → board `Speed` |
-| 3 | Wire security lane → Jira, gỡ nhánh security khỏi MR lane | general-purpose / opus | ⬜ | 0/5 | — | Chỗ dễ tạo ticket trùng nhất |
+| 3a | `resolvedRows` + `jiraLane.ts` | inline | ✅ | 1/5 | clean | Chỗ dễ tạo ticket trùng nhất. Mọi quyết định nằm trong hàm thuần |
+| 3b | Wire vào `job.ts` / `run.ts` / `config.ts` | inline | ⬜ | 0/5 | — | `AUDIT_JIRA_ENABLED` mặc định tắt |
+| 3c | Gỡ nhánh `security` khỏi MR lane | inline | ⬜ | 0/5 | — | Xoá khỏi `MrLaneKind`, không để bật lại bằng env |
 | 4 | `.env.example` + doctor check | inline | ⬜ | 0/5 | — | `.env.example` hiện không có key `AUDIT_` nào |
 | 5 | Đóng gap `checkPushCredential` | general-purpose / sonnet | ⬜ | 0/5 | — | Đang chặn `AUDIT_MR_ENABLED=true`; lane cleanup bật cũng không push được |
 
@@ -119,3 +121,44 @@ tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
     dependency nào — dùng `fetch` global.
   - Blast radius: POST vào Jira dùng chung của team. `assertProjectFal` chặn ở tầng build payload,
     trước khi tồn tại request; có test riêng cho nhánh đó.
+
+> Task 3 tách ba khi lập plan — một task gộp cả build ticket, wire orchestration và gỡ MR lane
+> thì không review được từng phần, và §6 nói scope creep phải split chứ không nuốt.
+
+#### ✅ Task 3a: `resolvedRows` trên ledger + `jiraLane.ts`
+- Agent: inline
+- Status: ✅ completed
+- Plan:
+  - Goal: cho một app + diff của ledger, dựng đúng **một** ticket cho finding chưa có ticket và
+    **một** comment cho mỗi ticket cũ còn liên quan; không có gì mới thì không POST gì cả.
+    `bun test ./test/audit.jiraLane.test.ts` xanh, `bun run typecheck` sạch.
+  - Files allowed: `src/audit/ledger.ts`, `src/audit/jiraLane.ts` (mới),
+    `test/audit.jiraLane.test.ts` (mới), `test/audit.ledger.test.ts`. Không đụng gì khác.
+  - Approach: `classify` là chỗ DUY NHẤT biết finding nào vừa chuyển sang `resolved` hôm nay, nên
+    nó trả thêm `resolvedRows`; `resolved: number` giữ nguyên để `report.ts` và test cũ không đổi.
+    `carried` thì suy được (`openAuditFindings` trừ `fresh`) nên không thêm field. Tách build/post:
+    `buildTicket` + `buildComments` thuần, `runJiraLane` chỉ POST. Bỏ phương án query
+    `resolvedAuditFindings(app)`: nó trả cả finding resolved từ tháng trước → comment lại mỗi sáng.
+  - Test command: `bun test ./test/audit.jiraLane.test.ts ./test/audit.ledger.test.ts` **và**
+    `bun run typecheck`.
+  - Risk: đây là chỗ đẻ ticket trùng. Sai một nhánh là sáng mai 858 ticket FAL. Vì thế mọi quyết
+    định "có tạo không / gộp vào đâu" nằm trong hàm thuần có test, không nằm cạnh lời gọi network.
+  - Rollback: revert; chưa gì gọi `runJiraLane` cho tới 3b.
+- **Plan sửa giữa chừng:** thêm `resolvedRows` làm 4 literal `emptyLedger` không compile
+  (`job.ts:95`, `run.ts:102`, 2 file test). Files allowed mở rộng đúng 4 chỗ đó, mỗi chỗ 1 dòng.
+- Rounds used: 1/5 — vòng 1 là 4 lỗi typecheck trên, không phải lỗi logic.
+- Verify: `bun test ./test/audit.jiraLane.test.ts` 12 pass / 0 fail; `bun run typecheck` exit 0;
+  `bun test ./test` 712 pass / 5 fail (vẫn đúng 5 `brainSlice.test.ts` cũ).
+- Quyết định đã đóng bằng test, không phải bằng comment:
+  - không có gì mới → **không POST gì cả**
+  - fresh nhiều → **một** ticket, không phải mỗi finding một ticket
+  - carried **chưa có** ticket → gộp vào ticket hôm nay (nếu không thì nó không fresh ngày nào
+    nữa và sẽ không bao giờ có ticket)
+  - carried/resolved **đã có** ticket → gộp thành **một** comment cho mỗi ticket
+  - create fail → `ticketedFps` rỗng, không đóng dấu `jira_key` lên finding, mai chạy lại
+  - comment fail ở ticket này không chặn ticket kia
+- Security check: **clean** — 2 file mới, 5 file sửa (16 insert / 8 delete, trong đó 4 file chỉ
+  1 dòng literal). Không secret, không lời gọi log nào trong `jiraLane.ts`, không host mới
+  (`space.avada.net` đã khai ở task 2), không dependency mới, không đụng `.env*`/lockfile/CI.
+  Blast radius: đây là chỗ đẻ ticket trùng — vì thế `buildTicket`/`buildComments` là hàm thuần
+  có test, tách khỏi lời gọi network.

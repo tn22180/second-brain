@@ -1,4 +1,4 @@
-import type {Store} from '../state/store';
+import type {AuditFindingRow, Store} from '../state/store';
 
 export type FindingKind = 'security' | 'hygiene';
 
@@ -26,6 +26,14 @@ export interface LedgerDiff {
   carried: number;
   resolved: number;
   suppressed: number;
+  /**
+   * The rows that flipped to `resolved` in THIS call, carried out because this is the
+   * only place that knows which ones flipped today: a later
+   * `SELECT … WHERE status = 'resolved'` also returns everything resolved last month,
+   * which would re-comment on the same closed tickets every morning. `resolved` stays
+   * a count so `report.ts` and its tests are untouched.
+   */
+  resolvedRows: AuditFindingRow[];
 }
 
 /**
@@ -53,11 +61,11 @@ export function classify(store: Store, app: string, found: AuditFinding[], nowMs
     store.upsertAuditFinding(f, nowMs);
   }
 
-  let resolved = 0;
+  const resolvedRows: AuditFindingRow[] = [];
   for (const row of store.openAuditFindings(app)) {
     if (seen.has(row.fp)) continue;
     store.setAuditFindingStatus(row.fp, 'resolved');
-    resolved++;
+    resolvedRows.push(row);
   }
-  return {fresh, carried, resolved, suppressed};
+  return {fresh, carried, resolved: resolvedRows.length, suppressed, resolvedRows};
 }

@@ -99,7 +99,7 @@ function threwAppResult(app: App, e: unknown): AppAuditResult {
     mr: {security: undefined, cleanup: undefined},
     report: {
       appName: app.appName,
-      ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0},
+      ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: []},
       openFindings: [],
       hasSecuritySkill: false,
       laneFailures: [{lane: 'security', detail: (e as Error)?.message ?? 'the job threw without a message'}]

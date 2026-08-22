@@ -228,7 +228,7 @@ function okResult(appName: string): AppAuditResult {
     mr: {security: undefined, cleanup: undefined},
     report: {
       appName,
-      ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0},
+      ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: []},
       openFindings: [],
       hasSecuritySkill: true,
       laneFailures: []
