@@ -118,6 +118,9 @@ export interface AuditFindingRow extends AuditFinding {
   firstSeenMs: number;
   lastSeenMs: number;
   mrUrl: string | undefined;
+  /** The FAL ticket this finding was reported in. Set once, then reused so a carried
+   *  finding comments on its existing ticket instead of opening a second one. */
+  jiraKey: string | undefined;
 }
 
 interface RawAuditFinding {
@@ -134,6 +137,7 @@ interface RawAuditFinding {
   last_seen_ms: number;
   status: string;
   mr_url: string | null;
+  jira_key: string | null;
 }
 
 function toAuditFindingRow(r: RawAuditFinding): AuditFindingRow {
@@ -150,7 +154,8 @@ function toAuditFindingRow(r: RawAuditFinding): AuditFindingRow {
     status: r.status as FindingStatus,
     firstSeenMs: r.first_seen_ms,
     lastSeenMs: r.last_seen_ms,
-    mrUrl: opt(r.mr_url)
+    mrUrl: opt(r.mr_url),
+    jiraKey: opt(r.jira_key)
   };
 }
 
@@ -239,8 +244,12 @@ export class Store {
         first_seen_ms INTEGER NOT NULL,
         last_seen_ms  INTEGER NOT NULL,
         status        TEXT NOT NULL,
-        mr_url        TEXT
+        mr_url        TEXT,
+        jira_key      TEXT
       )`);
+    // Databases created before jira_key existed already have the table, so CREATE TABLE
+    // IF NOT EXISTS above is a no-op for them.
+    this.addColumns('audit_findings', {jira_key: 'TEXT'});
     this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_app ON audit_findings(app, status)');
     this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_seen ON audit_findings(last_seen_ms DESC)');
   }
@@ -569,5 +578,9 @@ export class Store {
 
   setAuditFindingMr(fp: string, url: string): void {
     this.db.query('UPDATE audit_findings SET mr_url = ? WHERE fp = ?').run(url, fp);
+  }
+
+  setAuditFindingJira(fp: string, key: string): void {
+    this.db.query('UPDATE audit_findings SET jira_key = ? WHERE fp = ?').run(key, fp);
   }
 }
