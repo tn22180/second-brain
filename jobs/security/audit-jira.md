@@ -33,7 +33,7 @@ tới 2026-08-04, đó là lý do task 1 của job trước tắt nó đi.
 | # | Task | Agent / Model | Status | Rounds | Sec | Notes |
 |---|------|---------------|--------|--------|-----|-------|
 | 1 | `jira_key` trên `audit_findings` + accessor | inline | ✅ | 1/5 | clean | Mirror `mr_url` / `setAuditFindingMr`. Migration verify trên bản copy của `state.db` thật |
-| 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. IMG-OPT không có Falcon App option |
+| 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. `IMG-OPT` → board `Speed` |
 | 3 | Wire security lane → Jira, gỡ nhánh security khỏi MR lane | general-purpose / opus | ⬜ | 0/5 | — | Chỗ dễ tạo ticket trùng nhất |
 | 4 | `.env.example` + doctor check | inline | ⬜ | 0/5 | — | `.env.example` hiện không có key `AUDIT_` nào |
 | 5 | Đóng gap `checkPushCredential` | general-purpose / sonnet | ⬜ | 0/5 | — | Đang chặn `AUDIT_MR_ENABLED=true`; lane cleanup bật cũng không push được |
@@ -105,10 +105,10 @@ tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
   `bun test ./test` 699 pass / 5 fail (vẫn đúng 5 cái `brainSlice.test.ts` có sẵn).
 - **Không POST thử vào FAL.** Shape payload đã được chứng minh bằng FAL-720/721/722 tạo hôm nay
   qua skill `jira-create` với đúng field id đó — tạo thêm issue rác để test là bẩn board team.
-- Phát hiện: **`IMG-OPT` không có option Falcon App.** Danh sách Jira chỉ có 9 giá trị
-  (SEO/Blog/APC/AEO/Feed/Ads/Pixels/Speed/Canva), image optimizer không nằm trong đó và Jira
-  400 nếu gửi giá trị lạ. Client bỏ hẳn field cho app này → ticket rơi vào Falcon Master board.
-  Không map sang app hàng xóm: board sai còn tệ hơn không board.
+- Tên registry và option Jira **không trùng nhau**, nên phải có bảng map chứ không
+  `toUpperCase()` được: `BLOG` → `Blog`, và `IMG-OPT` → **`Speed`** (Tuan xác nhận 2026-08-22 —
+  image optimizer được team track ở board Speed). App không có trong bảng thì bỏ hẳn field →
+  rơi vào Falcon Master board; đoán bừa board hàng xóm tệ hơn không board.
 - Security check: **clean** — 2 file mới, không sửa file cũ.
   - Không có secret thật. Hai chuỗi hình dạng token trong test là `pat-not-a-real-token` và
     `glpat-<fixture>` — cố ý nhìn là biết giả, đúng kết luận của security check whole-branch

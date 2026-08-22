@@ -31,15 +31,18 @@ export const ISSUE_TYPE_TASK = '10001';
  * Registry app name -> Falcon App option. The option list is fixed on the Jira side
  * (SEO/Blog/APC/AEO/Feed/Ads/Pixels/Speed/Canva) and Jira 400s on a value outside it.
  *
- * IMG-OPT has no option: the image optimizer is not on that list. Its tickets are created
- * without the field, which puts them on the Falcon Master board instead of a team board.
- * Mapping it onto a neighbouring app's board would be worse — the board would be wrong.
+ * The names do not line up one-to-one, which is why this map exists rather than a
+ * `toUpperCase()`: the registry's `IMG-OPT` is the `Speed` board (Tuan, 2026-08-22 — image
+ * optimization is a speed feature and the team tracks it there), and `BLOG` is spelled `Blog`.
+ * An app with no option here is filed without the field, landing on the Falcon Master board;
+ * guessing a neighbouring app's board would be worse than no board.
  */
 const FALCON_APP: Record<string, string> = {
   SEO: 'SEO',
   BLOG: 'Blog',
   APC: 'APC',
-  AEO: 'AEO'
+  AEO: 'AEO',
+  'IMG-OPT': 'Speed'
 };
 
 export function falconAppFor(appName: string): string | undefined {

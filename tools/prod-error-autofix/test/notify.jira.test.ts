@@ -43,9 +43,15 @@ describe('buildIssuePayload', () => {
     expect(p.fields.priority).toEqual({name: 'High'});
   });
 
-  test('IMG-OPT has no Falcon App option, so the field is omitted rather than guessed', () => {
-    expect(falconAppFor('IMG-OPT')).toBeUndefined();
+  test('IMG-OPT is the Speed board, which no case transform would produce', () => {
+    expect(falconAppFor('IMG-OPT')).toBe('Speed');
     const p = buildIssuePayload({...INPUT, appName: 'IMG-OPT'});
+    expect(p.fields.customfield_11203).toEqual({value: 'Speed'});
+  });
+
+  test('an app with no option is filed without the field rather than with a guessed one', () => {
+    expect(falconAppFor('SOMETHING-NEW')).toBeUndefined();
+    const p = buildIssuePayload({...INPUT, appName: 'SOMETHING-NEW'});
     expect(p.fields.customfield_11203).toBeUndefined();
     expect((p.fields.project as {key: string}).key).toBe('FAL');
   });
