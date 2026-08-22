@@ -28,8 +28,8 @@ Tracking is this table only — this harness has no TaskCreate tool.
 | 7 | Supervisor + report render | general-purpose / sonnet | ✅ | 1/5 | clean | `83de9f3`. Redacts again at render, incl. the `file` path and lane-failure detail |
 | 8 | MR lanes | general-purpose / opus | ✅ | 1/5 | clean | `c8f8e2d`. 63 tests, none pushes. **Open decision: the green-jest gate makes `blogs` structurally unable to ever produce an MR** |
 | 9 | `audit` command + orchestration | general-purpose / sonnet | ✅ | 1/5 | clean | `b9b1ec7`. Security timeout raised 15m→20m off measured file counts; no brain slice passed |
-| 10 | 06:00 plist + doctor checks | general-purpose / sonnet | ⬜ | 0/5 | — | Calendar one-shot, never KeepAlive |
-| 11 | README + this table | inline | ⬜ | 0/5 | — | README:61 claims SSH; the remotes are HTTPS across two hosts |
+| 10 | 06:00 plist + doctor checks | general-purpose / sonnet | ✅ | 1/5 | clean | Calendar one-shot, never KeepAlive. Installed + loaded 2026-08-22 |
+| 11 | README + this table | inline | ✅ | 1/5 | clean | README corrected: remotes are HTTPS across two hosts, not SSH |
 
 ### Log
 
@@ -321,3 +321,63 @@ and exercised by no test. Low risk, but it is untested surface on the push path.
 ### Open findings, not caused by this work
 
 - **`brain budget` is ~4x over on every app.** Measured 2026-08-20: SEO 23473, BLOG 23805, APC 23326, AEO 23289, IMG-OPT 23323 — against a 6000 budget. `test/brainSlice.test.ts` fails 5 tests because of it, and has since before this job started; neither `src/brain/*` nor that test is in either task's diff. Every prod-error job currently loads an oversized slice. Not fixed here — it is its own task and Tuan has not been asked yet.
+
+---
+
+## Handover done — 2026-08-22
+
+Both manual steps from the COMPLETE section are now done.
+
+**1. Audit job installed.** `init` was first run with the default label
+`com.avada.prod-error-autofix`, which does not match the label this machine's daemon was
+installed under (`com.tn22180.prod-error-autofix`). Loading that would have started a *second*
+Slack daemon beside the live one. Regenerated with `--label com.tn22180.prod-error-autofix`; the
+existing daemon plist was left untouched (`đã có, không đụng`) and only the audit plist was
+copied and loaded.
+
+```
+$ plutil -lint launchd/com.tn22180.prod-error-autofix-audit.plist
+OK
+$ launchctl list | grep autofix
+-       0  com.tn22180.prod-error-autofix-audit     # PID "-" = loaded, waiting for 06:00
+72820   0  com.tn22180.prod-error-autofix
+```
+
+Plist re-read after generation: `StartCalendarInterval` Hour 6 / Minute 0, no `KeepAlive`, no
+`RunAtLoad`, args end `audit --all`, own logs (`audit.log` / `audit.err.log`), own label.
+`CLOUDSDK_CORE_ACCOUNT` pinned to the same service account as the daemon.
+
+**2. Daemon restarted.** PID 2202 → 72820, `slack: authenticated, bot user U0ANC8JQ3AL`. The
+`ECONNREFUSED` lines in `daemon.err.log` are stale — that file has not been written since
+2026-08-19.
+
+**Task 1 verified on live traffic, not just in tests.** The restarted daemon produced both
+statuses in the same minute, which is the exact ordering the round-1 defect got wrong:
+
+```
+→ 1dlgm1s status fix_disabled · fix_disabled · $0.00
+→ 4cha8x  status infra        · infra_no_autofix · $0.00
+```
+
+An infra alert still reports `infra`, not `fix_disabled`. No branch pushed, no MR opened.
+`.env` sets neither `AUTOFIX_FIX_ENABLED` nor `AUDIT_MR_ENABLED`, and
+`config.ts:245` is `=== 'true'`, so both are off.
+
+### Still open (unchanged)
+
+1. `checkPushCredential` has no caller computing `canPush` — blocks `AUDIT_MR_ENABLED=true`.
+2. `store.setAuditFindingMr` has no test.
+3. `test/brainSlice.test.ts` — 5 failures. **Not test-only:** the running daemon logs
+   `brain slice over budget: 24247/6000` on every BLOG alert, so the budget is being blown in
+   prod, not just in the fixture. 4x over.
+
+### APC security findings — hand-verified 2026-08-21, nothing filed yet
+
+Read at `420385b` (= `origin/master` at scan time). 11 of 12 confirmed, 1 refuted.
+Two chains and three loose buckets; see the full report at
+`~/.cache/prod-autofix/audit-2026-08-20.md`. Not yet raised in Jira — awaiting Tuan.
+
+Three committed credentials need **rotation**, not deletion:
+`packages/functions/src/const/appIntegationKeys.js:1`,
+`packages/functions/src/graphql/codegen.js:7`,
+`packages/functions/src/commands/autoTranslateV2.js:8`.
