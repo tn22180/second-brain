@@ -33,7 +33,7 @@ tới 2026-08-04, đó là lý do task 1 của job trước tắt nó đi.
 | # | Task | Agent / Model | Status | Rounds | Sec | Notes |
 |---|------|---------------|--------|--------|-----|-------|
 | 1 | `jira_key` trên `audit_findings` + accessor | inline | ✅ | 1/5 | clean | Mirror `mr_url` / `setAuditFindingMr`. Migration verify trên bản copy của `state.db` thật |
-| 2 | Jira client trong tool | general-purpose / sonnet | ⬜ | 0/5 | — | create + comment, guard project FAL, token từ env |
+| 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. IMG-OPT không có Falcon App option |
 | 3 | Wire security lane → Jira, gỡ nhánh security khỏi MR lane | general-purpose / opus | ⬜ | 0/5 | — | Chỗ dễ tạo ticket trùng nhất |
 | 4 | `.env.example` + doctor check | inline | ⬜ | 0/5 | — | `.env.example` hiện không có key `AUDIT_` nào |
 | 5 | Đóng gap `checkPushCredential` | general-purpose / sonnet | ⬜ | 0/5 | — | Đang chặn `AUDIT_MR_ENABLED=true`; lane cleanup bật cũng không push được |
@@ -82,3 +82,40 @@ Hệ quả cho lần chạy 06:00 đầu tiên: **mọi** finding của cả 5 a
 Report Telegram sẽ đụng trần 4096 và rơi phần lớn xuống dòng "Còn N phát hiện không hiện ở đây".
 Đây cũng chính là lý do chính sách "1 ticket / app / ngày" ở trên là bắt buộc chứ không phải
 tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
+
+#### ✅ Task 2: Jira client trong tool
+- Agent: inline
+- Status: ✅ completed
+- Plan:
+  - Goal: `createIssue()` trả `{ok, key}` với payload đúng shape FAL, `addComment()` trả `{ok}`,
+    cả hai **không bao giờ throw** và guard project ≠ FAL. `bun test ./test/notify.jira.test.ts`
+    xanh, `bun run typecheck` sạch.
+  - Files allowed: `src/notify/jira.ts` (mới), `test/notify.jira.test.ts` (mới). Không đụng gì khác.
+  - Approach: mirror `src/notify/telegram.ts` — `Fetcher` inject được, mọi lỗi *trả về* chứ không
+    ném, để Jira sập không làm hỏng audit run. Field id đọc từ probe của skill `jira-create`
+    (`customfield_11203` Falcon App, `customfield_10700` assignees). Bỏ phương án shell ra
+    `create-issue.mjs` của skill: nó in ra stdout cho người đọc và sống ở `~/.claude`, không phải
+    dependency mà một daemon được phép trỏ vào.
+  - Test command: `bun test ./test/notify.jira.test.ts` **và** `bun run typecheck`.
+  - Risk: client này POST vào Jira thật của cả team. Rủi ro lớn nhất là tạo issue sai project;
+    guard `assertProjectFal` chặn ở tầng build payload, trước khi có network call.
+  - Rollback: xoá 2 file mới; chưa gì import chúng cho tới task 3.
+- Rounds used: 1/5
+- Verify: `bun test ./test/notify.jira.test.ts` 14 pass / 0 fail; `bun run typecheck` exit 0;
+  `bun test ./test` 699 pass / 5 fail (vẫn đúng 5 cái `brainSlice.test.ts` có sẵn).
+- **Không POST thử vào FAL.** Shape payload đã được chứng minh bằng FAL-720/721/722 tạo hôm nay
+  qua skill `jira-create` với đúng field id đó — tạo thêm issue rác để test là bẩn board team.
+- Phát hiện: **`IMG-OPT` không có option Falcon App.** Danh sách Jira chỉ có 9 giá trị
+  (SEO/Blog/APC/AEO/Feed/Ads/Pixels/Speed/Canva), image optimizer không nằm trong đó và Jira
+  400 nếu gửi giá trị lạ. Client bỏ hẳn field cho app này → ticket rơi vào Falcon Master board.
+  Không map sang app hàng xóm: board sai còn tệ hơn không board.
+- Security check: **clean** — 2 file mới, không sửa file cũ.
+  - Không có secret thật. Hai chuỗi hình dạng token trong test là `pat-not-a-real-token` và
+    `glpat-<fixture>` — cố ý nhìn là biết giả, đúng kết luận của security check whole-branch
+    job trước (fixture trông thật dạy reviewer lướt qua cái thật).
+  - Client **không có một lời gọi log nào**, nên token không thể rơi vào `daemon.log`. Nó chỉ
+    sống trong header `Authorization`.
+  - **Outbound host mới: `space.avada.net`.** Có khai trong plan, không phải lén. Không thêm
+    dependency nào — dùng `fetch` global.
+  - Blast radius: POST vào Jira dùng chung của team. `assertProjectFal` chặn ở tầng build payload,
+    trước khi tồn tại request; có test riêng cho nhánh đó.
