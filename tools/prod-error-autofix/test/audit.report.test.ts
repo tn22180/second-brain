@@ -317,3 +317,34 @@ describe('runSupervisor', () => {
     expect(calls).toBe(1);
   });
 });
+
+describe('the Jira ticket line', () => {
+  test('the ticket is named next to the app that opened it', () => {
+    const out = renderReport({
+      date: '2026-08-22',
+      digest: false,
+      costUsd: undefined,
+      apps: [
+        app({
+          appName: 'APC',
+          ledger: ledger({fresh: [finding({app: 'APC', file: 'src/a.js', rule: 'auth', title: 'no shop check'})]}),
+          jiraTicketUrl: 'https://space.avada.net/browse/FAL-900'
+        })
+      ]
+    });
+    expect(out).toContain('https://space.avada.net/browse/FAL-900');
+  });
+
+  test('an app with a ticket but no fresh finding is not filed under "nothing new"', () => {
+    // Happens once per app: the run where a backlog older than the Jira lane finally
+    // gets a ticket. Going quiet there would hide the only message naming it.
+    const out = renderReport({
+      date: '2026-08-22',
+      digest: false,
+      costUsd: undefined,
+      apps: [app({appName: 'APC', jiraTicketUrl: 'https://space.avada.net/browse/FAL-901'})]
+    });
+    expect(out).toContain('FAL-901');
+    expect(out).not.toContain('APC: không có gì mới');
+  });
+});

@@ -95,11 +95,30 @@ export interface AuditTimeouts {
   runMs: number;
 }
 
+/**
+ * Absent means the lane does not run. The two reasons — switched off, or no token —
+ * collapse here on purpose: `runAuditJob` has no use for the difference, and carrying
+ * both an `enabled` flag and an optional config down to it invents an "enabled but no
+ * token" branch that would have to be handled at every call site.
+ */
+export interface AuditJiraSettings {
+  baseUrl: string;
+  token: string;
+  /** Jira usernames. Empty leaves the ticket unassigned. */
+  assignees: string[];
+}
+
 export interface AuditSettings {
   /** Kill switch that does not need the plist unloaded. */
   enabled: boolean;
   /** Report-only until the signal has been watched. */
   mrEnabled: boolean;
+  /**
+   * The security lane files tickets instead of MRs (jobs/security/audit-jira.md). Off
+   * unless `AUDIT_JIRA_ENABLED=true` AND a token exists: this is the one lane that
+   * writes into the team's shared Jira, so it must never come on by accident.
+   */
+  jira: AuditJiraSettings | undefined;
   models: AuditModels;
   timeouts: AuditTimeouts;
   /** `Date#getDay()` value — 1 = Monday. Full digest of every open finding, so a
@@ -246,6 +265,17 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
     audit: {
       enabled: env.AUDIT_ENABLED !== 'false',
       mrEnabled: env.AUDIT_MR_ENABLED === 'true',
+      jira:
+        env.AUDIT_JIRA_ENABLED === 'true' && env.JIRA_TOKEN
+          ? {
+              baseUrl: env.JIRA_BASE_URL || 'https://space.avada.net',
+              token: env.JIRA_TOKEN,
+              assignees: (env.AUDIT_JIRA_ASSIGNEE || '')
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+            }
+          : undefined,
       models: {
         security: env.AUDIT_SECURITY_MODEL || 'claude-opus-5',
         triage: env.AUDIT_TRIAGE_MODEL || 'claude-sonnet-5',

@@ -35,7 +35,7 @@ tới 2026-08-04, đó là lý do task 1 của job trước tắt nó đi.
 | 1 | `jira_key` trên `audit_findings` + accessor | inline | ✅ | 1/5 | clean | Mirror `mr_url` / `setAuditFindingMr`. Migration verify trên bản copy của `state.db` thật |
 | 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. `IMG-OPT` → board `Speed` |
 | 3a | `resolvedRows` + `jiraLane.ts` | inline | ✅ | 1/5 | clean | Chỗ dễ tạo ticket trùng nhất. Mọi quyết định nằm trong hàm thuần |
-| 3b | Wire vào `job.ts` / `run.ts` / `config.ts` | inline | ⬜ | 0/5 | — | `AUDIT_JIRA_ENABLED` mặc định tắt |
+| 3b | Wire vào `job.ts` / `run.ts` / `config.ts` | inline | ✅ | 1/5 | clean | Tắt = zero call, có test. Verify trên `.env` thật |
 | 3c | Gỡ nhánh `security` khỏi MR lane | inline | ⬜ | 0/5 | — | Xoá khỏi `MrLaneKind`, không để bật lại bằng env |
 | 4 | `.env.example` + doctor check | inline | ⬜ | 0/5 | — | `.env.example` hiện không có key `AUDIT_` nào |
 | 5 | Đóng gap `checkPushCredential` | general-purpose / sonnet | ⬜ | 0/5 | — | Đang chặn `AUDIT_MR_ENABLED=true`; lane cleanup bật cũng không push được |
@@ -162,3 +162,49 @@ tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
   (`space.avada.net` đã khai ở task 2), không dependency mới, không đụng `.env*`/lockfile/CI.
   Blast radius: đây là chỗ đẻ ticket trùng — vì thế `buildTicket`/`buildComments` là hàm thuần
   có test, tách khỏi lời gọi network.
+
+#### ✅ Task 3b: Wire vào `job.ts` / `run.ts` / `config.ts`
+- Agent: inline
+- Status: 🔄 in-progress
+- Plan:
+  - Goal: `AUDIT_JIRA_ENABLED=true` + `JIRA_TOKEN` có mặt thì mỗi app tạo/comment đúng như 3a
+    và đóng dấu `jira_key` lên finding; thiếu một trong hai thì **không có lời gọi Jira nào**.
+    Ticket của hôm nay hiện trong message Telegram. `bun test ./test` không phát sinh fail mới,
+    `bun run typecheck` sạch.
+  - Files allowed: `src/config.ts`, `src/audit/job.ts`, `src/audit/run.ts`, `src/audit/report.ts`,
+    `test/audit.job.test.ts`, `test/audit.report.test.ts`, `test/config.test.ts`. Không đụng khác.
+  - Approach: gộp hai cờ (`AUDIT_JIRA_ENABLED` và có token hay không) thành **một** field
+    `AuditJobSettings.jira` — `undefined` là lane tắt. Đúng hợp đồng `telegram` đang dùng, và
+    job không phải biết vì sao nó tắt. Bỏ phương án truyền cả `enabled` lẫn `cfg` xuống job:
+    hai cờ cho một quyết định là chỗ đẻ nhánh "enabled nhưng không có token".
+  - Test command: `bun test ./test` **và** `bun run typecheck`.
+  - Risk: đây là lần đầu code có thể POST vào Jira thật của team khi chạy. Mặc định phải TẮT, và
+    phải có test chứng minh tắt nghĩa là zero call, không phải "gọi rồi bỏ kết quả".
+  - Rollback: revert; `AUDIT_JIRA_ENABLED` không set thì code mới không chạy nhánh nào.
+- Status: ✅ completed
+- Rounds used: 1/5 — vòng 1 là chuỗi lỗi typecheck (literal `AppAuditResult`/`AuditJobSettings`
+  thiếu field mới ở 6 chỗ, và `category: 'auth'` không có trong `SecurityCategory` — đúng là
+  `authn`). Không có lỗi logic.
+- Verify: `bun run typecheck` exit 0; `bun test ./test` **719 pass / 5 fail** (vẫn đúng 5
+  `brainSlice.test.ts` cũ, không phát sinh mới).
+- **Verify trên `.env` thật, không phải fixture** — cái quan trọng nhất của task này:
+  ```
+  audit.jira      = undefined (lane OFF)
+  audit.mrEnabled = false
+  ```
+  Chạy 06:00 sáng mai sẽ không có một request Jira nào.
+- Hai cờ gộp thành một field: `audit.jira` là `undefined` khi thiếu `AUDIT_JIRA_ENABLED=true`
+  **hoặc** thiếu `JIRA_TOKEN`. `job.ts` không cần biết vì sao nó tắt. Có test cho cả 3 tổ hợp.
+- Test chứng minh tắt = **zero call**, không phải "gọi rồi bỏ kết quả": stub `runJiraLane` đếm
+  số lần gọi và assert `0`.
+- Report: thêm dòng `🎫 <url>` dưới tên app. App có ticket nhưng không có finding `fresh` thì
+  **không** bị gom vào "không có gì mới" — ca đó xảy ra đúng một lần cho mỗi app, là lần backlog
+  cũ hơn lane Jira cuối cùng được tạo ticket, và im lặng ở đó là giấu mất message duy nhất
+  nhắc tới ticket đó.
+- Security check: **clean** — 7 file, +226/−7.
+  - Không secret; chuỗi hình dạng token trong test đều là `not-a-real-token`.
+  - **Không có lời gọi log mới nào**, và `grep` xác nhận không chỗ nào `JSON.stringify` cả
+    object config — token Jira không có đường rơi vào `daemon.log` hay `audit.log`.
+  - Không host mới (đã khai ở task 2), không dependency mới, không đụng `.env*`/lockfile/CI.
+  - Blast radius: đây là commit đầu tiên mà code **có thể** POST vào Jira dùng chung của team.
+    Mặc định tắt, đã verify trên `.env` thật ở trên.

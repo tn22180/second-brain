@@ -11,6 +11,8 @@ import type {SecurityLaneInput, SecurityLaneResult} from './securityLane';
 import type {SecurityFinding} from './securitySchema';
 import type {TriageFinding, TriageInput, TriageResult, TriageVerdict, Verdict} from './triage';
 import type {MrLaneInput, MrLaneKind, MrLaneResult} from './mr';
+import type {JiraLaneInput, JiraLaneResult} from './jiraLane';
+import type {AuditJiraSettings} from '../config';
 
 /**
  * One app, start to finish: worktree → Lane A + Lane B concurrently → ledger →
@@ -42,6 +44,8 @@ export interface AuditJobSettings {
    * rather than inventing a parallel set of knobs for the same thing.
    */
   mr: {model: string; agentTimeoutMs: number; jestTimeoutMs: number};
+  /** Absent means the security lane files no ticket — see `AuditJiraSettings`. */
+  jira: AuditJiraSettings | undefined;
 }
 
 export interface AuditJobDeps {
@@ -56,6 +60,8 @@ export interface AuditJobDeps {
   triageLane: (input: TriageInput) => Promise<TriageResult>;
   /** Never called when `cfg.mrEnabled` is false — the caller must not even construct one. */
   runMrLane: (input: MrLaneInput & {kind: MrLaneKind}) => Promise<MrLaneResult>;
+  /** Never called when `cfg.jira` is absent, for the same reason. */
+  runJiraLane: (input: JiraLaneInput, cfg: AuditJiraSettings) => Promise<JiraLaneResult>;
   store: Store;
 }
 
@@ -65,6 +71,7 @@ export interface AppAuditResult {
   report: AppReportInput;
   costUsd: number | undefined;
   mr: {security: MrLaneResult | undefined; cleanup: MrLaneResult | undefined};
+  jira: JiraLaneResult | undefined;
 }
 
 /**
@@ -208,6 +215,7 @@ function failedAppResult(app: App, laneFailures: LaneFailure[]): AppAuditResult 
     ok: false,
     costUsd: undefined,
     mr: {security: undefined, cleanup: undefined},
+    jira: undefined,
     report: {
       appName: app.appName,
       ledger: emptyLedger(),
@@ -293,10 +301,36 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
     ];
 
     const ledger = classify(deps.store, app.appName, found, deps.cfg.nowMs);
-    // Only read on a digest day: the whole point of the daily message is NOT
-    // repeating the backlog every morning, so there is no reason to pay for the
-    // read the other six days.
-    const openFindings = deps.cfg.digest ? deps.store.openAuditFindings(app.appName) : [];
+    // Read once, for up to two consumers. Only read at all on a digest day or with the
+    // Jira lane on: the whole point of the daily message is NOT repeating the backlog
+    // every morning, so there is no reason to pay for the read the other six days.
+    const openRows = deps.cfg.digest || deps.cfg.jira ? deps.store.openAuditFindings(app.appName) : [];
+    const openFindings = deps.cfg.digest ? openRows : [];
+
+    let jira: JiraLaneResult | undefined;
+    if (deps.cfg.jira) {
+      // After `classify`, an open row is either fresh or carried — anything not seen
+      // this run has already been flipped to resolved above.
+      const freshFps = new Set(ledger.fresh.map(f => f.fp));
+      const security = openRows.filter(r => r.kind === 'security');
+      jira = await deps.runJiraLane(
+        {
+          appName: app.appName,
+          dateStr: deps.cfg.dateStr,
+          fresh: ledger.fresh.filter(f => f.kind === 'security'),
+          carried: security.filter(r => !freshFps.has(r.fp)),
+          resolved: ledger.resolvedRows.filter(r => r.kind === 'security'),
+          assignees: deps.cfg.jira.assignees
+        },
+        deps.cfg.jira
+      );
+      // Stamped only for a ticket that exists: `ticketedFps` is empty on a failed
+      // create, so the finding stays unticketed and tomorrow's run retries it.
+      if (jira.ticketKey) {
+        for (const fp of jira.ticketedFps) deps.store.setAuditFindingJira(fp, jira.ticketKey);
+      }
+      for (const detail of jira.failures) laneFailures.push({lane: 'jira', detail});
+    }
 
     let mr: {security: MrLaneResult | undefined; cleanup: MrLaneResult | undefined} = {
       security: undefined,
@@ -349,7 +383,15 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       ok: true,
       costUsd,
       mr,
-      report: {appName: app.appName, ledger, openFindings, hasSecuritySkill, laneFailures}
+      jira,
+      report: {
+        appName: app.appName,
+        ledger,
+        openFindings,
+        hasSecuritySkill,
+        laneFailures,
+        jiraTicketUrl: jira?.ticketUrl
+      }
     };
   } finally {
     // A worktree is a full checkout — seven of them filled this machine's disk on

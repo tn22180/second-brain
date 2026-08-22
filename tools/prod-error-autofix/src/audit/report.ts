@@ -11,7 +11,7 @@ import {redactSecret} from './securitySchema';
  * still produce a message.
  */
 
-export type LaneName = 'security' | 'hygiene' | 'triage';
+export type LaneName = 'security' | 'hygiene' | 'triage' | 'jira';
 
 export interface LaneFailure {
   lane: LaneName;
@@ -30,6 +30,8 @@ export interface AppReportInput {
   /** False means this app's security sweep ran without its own `.claude/skills` — `blogs`, today. */
   hasSecuritySkill: boolean;
   laneFailures: LaneFailure[];
+  /** Today's ticket for this app, when the security lane opened one. */
+  jiraTicketUrl?: string;
 }
 
 export interface ReportInput {
@@ -89,9 +91,13 @@ function findingLines(f: AuditFinding): string[] {
 // like it had fewer findings than it did.
 function appSection(app: AppReportInput, digest: boolean, included: Set<string> | undefined): {lines: string[]; quiet: boolean} {
   const shown = digest ? app.openFindings : app.ledger.fresh;
-  if (shown.length === 0) return {lines: [], quiet: true};
+  // A ticket with no fresh finding behind it happens exactly once per app: the run
+  // where a backlog that predates the Jira lane finally gets ticketed. Staying quiet
+  // there would hide the only message naming that ticket.
+  if (shown.length === 0 && !app.jiraTicketUrl) return {lines: [], quiet: true};
   const label = digest ? 'tồn' : 'mới';
   const lines = [`${worstEmoji(shown)} ${app.appName} · ${shown.length} ${label}`];
+  if (app.jiraTicketUrl) lines.push(`  🎫 ${app.jiraTicketUrl}`);
   const pool = included ? shown.filter(f => included.has(f.fp)) : shown;
   // Security before hygiene, high before low — what a human needs to see
   // first at 06:00, not scan order. Applied whether or not the cap is active,

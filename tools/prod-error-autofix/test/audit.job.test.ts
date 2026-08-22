@@ -6,6 +6,7 @@ import {auditJobWorktreeDir, runAuditJob, type AppAuditResult, type AuditJobDeps
 import {renderReport, type ReportInput} from '../src/audit/report';
 import {runAudit, type AuditRunConfig, type AuditRunDeps} from '../src/audit/run';
 import type {MrLaneResult} from '../src/audit/mr';
+import type {JiraLaneInput} from '../src/audit/jiraLane';
 
 /**
  * Nothing here spawns a real `claude`, runs real eslint, creates a real worktree,
@@ -32,6 +33,7 @@ function settings(over: Partial<AuditJobSettings> = {}): AuditJobSettings {
     triage: {model: 'claude-sonnet-5', timeoutMs: 2000},
     eslintTimeoutMs: 2000,
     mr: {model: 'claude-sonnet-5', agentTimeoutMs: 2000, jestTimeoutMs: 2000},
+    jira: undefined,
     ...over
   };
 }
@@ -59,6 +61,9 @@ function jobDeps(over: Partial<AuditJobDeps> = {}): AuditJobDeps {
     triageLane: async () => ({ok: true, verdicts: [], deletable: [], costUsd: 0.05}),
     runMrLane: async () => {
       throw new Error('runMrLane should not be called in this test');
+    },
+    runJiraLane: async () => {
+      throw new Error('runJiraLane should not be called in this test');
     },
     store: new Store(':memory:'),
     ...over
@@ -171,6 +176,82 @@ describe('runAuditJob', () => {
     expect(result.mr.cleanup).toBeDefined();
   });
 
+  test('no cfg.jira means the Jira lane is never called at all', async () => {
+    let called = 0;
+    const deps = jobDeps({
+      cfg: settings({jira: undefined}),
+      runJiraLane: async () => {
+        called++;
+        return {ticketKey: undefined, ticketUrl: undefined, ticketedFps: [], commented: [], failures: []};
+      }
+    });
+    const result = await runAuditJob(APP, deps);
+    // Not "called and ignored": this lane writes into the team's shared Jira, so off
+    // has to mean no request was ever built.
+    expect(called).toBe(0);
+    expect(result.jira).toBeUndefined();
+    expect(result.report.jiraTicketUrl).toBeUndefined();
+  });
+
+  test('cfg.jira stamps the ticket onto every fingerprint it covered', async () => {
+    const store = new Store(':memory:');
+    let seen: JiraLaneInput | undefined;
+    const deps = jobDeps({
+      cfg: settings({jira: {baseUrl: 'https://space.avada.net', token: 'not-a-real-token', assignees: ['tuannv']}}),
+      store,
+      securityLane: async () => ({
+        ok: true,
+        dropped: 0,
+        hasSecuritySkill: true,
+        costUsd: 0.1,
+        findings: [
+          {
+            file: 'packages/functions/src/handlers/api.js',
+            line: 64,
+            severity: 'high' as const,
+            category: 'authn' as const,
+            title: 'session gate mounted after the swagger gate',
+            why: 'anything accepted there opens every /api/* route',
+            fix: 'mount the session gate first'
+          }
+        ]
+      }),
+      runJiraLane: async input => {
+        seen = input;
+        return {
+          ticketKey: 'FAL-900',
+          ticketUrl: 'https://space.avada.net/browse/FAL-900',
+          ticketedFps: input.fresh.map(f => f.fp),
+          commented: [],
+          failures: []
+        };
+      }
+    });
+
+    const result = await runAuditJob(APP, deps);
+    expect(seen!.fresh).toHaveLength(1);
+    expect(seen!.assignees).toEqual(['tuannv']);
+    expect(result.report.jiraTicketUrl).toBe('https://space.avada.net/browse/FAL-900');
+
+    const row = store.openAuditFindings('SEO').find(r => r.kind === 'security')!;
+    expect(row.jiraKey).toBe('FAL-900');
+  });
+
+  test('a Jira failure is reported as a lane failure, not swallowed', async () => {
+    const deps = jobDeps({
+      cfg: settings({jira: {baseUrl: 'https://space.avada.net', token: 'not-a-real-token', assignees: []}}),
+      runJiraLane: async () => ({
+        ticketKey: undefined,
+        ticketUrl: undefined,
+        ticketedFps: [],
+        commented: [],
+        failures: ['create: HTTP 400']
+      })
+    });
+    const result = await runAuditJob(APP, deps);
+    expect(result.report.laneFailures).toContainEqual({lane: 'jira', detail: 'create: HTTP 400'});
+  });
+
   test('auditJobWorktreeDir never collides with the fix lane\'s own worktree naming', () => {
     const dir = auditJobWorktreeDir('/cache/wt', 'seo', '2026-08-19');
     expect(dir).toContain('audit-seo-20260819');
@@ -212,6 +293,9 @@ function runDeps(over: Partial<AuditRunDeps> = {}): AuditRunDeps {
     runMrLane: async () => {
       throw new Error('runMrLane should not be called unless mrEnabled is true');
     },
+    runJiraLane: async () => {
+      throw new Error('runJiraLane should not be called unless cfg.jira is set');
+    },
     store,
     supervisor: async (input: ReportInput) => renderReport(input),
     sendTelegram: async () => ({ok: true, detail: undefined}),
@@ -226,6 +310,7 @@ function okResult(appName: string): AppAuditResult {
     ok: true,
     costUsd: 0.1,
     mr: {security: undefined, cleanup: undefined},
+    jira: undefined,
     report: {
       appName,
       ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: []},

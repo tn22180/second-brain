@@ -12,6 +12,7 @@ import {runJest} from '../verify/jest';
 import {measureBaseline} from '../verify/smoke';
 import {runEslint} from './eslint';
 import {runAuditJob, type AppAuditResult, type AuditJobDeps, type AuditJobSettings} from './job';
+import {runJiraLane} from './jiraLane';
 import {runMrLane, type MrLaneDeps} from './mr';
 import {renderReport, type ReportInput} from './report';
 import {runSecurityLane} from './securityLane';
@@ -51,6 +52,7 @@ export interface AuditRunDeps {
   securityLane: AuditJobDeps['securityLane'];
   triageLane: AuditJobDeps['triageLane'];
   runMrLane: AuditJobDeps['runMrLane'];
+  runJiraLane: AuditJobDeps['runJiraLane'];
   store: Store;
   /** Lane C. Falls back to `renderReport` on a throw or a timeout — a broken
    * agent at 06:00 must not mean a morning with real findings goes unreported. */
@@ -78,6 +80,7 @@ function buildJobDeps(cfg: AuditRunConfig, deps: AuditRunDeps): AuditJobDeps {
     securityLane: deps.securityLane,
     triageLane: deps.triageLane,
     runMrLane: deps.runMrLane,
+    runJiraLane: deps.runJiraLane,
     store: deps.store
   };
 }
@@ -97,6 +100,7 @@ function threwAppResult(app: App, e: unknown): AppAuditResult {
     ok: false,
     costUsd: undefined,
     mr: {security: undefined, cleanup: undefined},
+    jira: undefined,
     report: {
       appName: app.appName,
       ledger: {fresh: [], carried: 0, resolved: 0, suppressed: 0, resolvedRows: []},
@@ -166,6 +170,7 @@ export function buildAuditRunConfig(cfg: Config, nowMs: number, onlyApp?: string
     dateStr,
     digest,
     mrEnabled: cfg.audit.mrEnabled,
+    jira: cfg.audit.jira,
     nowMs,
     worktreeRoot: cfg.paths.worktreeRoot,
     gitTimeoutMs: cfg.timeouts.gcloudMs,
@@ -213,6 +218,8 @@ export function buildAuditRunDeps(cfg: Config, store: Store): AuditRunDeps {
     securityLane: runSecurityLane,
     triageLane: runTriage,
     runMrLane: input => runMrLane(input, mrDeps),
+    runJiraLane: (input, jiraCfg) =>
+      runJiraLane(input, {cfg: {baseUrl: jiraCfg.baseUrl, token: jiraCfg.token}}),
     store,
     supervisor: input =>
       runSupervisor(input, spawnClaude, {model: cfg.audit.models.supervisor, timeoutMs: cfg.audit.timeouts.supervisorMs}),

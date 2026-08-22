@@ -78,6 +78,24 @@ describe('buildConfig', () => {
     expect(buildConfig({...base, AUDIT_MR_ENABLED: 'true'}).audit.mrEnabled).toBe(true);
   });
 
+  test('the Jira lane needs BOTH the flag and a token — either alone leaves it off', () => {
+    expect(buildConfig(base).audit.jira).toBeUndefined();
+    expect(buildConfig({...base, AUDIT_JIRA_ENABLED: 'true'}).audit.jira).toBeUndefined();
+    expect(buildConfig({...base, JIRA_TOKEN: 'not-a-real-token'}).audit.jira).toBeUndefined();
+
+    const on = buildConfig({...base, AUDIT_JIRA_ENABLED: 'true', JIRA_TOKEN: 'not-a-real-token'}).audit.jira;
+    expect(on).toEqual({baseUrl: 'https://space.avada.net', token: 'not-a-real-token', assignees: []});
+  });
+
+  test('assignees is a comma list, and an empty one stays empty', () => {
+    const jira = (env: Record<string, string>) =>
+      buildConfig({...base, AUDIT_JIRA_ENABLED: 'true', JIRA_TOKEN: 'not-a-real-token', ...env}).audit.jira;
+    expect(jira({AUDIT_JIRA_ASSIGNEE: 'tuannv'})!.assignees).toEqual(['tuannv']);
+    expect(jira({AUDIT_JIRA_ASSIGNEE: ' tuannv , dungta '})!.assignees).toEqual(['tuannv', 'dungta']);
+    expect(jira({AUDIT_JIRA_ASSIGNEE: ''})!.assignees).toEqual([]);
+    expect(jira({JIRA_BASE_URL: 'https://jira.example'})!.baseUrl).toBe('https://jira.example');
+  });
+
   test('audit models default to opus for security, sonnet for triage and supervisor', () => {
     const cfg = buildConfig(base);
     expect(cfg.audit.models).toEqual({security: 'claude-opus-5', triage: 'claude-sonnet-5', supervisor: 'claude-sonnet-5'});
