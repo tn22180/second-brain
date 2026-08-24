@@ -50,6 +50,8 @@ cancelTranslate với reset sync thì ổn r, k phải sửa
 shop cài trước 20/05/2026 mà bật isAdditionalFields lúc chưa lưu field nào thì route llms.txt legacy ném lỗi, trả 500
 e vá giúp a nhé
 apc /proxy/checkInstalled thì vẫn 200 bình thường nhé
+
+7. cái app SEO chưa có API để đọc theme hả e(đọc all file theme + đọ từng file 1)
 ---
 
 ## Findings (2026-08-13, trước khi làm)
@@ -719,3 +721,119 @@ Chưa có MR (glab vẫn chưa auth git.avada.net), chưa tag → chưa lên pro
 - `cancelTranslate` và reset sync không đụng tới, đúng như Tony nói.
 - `DevZone.js:41` còn `console.log('shop', shop)` — không rò token (`prepareShop` strip
   `accessToken`) nên để nguyên, ngoài scope.
+
+---
+
+## Đợt 4 — FEEDBACK 7 (2026-08-22)
+
+**Câu hỏi:** app SEO có API đọc theme (all file + từng file) chưa?
+
+**Trả lời: có, nhưng không nằm ở surface swagger/MCP đang gọi.**
+
+### Đang có gì
+
+`packages/functions/src/routes/chatbot.js:37-41` — 4 route theme, controller ở
+`controllers/chatbotController.js`:
+
+| Route | Handler | Làm gì |
+|---|---|---|
+| `GET /chatbot/themes` | `listThemes` (:61) | graphql `themes(first:250)` → id/name/role/updatedAt |
+| `POST /chatbot/theme-files` | `getThemeFiles` (:92) | đọc file, xem dưới |
+| `POST /chatbot/themes/upsertThemeFiles` | `upsertThemeFiles` (:147) | ghi file (`themeFilesUpsert`) |
+| `POST /chatbot/themes/duplicate` | `duplicateTheme` (:24) | nhân bản theme |
+
+`getThemeFiles` body `{shopId, themeId, filePaths = []}` — hai chế độ:
+
+- `filePaths` có phần tử → trả thẳng mảng file:
+  `{key, value, contentBase64, public_url, created_at, updated_at, content_type}`
+  (đây là "đọc từng file 1")
+- `filePaths` rỗng → `handleGetAllThemeData` paginate 250/trang đệ quy hết theme, rồi
+  `handleZipTheme` → chỉ trả `{themeZipUrl, info}`. **Không trả nội dung inline** — muốn đọc
+  all file phải tải zip về giải nén.
+
+### Vì sao tool không thấy
+
+1. `/chatbot/*` chạy ở **Cloud Run service riêng** `avada-seo-chatbot`
+   (`packages/functions/cloud-run/chatbot.server.js`, config `deploy.sh:100` 2Gi/1cpu/conc10/600s),
+   không phải function `api` mà `/proxy/swagger-token` mint JWT cho.
+2. Auth khác hẳn: `middleware/chatbot/verifyAccessToken.js` so header `X-Avada-Access-Token`
+   với **một static secret** `AVADA_CHATBOT_ACCESS_TOKEN`
+   (Secret Manager `avada-seo-avada-chatbot-access-token`). Không phải swagger JWT.
+3. Không có yaml nào trong `packages/functions/src/docs/` mô tả `/chatbot/*` → generator không sinh tool.
+4. Trong swagger chỉ có `/api/shopify/themes` và `/api/shopify/theme/{id}` — proxy REST
+   `GET /themes/{id}.json`, **metadata theme thôi, không có asset/content**.
+
+### Cảnh báo trước khi nối tool
+
+`X-Avada-Access-Token` là **một token dùng chung cho mọi shop**, `shopId` lấy từ body →
+ai có token đọc **và ghi** theme của bất kỳ shop nào (`upsertThemeFiles` nằm sau đúng token đó).
+Đừng nhét token này vào MCP client. Muốn có tool đọc theme thì thêm route `/api/*` mới sau
+`swaggerAuth` (đã scope theo shop), dùng lại `handleGetAllThemeData`, kèm yaml docs.
+
+### 2 bug phát hiện lúc soát
+
+`services/shopifyGraphQlService.js`:
+- `:3268` nhánh đệ quy `hasNextPage` **không truyền lại `filePaths`** → filter >250 file thì
+  từ trang 2 mất filter, trả nhầm toàn bộ theme.
+- `:3266` `pageInfo.hasNextPage` không optional-chain → graphql lỗi / theme không tồn tại làm
+  `pageInfo` undefined → TypeError, rơi vào catch trả `success:false`.
+
+Chưa sửa — chờ gật.
+
+**Chưa verify được prod:** `gcloud run services list --project=avada-seo` trả
+`Reauthentication failed. cannot prompt during non-interactive execution` → không xác nhận được
+service `avada-seo-chatbot` đang chạy revision nào. `deploy.sh` là script tay, CI không deploy nó
+(CI chỉ có `optimize-image.job`).
+
+### Đã làm (2026-08-22) — branch `feat/theme-file-api`, commit `5aea97303e`
+
+2 route mới trong `/api/*`, sau `swaggerAuth`, read-only:
+
+| Route | Trả |
+|---|---|
+| `GET /api/shopify/theme-files` | list toàn theme, **metadata thôi**. Có `?keys=a,b` (≤25) thì kèm body |
+| `GET /api/shopify/theme-file?key=layout/theme.liquid` | 1 file kèm body |
+
+`themeId` optional → mặc định theme đang publish. shopId lấy từ JWT nên `themeId` không với sang
+shop khác. `keys` cap 25 → 400; không có theme / theme không đọc được / không có file đó → 404.
+Không mở route ghi.
+
+Sửa kèm 2 bug ở `handleGetAllThemeData`: đệ quy mất `filePaths` (filter >250 file thành dump cả
+theme từ trang 2), và `pageInfo` không guard (query fail → rơi vào catch, báo theme rỗng). `filenames`
++ cursor giờ đi bằng GraphQL variable thay vì nội suy chuỗi, vì `filePaths` đến từ caller ngoài.
+
+Kèm: swagger 2 path + component `ThemeFile`, `docs/features/theme-file-api.md`, skill
+`.claude/skills/theme-files/` + mirror `.agent/` (không dùng `references/`).
+
+Bằng chứng:
+- test mới 14 case (9 controller + 5 service) — pass; trên code cũ: controller 9/9 đỏ,
+  service 3/5 đỏ.
+- full suite `250 passed, 13 failed` / `2250 passed, 25 failed` — **y hệt baseline master**
+  (`248 passed, 13 failed` / `2236 passed, 25 failed`), 13 suite fail là stale `lib/` + có sẵn.
+- `node scripts/docs-gate/index.js` → **PASS**: citations 504 anchored, feature-doc gated=true,
+  skill-gate 1 skill, mirror-parity 53/53.
+- eslint sạch (phải chạy `DISABLE_V8_COMPILE_CACHE=1`, eslint repo hỏng sẵn với v8-compile-cache).
+
+MR: https://git.avada.net/avada/seo/-/merge_requests/new?merge_request%5Bsource_branch%5D=feat%2Ftheme-file-api
+
+Skill viết lại theo đúng shape `avada-aeo-api` / `avada-apc-api` (commit `c0efc1519e`):
+task framing → Step 1 hiểu request → Step 2 authenticate → Step 3 list → Step 4 narrow+read →
+Step 5 present, rồi **Important rules** + **Live Swagger UI**. Không có `references/`.
+
+Deploy: prod `seo` theo tag, merge master không đẩy gì.
+
+**Cập nhật cuối 2026-08-22:**
+- `5aea97303e` (code + swagger + feature doc + skill bản đầu) **đã merge vào master** qua
+  `607af2888c` — không phải tao merge, có session khác làm.
+- Còn 2 commit skill chưa vào master:
+  - `c0efc1519e` — theme-files skill viết lại theo shape AEO, nằm trên `feat/theme-file-api`
+    (merge trước đó chỉ lấy `5aea97303e`).
+  - `8a01b9d567` — `avada-seo-api` (skill API toàn app) viết lại theo shape AEO, branch
+    `docs/avada-seo-api-skill`, đã push.
+- Repo `seo` đang có session khác thao tác song song: HEAD bị đổi branch giữa chừng
+  (`feat/theme-file-api` → `perf/lazy-heavy-sdk-imports`, reset về origin/master, rồi
+  `docs/avada-seo-api-skill`). Không mất commit nào.
+
+MR còn mở:
+- https://git.avada.net/avada/seo/-/merge_requests/new?merge_request%5Bsource_branch%5D=docs%2Favada-seo-api-skill
+- https://git.avada.net/avada/seo/-/merge_requests/new?merge_request%5Bsource_branch%5D=feat%2Ftheme-file-api

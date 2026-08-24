@@ -7,6 +7,62 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `4zowc` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1dfzetm` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `14okhn5` · 2026-08-22 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1da1qyp` · 2026-08-22 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1cuhvec` · 2026-08-22 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `127fskk` · 2026-08-22 · SEO · proxygen2 · GET /proxy/sitemap/articles.xml for smokey-dealz.myshopify.com returned 500 because trace-redirect@1.0.6, invo · — · fix_disabled
+- `1vm3ak8` · 2026-08-22 · AEO · aggregateAiReferralsSubscriber · Not a code defect: the single alerted 500 is a Cloud Functions gen1 platform admission rejection — Pub/Sub pus · — · infra
+- `tpilp9` · 2026-08-22 · BLOG · apisa · GET /apiSa/get-list-ai-image sweeps up to 20 pages of Shopify `files(first: 250)` through a shopify-api-node c · — · fix_disabled
+- `fb298x` · 2026-08-22 · BLOG · mcp · create_article_draft builds its job `input` object with `outline: args?.outline` (plus keyword/language/length · — · fix_disabled
+- `x8vfy4` · 2026-08-22 · BLOG · proxy · GET /proxy/seoOn-preview was called with the URL-escaped article id `596218773737\` (query `id=596218773737%5C · — · fix_disabled
+- `1uxz3rd` · 2026-08-22 · BLOG · proxy · getShopifyArticleById swallows its own InvalidArticleIdError and returns `{}`, so getPreview treats the malfor · — · fix_disabled
+- `jnkvv8` · 2026-08-22 · BLOG · proxy · GET /proxy/seoOn-preview was called with the URL-escaped article id `596218773737\` (query `id=596218773737%5C · — · fix_disabled
+- `18e2dxz` · 2026-08-22 · BLOG · proxy · getShopifyArticleById throws InvalidArticleIdError for the malformed id `596218773737\` but its own catch swal · — · fix_disabled
+- `e1s6di` · 2026-08-22 · BLOG · proxy · The alerted ERROR is not a request failure: POST /proxy/ai-summary/vote/:id passes the unvalidated `:id` path  · — · fix_disabled
+- `1g4bhm7` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
+- `1ix55ri` · 2026-08-22 · BLOG · mcp · Cloud Run revisions mcp-00017-bex and mcp-00018-fiz (hand-deployed 2026-08-21 04:42:14Z → replaced 08:27:11Z)  · — · fix_disabled
+- `1lsn5wc` · 2026-08-22 · BLOG · mcp · The build deployed as Cloud Run revision mcp-00017-bex at 2026-08-21T04:42:35Z never writes a response for an  · — · fix_disabled
+- `1g630rl` · 2026-08-22 · BLOG · api · getProductsGraphQL interpolates the merchant's raw `search` query param into a double-quoted GraphQL string li · — · fix_disabled
+- `1fmj5f7` · 2026-08-22 · BLOG · api · Duplicate of the recorded redis.service escalation family (1m4c9me / e6i8uy / 1yq6npy / 1l8e49w): no request f · — · fix_disabled
+- `23ar1g` · 2026-08-22 · BLOG · proxy · Duplicate of the recorded Memorystore-outage family (w7q35f / 1kwz9uf / y2tcey / 91i6a / e6i8uy): a ~112-secon · — · fix_disabled
+- `vjtmj2` · 2026-08-22 · BLOG · api · Duplicate of the recorded Memorystore-outage family (e6i8uy / w7q35f / 1kwz9uf / y2tcey): a ~56-second Memorys · — · fix_disabled
+- `j0knyy` · 2026-08-22 · BLOG · api · Duplicate of recorded fingerprint e6i8uy: a ~56-second Memorystore outage (34.60.93.33:6380, 03:24:42.4Z first · — · fix_disabled
+- `91i6a` · 2026-08-22 · BLOG · proxy · Duplicate of the recorded Memorystore-outage family (w7q35f / 1kwz9uf / y2tcey / e6i8uy): a ~112-second Memory · — · fix_disabled
+- `y2tcey` · 2026-08-22 · BLOG · proxy · Duplicate of the recorded Memorystore-outage family (w7q35f / 1kwz9uf / e6i8uy): a 111-second Memorystore outa · — · fix_disabled
+- `1kwz9uf` · 2026-08-22 · BLOG · proxy · Duplicate of recorded fingerprint w7q35f: a ~112-second Memorystore outage (34.60.93.33:6380, first ECONNREFUS · — · fix_disabled
+- `w7q35f` · 2026-08-22 · BLOG · proxy · A 111-second Memorystore outage (34.60.93.33:6380, 2026-08-21T03:24:36.947Z first ECONNREFUSED → 03:26:28.012Z · — · fix_disabled
+- `xk75j8` · 2026-08-22 · BLOG · embedapp · No request failed: the alert is redis.service's own escalation branch firing during a self-healing 47-second M · — · fix_disabled
+- `tx75fq` · 2026-08-22 · BLOG · auth · No request failed: the alert is redis.service's own escalation branch firing during a self-healing 56-second M · — · fix_disabled
+- `1m4c9me` · 2026-08-22 · BLOG · api · No request failed: the alert is redis.service's own escalation branch firing during a 56-second self-healing M · — · fix_disabled
+- `1yq6npy` · 2026-08-22 · BLOG · api · packages/functions/src/services/redis.service.js escalates an in-progress, self-healing ioredis reconnect to s · — · fix_disabled
+- `e6i8uy` · 2026-08-22 · BLOG · api · A 56-second Memorystore outage (34.60.93.33:6380, 03:24:42.4Z→03:25:38.8Z) made every ioredis command fail aft · — · fix_disabled
+- `1l8e49w` · 2026-08-22 · BLOG · embedapp · redis.service.js escalates an in-progress, self-healing ioredis reconnect to severity=ERROR: its TRANSIENT_GRA · — · fix_disabled
+- `sz6zq` · 2026-08-22 · BLOG · auth · no verified cause · — · inconclusive
+- `p203fm` · 2026-08-22 · BLOG · proxy · no verified cause · — · inconclusive
+- `6x5u13` · 2026-08-22 · BLOG · proxy · no verified cause · — · inconclusive
+- `kvx0hp` · 2026-08-22 · BLOG · proxy · no verified cause · — · inconclusive
+- `1fg4q32` · 2026-08-22 · BLOG · proxy · no verified cause · — · inconclusive
+- `fxmca4` · 2026-08-22 · IMG-OPT · changelogtriggers-shops · Not a code defect: the single HTTP 500 is a Cloud Run admission rejection (latency 0s, no application log, bra · — · infra
+- `chye57` · 2026-08-22 · BLOG · api · translation.service.js:154 re-parses getCompletion's return value with bare JSON.parse, but getCompletion retu · — · fix_disabled
+- `1cjdbb6` · 2026-08-22 · BLOG · api · translateWithRetry logs every failed attempt at logger.error before it checks whether a retry remains, so the  · — · fix_disabled
+- `1dmbc0c` · 2026-08-22 · BLOG · subscriberenewsubscribertokenshandler · getActiveSubscriptions catches undici's transport-level `TypeError: fetch failed` from its raw, un-timed, un-r · — · fix_disabled
+- `rgfqbq` · 2026-08-22 · SEO · syncelasticsearchchunkgen2 · syncElasticsearchChunkGen2 declares no `concurrency`, so Cloud Run runs it at the gen2 default of 80 requests  · — · fix_disabled
+- `11p3e4v` · 2026-08-22 · SEO · ollamaquotaalertgen2 · ollamaQuotaAlertGen2 is declared memory: '512MiB' while its container's real cold-start RSS is 512-543 MiB, be · — · infra
+- `1bd9e3m` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l): · — · fix_disabled
+- `1uvq10d` · 2026-08-22 · SEO · extensiongen2 · Not a code defect: the single 503 is a Cloud Run connection error on the last request routed to instance …2926 · — · infra
+- `14obe36` · 2026-08-22 · SEO · ollamaquotaalertgen2 · ollamaQuotaAlertGen2 is declared memory: '512MiB' while every gen2 container in this repo loads the whole app. · — · infra
+- `1gpxu2r` · 2026-08-22 · BLOG · api · Every knowledge-base generation call fails: the app issues OpenAI's hosted `web_search_preview` server-tool re · — · fix_disabled
+- `7u4qve` · 2026-08-22 · BLOG · mcp · getShopifyArticleById logs the expected "this article does not exist in Shopify" miss at logger.error (severit · — · fix_disabled
+- `1ocnbc4` · 2026-08-22 · SEO · proxygen2 · POST /proxy/optimize/start is registered with only `jsonType` and no auth middleware, so nothing ever sets `ct · — · fix_disabled
+- `igidee` · 2026-08-22 · SEO · lighthouseauditrunnergen2 · GET /lighthouse/auditNew has no server-side deadline anywhere in its chain, so the mobile/densen4G Lighthouse  · — · fix_disabled
+- `8nzlcb` · 2026-08-22 · SEO · apigen2 · The browser's `__session` cookie for shop 5cc201-4b.myshopify.com decrypts to the JSON primitive number `6`, a · — · fix_disabled
+- `krgiq8` · 2026-08-22 · SEO · sidekickgen2 · Shop OpKzFaQov7LO29opP9oU's stored offline Shopify token predates the `read_markets` scope, so every `shopLoca · — · fix_disabled
+- `1ve3ntt` · 2026-08-22 · SEO · ollamaquotaalertgen2 · The alerted STARTUP TCP probe failure on ollamaquotaalertgen2-00001-tiw is the downstream symptom of an OOM ki · — · infra
+- `1mk9y60` · 2026-08-22 · SEO · ollamaquotaalertgen2 · ollamaQuotaAlertGen2's memory cap has never been above its own cold-start RSS: the first-ever deploy shipped 2 · — · infra
+- `27f6cl` · 2026-08-22 · SEO · proxygen2 · Not an app defect: a vulnerability-scanner sweep (1511 requests in 30 min from one UA) hit the public proxygen · — · infra
+- `gklwcy` · 2026-08-22 · SEO · proxygen2 · Not an app defect: a 1300-request vulnerability-scanner sweep hit the public proxygen2 Cloud Run URL, and 7 of · — · infra
 - `cfkgba` · 2026-08-18 · SEO · apigen2 · The browser's `__session` cookie for this merchant decrypts to the primitive number `39`, and @avada/core 4.8. · https://git.avada.net/avada/seo/-/merge_requests/2167 · mr_open
 - `bkoiz9` · 2026-08-18 · BLOG · api · no verified cause · — · inconclusive
 - `1ftb857` · 2026-08-18 · SEO · authgen2 · no verified cause · — · inconclusive
@@ -41,7 +97,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1abkxna` · 2026-08-15 · SEO · proxygen2 · GET /proxy/sitemap/collections.xml for pom-pom-london.myshopify.com returned 500 because trace-redirect@1.0.6, · https://gitlab.com/avada/seo/-/merge_requests/2195 · mr_open
 - `4f3kp8` · 2026-08-15 · SEO · handlespeedupbackgroundgen2 · no verified cause · — · inconclusive
 - `1ciqzvj` · 2026-08-15 · SEO · resolveallredirectsubscribergen2 · no verified cause · — · inconclusive
-- `dea93l` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
+- `dea93l` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb): the brow · — · fix_disabled
 - `1agqupy` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `118uoxk` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
 - `sp18eo` · 2026-08-14 · BLOG · api · GET /api/settings failed for shop gddoilEQDA3qDbQch9xb because the bare, unretried `shopify.asset.get(themeId, · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
@@ -175,7 +231,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `6lewzd` · 2026-08-13 · SEO · apigen2 · no verified cause · — · inconclusive
 - `1iaehe` · 2026-08-13 · AEO · apiSa · Shopify Admin REST GET /admin/api/2026-XX/shop.json returned HTTP 402 Payment Required for the frozen shop 3bv · — · inconclusive
 - `l7h4nd` · 2026-08-13 · SEO · apigen2 · GET /api/resource-report computes its answer inline by walking the shop's entire Shopify catalog (4 resource t · — · inconclusive
-- `vw50q2` · 2026-08-13 · BLOG · subscriberenewsubscribertokenshandler · getActiveSubscriptions calls respRequest.json() with no ok/status/content-type check, so when Shopify's edge a · — · deferred
+- `vw50q2` · 2026-08-22 · BLOG · subscriberenewsubscribertokenshandler · getActiveSubscriptions calls respRequest.json() with no ok/status/content-type guard, so when Shopify's edge a · — · fix_disabled
 - `rgpyy6` · 2026-08-13 · BLOG · apiv2 · processImageUpload throws a hard 'Failed to upload' whenever Shopify's freshly-created MediaImage is still pro · — · deferred
 - `jbckeh` · 2026-08-13 · BLOG · apiv2 · processImageUpload treats Shopify's still-processing MediaImage as a hard failure: retryGetImageUpload gives u · — · deferred
 - `1j0fnzi` · 2026-08-12 · SEO · apigen2 · reoptimizeBulkFix calls `publishTopic(...)` at packages/functions/src/controllers/bulkAuditFixController.js:20 · https://gitlab.com/avada/seo/-/merge_requests/2184 · mr_open
@@ -235,7 +291,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1vf9w45` · 2026-08-12 · BLOG · apiv2 · Duplicate of fingerprint sbztha (MR https://gitlab.com/avada/blogs/-/merge_requests/867 open, unmerged — fix c · https://gitlab.com/avada/blogs/-/merge_requests/867 · mr_open
 - `sbztha` · 2026-08-12 · BLOG · apiv2 · createFile reads fileCreate.files[0].fileErrors without ever checking fileCreate.userErrors, so when Shopify's · https://gitlab.com/avada/blogs/-/merge_requests/867 · mr_open
 - `1jtjnnm` · 2026-08-12 · BLOG · apiv2 · no verified cause · — · inconclusive
-- `3l54x4` · 2026-08-12 · SEO · apigen2 · no verified cause · — · inconclusive
+- `3l54x4` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
 - `19tm31y` · 2026-08-12 · SEO · embedappgen2 · no verified cause · — · inconclusive
 - `1qz59l0` · 2026-08-12 · SEO · embedappgen2 · no verified cause · — · inconclusive
 - `pneibv` · 2026-08-12 · SEO · embedappgen2 · no verified cause · — · inconclusive
@@ -263,7 +319,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1qmdvrl` · 2026-08-12 · BLOG · api · GET /api/article/:id opened without a `locale` or `primary` query param makes articleController.getOne pass `u · https://gitlab.com/avada/blogs/-/merge_requests/863 · mr_open
 - `g91yns` · 2026-08-12 · SEO · retriggeroptimizepublishergen2 · One cold-start container of retriggeroptimizepublishergen2 (instance 001548f72986fb78…) never bound :8080 and  · — · infra
 - `1n79ojv` · 2026-08-12 · BLOG · proxy · Shopify's storefront does not serve a just-published article immediately, and fetchRenderedArticleHtml's retry · https://gitlab.com/avada/blogs/-/merge_requests/862 · mr_open
-- `1dlgm1s` · 2026-08-16 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages hands sharpCompressImage's base64 STRING to uploadToCloudStorage, which requires  · — · inconclusive
+- `1dlgm1s` · 2026-08-22 · IMG-OPT · createPreviewImages · subscribeCreatePreviewImages passes sharpCompressImage's base64 STRING (not the Buffer it also returns) into u · — · fix_disabled
 - `u2coqc` · 2026-08-12 · BLOG · reviewupdatesschedule · reviewUpdatesSchedule calls puppeteer.launch() with no args, no explicit timeout and no retry, so when Chrome  · https://gitlab.com/avada/blogs/-/merge_requests/861 · mr_open
 - `dlfokk` · 2026-08-12 · BLOG · apiv2 · The OpenRouter model emitted a raw unescaped double quote inside the JSON string value of `body` (`Our tagline · — · infra
 - `s0kn2e` · 2026-08-12 · BLOG · api · The alert is a swallowed, non-fatal per-image failure: OpenRouter's image fetcher got HTTP 404 for two cdn.sho · https://gitlab.com/avada/blogs/-/merge_requests/860 · mr_open
@@ -288,7 +344,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `bvrcak` · 2026-08-12 · BLOG · apisa · genIdeas asks OpenRouter for an unconstrained free-text completion (getCompletion default format='text', no zo · https://gitlab.com/avada/blogs/-/merge_requests/853 · mr_open
 - `ghv4ok` · 2026-08-04 · SEO · lighthouseauditrunnergen2 · Two of 62 lighthouseauditrunnerGen2 cold-start containers in the 15:30–16:30Z hour never bound :8080 and were  · — · infra
 - `yo3dfr` · 2026-08-12 · SEO · lighthouseauditrunnergen2 · Two distinct causes share this 30-minute window: the 2 alerted 503s are infra (cold-start containers exceeding · https://gitlab.com/avada/seo/-/merge_requests/2102 · mr_open
-- `1d6kx48` · 2026-08-12 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1d6kx48` · 2026-08-22 · SEO · proxygen2 · Not a code defect: the single alerted 503 is a Cloud Run frontend-to-container connection error on proxygen2 i · — · infra
 - `3xz8u3` · 2026-08-04 · SEO · apisagen2 · no verified cause · — · inconclusive
 - `klsiut` · 2026-08-04 · SEO · apisagen2 · GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request  · — · inconclusive
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
@@ -317,7 +373,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `b59yxp` · 2026-08-04 · SEO · proxygen2 · Duplicate of fingerprint pgb7sh (MR https://gitlab.com/avada/seo/-/merge_requests/2117 open, unmerged): valida · https://gitlab.com/avada/seo/-/merge_requests/2117 · mr_open
 - `mmxvm4` · 2026-08-04 · BLOG · api · One articleController.list call for shop fabzonefabindia.com fanned out 5 concurrent node-fetch GETs to that s · https://gitlab.com/avada/blogs/-/merge_requests/836 · mr_open
 - `pgb7sh` · 2026-08-04 · SEO · proxygen2 · validateAccessToken calls veryShopifyDomain, which does a node-fetch v2 GET of https://<shop>/robots.txt with  · https://gitlab.com/avada/seo/-/merge_requests/2117 · mr_open
-- `1w6r1x2` · 2026-08-04 · BLOG · api · getKeyWordsSuggestion splits the merchant's free-text keyword on spaces and passes every resulting word as a K · https://gitlab.com/avada/blogs/-/merge_requests/835 · mr_open
+- `1w6r1x2` · 2026-08-23 · BLOG · api · GET /api/google/keyword issues up to two unretried Google Ads generateKeywordIdeas calls per request against o · — · fix_disabled
 - `onfujl` · 2026-08-04 · BLOG · apisa · The standalone editor was mounted at /articles/edit/dev_zone, so GET /apiSa/article/dev_zone reached articleCo · https://gitlab.com/avada/blogs/-/merge_requests/833 · mr_open
 - `9t0caz` · 2026-08-04 · BLOG · api · Duplicate of fingerprint 14psg9p (MR https://gitlab.com/avada/blogs/-/merge_requests/832 open, unmerged): getB · https://gitlab.com/avada/blogs/-/merge_requests/832 · mr_open
 - `14psg9p` · 2026-08-04 · BLOG · api · getBlogsGraphQL double-quotes the search filter: it builds `title:"${searchQuery}"` and then interpolates that · https://gitlab.com/avada/blogs/-/merge_requests/832 · mr_open
@@ -382,12 +438,12 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `xhe0fj` · 2026-07-31 · BLOG · api · Duplicate of fingerprint rq3qf8 / 1w64e0z (MR 810 open, unmerged): Shopify Admin GraphQL answered one transien · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
 - `rq3qf8` · 2026-07-31 · BLOG · api · Shopify Admin GraphQL answered one transient HTTP 503 to shop FqpPuSM3XKz0LLkZXe24's shopLocales query, and sh · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
 - `1f3smxv` · 2026-08-14 · BLOG · proxy · A one-off Shopify Admin GraphQL HTTP 503 on the single `articles` query in getArticlesByTagWithPagination beca · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
-- `100ms51` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
+- `100ms51` · 2026-08-22 · SEO · apigen2 · GET /api/resource-report computes its answer inline on the request path: on a cache miss it walks the shop's e · — · fix_disabled
 - `pboq3f` · 2026-08-03 · BLOG · api · During a 13.5-hour intermittent OpenRouter rate limit on Google's Gemini SKUs, getCompletion's last-attempt fa · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `ri78d8` · 2026-07-31 · SEO · apisagen2 · no verified cause · — · inconclusive
 - `epfkly` · 2026-08-01 · BLOG · reviewupdatesschedule · Every run of reviewUpdatesSchedule since Chrome was restored on the container (2026-07-31) dies in getPageRevi · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
 - `n7z34s` · 2026-08-02 · BLOG · reviewupdatesschedule · Duplicate of fingerprints pf3lkx / epfkly (MR https://gitlab.com/avada/blogs/-/merge_requests/814 open, unmerg · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
-- `19t4boc` · 2026-08-03 · SEO · apigen2 · Shopify REST `GET /admin/api/2026-07/metafields.json?metafield[owner_resource]=collection` returns 404 under t · — · inconclusive
+- `19t4boc` · 2026-08-22 · SEO · apigen2 · The Bulk Generator's "generate again" button fires one POST /api/regenerateBulkItem per selected row with no c · — · fix_disabled
 - `1npmocs` · 2026-07-31 · BLOG · api · genIdeas requests a plain-text completion (getCompletion default format='text', no zodSchema), so nothing cons · — · deferred
 - `1m8run2` · 2026-07-31 · BLOG · apisa · Duplicate of fingerprint 3349gs (MR 802 already open, unmerged): shop fKUMrHXwtJca3KNWMU6X's recentOpenedArtic · https://gitlab.com/avada/blogs/-/merge_requests/802 · mr_open
 - `1sob2ko` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
@@ -414,8 +470,8 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `3349gs` · 2026-07-31 · BLOG · api · shop.recentOpenedArticles keeps gids of articles that no longer resolve in Shopify, and getShopifyArticleById  · https://gitlab.com/avada/blogs/-/merge_requests/802 · mr_open
 - `1oupj7q` · 2026-07-31 · BLOG · api · POST /api/audit-agent/fix-issue returns 500 whenever the OpenRouter completion behind parseJsonCompletion come · https://gitlab.com/avada/blogs/-/merge_requests/801 · mr_open
 - `2z6u3r` · 2026-07-31 · BLOG · api · parseJsonCompletion calls bare JSON.parse on the OpenRouter completion, and google/gemini-2.5-flash emitted an · https://gitlab.com/avada/blogs/-/merge_requests/800 · mr_open
-- `ct2hgz` · 2026-08-18 · IMG-OPT · apiSa · The offline Shopify access token stored for shop 65rnj1-r6.myshopify.com is no longer valid at Shopify, so eve · — · inconclusive
-- `a4bayk` · 2026-08-18 · IMG-OPT · createPreviewImages · sharpCompressImage returns {log} with no `base64` whenever it cannot produce a smaller buffer (unsupported for · — · inconclusive
+- `ct2hgz` · 2026-08-23 · IMG-OPT · apiSa · The offline Shopify access token stored for shop gfam8p-z5.myshopify.com (shpat_8ff2ce8e…41ef, unchanged since · — · fix_disabled
+- `a4bayk` · 2026-08-22 · IMG-OPT · createPreviewImages · sharpCompressImage returns {log} with no `base64` on every no-smaller-output path (animated image, unsupported · — · fix_disabled
 - `1q0ihss` · 2026-08-03 · BLOG · proxy · A single transient Shopify Admin GraphQL HTTP 503 on getArticleTagsList went unretried — initShopify builds th · https://gitlab.com/avada/blogs/-/merge_requests/820 · mr_open
 - `1ib8ldr` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/828 · mr_open
 - `12qs3xc` · 2026-07-31 · BLOG · proxy · Four shops that uninstalled the app still have their shop doc and stale accessToken in Firestore, so every cra · https://gitlab.com/avada/blogs/-/merge_requests/799 · mr_open
