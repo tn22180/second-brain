@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `16vcpso` · 2026-08-24 · SEO · apisagen2 · POST /apiSa/genFaqBulk returned 500 because a Shopify Admin GraphQL THROTTLED error reached generateBulkContro · — · fix_disabled
 - `4zowc` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
 - `1dfzetm` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
 - `14okhn5` · 2026-08-22 · SEO · proxygen2 · no verified cause · — · inconclusive

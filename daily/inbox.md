@@ -168,3 +168,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Stuck-job watchdog (bulk-fix, seo) cần 1GiB, default deploy không đủ (`e89be95704`)
 - [ ] (×1) Ollama không có API key → phải skip ở code, không dựa vào env trên box; box có key mà route vẫn fail là chuyện khác (`746efd8a78`)
 - [ ] (×1) Bulk AI fix phải stop job khi shop hết AI credit, không thì chạy tiếp vô ích (`f3d5d43c20`)
+
+### memory candidates 2026-08-24
+- [ ] (×1) `blog-cache-vm` chỉ phục vụ Redis của app blogs — không phải VM app, gỡ được khi Redis blog chuyển đi
+- [ ] (×1) `seo-stg-ops` (2GB) và `seo-stg-hicpu` là VM staging orphan, không ai trong team nhận sở hữu tính tới 2026-08-24
+- [ ] (×1) Fleet-control alert "workers 0/0 up" = không có worker đăng ký (khác worker chết) — message hiện tại gây hiểu nhầm critical
+- [ ] (×1) dev_zone SEO không còn expose Access token / shop info (FE + BE), seo `f038aa4d28` + `56a21f7c28`
+- [ ] (×1) Beszel (opensource) là hướng đang cân nhắc cho monitoring VM/fleet — custom được, thay phần Grafana/Bull Board vừa cắt

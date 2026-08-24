@@ -1,6 +1,6 @@
 ---
 name: seo-master-no-detect-worker
-description: "LỖI THỜI về trigger (deploy giờ theo tag — xem seo-prod-deploy-by-tag); phần detect_worker + token vẫn đúng"
+description: "LỖI THỜI: worker giờ deploy trên MỌI prod tag (A3/!2169 merged); phần detect_worker vẫn đúng, phần GLAB_TOKEN revoked đã sai"
 metadata: 
   node_type: memory
   type: project
@@ -8,9 +8,14 @@ metadata:
   modified: 2026-07-31T09:23:22.371Z
 ---
 
-> **Lỗi thời từ 2026-08-20 ở phần trigger.** `deploy_worker` giờ là `only: - tags`; merge master
-> không deploy gì. Xem [[seo-prod-deploy-by-tag]]. Phần `detect_worker` chỉ có trên
-> `feat/worker-pubsub-migration` và phần token GitLab bên dưới vẫn đúng.
+> **Lỗi thời — cập nhật 2026-08-22.** Sau khi MR seo **!2169** merge (task A3), `deploy_worker` là
+> `only: - tags`, **không còn cần `[deploy-worker]` trong title**: box worker redeploy trên **mọi
+> prod tag**, `allow_failure: true` (fail im lặng — verify bằng pipeline job, đừng tin màu xanh).
+> Merge master vẫn không deploy gì; phải cắt tag. Xem [[seo-prod-deploy-by-tag]].
+> Xác nhận trên tag `v1.85.85` (pipeline 209854): `deploy_worker` success.
+> Phần `detect_worker` chỉ có trên `feat/worker-pubsub-migration` — vẫn đúng.
+> **Phần GLAB_TOKEN bên dưới đã sai:** `glab auth status` 2026-08-22 login OK cả `gitlab.com`
+> (tn22180) lẫn `git.avada.net` (tuannv), API chạy bình thường.
 
 seo repo **master** `.gitlab-ci.yml` `deploy_worker` job (tới 2026-07-31) = `only.variables: $CI_COMMIT_TITLE =~ /\[deploy-worker\]/`. There is **no `detect_worker` job on master** (0 occurrences). So a normal merge to master does NOT redeploy the self-hosted worker box — GCF gets it (`deploy_production` unconditional) but the worker box does not.
 

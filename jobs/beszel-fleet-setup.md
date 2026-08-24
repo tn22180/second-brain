@@ -102,8 +102,8 @@ Started: 2026-08-22
 | 3 | beszel-hub: systemd unit + play cài trên central | general-purpose / sonnet | ✅ | 1/5 | clean | v0.18.8, HTTP 200, bind tailscale IP |
 | 4 | beszel-agent play cho 3 box fleet (docker.sock, WS) | general-purpose / sonnet | ✅ | 5/5 | clean* | cả 3 box connected |
 | 5 | ufw central | — | ⏹ descoped | — | — | hub đã bind IP tailscale |
-| 6 | Join VM GCP vào tailnet (tag:monitored) | inline | ✅ 3/4 | — | clean | blog-cache-vm hoãn |
-| 7 | beszel-agent lên VM GCP | inline | ✅ 3/4 | — | clean | 6 host đang báo cáo |
+| 6 | Join VM GCP vào tailnet (tag:monitored) | inline | ✅ 4/4 | — | clean | đủ 7 host |
+| 7 | beszel-agent lên VM GCP | inline | ✅ 4/4 | — | clean | 7 host đang báo cáo |
 | 8 | Alert Beszel → Slack | — | ⬜ chờ Tony | 0/5 | — | cấu hình trong hub UI |
 | 9 | Runbook + dòng trong fleet README | inline | ✅ | 0/5 | clean | 144 dòng |
 
@@ -658,3 +658,39 @@ Creds: `~/.beszel/<host>.env` (0600) cho VM, `~/.beszel/agent.env` cho fleet.
 ### Commit
 `fleet-control` `feat/beszel-monitoring` → `78a336b` (2 file, +66/-15).
 Trước đó `7122e18` (8 file, +798). Chưa push.
+
+---
+
+## blog-cache-vm — XONG 2026-08-24 (Tony chốt, làm trước khi thu hẹp grants)
+
+Tao đã nêu lo ngại hai lần, Tony quyết định làm luôn. Ghi lại để không mất dấu: rủi ro không
+nằm ở việc VM đó làm gì, mà ở chiều ngược lại — dưới `grants` catch-all, một VM prod của
+**app khác** có đường tới mọi node của fleet SEO, gồm `redis :6380` trên central.
+
+`blog-cache-vm` = 100.66.25.46, Debian 12, không Docker → `docker_metrics=false`.
+Sau khi cài: `redis-server` active và vẫn LISTENING ở 6380, web 80/443 nguyên, agent không
+mở cổng nào, disk 27%.
+
+**Nó không phải "chỉ redis".** Còn chạy Caddy phục vụ `:80`, `:443`, `:8080`
+(admin API Caddy ở `127.0.0.1:2019`).
+
+### Phát hiện ngoài scope: redis mở ra internet
+```
+allow-redis-tls   priority 1000   INGRESS   source 0.0.0.0/0   tag blog-redis   tcp:6380
+```
+Không có rule deny, rule đang bật. Xác nhận **mở thật** bằng cách thử từ một VM ở project khác
+— Mac không kết nối được chỉ vì mạng nhà chặn outbound, suýt kết luận nhầm là đã đóng.
+
+Nhưng đúng là **TLS thật**, không phải TCP trần: cert `CN=avada-blog-redis`, CA tự ký
+`CN=avada-blog-redis-ca`, handshake đọc 2966 byte; gửi `PING` qua TCP trần trả về 0 byte.
+Cộng `requirepass`. → chuyện đáng siết source range, không phải sự cố. Đã có
+`allow-connector` cho `10.8.0.0/28` làm mẫu. Và giờ VM ở trên tailnet nên có đường thay thế
+để đóng hẳn rule `0.0.0.0/0`. **Không đụng firewall** — đường prod của Blog app.
+
+### Trạng thái 7 host (2026-08-24)
+Tất cả `active`, 0 disconnect trong cửa sổ 2 phút. Năm host giữ một kết nối liên tục từ 22/08.
+`box2` vẫn là con duy nhất reconnect định kỳ, `reason=` rỗng — câu hỏi mở về riêng box2.
+
+### Commit
+`fleet-control` `feat/beszel-monitoring`: `7122e18` → `78a336b` → `68253ec` → `61c774f`.
+Chưa push.
