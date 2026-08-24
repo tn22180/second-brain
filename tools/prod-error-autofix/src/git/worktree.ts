@@ -45,7 +45,10 @@ export function branchNameFor(appName: string, fingerprint: string, attempt: num
  * Repo and date are sanitised rather than trusted — a stray character in either
  * would otherwise reach `git push` as part of a ref name.
  */
-export function auditBranchName(kind: 'security' | 'cleanup', repo: string, dateStr: string): string {
+// `'cleanup'` spelled out rather than imported from `audit/mr.ts`: the git layer does
+// not depend on the audit layer. Was `'security' | 'cleanup'` until the security lane
+// was removed on 2026-08-22 — narrowed so no caller can name a security branch.
+export function auditBranchName(kind: 'cleanup', repo: string, dateStr: string): string {
   const slug = repo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return `audit/${kind}-${slug}-${dateStr.replace(/[^0-9]/g, '')}`;
 }

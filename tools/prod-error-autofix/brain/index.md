@@ -92,7 +92,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `xeycw` · 2026-08-16 · BLOG · api · PUT /api/article/28987719791 for shop oU1eLddMkUdpnYAYISPu failed because the unretried shopLocales Shopify Ad · https://gitlab.com/avada/blogs/-/merge_requests/886 · mr_open
 - `xosts1` · 2026-08-16 · BLOG · proxy · no verified cause · — · inconclusive
 - `17ij74c` · 2026-08-16 · BLOG · api · articleController.create calls handleRetryOnError without passing `data`, so when Shopify's articleCreate answ · https://gitlab.com/avada/blogs/-/merge_requests/885 · mr_open
-- `g2hxcg` · 2026-08-16 · BLOG · proxy · no verified cause · — · inconclusive
+- `g2hxcg` · 2026-08-24 · BLOG · proxy · GET /proxy/shop/blog hung for the proxy function's full 60s timeoutSeconds because validateAccessToken awaits  · — · fix_disabled
 - `2t79bo` · 2026-08-15 · SEO · apigen2 · @avada/core 4.8.2's setSession assumes the decrypted `__session` cookie is an object; when a client presents a · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
 - `1abkxna` · 2026-08-15 · SEO · proxygen2 · GET /proxy/sitemap/collections.xml for pom-pom-london.myshopify.com returned 500 because trace-redirect@1.0.6, · https://gitlab.com/avada/seo/-/merge_requests/2195 · mr_open
 - `4f3kp8` · 2026-08-15 · SEO · handlespeedupbackgroundgen2 · no verified cause · — · inconclusive

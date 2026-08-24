@@ -99,7 +99,7 @@ function threwAppResult(app: App, e: unknown): AppAuditResult {
     appName: app.appName,
     ok: false,
     costUsd: undefined,
-    mr: {security: undefined, cleanup: undefined},
+    mr: {cleanup: undefined},
     jira: undefined,
     report: {
       appName: app.appName,

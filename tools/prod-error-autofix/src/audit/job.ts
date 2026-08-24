@@ -70,7 +70,7 @@ export interface AppAuditResult {
   ok: boolean;
   report: AppReportInput;
   costUsd: number | undefined;
-  mr: {security: MrLaneResult | undefined; cleanup: MrLaneResult | undefined};
+  mr: {cleanup: MrLaneResult | undefined};
   jira: JiraLaneResult | undefined;
 }
 
@@ -85,8 +85,8 @@ export function auditJobWorktreeDir(worktreeRoot: string, repo: string, dateStr:
 
 /**
  * This worktree is read-only in practice — nothing here ever commits or pushes it —
- * so the branch name only has to be a legal, collision-free ref, not one of
- * `auditBranchName`'s two MR kinds.
+ * so the branch name only has to be a legal, collision-free ref, not the MR lane's
+ * own `auditBranchName`.
  */
 function sweepBranchName(repo: string, dateStr: string): string {
   const slug = repo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -214,7 +214,7 @@ function failedAppResult(app: App, laneFailures: LaneFailure[]): AppAuditResult 
     appName: app.appName,
     ok: false,
     costUsd: undefined,
-    mr: {security: undefined, cleanup: undefined},
+    mr: {cleanup: undefined},
     jira: undefined,
     report: {
       appName: app.appName,
@@ -332,10 +332,7 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       for (const detail of jira.failures) laneFailures.push({lane: 'jira', detail});
     }
 
-    let mr: {security: MrLaneResult | undefined; cleanup: MrLaneResult | undefined} = {
-      security: undefined,
-      cleanup: undefined
-    };
+    let mr: {cleanup: MrLaneResult | undefined} = {cleanup: undefined};
     let mrCost: number | undefined;
 
     if (deps.cfg.mrEnabled) {
@@ -349,25 +346,18 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
         model: deps.cfg.mr.model,
         brainSlice: undefined,
         testCmd: app.testCmd,
-        security: securityFindings,
         lint: lintFindings,
         verdicts,
         nowMs: deps.cfg.nowMs,
         timeouts: {git: deps.cfg.gitTimeoutMs, agent: deps.cfg.mr.agentTimeoutMs, jest: deps.cfg.mr.jestTimeoutMs}
       };
-      const security = await deps.runMrLane({...common, kind: 'security'});
       const cleanup = await deps.runMrLane({...common, kind: 'cleanup'});
-      mr = {security, cleanup};
-      mrCost = addCost(security.costUsd, cleanup.costUsd);
+      mr = {cleanup};
+      mrCost = cleanup.costUsd;
 
       // The ledger's `mr_url` records the MR next to the finding's status, not
       // instead of it — a finding with an MR out is still present in the code
       // until the merge lands (spec, "An open MR is not a status").
-      if (security.mrUrl) {
-        for (const f of securityFindings) {
-          deps.store.setAuditFindingMr(findingFp({app: app.appName, file: f.file, rule: f.category, title: f.title}), security.mrUrl);
-        }
-      }
       if (cleanup.mrUrl) {
         const deleted = new Set(verdicts.filter(v => v.verdict === 'delete').map(v => v.fp));
         for (const f of lintFindings) {

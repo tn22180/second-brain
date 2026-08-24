@@ -59,18 +59,16 @@ describe('branch and worktree naming', () => {
     expect(branchNameFor('IMG-OPT', 'zz9', 2)).toBe('fix/prod-img-opt-zz9-a2');
   });
 
-  test('the two audit lanes get two branch names, one per kind', () => {
-    expect(auditBranchName('security', 'seo', '20260819')).toBe('audit/security-seo-20260819');
+  test('an audit branch is named for its lane', () => {
     expect(auditBranchName('cleanup', 'seo', '20260819')).toBe('audit/cleanup-seo-20260819');
-    expect(auditBranchName('security', 'seo', '20260819')).not.toBe(auditBranchName('cleanup', 'seo', '20260819'));
   });
 
   test('an audit branch name stays inside the audit/ namespace whatever the caller passes', () => {
     expect(auditBranchName('cleanup', 'llm-ai-search-seo', '2026-08-19')).toBe(
       'audit/cleanup-llm-ai-search-seo-20260819'
     );
-    expect(auditBranchName('security', 'AI Product/Copy', '20260819')).toBe(
-      'audit/security-ai-product-copy-20260819'
+    expect(auditBranchName('cleanup', 'AI Product/Copy', '20260819')).toBe(
+      'audit/cleanup-ai-product-copy-20260819'
     );
   });
 

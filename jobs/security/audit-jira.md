@@ -36,7 +36,7 @@ tới 2026-08-04, đó là lý do task 1 của job trước tắt nó đi.
 | 2 | Jira client trong tool | inline | ✅ | 1/5 | clean | create + comment, guard project FAL. `IMG-OPT` → board `Speed` |
 | 3a | `resolvedRows` + `jiraLane.ts` | inline | ✅ | 1/5 | clean | Chỗ dễ tạo ticket trùng nhất. Mọi quyết định nằm trong hàm thuần |
 | 3b | Wire vào `job.ts` / `run.ts` / `config.ts` | inline | ✅ | 1/5 | clean | Tắt = zero call, có test. Verify trên `.env` thật |
-| 3c | Gỡ nhánh `security` khỏi MR lane | inline | ⬜ | 0/5 | — | Xoá khỏi `MrLaneKind`, không để bật lại bằng env |
+| 3c | Gỡ nhánh `security` khỏi MR lane | inline | ✅ | 1/5 | clean | `MrLaneKind = 'cleanup'`. Không còn env nào bật lại được |
 | 4 | `.env.example` + doctor check | inline | ⬜ | 0/5 | — | `.env.example` hiện không có key `AUDIT_` nào |
 | 5 | Đóng gap `checkPushCredential` | general-purpose / sonnet | ⬜ | 0/5 | — | Đang chặn `AUDIT_MR_ENABLED=true`; lane cleanup bật cũng không push được |
 
@@ -208,3 +208,44 @@ tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
   - Không host mới (đã khai ở task 2), không dependency mới, không đụng `.env*`/lockfile/CI.
   - Blast radius: đây là commit đầu tiên mà code **có thể** POST vào Jira dùng chung của team.
     Mặc định tắt, đã verify trên `.env` thật ở trên.
+
+#### ✅ Task 3c: Gỡ nhánh `security` khỏi MR lane
+- Agent: inline
+- Status: ✅ completed
+- Plan:
+  - Goal: không còn đường nào trong code dẫn tới một MR do agent sửa security. `MrLaneKind`
+    chỉ còn `'cleanup'`, `buildSecurityFixPrompt` biến mất, và **không** có env nào bật lại được.
+    `bun test ./test` không phát sinh fail mới, `bun run typecheck` sạch.
+  - Files allowed: `src/audit/mr.ts`, `src/audit/job.ts`, `src/audit/run.ts`,
+    `test/audit.mr.test.ts`, `test/audit.job.test.ts`. Không đụng khác.
+  - Approach: xoá hẳn prompt + nhánh dựng body + field `MrLaneInput.security`, giữ `MrLaneKind`
+    làm union một phần tử vì `auditBranchName`/`auditWorktreeDir` vẫn đặt tên theo nó và một
+    lane thứ ba (không phải security) là chuyện có thật sau này. Bỏ phương án để lại prompt và
+    chỉ tắt bằng cờ: cờ tắt được thì có ngày ai đó bật.
+  - Test command: `bun test ./test` **và** `bun run typecheck`.
+  - Risk: xoá nhầm phần dùng chung sẽ làm lane cleanup — lane DUY NHẤT còn push — hỏng im lặng.
+    Vì thế test của lane cleanup phải còn nguyên số lượng và vẫn xanh, không được sửa cho vừa.
+  - Rollback: revert; `AUDIT_MR_ENABLED` vẫn đang false nên không có hành vi prod nào đổi.
+- **Plan sửa giữa chừng:** `src/git/worktree.ts` phải vào files allowed. `auditBranchName` khai
+  `kind: 'security' | 'cleanup'` — để nguyên thì helper vẫn biết đẻ tên nhánh security, đúng thứ
+  task này nói là phải hết. Thu về `'cleanup'`, viết literal chứ không import `MrLaneKind`:
+  tầng git không phụ thuộc tầng audit.
+- Rounds used: 1/5 — vòng 1 là chuỗi lỗi typecheck do đổi kiểu, cộng 1 test chết theo tiền đề
+  (`the second lane does not re-run it` — không còn lane thứ hai). Test đó viết lại thành hai lần
+  gọi liên tiếp, giữ nguyên điều nó thật sự bảo vệ: baseline cache theo `(repo, base sha)`.
+- Verify: `bun run typecheck` exit 0; `bun test ./test` **719 pass / 5 fail** (vẫn đúng 5
+  `brainSlice.test.ts` cũ). `test/audit.mr.test.ts` 35 pass / 0 fail.
+- Xoá thật, không phải tắt bằng cờ:
+  - `MrLaneKind` giờ là `'cleanup'` — union một phần tử
+  - `buildSecurityFixPrompt` xoá hẳn
+  - `MrLaneInput.security` và `AuditMrBodyInput.security`/`.kind` xoá hẳn
+  - `auditMrTitle(kind, …)` → `auditMrTitle(appName, count)`
+  - `auditBranchName` thu về `'cleanup'`
+  - `AppAuditResult.mr` từ `{security, cleanup}` còn `{cleanup}`
+  - `grep security src/audit/mr.ts` chỉ còn comment giải thích vì sao nó biến mất
+- Security check: **clean** — 7 file code/test, **+156/−224** (xoá nhiều hơn thêm, đúng bản chất
+  task). Không secret mới: chuỗi `shpat_…` duy nhất trong diff là fixture redaction có sẵn, bị
+  *dời* từ test security sang test cleanup, giá trị hex lặp nhìn là biết giả. Không log mới,
+  không host mới, không dependency mới, không đụng `.env*`/lockfile/CI.
+  Blast radius: lane cleanup là lane DUY NHẤT còn push. Test của nó giữ nguyên và vẫn xanh —
+  không sửa test cho vừa code.

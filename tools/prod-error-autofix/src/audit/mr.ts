@@ -7,22 +7,27 @@ import {FORBIDDEN_PATTERNS} from '../git/worktreeStatus';
 import type {RateVerdict} from '../state/rateGate';
 import type {JestRun, JestRunInput} from '../verify/jest';
 import type {BaselineInput, BaselineResult} from '../verify/smoke';
-import {redactSecret, type SecurityFinding} from './securitySchema';
+import {redactSecret} from './securitySchema';
 import type {TriageFinding, TriageVerdict} from './triage';
 
 /**
  * The only part of the audit that pushes, so every step in it fails closed.
  *
- * Two lanes, never one MR: a reviewer approving a security fix must not be
- * approving a batch of deletions in the same breath. Each lane cuts its **own**
- * worktree from the same `origin/<base>` — two agents editing one tree produce a
- * diff that cannot be split afterwards.
+ * Cleanup only. A security lane used to live here and was removed on 2026-08-22
+ * (jobs/security/audit-jira.md): a fix at an auth boundary can pass every test and
+ * still leak, so the finding goes to a Jira ticket for a human (`jiraLane.ts`) and no
+ * agent writes the fix. Deleted rather than left behind a flag — a flag that can be
+ * switched off can be switched back on.
+ *
+ * The kind still names the branch and the worktree, and is kept as a union so a later
+ * lane can be added without threading a new parameter through — but a security lane is
+ * not what it is for.
  *
  * Every side effect is injected. Nothing here reads a token: the remotes are HTTPS
  * across two hosts and authentication is the ambient credential helper's job.
  */
 
-export type MrLaneKind = 'security' | 'cleanup';
+export type MrLaneKind = 'cleanup';
 
 export type MrRefusal =
   | 'nothing_to_fix'
@@ -64,7 +69,6 @@ export interface MrLaneInput {
   model: string;
   brainSlice: string | undefined;
   testCmd: string[];
-  security: SecurityFinding[];
   /** Every lint finding that went to triage, with the verdicts that came back. */
   lint: TriageFinding[];
   verdicts: TriageVerdict[];
@@ -131,17 +135,13 @@ export function auditWorktreeDir(worktreeRoot: string, repo: string, kind: MrLan
   return join(worktreeRoot, `${repo}-${kind}-${dateStr.replace(/[^0-9]/g, '')}`);
 }
 
-export function auditMrTitle(kind: MrLaneKind, appName: string, count: number): string {
-  return kind === 'security'
-    ? `audit(security): [${appName}] ${count} finding${count === 1 ? '' : 's'} from the daily sweep`
-    : `audit(cleanup): [${appName}] remove ${count} unused declaration${count === 1 ? '' : 's'}`;
+export function auditMrTitle(appName: string, count: number): string {
+  return `audit(cleanup): [${appName}] remove ${count} unused declaration${count === 1 ? '' : 's'}`;
 }
 
 export interface AuditMrBodyInput {
-  kind: MrLaneKind;
   appName: string;
   dateStr: string;
-  security: SecurityFinding[];
   cleanup: TriageFinding[];
   agentSummary: string;
   jestLine: string;
@@ -160,29 +160,16 @@ export function buildAuditMrBody(input: AuditMrBodyInput): string {
     ''
   ];
 
-  if (input.kind === 'security') {
-    lines.push(
-      '## Findings',
-      '',
-      ...input.security.map(
-        f =>
-          `- \`${f.file}:${f.line}\` — **${f.severity}** / \`${f.category}\` — ${redactSecret(f.title)}\n` +
-          `  ${redactSecret(f.why)}`
-      ),
-      ''
-    );
-  } else {
-    lines.push(
-      '## Declarations removed',
-      '',
-      ...input.cleanup.map(f => `- \`${f.file}:${f.line}\` — \`${f.rule}\` — ${redactSecret(f.message)}`),
-      '',
-      'Declarations only: no file was deleted and no export was removed. `require()` is',
-      'dynamic in these trees, and reachability across one needs an analysis this audit',
-      'does not yet run.',
-      ''
-    );
-  }
+  lines.push(
+    '## Declarations removed',
+    '',
+    ...input.cleanup.map(f => `- \`${f.file}:${f.line}\` — \`${f.rule}\` — ${redactSecret(f.message)}`),
+    '',
+    'Declarations only: no file was deleted and no export was removed. `require()` is',
+    'dynamic in these trees, and reachability across one needs an analysis this audit',
+    'does not yet run.',
+    ''
+  );
 
   lines.push(
     '## What changed',
@@ -208,42 +195,6 @@ const FORBIDDEN_RULE = [
   '  `.firebaserc`, or any `.env` file. A diff containing one of them is thrown away',
   '  unpushed, so editing one only loses your work.'
 ].join('\n');
-
-export function buildSecurityFixPrompt(input: MrLaneInput): string {
-  return [
-    `# Fix these security findings — ${input.appName}`,
-    '',
-    'You are in a throwaway worktree of the repo. A read-only sweep produced the findings',
-    'below and each citation was checked against this worktree. Fix them, and only them.',
-    '',
-    '## Findings',
-    '',
-    ...input.security.map(f =>
-      [
-        `### \`${f.file}:${f.line}\` — ${f.severity} / ${f.category}`,
-        redactSecret(f.title),
-        `Why it matters: ${redactSecret(f.why)}`,
-        `Intended fix: ${redactSecret(f.fix)}`,
-        ''
-      ].join('\n')
-    ),
-    '## Rules',
-    '',
-    '- **Edit only the files listed above.** The diff is checked against that list and a',
-    '  file outside it refuses the whole merge request, including the fixes that were right.',
-    '- Do not create files. A new file is by definition outside the list.',
-    '- Smallest diff that closes the finding. No refactoring, no drive-by cleanups.',
-    FORBIDDEN_RULE,
-    "- **Read this app's own `CLAUDE.md` and `.claude/skills/` first.** These five apps look",
-    '  alike and differ in the details; another app’s conventions do not apply here.',
-    '- Preserve existing response contracts unless the finding *is* the contract.',
-    '',
-    '## Reply',
-    '',
-    'After the edits, reply with a few sentences saying what you changed and what a reviewer',
-    'should look at. No JSON.'
-  ].join('\n');
-}
 
 export function buildCleanupPrompt(input: MrLaneInput, eligible: TriageFinding[]): string {
   return [
@@ -304,7 +255,7 @@ export async function runMrLane(
 ): Promise<MrLaneResult> {
   const {kind} = input;
   const cleanup = eligibleCleanup(input.lint, input.verdicts);
-  const findingFiles = kind === 'security' ? input.security.map(f => f.file) : cleanup.map(f => f.file);
+  const findingFiles = cleanup.map(f => f.file);
   const inScope = new Set(findingFiles);
 
   const branch = auditBranchName(kind, input.repo, input.dateStr);
@@ -371,7 +322,7 @@ export async function runMrLane(
     }
 
     const agent = await deps.claude({
-      prompt: kind === 'security' ? buildSecurityFixPrompt(input) : buildCleanupPrompt(input, cleanup),
+      prompt: buildCleanupPrompt(input, cleanup),
       model: input.model,
       appendSystemPrompt: input.brainSlice,
       cwd: worktreeDir,
@@ -463,18 +414,16 @@ export async function runMrLane(
       return {...base, costUsd, files, refusal: 'capped', detail: cap.detail ?? cap.cap};
     }
 
-    const count = kind === 'security' ? input.security.length : cleanup.length;
+    const count = cleanup.length;
     const opened = await deps.openMr(
       {
         worktreeDir,
         branch,
         baseBranch: input.baseBranch,
-        title: auditMrTitle(kind, input.appName, count),
+        title: auditMrTitle(input.appName, count),
         description: buildAuditMrBody({
-          kind,
           appName: input.appName,
           dateStr: input.dateStr,
-          security: input.security,
           cleanup,
           agentSummary: agent.text.trim().slice(0, 2000),
           jestLine
@@ -513,16 +462,14 @@ export async function runMrLane(
 }
 
 /**
- * Sequential, not concurrent: both lanes cut a worktree from the same main checkout
- * and `git worktree add` takes that repo's index lock, so running them together
- * races for it. The cap is also read per lane, and a cap is a count of pushes that
- * have already happened.
+ * Kept as the audit's entry point even though only one lane is left: the caller does
+ * not have to know how many lanes exist, and the next one lands here without changing
+ * `job.ts` again.
  */
 export async function runBothMrLanes(
   input: MrLaneInput,
   deps: MrLaneDeps
-): Promise<{security: MrLaneResult; cleanup: MrLaneResult}> {
-  const security = await runMrLane({...input, kind: 'security'}, deps);
+): Promise<{cleanup: MrLaneResult}> {
   const cleanup = await runMrLane({...input, kind: 'cleanup'}, deps);
-  return {security, cleanup};
+  return {cleanup};
 }

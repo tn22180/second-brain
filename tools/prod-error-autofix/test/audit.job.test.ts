@@ -39,7 +39,7 @@ function settings(over: Partial<AuditJobSettings> = {}): AuditJobSettings {
 }
 
 const NONE_MR: MrLaneResult = {
-  kind: 'security',
+  kind: 'cleanup',
   branch: 'audit/security-seo-20260819',
   worktreeDir: '/cache/wt/seo-security-20260819',
   pushed: false,
@@ -157,11 +157,10 @@ describe('runAuditJob', () => {
     });
     const result = await runAuditJob(APP, deps);
     expect(called).toBe(0);
-    expect(result.mr.security).toBeUndefined();
     expect(result.mr.cleanup).toBeUndefined();
   });
 
-  test('mrEnabled true calls the MR lane once for security and once for cleanup', async () => {
+  test('mrEnabled true runs the cleanup lane and only the cleanup lane', async () => {
     const kinds: string[] = [];
     const deps = jobDeps({
       cfg: settings({mrEnabled: true}),
@@ -171,8 +170,8 @@ describe('runAuditJob', () => {
       }
     });
     const result = await runAuditJob(APP, deps);
-    expect(kinds.sort()).toEqual(['cleanup', 'security']);
-    expect(result.mr.security).toBeDefined();
+    // Security findings never reach an agent that writes a fix — they go to Jira.
+    expect(kinds).toEqual(['cleanup']);
     expect(result.mr.cleanup).toBeDefined();
   });
 
@@ -309,7 +308,7 @@ function okResult(appName: string): AppAuditResult {
     appName,
     ok: true,
     costUsd: 0.1,
-    mr: {security: undefined, cleanup: undefined},
+    mr: {cleanup: undefined},
     jira: undefined,
     report: {
       appName,
