@@ -110,7 +110,8 @@ describe('buildConfig', () => {
       supervisorMs: 5 * 60_000,
       eslintMs: 10 * 60_000,
       jobMs: 45 * 60_000,
-      runMs: 150 * 60_000
+      runMs: 150 * 60_000,
+      appMs: 25 * 60_000
     });
     expect(buildConfig({...base, AUDIT_SECURITY_TIMEOUT_MS: '999'}).audit.timeouts.securityMs).toBe(999);
   });

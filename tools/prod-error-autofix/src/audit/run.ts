@@ -30,6 +30,8 @@ export interface AuditRunConfig extends AuditJobSettings {
   /** Whole-run ceiling. Five apps at the per-app ceiling would land mid-morning;
    * this is what actually bounds a 06:00 run. */
   runTimeoutMs: number;
+  /** Per app, turned into an absolute `appDeadlineMs` at the top of each iteration. */
+  appTimeoutMs: number;
   /** Absent when Telegram is not configured — same degraded-mode contract as the daemon. */
   telegram: TelegramConfig | undefined;
   supervisor: {model: string; timeoutMs: number};
@@ -119,12 +121,17 @@ export async function runAudit(cfg: AuditRunConfig, deps: AuditRunDeps): Promise
   let stoppedEarly = false;
 
   for (const app of cfg.apps) {
-    if (deps.now() - startMs >= cfg.runTimeoutMs) {
+    const elapsed = deps.now() - startMs;
+    if (elapsed >= cfg.runTimeoutMs) {
       stoppedEarly = true;
       break;
     }
+    // Whichever runs out first: this app's own share, or what is left of the whole
+    // run. Without the second half the last app could start with 20 minutes of run
+    // budget left and still be handed a full 25.
+    const appDeadlineMs = deps.now() + Math.min(cfg.appTimeoutMs, cfg.runTimeoutMs - elapsed);
     try {
-      results.push(await job(app, cfg));
+      results.push(await job(app, {...cfg, appDeadlineMs}));
     } catch (e) {
       results.push(threwAppResult(app, e));
     }
@@ -181,6 +188,7 @@ export function buildAuditRunConfig(cfg: Config, nowMs: number, onlyApp?: string
     // and timeouts rather than a parallel `AUDIT_MR_*` set for the same thing.
     mr: {model: cfg.models.fix, agentTimeoutMs: cfg.timeouts.fixMs, jestTimeoutMs: cfg.timeouts.jestMs},
     runTimeoutMs: cfg.audit.timeouts.runMs,
+    appTimeoutMs: cfg.audit.timeouts.appMs,
     telegram: cfg.telegram,
     supervisor: {model: cfg.audit.models.supervisor, timeoutMs: cfg.audit.timeouts.supervisorMs},
     fullReportPath: join(cfg.paths.cacheRoot, `audit-${dateStr}.md`)

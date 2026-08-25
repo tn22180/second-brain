@@ -69,6 +69,18 @@ export interface TriageInput {
   timeoutMs: number;
   brainSlice: string | undefined;
   findings: TriageFinding[];
+  /**
+   * Absolute epoch-ms after which no further batch is started. Cooperative on
+   * purpose: `Promise.race` would abandon the lane without killing the `claude -p`
+   * behind it, leaving a child alive, a worktree held, and the run unable to exit.
+   * Checked BETWEEN batches, so one in flight still finishes.
+   *
+   * Absent means no per-app bound — the shape this lane had when SEO's 112 batches
+   * ran for ~48 hours on 2026-08-23.
+   */
+  deadlineMs?: number;
+  /** Injected so a test can move the clock without sleeping. */
+  now?: () => number;
 }
 
 export type TriageResult =
@@ -85,6 +97,12 @@ export type TriageResult =
        * still satisfies the type. `runTriage` itself always sets both. */
       totalBatches?: number;
       batchFailures?: TriageBatchFailure[];
+      /**
+       * Set when `deadlineMs` cut the lane short. The findings it never reached are
+       * still returned as `unsure`, so this is the only thing that distinguishes
+       * "triaged, nothing worth deleting" from "never looked at 5000 of them".
+       */
+      stoppedAtDeadline?: {atBatch: number; untriaged: number};
     }
   | {
       ok: false;
@@ -234,9 +252,20 @@ export async function runTriage(input: TriageInput, claude: ClaudeRunner = spawn
   const batchFailures: TriageBatchFailure[] = [];
   let costUsd: number | undefined;
 
+  const now = input.now ?? Date.now;
+  let stoppedAtDeadline: {atBatch: number; untriaged: number} | undefined;
+
   // Sequential on purpose (see TRIAGE_BATCH_SIZE's comment and the module-level
   // note above `batchFindings`): this lane is already one half of a fan-out.
   for (let i = 0; i < batches.length; i++) {
+    if (input.deadlineMs !== undefined && now() >= input.deadlineMs) {
+      const untriaged = batches.slice(i).flat();
+      for (const f of untriaged) {
+        verdicts.push({fp: f.fp, verdict: 'unsure', reason: 'triage stopped at the app deadline'});
+      }
+      stoppedAtDeadline = {atBatch: i, untriaged: untriaged.length};
+      break;
+    }
     const batch = batches[i]!;
     const outcome = await runTriageBatch(input, batch, claude);
     if (outcome.costUsd !== undefined) costUsd = (costUsd ?? 0) + outcome.costUsd;
@@ -255,7 +284,7 @@ export async function runTriage(input: TriageInput, claude: ClaudeRunner = spawn
     }
   }
 
-  if (batchFailures.length === batches.length) {
+  if (batchFailures.length > 0 && batchFailures.length === batches.length) {
     // Every batch failed — the degenerate case of partial failure, and still a
     // named lane failure, not a silent "triaged, found nothing worth deleting."
     const first = batchFailures[0]!;
@@ -281,6 +310,7 @@ export async function runTriage(input: TriageInput, claude: ClaudeRunner = spawn
     deletable: verdicts.filter(v => v.verdict === 'delete' && deletableRules.has(v.fp)),
     costUsd,
     totalBatches: batches.length,
-    batchFailures
+    batchFailures,
+    stoppedAtDeadline
   };
 }

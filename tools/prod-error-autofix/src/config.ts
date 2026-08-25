@@ -93,6 +93,8 @@ export interface AuditTimeouts {
   jobMs: number;
   /** Whole-run ceiling — what actually bounds a 06:00 sweep of all five apps. */
   runMs: number;
+  /** Per app. Five of these must fit inside `runMs` or the last apps never run. */
+  appMs: number;
 }
 
 /**
@@ -305,7 +307,10 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
         // Five apps at the per-app ceiling would be 3h45 and land mid-morning; this
         // is what actually bounds a 06:00 run, and a run that hits it reports the
         // apps it finished rather than running long past when anyone reads it.
-        runMs: num(env, 'AUDIT_RUN_TIMEOUT_MS', 150 * MINUTE)
+        runMs: num(env, 'AUDIT_RUN_TIMEOUT_MS', 150 * MINUTE),
+        // 5 apps x 25m = 125m, inside the 150m run cap with room for the report.
+        // Measured 2026-08-23: with no per-app bound at all, SEO alone ran ~48 hours.
+        appMs: num(env, 'AUDIT_APP_TIMEOUT_MS', 25 * MINUTE)
       },
       digestWeekday: num(env, 'AUDIT_DIGEST_WEEKDAY', 1)
     }

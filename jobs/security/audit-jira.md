@@ -249,3 +249,97 @@ tối ưu: 1-ticket-1-finding ở lần chạy đầu là hơn 800 ticket.
   không host mới, không dependency mới, không đụng `.env*`/lockfile/CI.
   Blast radius: lane cleanup là lane DUY NHẤT còn push. Test của nó giữ nguyên và vẫn xanh —
   không sửa test cho vừa code.
+
+---
+
+## Reopened 2026-08-25 — hai run thật cho thấy audit chạy 48 tiếng ra số 0
+
+Job 06:00 chạy thật lần đầu 2026-08-23. Kết quả đọc từ `~/.cache/prod-autofix/audit.log`:
+
+```
+(dừng sớm — vượt AUDIT_RUN_TIMEOUT_MS, 1/5 app chạy xong)
+
+SEO/triage   — 112/112 batch(es) failed
+BLOG/triage  —  46/46 batch(es) failed
+AEO/triage   —  40/40 batch(es) failed
+APC/triage   —  17/17 batch(es) failed
+SEO|BLOG|AEO/security — nonzero: {"is_error":true,"num_turns":1,"output_tokens":0}
+APC/security — nonzero: Ignoring 21 permissions.allow entries from
+  .claude/settings.local.json: this workspace has not been trusted.
+```
+
+**Mọi lane cần agent đều fail.** `2245 mới` của BLOG, `2127` của IMG-OPT là eslint thô chưa qua
+triage; số finding security thật là **0**. Lane duy nhất chạy được là lane không cần `claude -p`.
+
+Cap `AUDIT_RUN_TIMEOUT_MS` **có** bắn — nó chặn được giữa hai app. Cái nó không chặn được là bên
+trong một app: SEO một mình ăn hết 150 phút rồi còn chạy tiếp tới khi xong, tổng ~48 giờ.
+
+| # | Task | Agent / Model | Status | Rounds | Sec | Notes |
+|---|------|---------------|--------|--------|-----|-------|
+| 6a | Cap phải cắt được *trong* một app | inline | ✅ | 1/5 | clean | Deadline hợp tác, không `Promise.race` |
+| 6b | Tắt MCP + đọc được lý do lane fail | inline | ✅ | 1/5 | clean | `--strict-mcp-config`; `failureDetail` thay 500 ký tự `usage` rỗng |
+| 6c | Trust từng repo cho `claude -p` | — | ⬜ | 0/5 | — | Sửa `~/.claude.json`, cần Tuan đồng ý. **Không phải** nguyên nhân fail |
+
+#### ✅ Task 6a: Cap phải cắt được *trong* một app
+- Agent: inline
+- Status: ✅ completed
+- Plan:
+  - Goal: một app không bao giờ ăn quá phần ngân sách của nó. Lane triage dừng nhận batch mới khi
+    quá hạn, các finding còn lại vào `unsure` và **được đếm ra report**, không im lặng.
+    `bun test ./test` không phát sinh fail mới, `bun run typecheck` sạch.
+  - Files allowed: `src/audit/triage.ts`, `src/audit/job.ts`, `src/audit/run.ts`, `src/config.ts`,
+    `test/audit.triage.test.ts`, `test/audit.job.test.ts`, `test/config.test.ts`.
+  - Approach: deadline **hợp tác**, không `Promise.race`. Race không huỷ được `claude -p` đang
+    chạy — nó chỉ bỏ mặc job, process con vẫn sống và giữ worktree, run vẫn không thoát được.
+    Deadline tuyệt đối truyền xuống, `runTriage` kiểm trước mỗi batch. Đó là chỗ duy nhất tiêu
+    thời gian không có trần: lane security đã có `securityMs` bọc một lời gọi.
+  - Test command: `bun test ./test` **và** `bun run typecheck`.
+  - Risk: dừng sớm mà không báo thì report đọc như "đã triage xong, không có gì đáng xoá" trong
+    khi thực tế bỏ dở 5000 finding. Vì thế phần bỏ dở phải thành `laneFailure` có số đếm.
+  - Rollback: revert; không đặt `AUDIT_APP_TIMEOUT_MS` thì `appDeadlineMs` undefined = hành vi cũ.
+- Rounds used: 1/5 — vòng 1 là 2 fixture thiếu field mới (`appTimeoutMs`, `appMs`). Không lỗi logic.
+- Verify: `bun run typecheck` exit 0; `bun test ./test` **729 pass / 5 fail** (vẫn đúng 5
+  `brainSlice.test.ts` cũ; trước task này là 719 pass — thêm 10 test, không mất cái nào).
+- `AUDIT_APP_TIMEOUT_MS` mặc định 25 phút. 5 app × 25 = 125 phút, nằm trong `runMs` 150 phút.
+  Deadline mỗi app là `min(phần của nó, phần còn lại của cả run)` — app cuối không được cấp
+  25 phút khi cả run chỉ còn 20.
+- Bỏ `Promise.race`: race không huỷ được `claude -p` đang chạy. Nó chỉ bỏ mặc job — process con
+  vẫn sống, worktree vẫn bị giữ, và run vẫn không thoát được. Deadline hợp tác thì thật sự dừng.
+
+#### ✅ Task 6b: Tắt MCP + đọc được lý do lane fail
+- Agent: inline
+- Status: ✅ completed
+- Rounds used: 1/5
+- Verify: `bun test ./test/analyze.test.ts` 44 pass / 0 fail; typecheck exit 0.
+- **MCP:** thêm `--strict-mcp-config` (không kèm `--mcp-config`) cho MỌI lời gọi `claude -p`,
+  không riêng audit. `grep -rn "mcp__" src/` = **0 hit** — không lane nào gọi tool MCP, nhưng mỗi
+  spawn vẫn nạp và khởi động server MCP của user. Đo 2026-08-24: mỗi batch triage đang bật
+  `uvx workspace-mcp --tools calendar sheets drive docs gmail`, và run SEO có 112 batch.
+- **Đọc được lý do:** `detail` của `nonzero` trước là `(stderr || stdout).slice(0, 500)`. Với
+  envelope lỗi thì 500 ký tự đầu toàn `usage` rỗng (`output_tokens: 0`, `cache_creation`,
+  `service_tier`) còn field nói WHY (`result` / `api_error_status`) nằm quá chỗ cắt — đó là lý do
+  log 2026-08-23 không đọc được gì. `failureDetail()` parse envelope và báo đúng field đó.
+
+### Đo tay 2026-08-25 — trust KHÔNG phải nguyên nhân
+
+Chạy thật một lời gọi trong `projects/Falcon/ai-product-copy`:
+
+```
+EXIT=0
+stdout: {"is_error":false,...,"stop_reason":"end_turn",...}
+stderr: Ignoring 21 permissions.allow entries from .claude/settings.local.json:
+        this workspace has not been trusted.
+```
+
+Cảnh báo trust nằm ở **stderr** và exit **0** — `spawnClaude` chỉ báo `nonzero` khi `code !== 0`
+(`claudeCli.ts`), nên nó không thể là thứ làm lane fail. Nó chỉ đi kèm: `detail` lấy stderr nên
+cảnh báo trust che mất lỗi thật.
+
+Lỗi thật, đọc từ envelope của SEO/BLOG/AEO: `is_error:true`, `num_turns:1`,
+`input_tokens:0`, `output_tokens:0`, `total_cost_usd:0`. **Không có lời gọi API nào xảy ra.**
+Run 1 tốn $57.75 rồi mọi lời gọi sau đó trả lỗi ở mức 0 token — hình dạng của **cụt hạn mức**,
+không phải lỗi cấu hình. Lần chạy tới `failureDetail` sẽ in ra đúng câu Claude trả về.
+
+Vẫn nên set trust (21 permission entry đang bị bỏ qua nghĩa là agent bị chặn ở tool lẽ ra được
+phép), nhưng đó là việc riêng và cần Tuan tự quyết vì nó sửa `~/.claude.json`.
+

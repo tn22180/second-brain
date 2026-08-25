@@ -251,6 +251,36 @@ describe('runAuditJob', () => {
     expect(result.report.laneFailures).toContainEqual({lane: 'jira', detail: 'create: HTTP 400'});
   });
 
+  test('the triage lane is handed the app deadline, and what it skipped is reported', async () => {
+    let seenDeadline: number | undefined = -1;
+    const deps = jobDeps({
+      cfg: settings({appDeadlineMs: 1_755_000_600_000}),
+      runEslintLane: async () => ({
+        ok: true,
+        filesScanned: 1,
+        findings: [{file: 'packages/functions/src/a.js', line: 5, rule: 'no-unused-vars', message: "'X' unused"}]
+      }),
+      triageLane: async input => {
+        seenDeadline = input.deadlineMs;
+        return {
+          ok: true,
+          verdicts: input.findings.map(f => ({fp: f.fp, verdict: 'unsure' as const, reason: 'triage stopped at the app deadline'})),
+          deletable: [],
+          costUsd: 0.05,
+          totalBatches: 3,
+          batchFailures: [],
+          stoppedAtDeadline: {atBatch: 1, untriaged: 4711}
+        };
+      }
+    });
+
+    const result = await runAuditJob(APP, deps);
+    expect(seenDeadline).toBe(1_755_000_600_000);
+    // Without this line the report reads exactly like a clean triage.
+    const failure = result.report.laneFailures.find(f => f.lane === 'triage');
+    expect(failure?.detail).toContain('4711 finding(s) never triaged');
+  });
+
   test('auditJobWorktreeDir never collides with the fix lane\'s own worktree naming', () => {
     const dir = auditJobWorktreeDir('/cache/wt', 'seo', '2026-08-19');
     expect(dir).toContain('audit-seo-20260819');
@@ -262,6 +292,7 @@ function runConfig(over: Partial<AuditRunConfig> = {}): AuditRunConfig {
     ...settings(),
     apps: APPS,
     runTimeoutMs: 10 * 60_000,
+    appTimeoutMs: 5 * 60_000,
     telegram: {botToken: 't', chatId: 'c', threadId: undefined},
     supervisor: {model: 'claude-sonnet-5', timeoutMs: 2000},
     fullReportPath: '/cache/audit-2026-08-19.md',
@@ -337,6 +368,28 @@ describe('runAudit', () => {
     const r = await runAudit(runConfig({runTimeoutMs: 0}), runDeps());
     expect(r.stoppedEarly).toBe(true);
     expect(r.apps).toHaveLength(0);
+  });
+
+  test('each app gets its own deadline, and the last one cannot outlive the run', async () => {
+    // The run cap alone is only read BETWEEN apps: on 2026-08-23 SEO stayed inside one
+    // job() call for ~48 hours while the cap sat there unread.
+    const deadlines: (number | undefined)[] = [];
+    let clock = NOW;
+    await runAudit(runConfig({runTimeoutMs: 12 * 60_000, appTimeoutMs: 5 * 60_000}), {
+      ...runDeps(),
+      now: () => clock,
+      job: async (app, cfg) => {
+        deadlines.push(cfg.appDeadlineMs);
+        clock += 5 * 60_000; // every app burns its whole share
+        return okResult(app.appName);
+      }
+    });
+
+    // App 1 and 2 get the full 5 minutes. App 3 starts 10 minutes in with 2 left,
+    // so it is capped by the run, not by its own share.
+    expect(deadlines[0]).toBe(NOW + 5 * 60_000);
+    expect(deadlines[1]).toBe(NOW + 10 * 60_000);
+    expect(deadlines[2]).toBe(NOW + 12 * 60_000);
   });
 
   test('one message per run, not one per app', async () => {

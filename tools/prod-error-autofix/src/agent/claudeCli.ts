@@ -51,9 +51,16 @@ export function resolveClaudeBin(env: Record<string, string | undefined> = proce
 /**
  * Variadic flags go last on purpose: `--allowedTools a b c` swallows following
  * arguments, so anything after it would be read as another tool name.
+ *
+ * `--strict-mcp-config` with no `--mcp-config` means no MCP server at all. Nothing
+ * this tool runs names an `mcp__` tool — every lane's `allowedTools` is Read/Grep/
+ * Glob/Edit/Write/Bash — but without the flag each spawn still inherits the user's
+ * own servers and starts them. Measured 2026-08-24: every triage batch was launching
+ * `uvx workspace-mcp --tools calendar sheets drive docs gmail`, once per batch, and
+ * SEO's run had 112 batches.
  */
 export function buildArgs(inv: ClaudeInvocation, bin: string): string[] {
-  const args = [bin, '-p', inv.prompt, '--output-format', 'json', '--model', inv.model];
+  const args = [bin, '-p', inv.prompt, '--output-format', 'json', '--model', inv.model, '--strict-mcp-config'];
   if (inv.appendSystemPrompt) args.push('--append-system-prompt', inv.appendSystemPrompt);
   if (inv.permissionMode) args.push('--permission-mode', inv.permissionMode);
   if (inv.addDirs.length) args.push('--add-dir', ...inv.addDirs);
@@ -89,6 +96,32 @@ export function parseEnvelope(stdout: string): ClaudeResult {
     detail: isError ? String(envelope.api_error_status ?? envelope.subtype ?? 'agent reported is_error') : undefined
   };
 };
+
+/**
+ * What a nonzero exit is reported as.
+ *
+ * A raw `(stderr || stdout).slice(0, 500)` was useless in practice: on 2026-08-23 every
+ * lane failed and each detail was 500 characters of an error envelope's `usage` block —
+ * `output_tokens: 0`, `cache_creation`, `service_tier` — with the one field that says
+ * WHY (`result` / `api_error_status`) sitting past the cut. So when the output parses as
+ * an envelope, report those fields instead of the blob.
+ */
+export function failureDetail(stdout: string, stderr: string): string {
+  for (const stream of [stdout, stderr]) {
+    const text = stream.trim();
+    if (!text.startsWith('{')) continue;
+    try {
+      const env = JSON.parse(text) as Record<string, unknown>;
+      const parts = [env.api_error_status, env.subtype, env.result, env.stop_reason]
+        .filter(v => typeof v === 'string' && v)
+        .map(String);
+      if (parts.length) return parts.join(' · ').slice(0, 500);
+    } catch {
+      // Not an envelope after all — fall through to the raw text.
+    }
+  }
+  return (stderr || stdout).trim().slice(0, 500);
+}
 
 export const spawnClaude: ClaudeRunner = async inv => {
   const bin = resolveClaudeBin();
@@ -126,7 +159,7 @@ export const spawnClaude: ClaudeRunner = async inv => {
         sessionId: undefined,
         permissionDenials: [],
         failure: 'nonzero',
-        detail: (stderr || stdout).trim().slice(0, 500)
+        detail: failureDetail(stdout, stderr)
       };
     }
     return parseEnvelope(stdout);

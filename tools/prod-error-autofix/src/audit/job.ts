@@ -46,6 +46,13 @@ export interface AuditJobSettings {
   mr: {model: string; agentTimeoutMs: number; jestTimeoutMs: number};
   /** Absent means the security lane files no ticket — see `AuditJiraSettings`. */
   jira: AuditJiraSettings | undefined;
+  /**
+   * Absolute epoch-ms this app must stop starting new work at. Set per app by
+   * `runAudit`, not by config, because it is "now plus what is left of the run
+   * budget" — the run cap alone only gets read BETWEEN apps, which is how SEO
+   * spent ~48 hours inside one `job()` call on 2026-08-23.
+   */
+  appDeadlineMs?: number;
 }
 
 export interface AuditJobDeps {
@@ -184,7 +191,8 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
       model: deps.cfg.triage.model,
       timeoutMs: deps.cfg.triage.timeoutMs,
       brainSlice: undefined,
-      findings: lint
+      findings: lint,
+      deadlineMs: deps.cfg.appDeadlineMs
     });
   } catch (e) {
     return {
@@ -206,7 +214,18 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
     };
   }
 
-  return {lint, verdicts: triageRes.verdicts, deletable: triageRes.deletable, costUsd: triageRes.costUsd, laneFailures: []};
+  // No silent cap: a lane cut short by the deadline reads exactly like a clean
+  // triage unless the count of what it never looked at reaches the report.
+  const stopped = triageRes.stoppedAtDeadline;
+  const laneFailures: LaneFailure[] = stopped
+    ? [
+        {
+          lane: 'triage',
+          detail: `stopped at the app deadline after batch ${stopped.atBatch}; ${stopped.untriaged} finding(s) never triaged`
+        }
+      ]
+    : [];
+  return {lint, verdicts: triageRes.verdicts, deletable: triageRes.deletable, costUsd: triageRes.costUsd, laneFailures};
 }
 
 function failedAppResult(app: App, laneFailures: LaneFailure[]): AppAuditResult {

@@ -3,7 +3,7 @@ import {mkdirSync, rmSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {analyze, buildAnalyzePrompt, type AnalyzeInput} from '../src/agent/analyze';
 import {extractJson, parseAnalysis, validateAnalysis, type Analysis} from '../src/agent/analysisSchema';
-import {buildArgs, parseEnvelope, type ClaudeInvocation, type ClaudeResult} from '../src/agent/claudeCli';
+import {buildArgs, failureDetail, parseEnvelope, type ClaudeInvocation, type ClaudeResult} from '../src/agent/claudeCli';
 import {libToSrc, verifyCitation, verifyEvidence} from '../src/agent/verify';
 import type {LogBundle} from '../src/gcloud/logs';
 import type {RunResult, Runner} from '../src/gcloud/run';
@@ -213,6 +213,24 @@ describe('claude CLI plumbing', () => {
     expect(args[args.length - 1]).toBe('Grep');
     // No --max-turns: this CLI build does not have it, the caller bounds rounds.
     expect(args).not.toContain('--max-turns');
+  });
+
+  test('every spawn runs with no MCP server, and none is asked for', () => {
+    const inv: ClaudeInvocation = {
+      prompt: 'p',
+      model: 'm',
+      appendSystemPrompt: undefined,
+      cwd: '/repo',
+      allowedTools: ['Read'],
+      addDirs: [],
+      permissionMode: undefined,
+      timeoutMs: 1000
+    };
+    const args = buildArgs(inv, 'claude');
+    // --strict-mcp-config with no --mcp-config is "no servers at all". Every triage
+    // batch was otherwise starting the user's own uvx workspace-mcp, once per batch.
+    expect(args).toContain('--strict-mcp-config');
+    expect(args).not.toContain('--mcp-config');
   });
 
   test('the envelope shape is the one the installed CLI emits', () => {
@@ -447,5 +465,46 @@ describe('buildAnalyzePrompt', () => {
 
   test('round one carries no rejection section', () => {
     expect(buildAnalyzePrompt(base, 1, [])).not.toContain('was rejected');
+  });
+});
+
+describe('what a nonzero exit reports', () => {
+  /** The exact shape every lane failed with on 2026-08-23, usage block and all. */
+  const ERROR_ENVELOPE = JSON.stringify({
+    is_error: true,
+    duration_api_ms: 0,
+    num_turns: 1,
+    stop_reason: 'stop_sequence',
+    session_id: 'a0ffc9ed',
+    total_cost_usd: 0,
+    result: 'Claude AI usage limit reached',
+    usage: {
+      output_tokens_details: {thinking_tokens: 0},
+      input_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+      output_tokens: 0,
+      server_tool_use: {web_search_requests: 0, web_fetch_requests: 0},
+      service_tier: 'standard',
+      cache_creation: {ephemeral_1h_input_tokens: 0, ephemeral_5m_input_tokens: 0},
+      inference_geo: ''
+    }
+  });
+
+  test('an error envelope reports why, not 500 characters of an empty usage block', () => {
+    const detail = failureDetail(ERROR_ENVELOPE, '');
+    expect(detail).toContain('Claude AI usage limit reached');
+    expect(detail).not.toContain('cache_creation_input_tokens');
+    expect(detail.length).toBeLessThanOrEqual(500);
+  });
+
+  test('plain stderr is still passed through — not everything is an envelope', () => {
+    const detail = failureDetail('', 'this workspace has not been trusted');
+    expect(detail).toBe('this workspace has not been trusted');
+  });
+
+  test('unparseable output falls back to the raw text rather than losing it', () => {
+    expect(failureDetail('{not json', 'boom')).toBe('boom');
+    expect(failureDetail('{not json', '')).toBe('{not json');
   });
 });
