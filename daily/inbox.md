@@ -175,3 +175,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Fleet-control alert "workers 0/0 up" = không có worker đăng ký (khác worker chết) — message hiện tại gây hiểu nhầm critical
 - [ ] (×1) dev_zone SEO không còn expose Access token / shop info (FE + BE), seo `f038aa4d28` + `56a21f7c28`
 - [ ] (×1) Beszel (opensource) là hướng đang cân nhắc cho monitoring VM/fleet — custom được, thay phần Grafana/Bull Board vừa cắt
+
+### memory candidates 2026-08-25
+- [ ] (×1) Beszel đã chốt làm lớp monitoring VM/machine của fleet-control — nhúng qua menu Machines, dùng chung Google auth của fleet-control, không login riêng
+- [ ] (×1) `deploy/deploy.sh` của fleet-control chạy từ máy dev với `BOX=avada@100.87.235.36 DEST=/home/avada/fleet-control`, không có sẵn trên box — chạy trên box là `No such file or directory`
+- [ ] (×1) Tailscale direct connection cần UDP 41641 mở ở central; thiếu thì fallback DERP, biểu hiện như box "down"
+- [ ] (×1) Revoke service account Firebase làm chết mọi nơi đang dùng key đó (local env, script) — nạp lại bằng base64 vào env
+- [ ] (×1) Skill `jira-fix` (link FAL-xxx → phân tích → fix → MR) sống ở second-brain/skills, không nằm trong repo app

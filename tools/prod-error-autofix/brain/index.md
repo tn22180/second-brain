@@ -7,6 +7,13 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `jdoapt` · 2026-08-25 · AEO · onCreateUser · The CRM endpoint https://app.avada.io/app/api/v1/triggers/VbqxjCMDJL7jTzo2Yato answered one of 21 installs wit · — · fix_disabled
+- `bld4qf` · 2026-08-25 · BLOG · api · Commit b2cac34f5 added two `ctx.state.eventPayload = creditPayload(tokenResult)` call sites to blogAssist.cont · — · fix_disabled
+- `1m9iegv` · 2026-08-25 · BLOG · api · blogAssist.controller.js calls creditPayload(tokenResult) in getResultAiInline (and getCompletions) but never  · — · fix_disabled
+- `o3dxv8` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs both of its expected "this article does not exist" outcomes  · — · fix_disabled
+- `1dosxzi` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs its two expected "article does not exist" outcomes — Invalid · — · fix_disabled
+- `1bhevcs` · 2026-08-25 · BLOG · api · no verified cause · — · inconclusive
+- `1q9n03` · 2026-08-25 · BLOG · api · no verified cause · — · inconclusive
 - `16vcpso` · 2026-08-24 · SEO · apisagen2 · POST /apiSa/genFaqBulk returned 500 because a Shopify Admin GraphQL THROTTLED error reached generateBulkContro · — · fix_disabled
 - `4zowc` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
 - `1dfzetm` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
@@ -351,7 +358,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
 - `1h0gjn4` · 2026-08-14 · SEO · apigen2 · Shopify REST `metafield.list` answered HTTP 429 for shop f7gyAstbmRKIprVvNT24 during GET /api/analysis/page/69 · — · inconclusive
-- `1mv41mw` · 2026-08-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
+- `1mv41mw` · 2026-08-25 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
 - `19yp12q` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) was OOM-killed at 2026-08-04T10:33:21.448Z (2060 MiB use · — · infra

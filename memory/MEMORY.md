@@ -35,3 +35,4 @@
 - [seo optimize-image Cloud Run job](seo-optimize-image-cloud-run-job.md) — alt/image prod chạy ở Cloud Run JOB, deploy chỉ theo tag + title `[deploy-cloud-run-production]`; trôi 4 tuần sau master.
 - [seo central box access](seo-central-box-access.md) — box thật `avada@100.87.235.36`, fleet-control ở `/home/avada/fleet-control`; deploy.sh commit sẵn 2 default sai, sudo cần password.
 - [Bull Board vs fleet-control](seo-bullboard-grafana-vs-fleet-control.md) — cùng Redis/BullMQ (Bull Board có quyền ghi, không redact); Grafana chỉ đọc Loki. Đã khoá về 127.0.0.1 24/08.
+- [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.

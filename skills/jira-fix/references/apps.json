@@ -1,0 +1,62 @@
+{
+  "_provenance": {
+    "reposRoot": "đường dẫn tuyệt đối tới thư mục cha của mọi repo Avada",
+    "read": "2026-08-25",
+    "how": "falconApp: option list của customfield_11203 (probe jira-create 2026-07-10). repo/defaultBranch: git symbolic-ref refs/remotes/origin/HEAD trên từng repo. remote: git remote -v. testCmd: mọi repo có jest.config.js ở root, không phải repo nào cũng khai script `test` → npx jest là lệnh chạy được ở cả 5."
+  },
+  "reposRoot": "/Users/nguyentuan/Documents/second-brain/projects/Falcon",
+  "worktreeRoot": "~/.cache/jira-fix/wt",
+  "apps": [
+    {
+      "falconApp": "SEO",
+      "tag": "SEO",
+      "repo": "seo",
+      "defaultBranch": "master",
+      "remote": "https://git.avada.net/avada/seo.git",
+      "testCmd": ["npx", "jest", "--ci"],
+      "codePaths": ["packages/functions/src", "packages/assets/src", "packages/scripttag/src"]
+    },
+    {
+      "falconApp": "Blog",
+      "tag": "BLOG",
+      "repo": "blogs",
+      "defaultBranch": "master",
+      "remote": "https://gitlab.com/avada/blogs.git",
+      "testCmd": ["npx", "jest", "--ci"],
+      "codePaths": ["packages/functions/src", "packages/assets/src", "packages/avadaseo/src"]
+    },
+    {
+      "falconApp": "APC",
+      "tag": "APC",
+      "repo": "ai-product-copy",
+      "defaultBranch": "master",
+      "remote": "https://git.avada.net/avada/ai-product-copy.git",
+      "testCmd": ["npx", "jest", "--ci"],
+      "codePaths": ["packages/functions/src", "packages/assets/src", "packages/scripttag/src"]
+    },
+    {
+      "falconApp": "AEO",
+      "tag": "AEO",
+      "repo": "llm-ai-search-seo",
+      "defaultBranch": "main",
+      "remote": "https://git.avada.net/avada/llm-ai-search-seo.git",
+      "testCmd": ["npx", "jest", "--ci"],
+      "codePaths": ["packages/functions/src", "packages/assets/src"]
+    },
+    {
+      "falconApp": "Speed",
+      "tag": "IMG-OPT",
+      "repo": "avada-image-optimizer",
+      "defaultBranch": "master",
+      "remote": "https://gitlab.com/avada/avada-image-optimizer.git",
+      "testCmd": ["npx", "jest", "--ci"],
+      "codePaths": ["packages/functions/src", "packages/assets/src", "packages/scripttag/src"]
+    }
+  ],
+  "outOfScope": {
+    "Feed": "chưa có repo trong scope skill",
+    "Ads": "chưa có repo trong scope skill",
+    "Pixels": "chưa có repo trong scope skill",
+    "Canva": "chưa có repo trong scope skill"
+  }
+}
