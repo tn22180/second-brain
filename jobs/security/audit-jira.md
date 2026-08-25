@@ -278,7 +278,8 @@ trong một app: SEO một mình ăn hết 150 phút rồi còn chạy tiếp t�
 |---|------|---------------|--------|--------|-----|-------|
 | 6a | Cap phải cắt được *trong* một app | inline | ✅ | 1/5 | clean | Deadline hợp tác, không `Promise.race` |
 | 6b | Tắt MCP + đọc được lý do lane fail | inline | ✅ | 1/5 | clean | `--strict-mcp-config`; `failureDetail` thay 500 ký tự `usage` rỗng |
-| 6c | Trust từng repo cho `claude -p` | — | ⬜ | 0/5 | — | Sửa `~/.claude.json`, cần Tuan đồng ý. **Không phải** nguyên nhân fail |
+| 6c | Trust từng repo cho `claude -p` | — | ✅ | 1/5 | clean | 3 repo, `~/.claude.json`. **Không phải** nguyên nhân fail |
+| 6d | Đừng triage lại finding đã có phán quyết | inline | ✅ | 1/5 | clean | `delete` vẫn triage lại — verdict duy nhất thành push |
 
 #### ✅ Task 6a: Cap phải cắt được *trong* một app
 - Agent: inline
@@ -342,4 +343,39 @@ không phải lỗi cấu hình. Lần chạy tới `failureDetail` sẽ in ra �
 
 Vẫn nên set trust (21 permission entry đang bị bỏ qua nghĩa là agent bị chặn ở tool lẽ ra được
 phép), nhưng đó là việc riêng và cần Tuan tự quyết vì nó sửa `~/.claude.json`.
+
+
+#### ✅ Task 6d: Đừng triage lại finding đã có phán quyết
+- Agent: inline
+- Status: ✅ completed
+- Plan:
+  - Goal: một finding đã được triage hôm qua không tốn thêm một lời gọi `claude -p` nào hôm nay.
+    Mọi finding vẫn có verdict. `bun test ./test` không phát sinh fail mới, typecheck sạch.
+  - Files allowed: `src/audit/job.ts`, `test/audit.job.test.ts`. Không đụng khác.
+  - Approach: trước khi gọi lane triage, tra `store.openAuditFindings(app)` — hàng nào đã có
+    `verdict` thì dùng lại, chỉ gửi phần còn lại cho agent. **Không** dùng lại verdict `delete`:
+    đó là verdict duy nhất biến thành một lần push, và `findingFp` không phụ thuộc dòng nên code
+    quanh nó đổi mà fingerprint vẫn thế. Verdict nguy hiểm thì trả tiền triage lại; phần còn lại
+    (`keep`/`unsure`, gần như toàn bộ) thì không.
+    Bỏ phương án tăng `TRIAGE_BATCH_SIZE`: nó chỉ chia lại cùng khối lượng, ngày nào cũng trả
+    tiền cho cùng 5600 finding.
+  - Test command: `bun test ./test` **và** `bun run typecheck`.
+  - Risk: dùng lại verdict sai = giữ mãi một phán quyết cũ cho code đã đổi. Vì thế `delete` không
+    bao giờ được dùng lại, và ledger vẫn `upsert` để `last_seen_ms` không đứng im.
+  - Rollback: revert; hành vi cũ là gửi tất cả cho agent.
+- Rounds used: 1/5
+- Verify: `bun test ./test` **731 pass / 5 fail** (vẫn đúng 5 `brainSlice.test.ts` cũ);
+  `bun run typecheck` exit 0. Hai test mới đóng đúng hai nhánh: `delete` vẫn được gửi lại cho
+  agent, và khi mọi finding đã có phán quyết thì agent **không được gọi lần nào**.
+- Security check: **clean** — 2 file, +107/−5. Không secret, không log mới, không đụng file cấm.
+  Blast radius: verdict dùng lại nuôi lane cleanup, lane DUY NHẤT còn push. Đó là lý do `delete`
+  bị loại khỏi diện dùng lại.
+
+#### ✅ Task 6c: Trust 3 repo
+- Backup `~/.claude.json` (107837 byte) trước khi sửa, ghi bằng JSON parser rồi `json.load` lại
+  file tạm để validate, sau đó mới `os.replace`. Không `sed` vào file 88 key.
+- Đặt `hasTrustDialogAccepted: true` cho `blogs`, `avada-image-optimizer`, `ai-product-copy`.
+  `seo`, `llm-ai-search-seo`, `worker-sdk` đã trusted sẵn. 24 project entry giữ nguyên số lượng.
+- Verify bằng lời gọi thật trong repo APC: `EXIT=0`, **stderr rỗng** (trước đó là dòng
+  `Ignoring 21 permissions.allow entries`).
 

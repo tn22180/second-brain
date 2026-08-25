@@ -2,6 +2,7 @@ import {describe, expect, test} from 'bun:test';
 import {buildConfig} from '../src/config';
 import {listApps, type App} from '../src/registry';
 import {Store} from '../src/state/store';
+import {findingFp} from '../src/audit/findingFp';
 import {auditJobWorktreeDir, runAuditJob, type AppAuditResult, type AuditJobDeps, type AuditJobSettings} from '../src/audit/job';
 import {renderReport, type ReportInput} from '../src/audit/report';
 import {runAudit, type AuditRunConfig, type AuditRunDeps} from '../src/audit/run';
@@ -279,6 +280,75 @@ describe('runAuditJob', () => {
     // Without this line the report reads exactly like a clean triage.
     const failure = result.report.laneFailures.find(f => f.lane === 'triage');
     expect(failure?.detail).toContain('4711 finding(s) never triaged');
+  });
+
+  test('a finding the ledger already ruled on never goes back to the agent', async () => {
+    const store = new Store(':memory:');
+    const FINDINGS = [
+      {file: 'packages/functions/src/a.js', line: 5, rule: 'no-unused-vars', message: "'A' unused"},
+      {file: 'packages/functions/src/b.js', line: 6, rule: 'no-unused-vars', message: "'B' unused"},
+      {file: 'packages/functions/src/c.js', line: 7, rule: 'no-unused-vars', message: "'C' unused"}
+    ];
+    const fpOf = (f: {file: string; rule: string; message: string}) =>
+      findingFp({app: 'SEO', file: f.file, rule: f.rule, title: f.message});
+
+    // a: ruled `keep` yesterday. b: ruled `delete` yesterday. c: never seen.
+    store.upsertAuditFinding(
+      {fp: fpOf(FINDINGS[0]!), app: 'SEO', kind: 'hygiene', file: FINDINGS[0]!.file, line: 5, rule: 'no-unused-vars', title: FINDINGS[0]!.message, severity: 'low', verdict: 'keep'},
+      NOW - 86_400_000
+    );
+    store.upsertAuditFinding(
+      {fp: fpOf(FINDINGS[1]!), app: 'SEO', kind: 'hygiene', file: FINDINGS[1]!.file, line: 6, rule: 'no-unused-vars', title: FINDINGS[1]!.message, severity: 'low', verdict: 'delete'},
+      NOW - 86_400_000
+    );
+
+    let sentToAgent: string[] = [];
+    const deps = jobDeps({
+      store,
+      runEslintLane: async () => ({ok: true, filesScanned: 3, findings: FINDINGS}),
+      triageLane: async input => {
+        sentToAgent = input.findings.map(f => f.file);
+        return {
+          ok: true,
+          verdicts: input.findings.map(f => ({fp: f.fp, verdict: 'keep' as const, reason: 'fresh look'})),
+          deletable: [],
+          costUsd: 0.05,
+          totalBatches: 1,
+          batchFailures: []
+        };
+      }
+    });
+
+    const result = await runAuditJob(APP, deps);
+
+    // `delete` is the only verdict that turns into a push, and findingFp ignores the
+    // line, so the code around it can change while the fingerprint does not.
+    expect(sentToAgent.sort()).toEqual(['packages/functions/src/b.js', 'packages/functions/src/c.js']);
+    // Every finding still ends up with a verdict — nothing is silently dropped.
+    expect(result.report.ledger.fresh.length + result.report.ledger.carried).toBe(3);
+  });
+
+  test('every finding already ruled on means the agent is not called at all', async () => {
+    const store = new Store(':memory:');
+    const f = {file: 'packages/functions/src/a.js', line: 5, rule: 'no-unused-vars', message: "'A' unused"};
+    const fp = findingFp({app: 'SEO', file: f.file, rule: f.rule, title: f.message});
+    store.upsertAuditFinding(
+      {fp, app: 'SEO', kind: 'hygiene', file: f.file, line: 5, rule: 'no-unused-vars', title: f.message, severity: 'low', verdict: 'keep'},
+      NOW - 86_400_000
+    );
+
+    let called = 0;
+    const deps = jobDeps({
+      store,
+      runEslintLane: async () => ({ok: true, filesScanned: 1, findings: [f]}),
+      triageLane: async () => {
+        called++;
+        throw new Error('the agent must not be called when nothing needs triaging');
+      }
+    });
+
+    await runAuditJob(APP, deps);
+    expect(called).toBe(0);
   });
 
   test('auditJobWorktreeDir never collides with the fix lane\'s own worktree naming', () => {

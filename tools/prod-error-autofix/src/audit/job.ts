@@ -181,7 +181,33 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
     fp: findingFp({app: app.appName, file: f.file, rule: f.rule, title: f.message})
   }));
 
-  const unsure = (reason: string): TriageVerdict[] => lint.map(f => ({fp: f.fp, verdict: 'unsure', reason}));
+  const unsureFor = (findings: TriageFinding[], reason: string): TriageVerdict[] =>
+    findings.map(f => ({fp: f.fp, verdict: 'unsure', reason}));
+
+  /**
+   * A finding the ledger already carries a verdict for does not go back to the agent.
+   * SEO's sweep found ~5600 lint findings and re-triaged every one of them daily — 112
+   * batches, and the same answers every morning.
+   *
+   * `delete` is deliberately NOT reused: it is the only verdict that turns into a push,
+   * and `findingFp` is line-independent by design, so the code around a finding can
+   * change while its fingerprint does not. The dangerous verdict pays for a fresh look;
+   * `keep` and `unsure` — nearly all of them — do not.
+   */
+  const reusable = new Map(
+    deps.store
+      .openAuditFindings(app.appName)
+      .filter(r => r.verdict !== undefined && r.verdict !== 'delete')
+      .map(r => [r.fp, r.verdict!] as const)
+  );
+  const reused: TriageVerdict[] = lint
+    .filter(f => reusable.has(f.fp))
+    .map(f => ({fp: f.fp, verdict: reusable.get(f.fp) as TriageVerdict['verdict'], reason: 'verdict carried from an earlier sweep'}));
+  const toTriage = lint.filter(f => !reusable.has(f.fp));
+
+  if (toTriage.length === 0) {
+    return {lint, verdicts: reused, deletable: [], costUsd: undefined, laneFailures: []};
+  }
 
   let triageRes: TriageResult;
   try {
@@ -191,13 +217,13 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
       model: deps.cfg.triage.model,
       timeoutMs: deps.cfg.triage.timeoutMs,
       brainSlice: undefined,
-      findings: lint,
+      findings: toTriage,
       deadlineMs: deps.cfg.appDeadlineMs
     });
   } catch (e) {
     return {
       lint,
-      verdicts: unsure('triage threw'),
+      verdicts: [...unsureFor(toTriage, 'triage threw'), ...reused],
       deletable: [],
       costUsd: undefined,
       laneFailures: [{lane: 'triage', detail: (e as Error).message ?? 'threw'}]
@@ -207,7 +233,7 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
   if (!triageRes.ok) {
     return {
       lint,
-      verdicts: unsure('triage failed'),
+      verdicts: [...unsureFor(toTriage, 'triage failed'), ...reused],
       deletable: [],
       costUsd: triageRes.costUsd,
       laneFailures: [{lane: 'triage', detail: `${triageRes.failure}: ${triageRes.detail}`}]
@@ -225,7 +251,13 @@ async function runHygieneLane(app: App, worktreeDir: string, deps: AuditJobDeps)
         }
       ]
     : [];
-  return {lint, verdicts: triageRes.verdicts, deletable: triageRes.deletable, costUsd: triageRes.costUsd, laneFailures};
+  return {
+    lint,
+    verdicts: [...triageRes.verdicts, ...reused],
+    deletable: triageRes.deletable,
+    costUsd: triageRes.costUsd,
+    laneFailures
+  };
 }
 
 function failedAppResult(app: App, laneFailures: LaneFailure[]): AppAuditResult {
