@@ -13,6 +13,7 @@
 export type SecuritySeverity = 'high' | 'medium' | 'low';
 
 export type SecurityCategory =
+  | 'credential_exposure'
   | 'shop_scoping'
   | 'untrusted_input'
   | 'secret'
@@ -37,6 +38,7 @@ export type SecurityValidation =
 export const SEVERITIES: SecuritySeverity[] = ['high', 'medium', 'low'];
 
 export const CATEGORIES: SecurityCategory[] = [
+  'credential_exposure',
   'shop_scoping',
   'untrusted_input',
   'secret',
@@ -44,6 +46,17 @@ export const CATEGORIES: SecurityCategory[] = [
   'authn',
   'other'
 ];
+
+/**
+ * A merchant credential leaving its own shop's boundary is the worst outcome in
+ * this fleet, so its severity is not the model's call. `renderReport` drops
+ * findings by severity when the Telegram cap bites (report.ts), and a leaked
+ * `accessToken` the model happened to score `low` would be the first line cut —
+ * behind 800 `no-unused-vars` hits. The category is the claim; `high` follows.
+ */
+export function severityFor(category: SecurityCategory, severity: SecuritySeverity): SecuritySeverity {
+  return category === 'credential_exposure' ? 'high' : severity;
+}
 
 /**
  * Ordered most specific first: a vendor-prefixed key is consumed whole before the
@@ -165,7 +178,7 @@ export function validateSecurityFindings(raw: unknown): SecurityValidation {
       value.push({
         file,
         line,
-        severity: severity as SecuritySeverity,
+        severity: severityFor(category as SecurityCategory, severity as SecuritySeverity),
         category: category as SecurityCategory,
         // Redacted here, at construction: nothing downstream is trusted to remember.
         title: redactSecret(title),

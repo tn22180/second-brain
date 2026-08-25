@@ -277,3 +277,39 @@ describe('runSecurityLane', () => {
     expect(r.costUsd).toBe(0.4);
   });
 });
+
+describe('credential_exposure — the merchant token surface', () => {
+  test('the category is accepted', () => {
+    const res = validateSecurity(JSON.stringify([finding({category: 'credential_exposure'})]));
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value[0]!.category).toBe('credential_exposure');
+  });
+
+  // The severity is the reason this category exists. renderReport drops findings by
+  // severity once the Telegram cap bites, so a leaked accessToken the model scored
+  // `low` would be cut before 800 hygiene hits it should have outranked.
+  test('a low-scored credential leak is recorded as high anyway', () => {
+    const res = validateSecurity(
+      JSON.stringify([finding({category: 'credential_exposure', severity: 'low'})])
+    );
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value[0]!.severity).toBe('high');
+  });
+
+  test('every other category keeps the severity the agent gave it', () => {
+    const res = validateSecurity(JSON.stringify([finding({category: 'shop_scoping', severity: 'low'})]));
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value[0]!.severity).toBe('low');
+  });
+
+  test('the prompt puts it first and names the tokens this fleet uses', () => {
+    const prompt = buildSecurityPrompt(INPUT);
+    expect(prompt.indexOf('credential_exposure')).toBeLessThan(prompt.indexOf('shop_scoping'));
+    for (const name of ['accessToken', 'SHOPIFY_ACCESS_TOKEN_KEY', 'integrationKeys']) {
+      expect(prompt).toContain(name);
+    }
+    // Without the precedence line the same leak lands in two categories on two mornings,
+    // and findingFp (rule = category) reports it as new both times.
+    expect(prompt).toContain('not `shop_scoping`');
+  });
+});

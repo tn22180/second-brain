@@ -4,8 +4,9 @@ import {ANALYZE_TOOLS, spawnClaude, type ClaudeFailure, type ClaudeRunner} from 
 import {validateSecurity, type SecurityFinding} from './securitySchema';
 
 /**
- * Lane A of the daily audit: one read-only sweep of a whole repo for the five
- * surfaces that matter in a Shopify app on Firestore.
+ * Lane A of the daily audit: one read-only sweep of a whole repo for the six
+ * surfaces that matter in a Shopify app on Firestore. They are listed worst-first,
+ * and the worst is a merchant's own credential leaving its shop.
  *
  * Scope is the repo, not a diff — this is a sweep, not a review of one change.
  * The prompt names the surfaces to keep that bounded; without them the agent
@@ -64,16 +65,26 @@ export function buildSecurityPrompt(input: SecurityLaneInput): string {
     '',
     '## Surfaces to sweep, in this order',
     '',
-    '1. `shop_scoping` — a Firestore query, handler or bulk job that reads or writes',
+    "1. `credential_exposure` — a MERCHANT'S OWN credential leaving the boundary of the",
+    '   shop it belongs to. A Shopify `accessToken`, an integration or API key, a webhook',
+    '   HMAC secret, a service-account JSON: returned in a response, passed to a third',
+    '   party, put in a URL or a job payload, or stored where another shop can read it.',
+    '   Start from the names this fleet actually uses — `accessToken`,',
+    '   `SHOPIFY_ACCESS_TOKEN_KEY`, `integrationKeys`, `apiKey`, `apiSecret` — and from any',
+    '   per-shop token read out of Firestore. This is the worst thing you can find here:',
+    "   the token is the merchant's whole store.",
+    '   **Precedence:** when a scoping bug leaks a credential, it is `credential_exposure`,',
+    '   not `shop_scoping`. One finding, one category.',
+    '2. `shop_scoping` — a Firestore query, handler or bulk job that reads or writes',
     "   without filtering on the caller's own shop id. Cross-shop IDOR is the top risk",
     '   in this fleet.',
-    '2. `untrusted_input` — shop domain, plan, quota, price, credit balance or role taken',
+    '3. `untrusted_input` — shop domain, plan, quota, price, credit balance or role taken',
     '   from the request body/query instead of from the session or Firestore.',
-    '3. `secret` — a literal key, token or service-account JSON in the tree, including in',
+    '4. `secret` — a literal key, token or service-account JSON in the tree, including in',
     '   comments, fixtures, docs and test files.',
-    '4. `secret_in_log` — a logger, error report or command line printing a token, a whole',
+    '5. `secret_in_log` — a logger, error report or command line printing a token, a whole',
     '   config object, or a full request header.',
-    '5. `authn` — an endpoint with no authentication or the wrong one, and webhook handlers',
+    '6. `authn` — an endpoint with no authentication or the wrong one, and webhook handlers',
     '   with no HMAC verification.',
     '',
     '## Rules',
@@ -81,6 +92,7 @@ export function buildSecurityPrompt(input: SecurityLaneInput): string {
     '- Every finding must name a `file:line` that exists in this worktree. A citation that',
     '  does not resolve is dropped, so an invented one buys you nothing.',
     '- Report the location and the kind of a secret. **Never quote the value.**',
+    '- A `credential_exposure` finding is recorded as `high` whatever severity you give it.',
     '- No style, no performance, no dead code — another lane owns those.',
     '',
     '## Answer',
@@ -95,7 +107,7 @@ export function buildSecurityPrompt(input: SecurityLaneInput): string {
     '    "file": "packages/functions/src/handlers/x.js",',
     '    "line": 42,',
     '    "severity": "high | medium | low",',
-    '    "category": "shop_scoping | untrusted_input | secret | secret_in_log | authn | other",',
+    '    "category": "credential_exposure | shop_scoping | untrusted_input | secret | secret_in_log | authn | other",',
     '    "title": "one line, what is wrong",',
     '    "why": "what an attacker gets, in one or two sentences",',
     '    "fix": "what to change"',

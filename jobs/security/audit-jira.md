@@ -280,6 +280,7 @@ trong một app: SEO một mình ăn hết 150 phút rồi còn chạy tiếp t�
 | 6b | Tắt MCP + đọc được lý do lane fail | inline | ✅ | 1/5 | clean | `--strict-mcp-config`; `failureDetail` thay 500 ký tự `usage` rỗng |
 | 6c | Trust từng repo cho `claude -p` | — | ✅ | 1/5 | clean | 3 repo, `~/.claude.json`. **Không phải** nguyên nhân fail |
 | 6d | Đừng triage lại finding đã có phán quyết | inline | ✅ | 1/5 | clean | `delete` vẫn triage lại — verdict duy nhất thành push |
+| 7 | Credential khách hàng thành surface hạng nhất | inline | ✅ | 1/5 | clean | Category `credential_exposure`, severity ép `high` |
 
 #### ✅ Task 6a: Cap phải cắt được *trong* một app
 - Agent: inline
@@ -379,3 +380,27 @@ phép), nhưng đó là việc riêng và cần Tuan tự quyết vì nó sửa 
 - Verify bằng lời gọi thật trong repo APC: `EXIT=0`, **stderr rỗng** (trước đó là dòng
   `Ignoring 21 permissions.allow entries`).
 
+
+#### ✅ Task 7: Credential khách hàng thành surface hạng nhất
+- Agent: inline
+- Plan:
+  - Goal: một accessToken/integration key của merchant rời khỏi biên shop của nó được báo dưới
+    đúng một category riêng, luôn `high`, và đứng đầu danh sách surface trong prompt.
+  - Files allowed: `src/audit/securitySchema.ts`, `src/audit/securityLane.ts`,
+    `test/audit.security.test.ts`.
+  - Approach: thêm category `credential_exposure` + luật ưu tiên (leak là credential thì KHÔNG
+    báo `shop_scoping`), clamp severity trong `validateSecurityFindings`. Bỏ phương án chỉ sửa
+    chữ trong prompt: `report.ts:184` cắt theo severity, model chấm `low` là finding chết.
+  - Test command: `bun test ./test` và `bun run typecheck`.
+  - Risk: `findingFp` lấy `rule = f.category` (`job.ts:115`) → finding cũ đổi category = fp mới =
+    báo "mới" lại một sáng. Một lần. Ledger không cần migrate.
+  - Rollback: revert; category cũ vẫn hợp lệ, không có cột nào đổi shape.
+- Rounds used: 1/5
+- Verify: `bun run typecheck` exit 0; `bun test ./test` **735 pass / 9 skip / 5 fail** — 4 test mới,
+  5 fail vẫn đúng bộ `brainSlice.test.ts` cũ. Test khoá 4 điểm: category được nhận, `low` bị ép
+  `high`, category khác GIỮ NGUYÊN severity agent chấm, và prompt đặt `credential_exposure` trước
+  `shop_scoping` kèm luật ưu tiên.
+- Security check: **clean** — 3 file, +79/−4. Prompt chỉ nêu TÊN biến (`SHOPIFY_ACCESS_TOKEN_KEY`,
+  `integrationKeys`), không có giá trị nào. Không log mới, không dep mới, không đụng file cấm.
+  Blast radius: lane này chỉ đọc và báo — không MR, không ghi. Cái giá duy nhất là một sáng
+  báo lại "mới" cho finding đổi category.
