@@ -9,13 +9,41 @@ Produces the **daily GCP cost report** (Vietnamese, multi-app) from the `avada-s
 BigQuery billing export. Two stages:
 
 1. **Data** (deterministic): `scripts/billing_data.py` runs one `bq` query and writes
-   `reports/billing-data-<d1>.json` with every number the report needs.
+   `reports/billing-data-<d1>.json` with every number the report needs. It also picks
+   `d1` itself — see **Completeness** below.
 2. **Authoring** (you, following this guide): turn that JSON + `config/*` into the
    styled markdown and save it to `reports/gcp-cost-<d1>.md`.
 
 "App" = a GCP **project**. `d1` = the report day (yesterday by default), `d2` = the day
 before. **Cost basis = gross `SUM(cost)`** (before credits). All money is USD unless the
 data says otherwise.
+
+## Completeness
+
+The billing export backfills. A day that looks finished can still gain ~25% later, and the
+last piece to land is the `Cloud Firestore Storage` SKU — a flat storage-at-rest charge
+(~$13.80/day for `avada-seo`, <3% day-to-day spread). Judging by whether that SKU has
+arrived, the old fixed `today - 2` rule published a day that was on average **10.1% low,
+worst 23.9% low, wrong by >10% on 6 of 13 runs** (replay of 2026-08-12..24).
+
+So `billing_data.py` no longer trusts a fixed lag. With no `--date` it probes
+`today - reportLagDays`, then walks back up to `--max-walk` days until it finds a day where
+that SKU has landed for **every** project that bills it — and where its `d2` has landed too,
+since the headline number is the `d2 → d1` delta. Same replay with the walk: mean error
+**0.2%**, worst 0.6%, no run off by >10%.
+
+The gate is presence, not size: the SKU arrives as one whole row per project per day, so a
+backlog leaves a hole, while a genuine storage drop (`avada-blog-app` fell $1.56 → $0.20/day
+on 2026-08-20 after a purge) is a small but complete number.
+
+`meta.completeness` in the data JSON carries `probeDate`, `settled`, `walkedBackDays` and a
+per-candidate `trail`. When nothing settles the report is still written — with a ⚠️ banner in
+the markdown and in the Telegram summary saying the numbers are a floor. An explicit `--date`
+skips the walk entirely and reports exactly that day.
+
+Expect the report day to lag more than 2 days during a backlog, and to repeat the same day
+across consecutive runs until the export catches up. That is the point: a repeated correct
+number beats a fresh wrong one.
 
 ## Preconditions
 
@@ -28,9 +56,9 @@ Requires `python3` (stdlib only).
 ## One-command path (recommended)
 
 ```bash
-python3 ~/.claude/skills/avada-billing-report/scripts/render_report.py        # yesterday
+python3 ~/.claude/skills/avada-billing-report/scripts/render_report.py        # newest settled day
 # flags: --date YYYY-MM-DD · --tz Asia/Ho_Chi_Minh · --all-projects · --budget 3500
-#        --no-refresh (reuse cached data) · --data PATH · --out PATH
+#        --no-refresh (with --date: reuse cached data) · --data PATH · --out PATH
 ```
 `render_report.py` calls `billing_data.py` internally, then writes `reports/gcp-cost-<d1>.md`.
 This is the right entrypoint for routine daily runs.
@@ -67,8 +95,9 @@ yourself with judgment beyond the templates.
 ### Step 1 — generate the data
 
 ```bash
-python3 ~/.claude/skills/avada-billing-report/scripts/billing_data.py        # yesterday, UTC
+python3 ~/.claude/skills/avada-billing-report/scripts/billing_data.py        # newest settled day, UTC
 # flags: --date YYYY-MM-DD · --tz Asia/Ho_Chi_Minh · --all-projects · --budget 3500
+#        --lag-days N (probe today-N first, default 2) · --max-walk N (default 4)
 ```
 It prints the data-file path on stdout and a summary on stderr. Load the JSON before authoring.
 

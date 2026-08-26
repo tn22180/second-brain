@@ -8,7 +8,7 @@ top Cloud Functions) and writes a single structured JSON file. The styled markdo
 report is authored separately by Claude following SKILL.md ("data + guided authoring").
 
 Usage:
-  python3 billing_data.py                 # yesterday (UTC)
+  python3 billing_data.py                 # newest settled day (UTC)
   python3 billing_data.py --date 2026-05-26
   python3 billing_data.py --tz Asia/Ho_Chi_Minh
   python3 billing_data.py --all-projects  # include *-staging
@@ -40,7 +40,12 @@ TZ_RE = re.compile(r"^[A-Za-z0-9_/+-]+$")
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--date", help="report day (d1), YYYY-MM-DD; default = yesterday in --tz")
+    p.add_argument("--date", help="report day (d1), YYYY-MM-DD; default = today - --lag-days, "
+                                  "then walked back to the newest settled day")
+    p.add_argument("--lag-days", type=int, default=2,
+                   help="how many days behind today to probe first (default 2)")
+    p.add_argument("--max-walk", type=int, default=4,
+                   help="max extra days to walk back looking for a settled day (default 4)")
     p.add_argument("--tz", default="UTC", help="timezone for the day boundary (default UTC)")
     p.add_argument("--all-projects", action="store_true", help="include *-staging projects")
     p.add_argument("--budget", type=float, default=3500.0, help="monthly budget target (default 3500)")
@@ -72,6 +77,7 @@ SELECT
     WHEN service.description = 'Cloud Scheduler' THEN 'Scheduler'
     ELSE service.description
   END AS bucket,
+  STARTS_WITH(sku.description, 'Cloud Firestore Storage') AS flat_sku,
   IF(service.description = 'Cloud Run Functions',
      IFNULL((SELECT value FROM UNNEST(labels) WHERE key = 'goog-drz-cloudfunctions-id'), '(untagged)'),
      NULL) AS fn_id,
@@ -83,7 +89,7 @@ WHERE _PARTITIONTIME >= TIMESTAMP(@part_from)
   AND DATE(usage_start_time, '{tz}') BETWEEN @win_start AND @win_end
   AND project.id IS NOT NULL
   {prod_filter}
-GROUP BY project_id, project_name, bucket, fn_id, usage_date, currency
+GROUP BY project_id, project_name, bucket, flat_sku, fn_id, usage_date, currency
 """
 
 
@@ -105,11 +111,79 @@ def in_range(d, lo, hi):
     return lo <= d <= hi
 
 
-def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
-    by_app = defaultdict(list)
+# The "Cloud Firestore Storage" SKU is a storage-at-rest charge: near-constant day to
+# day (<3% spread), and it is the chunk the export delivers last — during the
+# 2026-08-03..12 backlog it landed at lag 4-7 while everything else was in at lag 1.
+# Its absence is therefore the cheapest reliable signal that a day has not finished
+# landing, and a day missing it reads ~25% cheaper than it really was.
+FLAT_SKU_FLOOR = 0.10   # projects billing less than this/day are noise, skip them
+
+
+def normalize(rows):
     for r in rows:
         r["cost"] = float(r["cost"] or 0)
-        r["usage_date"] = date.fromisoformat(r["usage_date"])
+        if isinstance(r["usage_date"], str):
+            r["usage_date"] = date.fromisoformat(r["usage_date"])
+        if not isinstance(r.get("flat_sku"), bool):
+            r["flat_sku"] = str(r.get("flat_sku")).lower() == "true"
+    return rows
+
+
+def flat_sku_by_day(rows):
+    out = defaultdict(float)
+    for r in rows:
+        if r["flat_sku"]:
+            out[(r["project_id"], r["usage_date"])] += r["cost"]
+    return out
+
+
+def day_completeness(flat, day, lookback=7):
+    """{project_id: (present, ratio-to-trailing-median)} for projects that bill the flat SKU.
+
+    Gate on presence, not on the ratio: the SKU lands as one row per project per day, so
+    a backlog leaves a hole rather than a smaller number, while a genuine storage drop
+    (avada-blog-app fell 1.56 -> 0.20/day on 2026-08-20 after a purge) is a small number
+    that is nonetheless complete. Ratio is kept only for the trail.
+    """
+    checks = {}
+    for pid in {p for p, _ in flat}:
+        hist = sorted(flat.get((pid, day - timedelta(days=i)), 0.0) for i in range(1, lookback + 1))
+        med = hist[len(hist) // 2]
+        if med < FLAT_SKU_FLOOR:
+            continue
+        got = flat.get((pid, day), 0.0)
+        checks[pid] = (got > 0, round(got / med, 3))
+    return checks
+
+
+def pick_settled_day(rows, probe, max_walk):
+    """Newest day <= probe where both it and its d2 have finished landing.
+
+    d2 has to be settled too — the report's headline number is the d2->d1 delta, and
+    an unsettled d2 fakes a spike just as well as an unsettled d1 fakes a drop.
+    """
+    flat = flat_sku_by_day(rows)
+    trail = []
+    for i in range(max_walk + 1):
+        cand = probe - timedelta(days=i)
+        c1 = day_completeness(flat, cand)
+        c2 = day_completeness(flat, cand - timedelta(days=1))
+        both = list(c1.values()) + list(c2.values())
+        # No checkable project means no signal, not a clean bill of health: if the
+        # export stalls long enough, the trailing medians go to zero too.
+        ok = bool(both) and all(present for present, _ in both)
+        missing = sorted(pid for pid, (present, _) in list(c1.items()) + list(c2.items())
+                         if not present)
+        trail.append({"d1": cand.isoformat(), "settled": ok,
+                      "projectsChecked": len(c1), "missingFlatSku": missing})
+        if ok:
+            return cand, True, trail
+    return probe, False, trail
+
+
+def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
+    by_app = defaultdict(list)
+    for r in normalize(rows):
         by_app[r["project_id"]].append(r)
 
     apps = []
@@ -136,7 +210,7 @@ def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
         services = sorted(
             [{"bucket": b, "cost": round(c, 2),
               "pct": round(100 * c / r30, 1) if r30 else 0.0} for b, c in svc.items()],
-            key=lambda x: x["cost"], reverse=True)
+            key=lambda x: (-x["cost"], x["bucket"]))   # name breaks ties so daily reports diff clean
 
         # top Cloud Functions over rolling 30
         fns = defaultdict(float)
@@ -147,7 +221,7 @@ def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
         functions = sorted(
             [{"fn_id": f, "cost": round(c, 2),
               "pct": round(100 * c / fn_total, 1) if fn_total else 0.0} for f, c in fns.items()],
-            key=lambda x: x["cost"], reverse=True)
+            key=lambda x: (-x["cost"], x["fn_id"]))
 
         # day-over-day root causes (d1 vs d2), per bucket and per function
         svc_d1, svc_d2 = defaultdict(float), defaultdict(float)
@@ -166,7 +240,7 @@ def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
             keys = set(a) | set(b)
             out = [{"key": k, "d2": round(b.get(k, 0), 2), "d1": round(a.get(k, 0), 2),
                     "delta": round(a.get(k, 0) - b.get(k, 0), 2)} for k in keys]
-            return sorted(out, key=lambda x: abs(x["delta"]), reverse=True)
+            return sorted(out, key=lambda x: (-abs(x["delta"]), x["key"]))
 
         apps.append({
             "project_id": pid,
@@ -190,7 +264,7 @@ def aggregate(rows, d1, d2, month_start, r30_start, days_in_month):
                           "functions": deltas(fn_d1, fn_d2)[:5]},
         })
 
-    apps.sort(key=lambda a: a["r30"], reverse=True)
+    apps.sort(key=lambda a: (-a["r30"], a["project_id"]))
     return apps
 
 
@@ -199,23 +273,42 @@ def main():
     if not TZ_RE.match(args.tz):
         sys.exit(f"Invalid --tz '{args.tz}'")
 
+    today = datetime.now(ZoneInfo(args.tz)).date()
     if args.date:
-        d1 = date.fromisoformat(args.date)
+        probe = date.fromisoformat(args.date)
+        walk = 0
+        win_end = probe
     else:
-        d1 = (datetime.now(ZoneInfo(args.tz)).date() - timedelta(days=1))
+        probe = today - timedelta(days=args.lag_days)
+        walk = args.max_walk
+        win_end = today - timedelta(days=1)   # pull the fresher days too, to judge settling
+
+    earliest = probe - timedelta(days=walk)
+    win_start = min(earliest.replace(day=1), earliest - timedelta(days=29))
+    part_from = win_start - timedelta(days=1)
+
+    sql = build_sql(args.tz, prod_only=not args.all_projects)
+    sys.stderr.write(f"Querying {FQ_TABLE}\n  window {win_start}..{win_end} ({args.tz}), "
+                     f"scope={'all' if args.all_projects else 'production'}\n")
+    rows = normalize(run_bq(sql, {"part_from": part_from.isoformat(),
+                                  "win_start": win_start.isoformat(),
+                                  "win_end": win_end.isoformat()}))
+
+    if args.date:
+        d1, settled, trail = probe, None, []
+    else:
+        d1, settled, trail = pick_settled_day(rows, probe, walk)
+        if not settled:
+            sys.stderr.write(
+                f"WARNING: no settled day in {earliest}..{probe} — the billing export is "
+                f"still backfilling. Reporting {d1} anyway; treat it as a floor.\n")
+        elif d1 != probe:
+            sys.stderr.write(f"Note: {probe} not settled yet, walked back to {d1}.\n")
+
     d2 = d1 - timedelta(days=1)
     month_start = d1.replace(day=1)
     r30_start = d1 - timedelta(days=29)
-    win_start = min(month_start, r30_start)
-    part_from = win_start - timedelta(days=1)
     days_in_month = calendar.monthrange(d1.year, d1.month)[1]
-
-    sql = build_sql(args.tz, prod_only=not args.all_projects)
-    sys.stderr.write(f"Querying {FQ_TABLE}\n  window {win_start}..{d1} ({args.tz}), "
-                     f"scope={'all' if args.all_projects else 'production'}\n")
-    rows = run_bq(sql, {"part_from": part_from.isoformat(),
-                        "win_start": win_start.isoformat(),
-                        "win_end": d1.isoformat()})
 
     apps = aggregate(rows, d1, d2, month_start, r30_start, days_in_month)
 
@@ -237,6 +330,13 @@ def main():
                       "monthStart": month_start.isoformat(), "mtdDays": (d1 - month_start).days + 1,
                       "daysInMonth": days_in_month,
                       "r30Start": r30_start.isoformat(), "r30End": d1.isoformat()},
+            "completeness": {
+                "probeDate": probe.isoformat(),
+                "lagDays": args.lag_days,
+                "settled": settled,
+                "walkedBackDays": (probe - d1).days,
+                "trail": trail,
+            },
         },
         "totals": {
             "r30": total_r30, "r30Estimate": total_r30_est,

@@ -45,17 +45,16 @@ def ensure_data(args, lag_days):
     """Return path to the data JSON, running billing_data.py if needed."""
     if args.data:
         return args.data
-    if not args.date:
-        # Default = today (in --tz) minus reportLagDays. Billing export typically lags
-        # 1-2 days, so the most recent day's data is incomplete.
-        d1 = datetime.datetime.now(ZoneInfo(args.tz)).date() - timedelta(days=lag_days)
-        args.date = d1.isoformat()
-    if args.no_refresh:
+    if args.no_refresh and args.date:
         cached = os.path.join(REPORTS, f"billing-data-{args.date}.json")
         if os.path.exists(cached):
             return cached
+    # With no explicit --date, billing_data.py owns the choice: it probes today minus
+    # reportLagDays and walks back to the newest day the export has finished writing.
     cmd = [sys.executable, os.path.join(os.path.dirname(__file__), "billing_data.py"),
-           "--tz", args.tz, "--outdir", REPORTS, "--date", args.date]
+           "--tz", args.tz, "--outdir", REPORTS, "--lag-days", str(lag_days)]
+    if args.date:
+        cmd += ["--date", args.date]
     if args.all_projects:
         cmd += ["--all-projects"]
     if args.budget is not None:
@@ -159,6 +158,17 @@ def render(data, apps_cfg, settings, sugg, camel_by_app):
     L.append(f"| **MTD** | {dates['monthStart']} → {dates['d1']} ({dates['mtdDays']} ngày) |")
     L.append(f"| **Rolling 30** | {dates['r30Start']} → {dates['r30End']} |")
     L.append("| **Nguồn** | BigQuery Billing Export |\n")
+    comp = meta.get("completeness") or {}
+    if comp.get("settled") is False:
+        oldest = comp["trail"][-1]["d1"] if comp.get("trail") else dates["d1"]
+        holes = sorted({pid for t in comp.get("trail", []) for pid in t.get("missingFlatSku", [])})
+        L.append(f"> ⚠️ **Số liệu chưa chốt** — billing export còn backfill, không ngày nào "
+                 f"settled trong {oldest}..{comp['probeDate']}. Coi các số dưới là **sàn**, "
+                 f"cost thật cao hơn (chênh tới +59% từng thấy ngày 2026-08-03).\n"
+                 + (f"> Thiếu SKU Firestore Storage: `{'`, `'.join(holes)}`\n" if holes else ""))
+    elif comp.get("walkedBackDays"):
+        L.append(f"> ℹ️ Lùi {comp['walkedBackDays']} ngày so với lịch ({comp['probeDate']}) "
+                 f"vì ngày đó export chưa về đủ.\n")
     L.append("---\n")
 
     for a in full:

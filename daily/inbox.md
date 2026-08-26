@@ -182,3 +182,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Tailscale direct connection cần UDP 41641 mở ở central; thiếu thì fallback DERP, biểu hiện như box "down"
 - [ ] (×1) Revoke service account Firebase làm chết mọi nơi đang dùng key đó (local env, script) — nạp lại bằng base64 vào env
 - [ ] (×1) Skill `jira-fix` (link FAL-xxx → phân tích → fix → MR) sống ở second-brain/skills, không nằm trong repo app
+
+### memory candidates 2026-08-26
+- [ ] (×1) Worker fleet version = SEO release tag (không đánh số riêng); box đặt tên Tony (box1) / Dante (box2) / Central Leader + Central Worker 1 — seo `27812826b6`
+- [ ] (×1) Deploy functions `avada-seo` cần quyền `iam.serviceAccounts.ActAs` trên `avada-seo@appspot.gserviceaccount.com`; chỉ thêm role "Service Account User" không đủ
+- [ ] (×1) Beszel chốt làm monitoring máy cho fleet-control, nhúng qua API vào detail từng máy + logo project; homepage (gethomepage) đã loại
+- [ ] (×1) Commit message viết ra scratchpad `/private/tmp/claude-*/scratchpad/` không sống qua turn — `git commit -F` fail "could not read log file"
+- [ ] (×1) seo có 3 hướng vá security cùng lúc: bind integration key theo shop, deny client writes 5 collection per-shop, cross-app token đọc từ env (đều Draft, chưa merge)
