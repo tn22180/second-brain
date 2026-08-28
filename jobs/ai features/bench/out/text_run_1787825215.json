@@ -1,0 +1,2603 @@
+{
+  "records": [
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.384,
+        "ok": true,
+        "output": "```json\n{\"blocks\": [{\"id\": \"block-142\", \"text\": \"A countertop machine is not the only way to get espresso before work. Portable espresso makers solve this problem for travelers, campers, or those with no counter space. Most models use a manual hand pump. They work anywhere you can find hot water. This includes campsites, hotel rooms, or your home stovetop.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use. Let it air dry.\"}]}\n```",
+        "cost": 8.4645e-05,
+        "completion_tokens": 120,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 375,
+          "completion_tokens": 120,
+          "total_tokens": 495,
+          "cost": 8.4645e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 8.55e-05,
+            "upstream_inference_prompt_cost": 3.75e-05,
+            "upstream_inference_completions_cost": 4.8e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.044,
+          "cost": 0.000336204,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All sentences are under 20 words, and the block IDs are preserved. The meaning is unchanged.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All sentences are under 20 words, and the block IDs are preserved. The meaning is unchanged.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.963,
+          "cost": 0.00032274,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "One sentence in block-142 exceeds 20 words, but overall constraints are well met.",
+          "raw": "{\"constraints\": 4, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"One sentence in block-142 exceeds 20 words, but overall constraints are well met.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.656,
+          "cost": 0.0010494,
+          "ok": true,
+          "scores": {
+            "constraints": 1,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "block-142 violates 20-word constraint: sentence 1 has 21 words, sentence 2 has 21 words.",
+          "raw": "```json\n{\"constraints\": 1, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"block-142 violates 20-word constraint: sentence 1 has 21 words, sentence 2 has 21 words.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 1.323,
+        "ok": true,
+        "output": "```json\n{\"blocks\": [{\"id\": \"block-142\", \"text\": \"Do you need a five-hundred-dollar espresso machine? The short answer is no. Portable espresso makers solve this problem. They work for travel, camping, or small spaces. Most use a manual hand pump. No electric heating element is needed. They work anywhere you find hot water. Use a kettle, coffee maker, or stovetop.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use. Then let it air dry.\"}]}\n```",
+        "cost": 0.000428175,
+        "completion_tokens": 128,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 375,
+          "completion_tokens": 128,
+          "total_tokens": 503,
+          "cost": 0.000428175,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004325,
+            "upstream_inference_prompt_cost": 0.0001125,
+            "upstream_inference_completions_cost": 0.00032
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.157,
+          "cost": 0.000320364,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All sentences are under 20 words and content is preserved exactly as required.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All sentences are under 20 words and content is preserved exactly as required.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.352,
+          "cost": 0.00156816,
+          "ok": true,
+          "scores": {
+            "constraints": 1,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "block-142 violates 20-word constraint: sentence 1 has 11 words (pass), sentence 2 has 8 words (pass), sentence 3 has 5 words (pass), sentence 4 has 8 words (pass), sentence 5 has 7 words (pass), sentence 6 has 7 words (pass), sentence 7 has 8 words (pass), sentence 8 has 10 words (pass)\u2014all valid; block-143 all sentences under 20 words; however markdown fences present violate JSON-only requirement.",
+          "raw": "```json\n{\"constraints\": 1, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"block-142 violates 20-word constraint: sentence 1 has 11 words (pass), sentence 2 has 8 words (pass), sentence 3 has 5 words (pass), sentence 4 has 8 words (pass), sentence 5 has 7 words (pass), sentence 6 has 7 words (pass), sentence 7 has 8 words (pass), sentence 8 has 10 words (pass)\u2014all valid; block-143 all sentences under 20 words; however markdown fences present violate JSON-only requirement.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 1.001,
+        "ok": true,
+        "output": "{\"blocks\": [{\"id\": \"block-142\", \"text\": \"Do you need a costly countertop machine for great espresso? The answer is no. Portable espresso makers solve this. They are perfect for travel, camping, or small kitchens. Most models use a manual pump instead of electricity. They work anywhere you have hot water. Use a kettle, hotel maker, or your stove.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use and let it air dry.\"}]}",
+        "cost": 0.0,
+        "completion_tokens": 117,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 117,
+          "prompt_eval_count": 393
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.028,
+          "cost": 0.000335016,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All sentences are 20 words or less. The meaning is preserved. The output is valid JSON.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All sentences are 20 words or less. The meaning is preserved. The output is valid JSON.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.803,
+          "cost": 0.000311652,
+          "ok": true,
+          "scores": {
+            "constraints": 3,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Some sentences exceed 20 words, violating the length constraint.",
+          "raw": "{\"constraints\": 3, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Some sentences exceed 20 words, violating the length constraint.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.559,
+          "cost": 0.00099099,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "block-142 contains multiple sentences exceeding 20 words; constraint violation on sentence length cap.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"block-142 contains multiple sentences exceeding 20 words; constraint violation on sentence length cap.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 24.576,
+        "ok": true,
+        "output": "{\"blocks\": [{\"id\": \"block-142\", \"text\": \"Wondering whether a five-hundred-dollar countertop machine is the only way to get a decent espresso shot before work? The short answer is no, and portable espresso makers exist exactly to solve that problem. They are made for people who travel, camp, or simply do not have counter space. Most models use a manual hand pump instead of an electric heating element. That means they work anywhere you can find hot water. Think a campsite kettle, a hotel room coffee maker, or your own stovetop at home.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use and let it air dry.\"}]}",
+        "cost": 0.0,
+        "completion_tokens": 3790,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 3790,
+          "prompt_eval_count": 375
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.157,
+          "cost": 0.000351846,
+          "ok": true,
+          "scores": {
+            "constraints": 1,
+            "html_validity": 5,
+            "keyword_integration": 1,
+            "no_leakage": 5,
+            "copy_quality": 1
+          },
+          "notes": "Many sentences exceed the 20-word limit. The model did not edit the text to meet the constraint.",
+          "raw": "{\"constraints\": 1, \"html_validity\": 5, \"keyword_integration\": 1, \"no_leakage\": 5, \"copy_quality\": 1, \"notes\": \"Many sentences exceed the 20-word limit. The model did not edit the text to meet the constraint.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.699,
+          "cost": 0.000339768,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Most sentences exceed the 20-word limit, violating the constraint, but content and meaning are preserved.",
+          "raw": "{\"constraints\": 2, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Most sentences exceed the 20-word limit, violating the constraint, but content and meaning are preserved.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.902,
+          "cost": 0.00120186,
+          "ok": true,
+          "scores": {
+            "constraints": 1,
+            "html_validity": 5,
+            "keyword_integration": 1,
+            "no_leakage": 5,
+            "copy_quality": 2
+          },
+          "notes": "block-142 violates sentence length constraint repeatedly (first sentence 26 words, second 21 words, third 17 words, fourth 13 words, fifth 13 words, sixth 21 words); block-143 complies fully.",
+          "raw": "```json\n{\"constraints\": 1, \"html_validity\": 5, \"keyword_integration\": 1, \"no_leakage\": 5, \"copy_quality\": 2, \"notes\": \"block-142 violates sentence length constraint repeatedly (first sentence 26 words, second 21 words, third 17 words, fourth 13 words, fifth 13 words, sixth 21 words); block-143 complies fully.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 38.431,
+        "ok": true,
+        "output": "{\"blocks\": [{\"id\": \"block-142\", \"text\": \"If you have ever stood in a cramped kitchen wondering about expensive machines, the answer is no. Portable espresso makers exist to solve that problem for travelers or those without counter space. Most models use a manual hand pump instead of an electric heating element. This means they work anywhere you can find hot water. Try a campsite kettle, hotel coffee maker, or your own stovetop at home.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use and let it air dry.\"}]}",
+        "cost": 0.0,
+        "completion_tokens": 4603,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 4603,
+          "prompt_eval_count": 392
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.185,
+          "cost": 0.000341649,
+          "ok": true,
+          "scores": {
+            "constraints": 3,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 3
+          },
+          "notes": "Some sentences exceed the 20-word limit, but the JSON is valid and the content is preserved.",
+          "raw": "{\"constraints\": 3, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 3, \"notes\": \"Some sentences exceed the 20-word limit, but the JSON is valid and the content is preserved.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.506,
+          "cost": 0.000323532,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 3
+          },
+          "notes": "Sentences exceed 20 words in block-142, violating the length constraint.",
+          "raw": "{\"constraints\": 2, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 3, \"notes\": \"Sentences exceed 20 words in block-142, violating the length constraint.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.333,
+          "cost": 0.00120978,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 5,
+            "keyword_integration": 1,
+            "no_leakage": 5,
+            "copy_quality": 2
+          },
+          "notes": "block-142 violates 20-word constraint in multiple sentences (first sentence: 21 words; second: 18; third: 16; fourth: 10; fifth: 19 words all exceed or approach limit); block-143 complies but overall output fails primary constraint.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 5, \"keyword_integration\": 1, \"no_leakage\": 5, \"copy_quality\": 2, \"notes\": \"block-142 violates 20-word constraint in multiple sentences (first sentence: 21 words; second: 18; third: 16; fourth: 10; fifth: 19 words all exceed or approach limit); block-143 complies but overall output fails primary constraint.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 31.329,
+        "ok": true,
+        "output": "{\"blocks\": [{\"id\": \"block-142\", \"text\": \"Have you ever stood in a cramped kitchen? You might wonder if a five-hundred-dollar countertop machine is the only way to get a decent espresso before work. The short answer is no. Portable espresso makers exist exactly for this problem. They help travelers, campers, or people without counter space. Most models use a manual hand pump instead of an electric heating element. This means they work anywhere you can find hot water. That includes a campsite kettle, a hotel room coffee maker, or your own stovetop at home.\"}, {\"id\": \"block-143\", \"text\": \"Care for these devices is simple. Rinse the portafilter after each use and let it air dry.\"}]}",
+        "cost": 0.0,
+        "completion_tokens": 5104,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 5104,
+          "prompt_eval_count": 374
+        },
+        "case_id": "blog-audit-01-sentence-length",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.188,
+          "cost": 0.00034749,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All sentences are 20 words or less. The output is valid JSON and preserves the original meaning.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All sentences are 20 words or less. The output is valid JSON and preserves the original meaning.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.696,
+          "cost": 0.000334224,
+          "ok": true,
+          "scores": {
+            "constraints": 3,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Block-142 has sentences longer than 20 words, violating the length constraint.",
+          "raw": "{\"constraints\": 3, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Block-142 has sentences longer than 20 words, violating the length constraint.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 4.251,
+          "cost": 0.00132066,
+          "ok": true,
+          "scores": {
+            "constraints": 1,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "block-142 violates 20-word constraint in multiple sentences (e.g., 'Have you ever stood in a cramped kitchen?' is 8 words but 'You might wonder if a five-hundred-dollar countertop machine is the only way to get a decent espresso before work.' is 21 words); block-143 complies.",
+          "raw": "```json\n{\"constraints\": 1, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"block-142 violates 20-word constraint in multiple sentences (e.g., 'Have you ever stood in a cramped kitchen?' is 8 words but 'You might wonder if a five-hundred-dollar countertop machine is the only way to get a decent espresso before work.' is 21 words); block-143 complies.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 15.397,
+        "ok": true,
+        "output": "```json\n{\"text\": \"Traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, which is a rough trade-off for anyone who genuinely needs that first cup to function, but a portable espresso maker changes all of that.\"}\n```",
+        "cost": 5.247e-05,
+        "completion_tokens": 54,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 314,
+          "completion_tokens": 54,
+          "total_tokens": 368,
+          "cost": 5.247e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 5.3e-05,
+            "upstream_inference_prompt_cost": 3.14e-05,
+            "upstream_inference_completions_cost": 2.16e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.001,
+          "cost": 0.000299871,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.307,
+          "cost": 0.000264924,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output meets all constraints perfectly with natural keyword integration and no errors.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output meets all constraints perfectly with natural keyword integration and no errors.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.858,
+          "cost": 0.00091971,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Keyword naturally integrated in opening sentence, valid JSON structure, no leakage, preserves original meaning within single paragraph.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Keyword naturally integrated in opening sentence, valid JSON structure, no leakage, preserves original meaning within single paragraph.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 1.032,
+        "ok": true,
+        "output": "```json\n{\"text\": \"Traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, which is a rough trade-off for anyone who genuinely needs that first cup to function. But with a portable espresso maker, those days are over.\"}\n```",
+        "cost": 0.000231858,
+        "completion_tokens": 56,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 314,
+          "completion_tokens": 56,
+          "total_tokens": 370,
+          "cost": 0.000231858,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0002342,
+            "upstream_inference_prompt_cost": 9.42e-05,
+            "upstream_inference_completions_cost": 0.00014
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.299,
+          "cost": 0.0002673,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output meets all constraints perfectly with natural keyword integration and no extra content.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output meets all constraints perfectly with natural keyword integration and no extra content.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.856,
+          "cost": 0.00092169,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Keyword naturally integrated in second sentence, valid JSON structure, no leakage, preserves original meaning without adding facts.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Keyword naturally integrated in second sentence, valid JSON structure, no leakage, preserves original meaning without adding facts.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 1.707,
+        "ok": true,
+        "output": "{\"text\": \"Traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, but owning a portable espresso maker changes that rough trade-off for anyone who genuinely needs that first cup to function.\"}",
+        "cost": 0.0,
+        "completion_tokens": 45,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 45,
+          "prompt_eval_count": 332
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.016,
+          "cost": 0.000296901,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.421,
+          "cost": 0.000264528,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output meets all constraints perfectly with natural keyword integration and no extraneous content.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output meets all constraints perfectly with natural keyword integration and no extraneous content.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.096,
+          "cost": 0.00089595,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Keyword naturally integrated in second sentence, single paragraph format respected, no leakage, clean JSON structure.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Keyword naturally integrated in second sentence, single paragraph format respected, no leakage, clean JSON structure.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 12.763,
+        "ok": true,
+        "output": "{\"text\": \"Before a portable espresso maker came along, traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, which is a rough trade-off for anyone who genuinely needs that first cup to function.\"}",
+        "cost": 0.0,
+        "completion_tokens": 879,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 879,
+          "prompt_eval_count": 322
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.065,
+          "cost": 0.000297792,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output successfully integrates the keyword naturally and preserves the original meaning within a single paragraph.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.567,
+          "cost": 0.00026532,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output meets all constraints perfectly with natural keyword integration and no extraneous content.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output meets all constraints perfectly with natural keyword integration and no extraneous content.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.502,
+          "cost": 0.00093654,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Keyword naturally integrated in opening; schema correct; no leakage; slightly hypothetical framing (no original paragraph provided to verify meaning preservation).",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Keyword naturally integrated in opening; schema correct; no leakage; slightly hypothetical framing (no original paragraph provided to verify meaning preservation).\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 44.176,
+        "ok": true,
+        "output": "{\"text\": \"Traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, which is a rough trade-off for anyone who genuinely needs that first cup to function without a portable espresso maker.\"}",
+        "cost": 0.0,
+        "completion_tokens": 4785,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 4785,
+          "prompt_eval_count": 332
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.054,
+          "cost": 0.000299376,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output successfully integrated the keyword naturally while preserving the original meaning and adhering to all constraints.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output successfully integrated the keyword naturally while preserving the original meaning and adhering to all constraints.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.444,
+          "cost": 0.000272448,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "The phrase is included naturally but placement in the second sentence is slightly awkward; overall meets most constraints well.",
+          "raw": "{\"constraints\":4,\"html_validity\":5,\"keyword_integration\":4,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"The phrase is included naturally but placement in the second sentence is slightly awkward; overall meets most constraints well.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.391,
+          "cost": 0.00092961,
+          "ok": false,
+          "error": {
+            "status": null,
+            "message": "judge JSON parse failed: missing/non-numeric axis score; raw=```json\n{\"constraints\": 2, \"html_validity\": 5, \"keyword_integrity\": 1, \"no_leakage\": 5, \"copy_quality\": 2, \"notes\": \"Keyword placement is awkward and contradicts meaning; the phrase appears at the end in a negation that undermines the paragraph's logic.\"}\n```"
+          }
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 3.142,
+        "ok": true,
+        "output": "{\"text\": \"Traveling for work used to mean choosing between bad hotel coffee and skipping caffeine altogether, a rough trade-off that a portable espresso maker can eliminate for anyone who genuinely needs that first cup to function.\"}",
+        "cost": 0.0,
+        "completion_tokens": 562,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 562,
+          "prompt_eval_count": 321
+        },
+        "case_id": "blog-audit-02-intro-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.048,
+          "cost": 0.000296901,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output successfully integrated the keyword naturally and preserved the original meaning within a single paragraph.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output successfully integrated the keyword naturally and preserved the original meaning within a single paragraph.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.453,
+          "cost": 0.000264528,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output meets all constraints perfectly with natural keyword integration and no extraneous content.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output meets all constraints perfectly with natural keyword integration and no extraneous content.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.272,
+          "cost": 0.00089496,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Keyword naturally integrated in second sentence, single paragraph, valid JSON structure, no leakage or markdown.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Keyword naturally integrated in second sentence, single paragraph, valid JSON structure, no leakage or markdown.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.046,
+        "ok": true,
+        "output": "```json\n{\n  \"suggested_topics\": [\n    {\n      \"Topic\": \"Achieving True Espresso Pressure On-the-Go With Manual Brewers\"\n    },\n    {\n      \"Topic\": \"The Essential BrewGear Setup for Your Next Camping Trip\"\n    },\n    {\n      \"Topic\": \"Mastering Coffee Extraction: Key Variables for Portable Espresso\"\n    }\n  ]\n}\n```",
+        "cost": 8.3259e-05,
+        "completion_tokens": 92,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 473,
+          "completion_tokens": 92,
+          "total_tokens": 565,
+          "cost": 8.3259e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 8.41e-05,
+            "upstream_inference_prompt_cost": 4.73e-05,
+            "upstream_inference_completions_cost": 3.68e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.113,
+          "cost": 0.000315711,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, output is valid JSON, and topics are on-brand and relevant.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, output is valid JSON, and topics are on-brand and relevant.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.076,
+          "cost": 0.00027324,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with well-targeted, on-brand topic suggestions.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with well-targeted, on-brand topic suggestions.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 45.285,
+          "ok": false,
+          "error": {
+            "status": null,
+            "message": "TimeoutError: [Errno 60] Operation timed out"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 7.313,
+        "ok": true,
+        "output": "```json\n{\n  \"suggested_topics\": [\n    {\n      \"Topic\": \"Achieving true espresso crema on the go with portable hand-pump makers\"\n    },\n    {\n      \"Topic\": \"The ultimate guide to durable, travel-friendly espresso gear for outdoor adventures\"\n    },\n    {\n      \"Topic\": \"Understanding grind size and pressure for perfect portable espresso extraction\"\n    }\n  ]\n}\n```",
+        "cost": 0.000380556,
+        "completion_tokens": 97,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 473,
+          "completion_tokens": 97,
+          "total_tokens": 570,
+          "cost": 0.000380556,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0003844,
+            "upstream_inference_prompt_cost": 0.0001419,
+            "upstream_inference_completions_cost": 0.0002425
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.542,
+          "cost": 0.000278784,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly matches the constraints with relevant, well-phrased topics.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output perfectly matches the constraints with relevant, well-phrased topics.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.394,
+          "cost": 0.00108306,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 1,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Output contains markdown fences (violation of 'ONLY the specified JSON shape, no markdown fences'), but JSON structure, topic count, word counts (8, 11, 10), and brand-fit are all excellent.",
+          "raw": "```json\n{\"constraints\": 4, \"html_validity\": 1, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Output contains markdown fences (violation of 'ONLY the specified JSON shape, no markdown fences'), but JSON structure, topic count, word counts (8, 11, 10), and brand-fit are all excellent.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 0.962,
+        "ok": true,
+        "output": "{\n\"suggested_topics\": [\n{ \"Topic\": \"Comparing manual pressure espresso versus instant coffee for outdoor brewing\" },\n{ \"Topic\": \"Technical guide to achieving consistent extraction with portable hand-pump makers\" },\n{ \"Topic\": \"Essential lightweight coffee gear for remote workers and digital nomads\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 70,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 70,
+          "prompt_eval_count": 491
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.27,
+          "cost": 0.000316305,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, output is valid JSON and topics are on-brand and well-phrased.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, output is valid JSON and topics are on-brand and well-phrased.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.436,
+          "cost": 0.000271656,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, well-phrased topics for the brand.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, well-phrased topics for the brand.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 4.684,
+          "cost": 0.00102267,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "All three topics are on-brand, properly scoped (6-12 words), and avoid generic clickbait or luxury lifestyle framing; third topic edges slightly toward lifestyle but remains equipment-focused.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"All three topics are on-brand, properly scoped (6-12 words), and avoid generic clickbait or luxury lifestyle framing; third topic edges slightly toward lifestyle but remains equipment-focused.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 16.871,
+        "ok": true,
+        "output": "{\n\"suggested_topics\": [\n{ \"Topic\": \"Why hand-pump espresso makers deliver real pressure, not instant coffee\" },\n{ \"Topic\": \"Building a durable travel espresso kit for camping and remote work\" },\n{ \"Topic\": \"Dialing in grind size and water temperature with portable gear\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 1727,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 1727,
+          "prompt_eval_count": 459
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.15,
+          "cost": 0.000309771,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, output is valid JSON, and topics are on-brand and relevant.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, output is valid JSON, and topics are on-brand and relevant.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.488,
+          "cost": 0.000273636,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly matches the constraints with relevant, on-brand topics and valid JSON.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output perfectly matches the constraints with relevant, on-brand topics and valid JSON.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.038,
+          "cost": 0.00099792,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All three topics are on-brand, technically sound, 6-12 words, and avoid both luxury lifestyle and generic clickbait; JSON structure is exact and valid.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All three topics are on-brand, technically sound, 6-12 words, and avoid both luxury lifestyle and generic clickbait; JSON structure is exact and valid.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 47.185,
+        "ok": true,
+        "output": "{\n\"suggested_topics\": [\n{ \"Topic\": \"Mastering manual espresso pressure techniques for consistent shots while traveling.\" },\n{ \"Topic\": \"Evaluating durability in portable espresso equipment for camping and remote work.\" },\n{ \"Topic\": \"Optimizing travel grinder settings for better manual espresso extraction quality.\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 5070,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 5070,
+          "prompt_eval_count": 490
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.313,
+          "cost": 0.000314127,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, output is valid JSON, and topics are relevant and well-phrased.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, output is valid JSON, and topics are relevant and well-phrased.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.704,
+          "cost": 0.000268488,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with well-focused, brand-appropriate topic suggestions.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with well-focused, brand-appropriate topic suggestions.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.238,
+          "cost": 0.0010197,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All three topics are on-brand, word-count compliant (9-11 words each), technically sound for portable espresso, and avoid generic clickbait or luxury lifestyle framing.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All three topics are on-brand, word-count compliant (9-11 words each), technically sound for portable espresso, and avoid generic clickbait or luxury lifestyle framing.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 5.638,
+        "ok": true,
+        "output": "{\n\"suggested_topics\": [\n{ \"Topic\": \"How to dial in a travel grinder for consistent hand-pump espresso\" },\n{ \"Topic\": \"Manual espresso vs. instant coffee: why pressure matters for flavor\" },\n{ \"Topic\": \"Durable espresso gear: choosing a portable maker that survives the outdoors\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 522,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 522,
+          "prompt_eval_count": 460
+        },
+        "case_id": "blog-suggest-03-topic",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.072,
+          "cost": 0.000310662,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, output is valid JSON, and topics are on-brand and relevant.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, output is valid JSON, and topics are on-brand and relevant.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.649,
+          "cost": 0.00027324,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly meets all constraints with relevant, well-phrased topics.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The output perfectly meets all constraints with relevant, well-phrased topics.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 3.208,
+          "cost": 0.00106227,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All three topics are precisely 6-12 words, on-brand for portable/manual espresso (no luxury lifestyle or generic clickbait), valid JSON structure with exactly 3 items, no leakage or markdown.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All three topics are precisely 6-12 words, on-brand for portable/manual espresso (no luxury lifestyle or generic clickbait), valid JSON structure with exactly 3 items, no leakage or markdown.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.104,
+        "ok": true,
+        "output": "```json\n{\n  \"main_keywords\": [\n    {\n      \"Keyword\": \"manual espresso maker travel\"\n    },\n    {\n      \"Keyword\": \"portable espresso for camping\"\n    },\n    {\n      \"Keyword\": \"hand pump espresso brewing\"\n    },\n    {\n      \"Keyword\": \"travel coffee maker espresso\"\n    },\n    {\n      \"Keyword\": \"how to make espresso outdoors\"\n    }\n  ]\n}\n```",
+        "cost": 9.0189e-05,
+        "completion_tokens": 105,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 491,
+          "completion_tokens": 105,
+          "total_tokens": 596,
+          "cost": 9.0189e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 9.11e-05,
+            "upstream_inference_prompt_cost": 4.91e-05,
+            "upstream_inference_completions_cost": 4.2e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.109,
+          "cost": 0.000301455,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, keywords are relevant and well-formed.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, keywords are relevant and well-formed.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.765,
+          "cost": 0.00027522,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All keywords fit the brief perfectly with correct JSON format and no leakage.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All keywords fit the brief perfectly with correct JSON format and no leakage.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.297,
+          "cost": 0.00107316,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Output has markdown fences (violates JSON-only rule) but content is otherwise excellent: 5 items, proper schema, natural 2-5 word keywords with genuine search intent for portable espresso gear.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Output has markdown fences (violates JSON-only rule) but content is otherwise excellent: 5 items, proper schema, natural 2-5 word keywords with genuine search intent for portable espresso gear.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 1.304,
+        "ok": true,
+        "output": "```json\n{\n\"main_keywords\": [\n{ \"Keyword\": \"how manual espresso makers work\" },\n{ \"Keyword\": \"portable espresso maker travel\" },\n{ \"Keyword\": \"hand pump espresso brewing guide\" },\n{ \"Keyword\": \"travel espresso real pressure\" },\n{ \"Keyword\": \"espresso on the go explained\" }\n]\n}\n```",
+        "cost": 0.000343827,
+        "completion_tokens": 80,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 491,
+          "completion_tokens": 80,
+          "total_tokens": 571,
+          "cost": 0.000343827,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0003473,
+            "upstream_inference_prompt_cost": 0.0001473,
+            "upstream_inference_completions_cost": 0.0002
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.597,
+          "cost": 0.000266112,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, natural keywords and valid JSON.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, natural keywords and valid JSON.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.57,
+          "cost": 0.00100782,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All 5 keywords are legitimate, 2\u20135 word search intents for portable/manual espresso; markdown fences present but JSON structure and content are otherwise perfect.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All 5 keywords are legitimate, 2\u20135 word search intents for portable/manual espresso; markdown fences present but JSON structure and content are otherwise perfect.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 0.952,
+        "ok": true,
+        "output": "{\n\"main_keywords\": [\n{ \"Keyword\": \"manual espresso maker for travel\" },\n{ \"Keyword\": \"hand pump espresso machine\" },\n{ \"Keyword\": \"portable espresso extraction\" },\n{ \"Keyword\": \"camping espresso gear\" },\n{ \"Keyword\": \"how manual espresso makers work\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 73,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 73,
+          "prompt_eval_count": 509
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.779,
+          "cost": 0.000291654,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, keywords are relevant and well-formed.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, keywords are relevant and well-formed.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.374,
+          "cost": 0.000268488,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, well-formed keywords and correct JSON format.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, well-formed keywords and correct JSON format.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.992,
+          "cost": 0.0009999,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All 5 keywords are specific, search-intent-aligned, 2\u20135 words, non-generic, brand-neutral, and properly formatted in the required schema.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All 5 keywords are specific, search-intent-aligned, 2\u20135 words, non-generic, brand-neutral, and properly formatted in the required schema.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 10.855,
+        "ok": true,
+        "output": "{\n\"main_keywords\": [\n{ \"Keyword\": \"manual espresso maker\" },\n{ \"Keyword\": \"portable espresso maker\" },\n{ \"Keyword\": \"hand pump espresso maker\" },\n{ \"Keyword\": \"how to make espresso while traveling\" },\n{ \"Keyword\": \"espresso maker for camping\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 746,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 746,
+          "prompt_eval_count": 480
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.616,
+          "cost": 0.000291654,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, keywords are relevant and well-formed.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, keywords are relevant and well-formed.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.013,
+          "cost": 0.000261756,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, well-formed keywords.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, well-formed keywords.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.071,
+          "cost": 0.00099495,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All 5 keywords are relevant, 2\u20135 words, non-generic, brand-neutral, and match authentic search intent for portable/manual espresso gear.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All 5 keywords are relevant, 2\u20135 words, non-generic, brand-neutral, and match authentic search intent for portable/manual espresso gear.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 31.66,
+        "ok": true,
+        "output": "{\n\"main_keywords\": [\n{ \"Keyword\": \"manual espresso maker for travel\" },\n{ \"Keyword\": \"hand pump espresso machine\" },\n{ \"Keyword\": \"portable espresso brewing guide\" },\n{ \"Keyword\": \"manual camping espresso maker\" },\n{ \"Keyword\": \"brewing espresso while traveling\" }\n]\n}",
+        "cost": 0.0,
+        "completion_tokens": 3286,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 3286,
+          "prompt_eval_count": 513
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.084,
+          "cost": 0.000292248,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, keywords are relevant and well-formed.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, keywords are relevant and well-formed.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.426,
+          "cost": 0.0002673,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, well-formed keywords and valid JSON.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, well-formed keywords and valid JSON.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.764,
+          "cost": 0.00096624,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All 5 keywords are specific, multi-word, search-intent-aligned, brand-neutral, and properly formatted in the required schema.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All 5 keywords are specific, multi-word, search-intent-aligned, brand-neutral, and properly formatted in the required schema.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 16.729,
+        "ok": true,
+        "output": "{\n  \"main_keywords\": [\n    { \"Keyword\": \"manual espresso maker travel\" },\n    { \"Keyword\": \"hand pump espresso maker\" },\n    { \"Keyword\": \"how manual espresso maker works\" },\n    { \"Keyword\": \"portable espresso maker camping\" },\n    { \"Keyword\": \"travel espresso maker\" }\n  ]\n}",
+        "cost": 0.0,
+        "completion_tokens": 2051,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 2051,
+          "prompt_eval_count": 482
+        },
+        "case_id": "blog-suggest-04-keyword",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.008,
+          "cost": 0.000293733,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, keywords are relevant and well-formatted.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, keywords are relevant and well-formatted.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.621,
+          "cost": 0.000264528,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met with relevant, well-formed keywords.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"All constraints met with relevant, well-formed keywords.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 5.113,
+          "cost": 0.00101673,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All 5 keywords are specific, multi-word, search-intent-aligned phrases for portable/manual espresso gear; no brand names, no generic single words, valid JSON structure.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All 5 keywords are specific, multi-word, search-intent-aligned phrases for portable/manual espresso gear; no brand names, no generic single words, valid JSON structure.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 2.664,
+        "ok": true,
+        "output": "```json\n{\n  \"outline\": {\n    \"h1\": \"Mastering Your Brew: How a Portable Espresso Maker Works for Travelers\",\n    \"body\": [\n      {\n        \"h2\": \"The Quest for Great Coffee, Anywhere: Why a Portable Espresso Maker Matters\",\n        \"h3\": [\n          \"The traveler's coffee dilemma: compromise or carry-on?\",\n          \"Introducing the manual hand-pump espresso maker: your portable barista.\",\n          \"BrewGear Co.'s philosophy: quality extraction on the go.\"\n        ]\n      },\n      {\n        \"h2\": \"Anatomy of a Portable Espresso Maker: Understanding the Mechanics\",\n        \"h3\": [\n          \"Key components: water chamber, coffee basket, pump mechanism, portafilter.\",\n          \"The science of pressure: how hand-pumping achieves espresso standards.\",\n          \"Materials and design considerations for travel-friendliness.\"\n        ]\n      },\n      {\n        \"h2\": \"The Extraction Process: Step-by-Step with Your Manual Espresso Maker\",\n        \"h3\": [\n          \"Pre-brew preparation: grinding beans, tamping coffee.\",\n          \"The pumping action: building pressure for optimal extraction.\",\n          \"Achieving the perfect shot: flow rate, crema, and taste.\",\n          \"Tips for a consistent espresso without electricity.\"\n        ]\n      },\n      {\n        \"h2\": \"Beyond the Shot: Complementary Gear for Your Camping Espresso Maker Setup\",\n        \"h3\": [\n          \"Collapsible kettles: boiling water efficiently.\",\n          \"Travel grinders: fresh grounds for superior flavor.\",\n          \"Reusable capsule adapters: convenience meets sustainability.\"\n        ]\n      },\n      {\n        \"h2\": \"Troubleshooting and Technique: Elevating Your Travel Coffee Game\",\n        \"h3\": [\n          \"Common issues and how to fix them (e.g., weak shot, channeling).\",\n          \"Advanced tips: water temperature, grind size, and tamping pressure.\",\n          \"Maintaining your hand pump espresso maker for longevity.\"\n        ]\n      },\n      {\n        \"h2\": \"The BrewGear Co. Advantage: Why Choose a Manual Espresso Maker for Travel?\",\n        \"h3\": [\n          \"Durability and portability: built for adventure.\",\n          \"Focus on extraction: geeky details for the discerning palate.\",\n          \"Empowering your coffee journey: enjoy caf\u00e9-quality espresso anywhere.\"\n        ]\n      }\n    ]\n  }\n}\n```",
+        "cost": 0.000286704,
+        "completion_tokens": 550,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 696,
+          "completion_tokens": 550,
+          "total_tokens": 1246,
+          "cost": 0.000286704,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0002896,
+            "upstream_inference_prompt_cost": 6.96e-05,
+            "upstream_inference_completions_cost": 0.00022
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.178,
+          "cost": 0.000460944,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints, including keyword integration and structural requirements.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints, including keyword integration and structural requirements.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.694,
+          "cost": 0.000466884,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets all structural and keyword integration requirements with natural, brand-neutral language.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets all structural and keyword integration requirements with natural, brand-neutral language.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.347,
+          "cost": 0.00170874,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met: 6 H2s with 3-4 H3s each, primary keyword in H1 and two H2s, all secondary keywords naturally distributed, no redundancy, valid JSON structure, no leakage or markdown fences.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met: 6 H2s with 3-4 H3s each, primary keyword in H1 and two H2s, all secondary keywords naturally distributed, no redundancy, valid JSON structure, no leakage or markdown fences.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 4.847,
+        "ok": true,
+        "output": "{\n  \"outline\": {\n    \"h1\": \"Unveiling the Mechanics: How a Portable Espresso Maker Delivers Cafe-Quality Shots Anywhere\",\n    \"body\": [\n      {\n        \"h2\": \"Introduction: The Allure of On-the-Go Espresso\",\n        \"h3\": [\n          \"Beyond Instant Coffee: Why Manual Espresso Matters for Travelers\",\n          \"The Core Promise: Espresso Without Electricity, Explained\",\n          \"What We'll Cover: Demystifying the Hand-Pump Mechanism\"\n        ]\n      },\n      {\n        \"h2\": \"The Fundamental Principles of Espresso Extraction\",\n        \"h3\": [\n          \"Pressure, Temperature, and Grind: The Holy Trinity of Espresso\",\n          \"Why a Manual Espresso Maker for Travel Excels at Control\",\n          \"Comparing Manual to Traditional Machine Extraction\"\n        ]\n      },\n      {\n        \"h2\": \"Deconstructing the Hand Pump Espresso Maker: Key Components\",\n        \"h3\": [\n          \"The Water Reservoir: Heating and Holding\",\n          \"The Pump Mechanism: Generating the Crucial Pressure\",\n          \"The Portafilter and Basket: Holding the Ground Coffee\",\n          \"The Extraction Chamber: Where the Magic Happens\"\n        ]\n      },\n      {\n        \"h2\": \"Step-by-Step: How to Pull a Shot with Your Hand Pump Espresso\",\n        \"h3\": [\n          \"Preparation: Heating Water and Grinding Beans (The Importance of Travel Grinders)\",\n          \"Loading the Basket: Dosing and Tamping for Optimal Extraction\",\n          \"Assembling the Device: Ensuring a Proper Seal\",\n          \"The Pumping Action: Building Pressure and Observing the Flow\",\n          \"The Result: A Perfect Shot and Crema\"\n        ]\n      },\n      {\n        \"h2\": \"Mastering the Nuances: Tips for Optimal Camping Espresso Maker Performance\",\n        \"h3\": [\n          \"Grind Size Matters: Adjusting for Different Beans and Devices\",\n          \"Water Temperature: The Unsung Hero of Flavor\",\n          \"Pre-Infusion Techniques for Enhanced Extraction\",\n          \"Maintenance and Cleaning: Ensuring Longevity on the Road\"\n        ]\n      },\n      {\n        \"h2\": \"Beyond the Basics: Advanced Techniques and Accessories\",\n        \"h3\": [\n          \"Reusable Capsule Adapters: Convenience Meets Quality\",\n          \"Collapsible Kettles: The Perfect Partner for Hot Water on Demand\",\n          \"Experimenting with Different Bean Roasts and Origins\"\n        ]\n      },\n      {\n        \"h2\": \"Conclusion: Your Portable Espresso Maker, Your Cafe Anywhere\",\n        \"h3\": [\n          \"Recap: The Ingenuity of Espresso Without Electricity\",\n          \"Empowering Your Coffee Adventures: Why Manual is the Way to Go\",\n          \"Exploring BrewGear Co.'s Range for Your Next Journey\"\n        ]\n      }\n    ]\n  }\n}",
+        "cost": 0.001808037,
+        "completion_tokens": 647,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 696,
+          "completion_tokens": 647,
+          "total_tokens": 1343,
+          "cost": 0.001808037,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0018263,
+            "upstream_inference_prompt_cost": 0.0002088,
+            "upstream_inference_completions_cost": 0.0016175
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": false,
+        "compliance_detail": "'outline.body' has 7 items, expected 5-6"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.705,
+          "cost": 0.000504504,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets the brief with correct structure, keyword use, and natural phrasing.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets the brief with correct structure, keyword use, and natural phrasing.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.43,
+          "cost": 0.00190377,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 5,
+            "keyword_integration": 3,
+            "no_leakage": 4,
+            "copy_quality": 4
+          },
+          "notes": "Output has 7 H2 sections (exceeds 5-6 cap); h3 arrays inconsistently sized (3-5 items); secondary keywords present but unevenly distributed; conclusion section appears promotional ('BrewGear Co.') which may violate brand-neutral requirement.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 5, \"keyword_integration\": 3, \"no_leakage\": 4, \"copy_quality\": 4, \"notes\": \"Output has 7 H2 sections (exceeds 5-6 cap); h3 arrays inconsistently sized (3-5 items); secondary keywords present but unevenly distributed; conclusion section appears promotional ('BrewGear Co.') which may violate brand-neutral requirement.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 5.861,
+        "ok": true,
+        "output": "{\n  \"outline\": {\n    \"h1\": \"Engineering Your Morning: How a Portable Espresso Maker Delivers Cafe-Quality Shots on the Go\",\n    \"body\": [\n      {\n        \"h2\": \"The Physics of Pressure: How a Manual Espresso Maker for Travel Works\",\n        \"h3\": [\n          \"Understanding the 9-Bar Standard\",\n          \"The Role of the Hand Pump Mechanism\",\n          \"Creating a Watertight Seal for Maximum Extraction\"\n        ]\n      },\n      {\n        \"h2\": \"Anatomy of a Hand Pump Espresso System\",\n        \"h3\": [\n          \"The Water Reservoir and Piston Assembly\",\n          \"The Basket and Filter: Managing Flow Rate\",\n          \"The Role of the Valve System in Pressure Regulation\"\n        ]\n      },\n      {\n        \"h2\": \"Brewing Espresso Without Electricity: Step-by-Step Technical Guide\",\n        \"h3\": [\n          \"Temperature Management: The Importance of Pre-Heating\",\n          \"The Criticality of the Grind: Avoiding Channeling\",\n          \"Pumping Cadence: Achieving a Consistent Flow\"\n        ]\n      },\n      {\n        \"h2\": \"Optimizing Your Setup for Different Travel Environments\",\n        \"h3\": [\n          \"Camping Espresso Maker Tips: Dealing with Altitude and Cold\",\n          \"Remote Work Workflows: Integrating with Collapsible Kettles\",\n          \"Using Reusable Capsule Adapters for Convenience\"\n        ]\n      },\n      {\n        \"h2\": \"Troubleshooting Your Extraction on the Road\",\n        \"h3\": [\n          \"Under-extraction: Identifying Sour Notes and Fast Flow\",\n          \"Over-extraction: Solving Bitterness and Restricted Flow\",\n          \"Cleaning and Maintenance in the Field\"\n        ]\n      },\n      {\n        \"h2\": \"Why Manual Extraction Outperforms Battery-Powered Alternatives\",\n        \"h3\": [\n          \"Reliability: No Charging, No Failures\",\n          \"Tactile Control Over the Shot Profile\",\n          \"Sustainability and Minimalist Gear Packing\"\n        ]\n      }\n    ]\n  }\n}",
+        "cost": 0.0,
+        "completion_tokens": 476,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 476,
+          "prompt_eval_count": 714
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.121,
+          "cost": 0.000438669,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints, including keyword integration and structural requirements.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints, including keyword integration and structural requirements.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.682,
+          "cost": 0.000444708,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 5.031,
+          "cost": 0.0016038,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met: 6 H2s with 3 H3s each, primary keyword in H1 and two H2s, all secondary keywords naturally integrated, valid JSON structure, no leakage or clickbait.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met: 6 H2s with 3 H3s each, primary keyword in H1 and two H2s, all secondary keywords naturally integrated, valid JSON structure, no leakage or clickbait.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 21.371,
+        "ok": true,
+        "output": "{\n  \"outline\": {\n    \"h1\": \"How a Hand-Pump Portable Espresso Maker Works While Traveling (No Electricity Required)\",\n    \"body\": [\n      {\n        \"h2\": \"What Is a Manual Espresso Maker for Travel?\",\n        \"h3\": [\n          \"The short answer: water, finely ground coffee, and pressure from your arm\",\n          \"Who it's built for: campers, long-haul flyers, and remote workers off the grid\"\n        ]\n      },\n      {\n        \"h2\": \"Inside a Hand-Pump Portable Espresso Maker: The Key Parts\",\n        \"h3\": [\n          \"The pump chamber and pressure head\",\n          \"Filter basket, portafilter, and water chamber\",\n          \"Seals and gaskets: the small parts that make or break extraction\"\n        ]\n      },\n      {\n        \"h2\": \"The Extraction Science: How Hand Pump Espresso Builds Real Pressure\",\n        \"h3\": [\n          \"From arm strength to brewing pressure: what your pump actually does\",\n          \"Grind size, dose, and tamping for a balanced manual shot\",\n          \"Water temperature off-grid: how hot is hot enough?\"\n        ]\n      },\n      {\n        \"h2\": \"Step-by-Step: Making Espresso Without Electricity\",\n        \"h3\": [\n          \"Heat your water with a collapsible kettle, burner, or insulated thermos\",\n          \"Load, lock, pump, and extract: the full shot sequence\",\n          \"Timing the pull: why 25-30 seconds still applies in a tent\"\n        ]\n      },\n      {\n        \"h2\": \"Using a Camping Espresso Maker in the Real World\",\n        \"h3\": [\n          \"Packing light: weight, dimensions, and airline-friendly design\",\n          \"Reusable capsule adapters for low-effort, low-mess shots\",\n          \"Cleaning and maintenance between campsites\"\n        ]\n      },\n      {\n        \"h2\": \"Is a Hand-Pump Portable Espresso Maker Right for You?\",\n        \"h3\": [\n          \"When a hand pump beats battery-powered and electric models\",\n          \"Pairing your maker with a travel grinder for fresher shots\",\n          \"Where to start: choosing your first manual setup from BrewGear Co.\"\n        ]\n      }\n    ]\n  }\n}",
+        "cost": 0.0,
+        "completion_tokens": 2224,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 2224,
+          "prompt_eval_count": 664
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.038,
+          "cost": 0.000453519,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints, including keyword integration and structural requirements.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints, including keyword integration and structural requirements.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.627,
+          "cost": 0.000458568,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.343,
+          "cost": 0.00167211,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met: 6 H2s with 2-3 H3s each, primary keyword in H1 and H2s 1\u20132, secondary keywords distributed naturally across remaining sections, no clickbait or redundancy, valid JSON structure only.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met: 6 H2s with 2-3 H3s each, primary keyword in H1 and H2s 1\u20132, secondary keywords distributed naturally across remaining sections, no clickbait or redundancy, valid JSON structure only.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 43.31,
+        "ok": true,
+        "output": "{\n  \"outline\": {\n    \"h1\": \"How a Portable Espresso Maker Works While Traveling: A Practical Guide\",\n    \"body\": [\n      {\n        \"h2\": \"Why Choose Espresso Without Electricity on the Road\",\n        \"h3\": [\n          \"Limitations of electric brewers outdoors\",\n          \"Freedom from power sources and adapters\"\n        ]\n      },\n      {\n        \"h2\": \"How Hand Pump Espresso Works in a Portable Espresso Maker\",\n        \"h3\": [\n          \"Generating 9 bars of pressure manually\",\n          \"Water flow rate and contact time dynamics\"\n        ]\n      },\n      {\n        \"h2\": \"Benefits of a Manual Espresso Maker for Travel\",\n        \"h3\": [\n          \"Weight considerations for backpacking\",\n          \"Durability against rough handling\"\n        ]\n      },\n      {\n        \"h2\": \"Using a Camping Espresso Maker in Remote Locations\",\n        \"h3\": [\n          \"Heating water over a camp stove\",\n          \"Stabilizing the brew unit on uneven ground\"\n        ]\n      },\n      {\n        \"h2\": \"Dialing In Your Shot During Transit\",\n        \"h3\": [\n          \"Adjusting grind size for altitude and temperature\",\n          \"Consistent tamping techniques without a station\"\n        ]\n      },\n      {\n        \"h2\": \"Maintenance and Care for Long-Term Durability\",\n        \"h3\": [\n          \"Cleaning seals and pistons in the field\",\n          \"When to replace gaskets and O-rings\"\n        ]\n      }\n    ]\n  }\n}",
+        "cost": 0.0,
+        "completion_tokens": 4974,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 4974,
+          "prompt_eval_count": 724
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.223,
+          "cost": 0.000414711,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints and provides a well-structured, keyword-rich outline.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints and provides a well-structured, keyword-rich outline.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.407,
+          "cost": 0.000394812,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets all specified constraints with natural keyword integration and proper structure.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets all specified constraints with natural keyword integration and proper structure.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.446,
+          "cost": 0.00147312,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met: 6 H2s with 2 H3s each, primary keyword in H1 and H2s 1-2, all secondary keywords naturally distributed, valid JSON structure, no leakage or clickbait.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met: 6 H2s with 2 H3s each, primary keyword in H1 and H2s 1-2, all secondary keywords naturally distributed, valid JSON structure, no leakage or clickbait.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 21.863,
+        "ok": true,
+        "output": "{\n  \"outline\": {\n    \"h1\": \"How a Portable Espresso Maker Works: The Manual Hand-Pump Guide for Travelers\",\n    \"body\": [\n      {\n        \"h2\": \"The Rise of Espresso Without Electricity: Why Manual Makers Are a Travel Essential\",\n        \"h3\": [\n          \"From Campfires to Hotel Rooms: The Versatility of Manual Espresso\",\n          \"What Makes Hand-Pump Espresso Different from Other Methods\"\n        ]\n      },\n      {\n        \"h2\": \"Inside the Hand-Pump Espresso Maker: How It Works\",\n        \"h3\": [\n          \"The Anatomy of a Manual Espresso Maker (Pump, Chamber, Filter Basket)\",\n          \"The Physics of Pressure: How 9 Bars of Pressure Are Achieved Without Electricity\",\n          \"Why Hand-Pump Espresso Delivers Consistent Results\"\n        ]\n      },\n      {\n        \"h2\": \"Choosing the Right Portable Espresso Maker for Your Travel Needs\",\n        \"h3\": [\n          \"Key Features to Look For in a Portable Espresso Maker (size, weight, materials)\",\n          \"Manual Espresso Maker vs. Other Portable Options (AeroPress, etc.)\",\n          \"Budget Considerations and Brew Quality Trade-offs\"\n        ]\n      },\n      {\n        \"h2\": \"Step-by-Step Guide: Making Espresso with a Manual Espresso Maker for Travel\",\n        \"h3\": [\n          \"Pre-Trip Preparation: Grinding and Dosing Your Coffee\",\n          \"The Pumping Technique: Building Pressure Smoothly\",\n          \"Milk Frothing and Drink Variations on the Road\"\n        ]\n      },\n      {\n        \"h2\": \"Pro Tips for Perfect Extraction with a Camping Espresso Maker\",\n        \"h3\": [\n          \"Water Temperature Control Without a Thermometer\",\n          \"Adjusting Grind Size for Altitude and Conditions\",\n          \"Cleaning and Maintenance in the Field\"\n        ]\n      },\n      {\n        \"h2\": \"Conclusion: Embrace the Portable Espresso Lifestyle\",\n        \"h3\": [\n          \"Recap and Final Thoughts\",\n          \"Call to Action: Explore BrewGear's Range of Manual Espresso Equipment\"\n        ]\n      }\n    ]\n  }\n}",
+        "cost": 0.0,
+        "completion_tokens": 2623,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 2623,
+          "prompt_eval_count": 673
+        },
+        "case_id": "blog-suggest-05-outline",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.055,
+          "cost": 0.000443421,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline perfectly adheres to all constraints, including keyword integration and structural requirements.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The outline perfectly adheres to all constraints, including keyword integration and structural requirements.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.598,
+          "cost": 0.000447084,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The outline fully meets the brief with correct structure, keyword placement, and natural phrasing.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 8.278,
+          "cost": 0.00164439,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met: 6 H2s with 2-3 H3s each, primary keyword in h1 and two H2s, all secondary keywords naturally distributed, valid JSON structure, no leakage or clickbait.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met: 6 H2s with 2-3 H3s each, primary keyword in h1 and two H2s, all secondary keywords naturally distributed, valid JSON structure, no leakage or clickbait.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 0.945,
+        "ok": true,
+        "output": "```json\n{\n  \"alt\": \"Matte black portable espresso maker on picnic table, morning light, tent background.\"\n}\n```",
+        "cost": 3.4848e-05,
+        "completion_tokens": 30,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 232,
+          "completion_tokens": 30,
+          "total_tokens": 262,
+          "cost": 3.4848e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 3.52e-05,
+            "upstream_inference_prompt_cost": 2.32e-05,
+            "upstream_inference_completions_cost": 1.2e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-alttext-06-hero-image",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.107,
+          "cost": 0.000300465,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 3,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "The output missed 'steam from cup' and 'camping kettle' from the description.",
+          "raw": "{\"constraints\": 4, \"html_validity\": 5, \"keyword_integration\": 3, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"The output missed 'steam from cup' and 'camping kettle' from the description.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.679,
+          "cost": 0.000277596,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Alt text is good but adds 'morning light' not in description and misses steam from cup and camping kettle.",
+          "raw": "{\"constraints\":4,\"html_validity\":5,\"keyword_integration\":4,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"Alt text is good but adds 'morning light' not in description and misses steam from cup and camping kettle.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.78,
+          "cost": 0.00094446,
+          "ok": false,
+          "error": {
+            "status": null,
+            "message": "judge JSON parse failed: missing/non-numeric axis score; raw=```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integrity\": 2, \"no_leakage\": 5, \"copy_quality\": 3, \"notes\": \"Markdown fences violate 'JSON only' rule; 'morning light' invented; missing camping kettle and steam details from brief.\"}\n```"
+          }
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash",
+        "provider": "openrouter",
+        "latency_s": 0.972,
+        "ok": true,
+        "output": "```json\n{\n  \"alt\": \"Matte black portable espresso maker on a wooden picnic table with a camping kettle, steam rising.\"\n}\n```",
+        "cost": 0.000150579,
+        "completion_tokens": 33,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 232,
+          "completion_tokens": 33,
+          "total_tokens": 265,
+          "cost": 0.000150579,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001521,
+            "upstream_inference_prompt_cost": 6.96e-05,
+            "upstream_inference_completions_cost": 8.25e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "blog-alttext-06-hero-image",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.685,
+          "cost": 0.000262944,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Alt text correctly describes the scene with the required keyword naturally included.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Alt text correctly describes the scene with the required keyword naturally included.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.015,
+          "cost": 0.00087912,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 2,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Markdown fences violate JSON-only constraint; content itself is excellent.",
+          "raw": "```json\n{\"constraints\": 4, \"html_validity\": 2, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Markdown fences violate JSON-only constraint; content itself is excellent.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 0.763,
+        "ok": true,
+        "output": "{\n  \"alt\": \"Matte black portable espresso maker and camping kettle on a wooden table in a pine forest.\"\n}",
+        "cost": 0.0,
+        "completion_tokens": 28,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 28,
+          "prompt_eval_count": 250
+        },
+        "case_id": "blog-alttext-06-hero-image",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.098,
+          "cost": 0.000306999,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "The alt text is good but misses 'steam from cup' and 'hand-pump' details.",
+          "raw": "{\"constraints\": 4, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"The alt text is good but misses 'steam from cup' and 'hand-pump' details.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.616,
+          "cost": 0.000268884,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Alt text is natural and includes the keyword but misses some visible details like steam and tent.",
+          "raw": "{\"constraints\":4,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"Alt text is natural and includes the keyword but misses some visible details like steam and tent.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.495,
+          "cost": 0.00100089,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Valid JSON with natural alt text; 'picnic table' described as 'wooden table' (minor interpretation), steam/cup detail omitted, but keyword integrated smoothly under 100 chars.",
+          "raw": "```json\n{\"constraints\": 4, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Valid JSON with natural alt text; 'picnic table' described as 'wooden table' (minor interpretation), steam/cup detail omitted, but keyword integrated smoothly under 100 chars.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:glm-5.3-flash",
+        "provider": "ollama",
+        "latency_s": 15.69,
+        "ok": true,
+        "output": "{\n\"alt\": \"Matte black portable espresso maker steaming on a wooden picnic table at a forest campsite\"\n}",
+        "cost": 0.0,
+        "completion_tokens": 836,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 836,
+          "prompt_eval_count": 229
+        },
+        "case_id": "blog-alttext-06-hero-image",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.088,
+          "cost": 0.00029403,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All constraints met, alt text is natural and includes the keyword without stuffing.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All constraints met, alt text is natural and includes the keyword without stuffing.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.725,
+          "cost": 0.00027126,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Alt text correctly describes the scene with natural inclusion of 'portable espresso maker' under 100 characters.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Alt text correctly describes the scene with natural inclusion of 'portable espresso maker' under 100 characters.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.383,
+          "cost": 0.00095634,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Perfect execution: valid JSON, natural phrasing, keyword integrated seamlessly, all visible elements included, 82 characters, no leakage or invention.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Perfect execution: valid JSON, natural phrasing, keyword integrated seamlessly, all visible elements included, 82 characters, no leakage or invention.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:qwen3.5:397b",
+        "provider": "ollama",
+        "latency_s": 52.313,
+        "ok": false,
+        "error": {
+          "status": null,
+          "message": "TimeoutError: [Errno 60] Operation timed out"
+        },
+        "cost": 0.0,
+        "case_id": "blog-alttext-06-hero-image"
+      },
+      "judges": []
+    },
+    {
+      "generation": {
+        "model": "ollama:deepseek-v4-flash:0731",
+        "provider": "ollama",
+        "latency_s": 9.933,
+        "ok": true,
+        "output": "{\"alt\": \"Portable espresso maker on wooden table with camping kettle, tent and forest, steam rising.\"}",
+        "cost": 0.0,
+        "completion_tokens": 1475,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 1475,
+          "prompt_eval_count": 223
+        },
+        "case_id": "blog-alttext-06-hero-image",
+        "json_valid": true,
+        "keys_ok": true,
+        "compliance_detail": "ok"
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.372,
+          "cost": 0.000293139,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints, including keyword integration and character limit.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints, including keyword integration and character limit.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.454,
+          "cost": 0.000264528,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Alt text correctly describes the image and includes the keyword naturally within the character limit.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Alt text correctly describes the image and includes the keyword naturally within the character limit.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.036,
+          "cost": 0.00094644,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Excellent compliance; keyword naturally integrated; minor: 'wooden table' not explicitly stated as 'picnic table' in brief, though reasonable inference.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Excellent compliance; keyword naturally integrated; minor: 'wooden table' not explicitly stated as 'picnic table' in brief, though reasonable inference.\"}\n```"
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "google/gemini-2.5-flash-lite": {
+      "provider": "openrouter",
+      "cases_attempted": 6,
+      "failures": 0,
+      "avg_cost_per_call": 0.00010535249999999998,
+      "avg_latency_s": 3.7566666666666664,
+      "avg_completion_tokens": 158.5,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.805555555555556,
+      "avg_judge_spread": 0.2333333333333334,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "6/6",
+      "fmt2_compliance": "6/6"
+    },
+    "google/gemini-2.5-flash": {
+      "provider": "openrouter",
+      "cases_attempted": 6,
+      "failures": 0,
+      "avg_cost_per_call": 0.000557172,
+      "avg_latency_s": 2.7985,
+      "avg_completion_tokens": 173.5,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.633333333333334,
+      "avg_judge_spread": 0.7333333333333334,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "6/6",
+      "fmt2_compliance": "5/6"
+    },
+    "ollama:gemma4:31b": {
+      "provider": "ollama",
+      "cases_attempted": 6,
+      "failures": 0,
+      "avg_cost_per_call": 0.0,
+      "avg_latency_s": 1.8743333333333334,
+      "avg_completion_tokens": 134.83333333333334,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.822222222222222,
+      "avg_judge_spread": 0.19999999999999987,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "6/6",
+      "fmt2_compliance": "6/6"
+    },
+    "ollama:glm-5.3-flash": {
+      "provider": "ollama",
+      "cases_attempted": 6,
+      "failures": 0,
+      "avg_cost_per_call": 0.0,
+      "avg_latency_s": 17.020999999999997,
+      "avg_completion_tokens": 1700.3333333333333,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.688888888888889,
+      "avg_judge_spread": 0.30000000000000004,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "6/6",
+      "fmt2_compliance": "6/6"
+    },
+    "ollama:qwen3.5:397b": {
+      "provider": "ollama",
+      "cases_attempted": 6,
+      "failures": 1,
+      "avg_cost_per_call": 0.0,
+      "avg_latency_s": 40.9524,
+      "avg_completion_tokens": 4543.6,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.6866666666666665,
+      "avg_judge_spread": 0.36,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "5/5"
+    },
+    "ollama:deepseek-v4-flash:0731": {
+      "provider": "ollama",
+      "cases_attempted": 6,
+      "failures": 0,
+      "avg_cost_per_call": 0.0,
+      "avg_latency_s": 14.77233333333333,
+      "avg_completion_tokens": 2056.1666666666665,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.8999999999999995,
+      "avg_judge_spread": 0.20000000000000004,
+      "spread_unreliable": false,
+      "fmt1_label": "json_valid",
+      "fmt2_label": "required_keys",
+      "fmt1_compliance": "6/6",
+      "fmt2_compliance": "6/6"
+    }
+  },
+  "total_spend": 0.061419798,
+  "openrouter_calls_made": 108,
+  "ollama_calls_made": 23,
+  "max_ollama_calls": 40,
+  "aborted": false,
+  "models": [
+    "google/gemini-2.5-flash-lite",
+    "google/gemini-2.5-flash",
+    "ollama:gemma4:31b",
+    "ollama:glm-5.3-flash",
+    "ollama:qwen3.5:397b",
+    "ollama:deepseek-v4-flash:0731"
+  ],
+  "judges": [
+    "google/gemini-2.5-flash",
+    "openai/gpt-4.1-mini",
+    "anthropic/claude-haiku-4.5"
+  ]
+}

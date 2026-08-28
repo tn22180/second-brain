@@ -13,6 +13,7 @@
 - [fleet-control Queues DOWN semantics](fleet-control-queues-down-semantics.md) — "Queues DOWN" = 1+ failed job trong 24h window, cosmetic; worker liveness (up===0) là row riêng. metrics:jobs giữ count độc lập với bull:*.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
 - [seo fleet Tailscale ACL auto-deploy](seo-fleet-tailscale-acl-autodeploy.md) — central=tag:deploy, box1/box2=tag:worker-box, accept rule → non-interactive SSH. Gotchas: box1 --ssh off, box2 was user-owned untagged, SSH-into-central needs dst:tag:deploy (autogroup:self ≠ tagged nodes).
+- [seo worker memoryMb là copy GCF](seo-worker-memory-measured.md) — RSS đo thật nhỏ hơn 2–8x (recursive 4096 khai vs 499 peak); budget prod 5190 nên không tier nào chạm cap concurrency.
 - [seo fleet→GCF spill](seo-fleet-gcf-spill.md) — dispatchWork 3 gates + spill theo MEMORY (MR2204): job.memoryMb > maxFreeMb (worker:mem hash). KHÔNG có ngưỡng queue tổng. Spill OFF ở prod tới khi FLEET_SPILL_ENABLED=true.
 - [fleet-control public hosting](fleet-control-public-hosting.md) — fleet.tuannv-dev.site via Cloudflare Tunnel(cloudflared@central)+Access(Google/OTP); config in /etc/cloudflared not ~; REDIS_PORT=6380; basic-auth off + ufw deny tailscale0:3900.
 - [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18, origin=git.avada.net, gitlab.com đổi tên gitlab-old. Bảng remote trong second-brain/CLAUDE.md đã sai.
@@ -36,3 +37,5 @@
 - [seo central box access](seo-central-box-access.md) — box thật `avada@100.87.235.36`, fleet-control ở `/home/avada/fleet-control`; deploy.sh commit sẵn 2 default sai, sudo cần password.
 - [Bull Board vs fleet-control](seo-bullboard-grafana-vs-fleet-control.md) — cùng Redis/BullMQ (Bull Board có quyền ghi, không redact); Grafana chỉ đọc Loki. Đã khoá về 127.0.0.1 24/08.
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
+- [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
+- [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.

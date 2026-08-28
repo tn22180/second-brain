@@ -1,0 +1,23 @@
+{
+  "records": [
+    {
+      "model": "google/gemini-2.5-flash-image",
+      "latency_s": 6.297,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.0387372,
+      "case_id": "img-01-skincare-flatlay",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-01-skincare-flatlay__google_gemini-2.5-flash-image.png",
+      "width": 1024,
+      "height": 1024,
+      "aspect_ratio": 1.0,
+      "aspect_16x9_compliant": false
+    }
+  ],
+  "total_spend": 0.0387372,
+  "calls_made": 1,
+  "aborted_on_spend_cap": false,
+  "models": [
+    "google/gemini-2.5-flash-image"
+  ]
+}

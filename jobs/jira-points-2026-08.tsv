@@ -1,0 +1,174 @@
+Key	Dev Point	Tester Point	Assignees	Status	Summary
+FAL-56	1	1	dungtt,tunglv	Done	App: SEO Suite App plan: pro_22 Shopify plan: professional Shop URL: <https://info-2d4e.myshopify.com> Crisp chat URL: <https://app.crisp.chat/website/dbb461f3-42ba-4046-bd39-cb50fc8f63f3/inbox/sessio
+FAL-71			linhnq,minhpt	Done	[DEV][SEO] R&D Google Structured Data — để AI fix thay vì làm thủ công
+FAL-97	21	5	linhnq,truongnn,dungtt	Done	[DEV][SEO] Sidekick app: Action extension (Phase 2)
+FAL-100	34	5	linhnq,truongnn,dungtt	Done	[DEV][SEO] Sidekick app: Shopify-proprietary (Phase 1 - data)
+FAL-101	13	5	linhnq,dungtt,tunglv	Testing Production	[DEV][SEO] AI Fix Audit: Bulk Fix Content - UI
+FAL-102			linhnq,dungtt,tunglv	Waiting For Review	[DEV][AEO] R&D: tracking AI agent có fetch llms.txt không
+FAL-103			linhnq,dungtt,tunglv	Waiting For Review	[DEV][AEO] Analytics — traffic đến store qua AI chatbot
+FAL-104			linhnq,dungtt,tunglv	Waiting For Review	[DEV][Blog] Revival analytics
+FAL-107			linhnq,truongnn,dungta,dungtt	Waiting For Review	[DEV][SEO] Affiliate program
+FAL-109			linhnq,truongnn,dungtt	Done	[DEV][Blog] Chuyển credits sang token
+FAL-114			truongnn,dungtt	Reviewing	[DEV][SEO] Fix Audit: internal links bằng AI
+FAL-116	8		linhnq,minhpt	Done	[DEV][AEO] Chia file llms.txt khi vượt giới hạn 265KB
+FAL-117			linhnq,minhpt,dungtt	Done	[DEV][AEO] Hỗ trợ agent.md
+FAL-118			linhnq,minhpt,dungtt	Done	[DEV][AEO] LLMs.txt: Editor
+FAL-119			linhnq,minhpt,dungtt	Done	[DEV][AEO] Gen llms.txt vào file llms.txt.liquid trong theme
+FAL-120			linhnq,minhpt,dungtt	Testing Production	[DEV][AEO] AEO Checklist
+FAL-121	1		linhnq,dungtt,tunglv	Done	[DEV][APC] Publish description theo locale
+FAL-131	55	5	linhnq,minhpt,dungtt	Test Staging	[DEV][AEO] Reddit Visibility — crawl thread Reddit theo topic + gợi ý reply gắn brand
+FAL-169	34		minhpt	Testing Production	[DEV][SEO] Fix Bug agent
+FAL-192	1	1	linhnq,truongnn,dungtt	Done	[DEV][SEO] Action required: Shopify App Store báo lỗi listing Avada AI SEO Image Optimizer (demote 24/07, delist 04/08)
+FAL-194			truongnn,dungtt,tuannv	Done	[INFRA][SEO] Staging thiếu Redis/VPC connector cho sidekickGen2 → Sidekick preview mất prefill (confirmUrl không có sidekickDraft)
+FAL-195			truongnn,dungtt	Archived	[BUG][SEO] Sidekick tool: đảm bảo tốc độ trả ≤1s + chuẩn hoá format output (yêu cầu #4 FAL-100)
+FAL-197	21	8	linhnq,truongnn,dungtt	Done	[DEV][AEO] Refactor AEO Audit checks theo Shopify Agentic Readiness
+FAL-255			truongnn,dungtt	Archived	[BUG][SEO] Sidekick fix-meta: click vào option là chọn/submit luôn, không kịp nhấn Submit
+FAL-265			truongnn,dungtt	Done	[BUG][SEO] Sidekick redirect: điều hướng sang Shopify URL Redirects thay vì tính năng Broken link trong app SEO
+FAL-272			truongnn,dungtt	Done	[BUG][SEO] Sidekick alt text: hướng dẫn sai nhãn UI (Apply to all images/Bulk optimize/tab Products không tồn tại)
+FAL-292			tranggt,truongnn	Done	[DEV][SEO] Product analytics phase 1: hệ ghi nhận event + dashboard nội bộ
+FAL-293	13		truongnn	Done	[DEV][SEO] Nghiên cứu hạ tầng ghi event: hướng tối ưu cost + tái sử dụng cho các app Falcon
+FAL-294	21	5	tranggt,truongnn	Done	[DEV][SEO] Dựng base frontend dashboard nội bộ + giao diện quản lý log event
+FAL-295	21	5	tranggt,truongnn	Done	[DEV][SEO] Backend ghi nhận event: Firebase Functions ingest + lưu BigQuery
+FAL-316	1	1	truongnn,dungtt	Done	[BUG][SEO] Không có toggle tắt OG/Social meta tags injection + OG block bị double render
+FAL-390	3	3	tranggt,lamln,minhpt	Done	[BUG][AEO] markdown-alternate: locale ghép bị nối lặp region (zh-TW-TW) + không validate locale, luôn fallback EN trả 200
+FAL-391	3	1	tranggt,tunglv	Done	[AI Product Copy] Select all + Generate tạo content cho toàn bộ sản phẩm, bỏ qua filter search (linhnguyen5)
+FAL-457			tranggt,minhpt,tuannv	Done	[BUG][AEO] Editor llms.txt bản visual escape backslash ký tự Markdown, ghi ra file live sai format
+FAL-458			tuannv,tunglv	Done	[BUG][SEO] Default meta tags bị mất content sau khi lưu (vào lại app mất hết)
+FAL-460			dungtt,tunglv	Waiting For Review	[DEV][SEO] Google Search Console: Revise + AI recommend
+FAL-471			tuannv,tunglv	Done	[BUG][SEO] Onpage Audit tab Blog posts: bảng tràn ngang che cột Last updated + nút ⋯ (không edit được)
+FAL-481			minhpt	Testing Production	[BUG][AEO] Markdown reviews không render với shop dùng Air Reviews (app review không xuất Review JSON-LD)
+FAL-490			truongnn	Done	[BUG][Blog] SEO On Blog strip the <p> in <li> when save - mat spacing giua cac doan trong list item
+FAL-491			truongnn	Done	[BUG][Blog] Nút Generate now ở Dashboard ra trang trắng ở bản standalone + hiển thị 0 token lúc chưa load xong số dư
+FAL-493			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: quét 1 sản phẩm ăn 162/200 AI credit mà modal xác nhận không báo trước tổng chi phí
+FAL-494			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: nút "Copy" trong màn chi tiết thread copy nội dung KHÔNG kèm disclosure line
+FAL-495			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: ô "Replies posted" và "Posts today" luôn = 0 khi merchant theo luồng đăng thủ công mà app khuyến nghị
+FAL-496			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: guardrail "min gap" & "max posts/day" chỉ nằm trong RAM và không áp cho luồng đăng thủ công
+FAL-497			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: không hiển thị số upvote / comment của thread dù API đã trả về (thiếu so với PRD)
+FAL-498			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: bấm "Draft with AI" xong bảng không refresh — thread vẫn hiện "To review", tab Drafted vẫn 0
+FAL-499			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: hướng dẫn cài extension thiếu bước giải nén file .zip
+FAL-500			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: extension còn tên "(prototype)" và description nội bộ, khách sẽ nhìn thấy trong chrome://extensions
+FAL-501			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: reply AI bịa trải nghiệm cá nhân và bịa sản phẩm shop không bán
+FAL-505			truongnn	Done	[BUG][SEO] 14 link "Learn more"/User guide trong app trỏ tới trang docs.avada.io đã 404
+FAL-506			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: sau khi đăng, app lưu link THREAD thay vì link COMMENT — merchant không mở lại được comment đã đăng
+FAL-507			tunglv	Done	[BUG][SEO] AI Fix sync product treo vinh vien voi shop nhieu san pham (2/22 chunk OOM khong retry)
+FAL-509			truongnn	Done	[BUG][Blog] AI Blog: bật "Generate images in content (1 per H2 section)" nhưng không phải H2 nào cũng có ảnh
+FAL-510			minhpt	Done	[BUG][SEO] Web performance score không hiển thị (rỗng "—") trên shop khách 1d00yn-2w.myshopify.com — ticket SEO-260803-qDAxBm
+FAL-522			truongnn	Done	[DEV][SEO] Thêm tag "Published" cho content đã generate để phân biệt trang đã/chưa publish
+FAL-523			truongnn	Done	[BUG][SEO] Bulk generator: nút "Generate again" không xoá cờ Published — dòng vừa regenerate vẫn hiện badge Published
+FAL-526			linhnq,dungtt,tuannv,tunglv	Waiting For Review	[DEV][SEO] MCP server để agent ngoài (Claude, ChatGPT) truy cập và điều khiển app
+FAL-527			linhnq,truongnn	To Do	[DEV][Blog] Tích hợp Shopify Sidekick để merchant tạo và tối ưu bài blog ngay trong Shopify Admin
+FAL-528			linhnq,truongnn,dungtt	Testing Production	[DEV][Blog] MCP server để agent ngoài (Claude, ChatGPT) truy cập và điều khiển app
+FAL-529			truongnn	Done	[BUG][SEO] Sidekick: tool read của app không phục vụ homepage (get_page_meta/get_page_seo_status thiếu resource type homepage)
+FAL-530			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: scan treo ở bước chấm điểm — 108 thread đã fetch bị bỏ rơi vĩnh viễn, merchant bị khoá quét 10 phút
+FAL-531			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: Preferred subreddits bị bỏ qua — scan sinh URL tìm kiếm toàn Reddit, thread trả về nằm ngoài subreddit merchant chọn
+FAL-532			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: modal "Scan featured products" không nói sẽ quét bao nhiêu sản phẩm và tốn bao nhiêu credit
+FAL-533			truongnn	Archived	[BUG][SEO] Sidekick Phase 2 chưa đạt AC: không có action extension (admin.app.intent.*) và thiếu action apply quick wins
+FAL-534			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: chip subreddit sai định dạng vẫn hiện sau khi lưu (server đã loại) + thiếu chuỗi dịch "Contact us" ở cả 10 locale
+FAL-536			truongnn	Done	[BUG][SEO] BLOCKER: Sidekick gọi tool của app đều thất bại trên version -1-54 — không phát được request nào tới /sidekick/seo/* (nghi shopify.idToken() trong extension)
+FAL-537			truongnn	Done	[BUG][SEO] Không generate được meta description bằng AI khi hết credit - thông báo lỗi không rõ ràng
+FAL-546			truongnn	Archived	[BUG][SEO] GH surface bat On nhung nudge khong hien - 5 cho (app SEO 2 + app Blog 3)
+FAL-553			minhpt	To Do	[BUG][AEO] Reddit Discovery: đổi App language sang ngôn ngữ khác thì trang Reddit Discovery vẫn hiển thị tiếng Anh
+FAL-554			minhpt	Test Staging	[BUG][AEO] Reddit Discovery: thiếu key dịch RedditDiscovery.credits.contactUs ở cả 10 locale ngoài tiếng Anh
+FAL-555			truongnn	Done	[BUG][Blog] Sửa bài blog không lưu được — Shopify trả userErrors metafields[8].type, app nuốt lỗi không báo
+FAL-559			truongnn	Archived	[BUG][SEO] Sidekick: lượt hỏi đầu tiên sau mỗi lần tải trang luôn fail "trouble connecting to the AVADA SEO app"
+FAL-560			truongnn	Done	[BUG][SEO] Điểm SEO sản phẩm lệch giữa list Onpage audit và trang detail (26 vs 23)
+FAL-561			truongnn	Done	[BUG][SEO] Sidekick báo "no pages missing a meta description" trong khi app không đo được mục này
+FAL-562			minhpt	Done	[BUG][SEO] URL hiển thị trong app thiếu tiền tố market/ngôn ngữ khi thao tác ở locale phụ
+FAL-566			truongnn	Done	[BUG][Blog] Author avatar khong hien thi tren blog post storefront - fallback no-avatar-author.png
+FAL-568	8	3	tranggt,lamln,tunglv	Done	[DEV][APC] Thêm bộ lọc collection vào màn Generate in bulk
+FAL-571			truongnn	Done	[BUG][SEO] Bulk AI Fix ghi đè Description của collection, mất mô tả gốc của shop
+FAL-572			truongnn	Done	[DEV][Blog] Collection element — chèn nhiều collection vào bài blog
+FAL-581			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: toàn bộ UI hardcode tiếng Anh, chưa qua i18n
+FAL-583			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: màn chọn property thiếu badge "Khớp nhất" và không ghi loại property
+FAL-590			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: thiếu nhánh guided create + verify domain (UC-03 / TC-03 trong PRD)
+FAL-598			tranggt,tunglv	Done	[BUG][APC] collection_id không được ép về số — giá trị lạ ghép thẳng vào query Shopify (apc-staging-1)
+FAL-600			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: custom date range crash khi chọn 1 ngày và lệch 1 ngày so với ngày đã chọn
+FAL-602			minhpt,dungtt	Testing Production	[DEV][SEO] Bỏ field accessTokenHash và email khỏi shop data của worker trong job
+FAL-603			truongnn	Done	[BUG][Blog] FAQs block: bấm dấu "+" không mở câu trả lời (2 script cùng gắn handler toggle)
+FAL-608			tranggt,truongnn,tuannv	Done	[BUG][SEO] Meta description AI gen cho blog post không khớp nội dung bài — AI bịa theo tên store
+FAL-609	5		lamln,truongnn	Done	[DEV][SEO] Migrate data BigQuery từ project plaza-staging-3 sang hệ event log mới
+FAL-610	5		lamln,truongnn	Done	[DEV][Speed] Thêm log event theo format mới cho app Speed
+FAL-611			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: sau khi chọn custom range, DatePicker khoá luôn các ngày quá khứ có dữ liệu nằm sau khoảng đó
+FAL-612			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: bấm back trong app ở trang đích của AI insight không quay lại Google Search Console
+FAL-613			tuannv,tunglv	Done	[BUG][SEO] Google Search Console v2: preset thời gian tính lùi từ hôm nay nên khoảng ngày lệch so với GSC
+FAL-615			truongnn,tuannv	Archived	[BUG][AEO] Rescan/quét nhiều product làm scrape storefront chết hàng loạt — 11 check JSON-LD FAIL sai, điểm tổng 24 thay vì ~81
+FAL-616			truongnn,tuannv	Archived	[BUG][AEO] Rescan chỉ quét 2000/2042 product và không báo cho merchant
+FAL-617			truongnn,tuannv	Archived	[BUG][AEO] Tab Collections / Blog posts / Pages hiện "Total: 14 items" nhưng bảng trống, không nói là chưa hỗ trợ
+FAL-618			tranggt,lamln,minhpt	Test Staging	[DEV][AEO] Mở MCP cho app AEO
+FAL-619	21	8	tranggt,lamln,minhpt	Waiting To Test	[DEV][AEO] Kết nối app qua ChatGPT
+FAL-620	13	5	tranggt,lamln,minhpt	Waiting To Test	[DEV][AEO] Kết nối app qua Sidekick
+FAL-621			tranggt,lamln,minhpt	To Do	[DEV][AEO] Tài liệu ngắn gọn hướng dẫn kết nối qua ChatGPT và Sidekick
+FAL-622			truongnn	Done	[BUG][Blog] Shop legacy vẫn bị chặn AI: gate AI chỉ xét ngày cài, không đọc cờ isLegacyPlan (b987fd-0b)
+FAL-624			tranggt,truongnn,tuannv	Done	[DEV][SEO] Thêm tiếng Hebrew cho AI generate FAQ và AI Content
+FAL-626			truongnn	Done	[BUG][Blog] Card section trên trang blog bị lỗi shopify-context
+FAL-628	3	1	tranggt,lamln,minhpt	Done	[DEV][AEO] Markdown Alternate: hỗ trợ metafield rich_text_field — thêm converter rich text JSON sang markdown
+FAL-629			linhnq,truongnn,dungtt	Testing Production	[DEV][BLOG] Pricing 2026: $14.9
+FAL-630			tunglv	Done	[BUG][SEO] Duplicate product: app hiển thị meta title cũ của sản phẩm gốc
+FAL-635			truongnn,tuannv	Archived	[BUG][SEO] Sidekick deep-link: sidekickDraft không prefill alt text và không chọn sẵn target redirect
+FAL-636			minhpt	Done	[BUG][SEO] Internal links: nút Refresh Suggestions ở trang chi tiết không đọc anchor text vừa thêm (0 gợi ý, phải Rescan)
+FAL-639			minhpt	Done	[BUG][SEO] Lịch sử AI alt text lệch số và lệch ngày giữa Activity details và Usage summary (shop taproo)
+FAL-642			truongnn	Done	[BUG][Blog] Product Card — modal "View" trong bài blog bị trống trên màn hình < 1024px
+FAL-649			tunglv	Done	[BUG][SEO] MCP create_redirect: lỗi trả về là "undefined", AI client không biết vì sao thất bại
+FAL-651			tunglv	Done	[BUG][SEO] MCP: cold start endpoint OAuth discovery quá 20 giây làm chết toàn bộ connector (mcp_upstream_auth_unavailable)
+FAL-654			tranggt,truongnn,tuannv	Reviewing	[DEV][Blog] Chuyển feature gating từ install-date sang Plan/Entitlement rõ ràng — phục vụ CS AI
+FAL-655			truongnn,tuannv	Testing Production	[DEV][Blog] Thêm event log (product-analytics tracking — falcon-event-tracker)
+FAL-658			dungtt,tuannv,tunglv	Test Staging	[DEV][SEO] New plan: Multistore + All-in-one bundle
+FAL-659			tunglv	Done	[BUG][SEO] MCP update_meta luôn thất bại nhưng vẫn ghi meta lên Shopify (báo lỗi sai, dữ liệu đã đổi)
+FAL-660			tunglv	Done	[BUG][SEO] MCP audit_resource xoá mất field không được truyền (focusKeyword biến mất khi chỉ cập nhật FAQs)
+FAL-661			tunglv	Done	[BUG][SEO] MCP list_pages_missing_meta nuốt cursor không hợp lệ, trả rỗng như thể mọi trang đã đủ meta
+FAL-662			tunglv	Done	[BUG][SEO] MCP: mọi job optimize ảnh chết ở 0 ảnh - app thấy 0 ảnh dù Shopify có 23 file
+FAL-681			minhpt	Done	[BUG][SEO] Link trong SEO checklist hiển thị 2 dấu // (https://domain.com//products/...)
+FAL-683			truongnn,dungtt	Done	[BUG][Blog] Đổi tên gói thành Pro nhưng ảnh banner modal và chuỗi Elements tab vẫn ghi Advanced
+FAL-691			tunglv	Done	[BUG][SEO] MCP create_redirect: to rỗng báo tạo thành công nhưng Shopify không có redirect
+FAL-695			truongnn,tuannv	To Do	[DEV][Blog] Clean data + optimize giam cost prod + staging 1, 6
+FAL-696			truongnn	Done	[BUG][Blog] Next bill hiển thị ngày quá khứ với shop đã qua nhiều chu kỳ renew
+FAL-699			tunglv	Done	[BUG][SEO] MCP fix_issue_with_ai: xin fix relatedKeywords nhưng trả về focusKeyword
+FAL-700			tunglv	Done	[BUG][SEO] MCP create_redirect thất bại vẫn ghi URL đang live vào danh sách broken link
+FAL-705			minhpt	Done	[DEV][SEO] Internal links: sửa lại cách tính Pages with / Pages without internal links + thêm tooltip giải thích từng field
+FAL-706			minhpt	Doing	[DEV][SEO] Internal links: lịch sử apply/suggest link + bộ lọc theo yêu cầu khách (taproo)
+FAL-708			truongnn	Done	[BUG][Blog] App embed Avada Blog load asset (page-tag.css, style-dynamic-product.css) trên mọi trang, jQuery 3.6.0 load sync ở trang bài viết
+FAL-711			tunglv	Done	[BUG][SEO] MCP audit_resource: metaTitle toàn khoảng trắng báo ok true, Shopify không đổi nhưng app lưu rỗng
+FAL-712			tunglv	Done	[BUG][SEO] MCP audit_resource thất bại vẫn ghi id sản phẩm không tồn tại vào ovrProductIds
+FAL-713			tunglv	Done	[BUG][SEO] MCP audit_resource không trả lại field vừa ghi nên không xác nhận được kết quả
+FAL-718			truongnn	Done	[BUG][Blog] Xem bản cũ trong Version history khiến autosave lưu đè, mất thay đổi đang sửa
+FAL-723			minhpt	Done	[BUG][SEO] Thừa ô description (mất title đi kèm) trên giao diện app SEO
+FAL-724			tunglv	Done	[BUG][SEO] MCP: ghi meta xong thì index xoá mất tên resource, list_pages_missing_meta trả về dòng không tên
+FAL-725			tunglv	Done	[BUG][SEO] MCP list_pages_missing_meta: không cập nhật meta đã ghi, và trả handle sai khiến ghi nhầm sản phẩm
+FAL-728			tunglv	Done	[BUG][SEO] MCP không có cách đọc FAQ hiện có, nhưng audit_resource lại yêu cầu gửi kèm FAQ cũ
+FAL-729			tunglv	Done	[BUG][SEO] MCP audit_resource không ghi gì vẫn bị guard đa ngôn ngữ chặn đòi locale
+FAL-752			tunglv	Waiting To Test	[BUG][SEO] All-in-one bundle: store chưa cài đủ 3 app vẫn bấm Get the bundle mua được
+FAL-753			tunglv	Waiting To Test	[BUG][SEO] Multistore: store cha đang ở plan trả phí không mua được gói Multistore, phải downgrade về Free trước
+FAL-754			tunglv	Archived	[BUG][SEO] All-in-one bundle: store chưa từng trial/trả phí ở cả 3 app nhưng Get the bundle không được 7-day free trial
+FAL-756			tunglv	Waiting To Test	[BUG][SEO] All-in-one bundle: mua gói xong app SEO Suite không được nâng lên Pro
+FAL-764			tunglv	Done	[BUG][SEO] Multistore: phải nhập invite code 2 lần — nhập ở popup rồi vào trang Multistore plan lại bắt nhập lại
+FAL-765			tunglv	Waiting To Test	[BUG][SEO] Multistore: store con đang ở plan Pro/Enterprise vẫn nhập được invite code — cần chặn
+FAL-766			dungtt,tuannv,tunglv	Done	[BUG][SEO] Multistore: một store con nhập được invite code của nhiều gói khác nhau,
+FAL-767			tranggt,truongnn	Test Staging	[BUG][Blog] MCP get_shop_context bỏ isLegacyPlan — CS AI trả lời sai shop legacy được dùng AI miễn phí
+FAL-768			tranggt,truongnn	Test Staging	[BUG][Blog] Shop không có installedAt mất hết quyền lợi legacy sau khi backfill entitlements
+FAL-769			tranggt,truongnn	Test Staging	[BUG][Blog] blockFields không chặn dot-path — merchant tự ghi được entitlements qua POST /api/shop
+FAL-770			dungtt,tunglv	Archived	[BUG][SEO] Transfer bundle ownership chưa có chỗ approve 
+FAL-771			dungtt,tuannv,tunglv	Doing	[BUG][SEO] Cần scroll tới card Multistore plan khi click Change plan/Upgrade plan ở trang Multistore plan
+FAL-773			dungtt,tunglv	Waiting To Test	[BUG][SEO] Store mới:  join multistore nhưng ko ko được upgrade plan pro
+FAL-774			truongnn,dungtt	Done	BUG-[BLOG]Khách đã add Related Keywords nhưng vẫn hiện lỗi "Excluded from this audience" trên bài viết.
+FAL-777			dungtt,tunglv	Test Staging	[Bug][SEO] Remove store khỏi multistore plan nhưng vẫn add code invite lại dù chưa đủ 30days
+FAL-778			dungtt,tunglv	Waiting To Test	[Bug][SEO] Cần remove slot của store đã join multistore plan khi store đó có thay đổi plan khác
+FAL-779			dungtt,tunglv	Waiting To Test	[BUG][SEO] Multistore: Store join multistore  plan > upgrade plan khác nhưng bị downgrade về Free
+FAL-782			tunglv	Archived	[BUG][SEO] Pricing: nút Get the bundle và Get the plan (Multistore) bấm không phản hồi, không tạo được subscription
+FAL-784			tunglv	To Do	[BUG][SEO] All-in-one bundle: thẻ gói thiếu dòng loại trừ Blog Advanced, chỉ ghi mỗi SEO Enterprise
+FAL-786	8		tunglv	Waiting To Live	[DEV][SEO] Optimize 4tr ảnh store sjcd8z-4y (Enterprise) — luồng riêng cho catalog cực lớn
+FAL-787			tranggt,minhpt	To Do	[BUG][AEO] MCP list_markdown_pages luôn trả published=true và custom=false, ẩn trang xong tool vẫn báo đang publish
+FAL-788			tranggt,minhpt	To Do	[BUG][AEO] MCP update_additional_file xoá sạch nội dung file khi không gửi content, dù mô tả tool nói giữ nguyên
+FAL-789			tranggt,minhpt	To Do	[BUG][AEO] MCP rate limiter không kích hoạt — 350 request/24s và 45 lần gọi token/2s đều không bị chặn
+FAL-790			tranggt,minhpt	To Do	[BUG][AEO] MCP get_ai_referral_stats nhận ngày rác và trả 0 visit như thật (bên Sidekick có kiểm, bên MCP không)
+FAL-791			tranggt,minhpt	To Do	[BUG][AEO] Màn hình xin quyền MCP mô tả thiếu: aeo:write ghi là chạy sync và rescan, thực tế cho xoá file và sửa nội dung
+FAL-792			tranggt,minhpt	To Do	[BUG][AEO] Cold start 10,6s ở /.well-known và 9,3s ở /sidekick — lần hỏi Sidekick đầu tiên không với được tool
+FAL-793			tunglv	To Do	[BUG][SEO] All-in-one bundle: ngày thu tiền ở AI Product Copy cộng thêm 30 ngày mỗi lần gọi API và lệch 1 tháng so với SEO Suite
+FAL-794			tunglv	To Do	[BUG][SEO] Mua All-in-one bundle xong thẻ gói biến mất khỏi trang giá, app chỉ hiện Current plan: Pro nhưng bill $49
+FAL-795			tunglv	To Do	[BUG][SEO] Đang dùng All-in-one bundle vẫn bấm được Get the plan của gói Multistore, không có cảnh báo hai gói không cộng dồn
+FAL-796			tunglv	To Do	[BUG][SEO] Store đã vào gói All-in-one bundle nhưng mở app còn lại vẫn bị màn onboarding chặn, không thấy Pro ngay
+FAL-797			tunglv	To Do	[DEV][SEO] Bỏ qua onboarding cho app chưa qua onboarding nhưng store đã join gói All-in-one bundle
+FAL-798			tranggt,minhpt	To Do	[BUG][AEO] Branch FAL-618 xoá chốt CRM login-as của /dev_zone — merchant thường mở được Control Panel và tự bật cờ nội bộ
+FAL-799			tunglv	To Do	[BUG][SEO] Khối Your bundle báo sai trạng thái cài đặt: app đã cài vẫn ghi Not installed yet và hiện nút Install
+FAL-800			tunglv	To Do	[BUG][SEO] App Blog: tiêu đề trang Subscription hiện "Free Trial - NaN days left" dù store đang dùng gói All-in-one bundle trả phí
+FAL-801			tunglv	To Do	[BUG][SEO] App Blog: gói Advanced vẫn mời "Free for 7 days" dù store đã trả phí qua gói All-in-one bundle
+FAL-802			tunglv	To Do	[BUG][SEO] Store đang có gói Multistore duyệt charge All-in-one bundle $49 nhưng plan không đổi, Blog vẫn ở Free

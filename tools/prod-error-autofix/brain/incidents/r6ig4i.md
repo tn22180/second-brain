@@ -3,43 +3,37 @@ service: api
 message: [handleError] Unauthenticated TypeError: Cannot create property 'shopifyTopLevelOAuth' on number '4'
 app: BLOG
 repo: blogs
-date: 2026-08-17T22:04:22.275Z
-status: inconclusive
-attempt: 1
+date: 2026-08-28T02:50:10.181Z
+status: fix_disabled
+attempt: 2
 
 # BLOG · api · r6ig4i
 
-**Outcome.** MR not opened: push_failed
+**Outcome.** fix lane disabled — analysed and reported, no MR
 
-**Root cause.** @avada/core 4.8.2's setSession writes a property onto whatever decryptText('__session') returns without checking it is an object, so a client-supplied __session cookie that decrypts+JSON.parses to a scalar (here the number 4) makes `cookies['shopifyTopLevelOAuth'] = 1` throw TypeError in strict mode and the api function answers GET /api/shopify/block with 500.
+**Root cause.** @avada/core 4.8.2's setSession assigns a property onto whatever decryptText('__session') returns without checking it is an object, so the browser's __session cookie for this merchant — which decrypts and JSON.parses to the primitive number 4 — makes `cookies['shopifyTopLevelOAuth'] = 1` throw TypeError in the strict-mode module, and GET /api/settings answers 500.
 
-**Mechanism.** GET /api/shopify/block (routes/api.js:192) enters verifyEmbedRequest mounted at handlers/api.js:88. verifyToken.js:119 calls setSession(ctx, 1, TOP_LEVEL_OAUTH_COOKIE_NAME) once checkIfActiveAccessToken passes. setSession (cookiesHelper.js:15) decrypts the browser's __session with the fixed key 'avada-session-identifier'; decryptText (hashHelper.js:26) returns JSON.parse(bytes) unguarded, and for this cookie the parse yielded the number 4 instead of a session object. cookiesHelper.js:16 then does cookies['shopifyTopLevelOAuth'] = 1 on that number — the file is 'use strict', so property creation on a primitive throws TypeError 'Cannot create property shopifyTopLevelOAuth on number 4'. Nothing in verifyToken catches it, so it reaches errorService.handleError with no ctx.state.user ('Unauthenticated') and the request 500s. Same defect family as fingerprints 1qodvk0 (BLOG api, 2026-08-17) and h9cev0 / 2t79bo (SEO apigen2).
+**Mechanism.** GET /api/settings (packages/functions/src/routes/api.js:216) has no ctx.state.user, so packages/functions/src/handlers/api.js:90 hands the request to verifyEmbedRequest. verifyToken's active-token branch calls setSession(ctx, 1, TOP_LEVEL_OAUTH_COOKIE_NAME) at node_modules/@avada/core/build/helpers/verifyEmbedRequest/verifyToken.js:119. setSession (cookiesHelper.js:15) decrypts the client-supplied __session with the fixed key 'avada-session-identifier'; decryptText (hashHelper.js:26) returns `JSON.parse(bytes.toString(...))` unguarded, and for this cookie the parse produced the number 4, not a session object. cookiesHelper.js:16 then executes `cookies[key] = value` on that number — the file is "use strict" (cookiesHelper.js:1), so property creation on a primitive throws TypeError "Cannot create property 'shopifyTopLevelOAuth' on number '4'". Nothing in verifyToken wraps the call, so it propagates to errorService.handleError with no ctx.state.user, logged as [handleError] Unauthenticated at 05:04:17.232058Z and as [unhandledError] GET /api/settings 500 at 05:04:17.221430Z — one request, two lines. Same defect family as recorded fingerprints r6ig4i (attempt 1, GET /api/shopify/block), 1qodvk0 on BLOG api and h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / 3l54x4 / 1g4bhm7 on SEO apigen2.
 
-Confidence: `medium`
+Confidence: `high`
 
 ## Code
-- `node_modules/@avada/core/build/helpers/cookiesHelper.js:16` — the throwing line: cookies[key] = value with cookies = 4, in a 'use strict' module
+- `node_modules/@avada/core/build/helpers/cookiesHelper.js:16` — the throwing line: cookies[key] = value with cookies === 4, in a "use strict" module
+- `node_modules/@avada/core/build/helpers/cookiesHelper.js:15` — setSession decrypts the client-supplied __session cookie and never type-checks the result before line 16
 - `node_modules/@avada/core/build/helpers/hashHelper.js:26` — decryptText returns JSON.parse(...) unguarded, so any JSON scalar (4) is handed back as the session object
-- `node_modules/@avada/core/build/helpers/verifyEmbedRequest/verifyToken.js:119` — the caller in the stack: setSession(ctx, 1, TOP_LEVEL_OAUTH_COOKIE_NAME) on the active-token branch, no try/catch
-- `packages/functions/src/handlers/api.js:88` — app mounts verifyEmbedRequest here for every /api/* request that has no ctx.state.user — the only app-owned point where a bad __session can be rejected before @avada/core touches it
-- `packages/functions/src/routes/api.js:192` — GET /shopify/block, the endpoint named in the [unhandledError] line
+- `node_modules/@avada/core/build/helpers/verifyEmbedRequest/verifyToken.js:119` — the caller named in the stack: setSession(ctx, 1, TOP_LEVEL_OAUTH_COOKIE_NAME) on the active-token branch, no try/catch
+- `packages/functions/src/handlers/api.js:90` — app mounts verifyEmbedRequest for every /api/* request without ctx.state.user — the app-owned point where a malformed __session can be rejected before @avada/core touches it
+- `packages/functions/src/handlers/api.js:63` — second entry into the same code path: shopifyCharge is given verifyEmbedRequest(verifyEmbedConfig) as verifyMiddleware, so a guard placed only at line 90 would miss it
+- `packages/functions/src/routes/api.js:216` — GET /settings, the endpoint named in the [unhandledError] line
 
 ## Evidence
-- 2 matching entries: `resource.labels.service_name="api" AND timestamp>="2026-08-17T21:24:51.802Z" AND timestamp<="2026-08-17T21:54:51.802Z" AND severity>=ERROR AND jsonPayload.message:"shopifyTopLevelOAuth"`
-- 2 matching entries: `resource.labels.service_name="api" AND timestamp>="2026-08-17T00:00:00Z" AND timestamp<="2026-08-18T00:00:00Z" AND jsonPayload.message:"Cannot create property"`
-- 25 matching entries: `resource.labels.service_name="mcp" AND timestamp>="2026-08-16T00:00:00Z" AND timestamp<="2026-08-18T00:00:00Z"`
+- 2 matching entries: `resource.labels.service_name="api" AND timestamp>="2026-08-27T04:49:19.596Z" AND timestamp<="2026-08-27T05:19:19.596Z" AND severity>=ERROR AND jsonPayload.message:"shopifyTopLevelOAuth"`
+- 2 matching entries: `resource.labels.service_name="api" AND timestamp>="2026-08-20T00:00:00Z" AND timestamp<="2026-08-28T00:00:00Z" AND jsonPayload.message:"Cannot create property"`
+- 3 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api" OR resource.labels.job_name="api") AND timestamp>="2026-08-27T04:49:19.596Z" AND timestamp<="2026-08-27T05:19:19.596Z" AND severity>=ERROR`
 
 ## Job
 - analyze rounds: 1
-- cost: $4.37
-- fix commit: `7c47727f53e0f00308ed40104ff198e3806e8402`
-- tests: 388 tests, 2 failing · baseline 2 failing · reproduce test fails without the fix (suite load)
-
-```
-packages/functions/src/handlers/api.js   | 2 ++
- packages/functions/src/handlers/apiV2.js | 2 ++
- 2 files changed, 4 insertions(+)
-```
+- cost: $1.22
 
 ## Verdict
 

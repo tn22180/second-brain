@@ -1,0 +1,384 @@
+{
+  "records": [
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "latency_s": 2.04,
+        "ok": true,
+        "output": "<h2>Aria Suede Ankle Boots</h2>\n\n<p>Elevate your everyday style with the Aria Suede Ankle Boots, the perfect blend of chic sophistication and effortless comfort. Crafted from luxuriously soft, premium suede, these boots offer a touch of understated elegance to any outfit. Designed with the modern woman in mind, the Aria boasts a flattering silhouette that pairs beautifully with everything from your favorite denim to flowing dresses.</p>\n\n<p>Experience unparalleled comfort with a cushioned footbed and a sturdy yet stylish heel, making them ideal for all-day wear. The versatile design of these <mark>suede ankle boots for women</mark> makes them a must-have addition to your wardrobe. Whether you're heading to brunch, a casual day out, or a night on the town, the Aria boots will ensure you step out in confidence and style.</p>\n\n<ul>\n    <li>Premium, soft suede upper</li>\n    <li>Comfortable cushioned footbed</li>\n    <li>Durable and stylish heel</li>\n    <li>Versatile ankle height</li>\n    <li>Easy side zipper closure</li>\n    <li>Available in a range of sophisticated colors</li>\n</ul>",
+        "cost": 0.000102168,
+        "completion_tokens": 237,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 237,
+          "total_tokens": 321,
+          "cost": 0.000102168,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001032,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 9.48e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 154,
+        "tags_used": [
+          "h2",
+          "li",
+          "mark",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "mark"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.226,
+          "cost": 0.0003069,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, persuasive, and adheres to all constraints perfectly.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, persuasive, and adheres to all constraints perfectly.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.823,
+          "cost": 0.000293436,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Well-written copy with natural keyword use; minor issue with disallowed <mark> tag.",
+          "raw": "{\"constraints\":5,\"html_validity\":4,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Well-written copy with natural keyword use; minor issue with disallowed <mark> tag.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.355,
+          "cost": 0.00105138,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 2,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Word count ~210 is within range, but <mark> tag is not in allowed list, and keyword integration uses forbidden tag making it awkward and non-natural.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 2, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Word count ~210 is within range, but <mark> tag is not in allowed list, and keyword integration uses forbidden tag making it awkward and non-natural.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "latency_s": 4.55,
+        "ok": true,
+        "output": "<h2>Aria Suede Ankle Boots</h2>\n<p>Step into effortless style and comfort with the Aria Suede Ankle Boots, designed exclusively for women who appreciate both fashion and functionality. Crafted from premium suede, these boots offer a soft, luxurious texture that elevates any outfit. Whether you're dressing up for a night out or adding a chic touch to your everyday look, the Aria boots are the perfect choice.</p>\n<p>These suede ankle boots for women feature a versatile design that pairs seamlessly with jeans, skirts, and dresses alike. The sturdy yet elegant block heel provides just the right amount of lift, ensuring you stay comfortable all day long. With a convenient side zipper, slipping these boots on and off is effortless, making them a practical addition to your wardrobe.</p>\n<ul>\n  <li>Premium suede material for a sophisticated finish</li>\n  <li>Comfortable block heel for all-day wear</li>\n  <li>Secure side zipper closure for easy on and off</li>\n  <li>Timeless silhouette suitable for various outfits</li>\n  <li>Available in multiple colors to match your style</li>\n</ul>\n<p>Elevate your footwear collection with the Aria Suede Ankle Boots \u2014 the ultimate blend of style, comfort, and versatility in suede ankle boots for women.</p>",
+        "cost": 0.000479556,
+        "completion_tokens": 279,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 95,
+          "completion_tokens": 279,
+          "total_tokens": 374,
+          "cost": 0.000479556,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004844,
+            "upstream_inference_prompt_cost": 3.8e-05,
+            "upstream_inference_completions_cost": 0.0004464
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 186,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.327,
+          "cost": 0.000329175,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.305,
+          "cost": 0.00104049,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "latency_s": 1.762,
+        "ok": true,
+        "output": "<h2>Vortex Pro 6-Speed Stand Mixer</h2>\n<p>Unleash your inner baker with the Vortex Pro 6-Speed Stand Mixer. This powerful and versatile appliance is designed to make your baking endeavors effortless and enjoyable. Whether you're whipping up delicate meringues, kneading dense bread dough, or creaming butter and sugar for cookies, the Vortex Pro handles it all with precision and ease. Its robust motor and durable construction ensure long-lasting performance, making it an indispensable tool for any home baker.</p>\n<p>Experience superior mixing results thanks to the planetary action, which ensures all ingredients are thoroughly incorporated. The intuitive 6-speed control allows you to adjust the mixing speed for any recipe, from a gentle stir to a vigorous whip. This makes it the perfect <strong>stand mixer for baking</strong>, offering unparalleled control for all your culinary creations.</p>\n<ul>\n<li>Powerful 500-watt motor for efficient mixing.</li>\n<li>6-speed settings with a pulse function for versatile control.</li>\n<li>Planetary mixing action for thorough ingredient incorporation.</li>\n<li>Large 5-quart stainless steel bowl for family-sized batches.</li>\n<li>Includes dough hook, whisk, and flat beater attachments.</li>\n<li>Tilt-head design for easy access to the bowl and attachments.</li>\n<li>Non-slip feet for stability during operation.</li>\n</ul>",
+        "cost": 0.000121572,
+        "completion_tokens": 286,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 286,
+          "total_tokens": 370,
+          "cost": 0.000121572,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001228,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 0.0001144
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 186,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.48,
+          "cost": 0.000325809,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, adheres to all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, adheres to all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 5.068,
+          "cost": 0.000302148,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Meets all requirements with natural keyword use and well-structured, persuasive copy.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Meets all requirements with natural keyword use and well-structured, persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.176,
+          "cost": 0.00109593,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent output; keyword naturally integrated in context, though wrapped in <strong> tags which weren't explicitly allowed\u2014minor technical issue that doesn't significantly impact quality.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent output; keyword naturally integrated in context, though wrapped in <strong> tags which weren't explicitly allowed\u2014minor technical issue that doesn't significantly impact quality.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "latency_s": 4.498,
+        "ok": true,
+        "output": "<h2>Vortex Pro 6-Speed Stand Mixer</h2>\n<p>Elevate your baking experience with the Vortex Pro 6-Speed Stand Mixer, the ultimate stand mixer for baking enthusiasts and professionals alike. Designed to handle everything from delicate cake batters to dense doughs, this powerful and versatile mixer ensures perfect results every time. Its robust motor and six adjustable speeds provide precise control, allowing you to tailor the mixing process to your recipe\u2019s needs.</p>\n<p>Whether you\u2019re whipping egg whites, kneading bread dough, or mixing cookie batter, the Vortex Pro delivers consistent performance with minimal effort. The sleek design and durable stainless steel bowl make cleanup quick and easy, while the included attachments expand your culinary possibilities.</p>\n<ul>\n  <li>Powerful motor with 6 adjustable speeds for optimal mixing control</li>\n  <li>Stainless steel mixing bowl with a generous 5-quart capacity</li>\n  <li>Includes dough hook, flat beater, and wire whisk attachments</li>\n  <li>Durable, easy-to-clean design perfect for daily use</li>\n  <li>Ideal stand mixer for baking cakes, bread, cookies, and more</li>\n</ul>\n<p>Upgrade your kitchen with the Vortex Pro 6-Speed Stand Mixer and enjoy effortless mixing that brings your baking creations to life with professional-quality results.</p>",
+        "cost": 0.000488664,
+        "completion_tokens": 285,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 94,
+          "completion_tokens": 285,
+          "total_tokens": 379,
+          "cost": 0.000488664,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004936,
+            "upstream_inference_prompt_cost": 3.76e-05,
+            "upstream_inference_completions_cost": 0.000456
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 179,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.166,
+          "cost": 0.000338382,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output adheres to all constraints, uses valid HTML, integrates the keyword naturally, and provides high-quality, persuasive copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output adheres to all constraints, uses valid HTML, integrates the keyword naturally, and provides high-quality, persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.353,
+          "cost": 0.00108108,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated twice, no leakage, persuasive and professional tone throughout.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated twice, no leakage, persuasive and professional tone throughout.\"}\n```"
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "google/gemini-2.5-flash-lite": {
+      "cases_attempted": 2,
+      "failures": 0,
+      "avg_cost_per_call": 0.00011187,
+      "avg_latency_s": 1.901,
+      "avg_completion_tokens": 261.5,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.6,
+      "avg_judge_spread": 1.1,
+      "spread_unreliable": false,
+      "word_range_compliance": "2/2",
+      "allowed_tags_compliance": "0/2"
+    },
+    "openai/gpt-4.1-mini": {
+      "cases_attempted": 2,
+      "failures": 0,
+      "avg_cost_per_call": 0.00048411,
+      "avg_latency_s": 4.524,
+      "avg_completion_tokens": 282.0,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 5.0,
+      "avg_judge_spread": 0.0,
+      "spread_unreliable": false,
+      "word_range_compliance": "2/2",
+      "allowed_tags_compliance": "2/2"
+    }
+  },
+  "total_spend": 0.00735669,
+  "calls_made": 14,
+  "aborted_on_spend_cap": false,
+  "models": [
+    "google/gemini-2.5-flash-lite",
+    "openai/gpt-4.1-mini"
+  ],
+  "judges": [
+    "google/gemini-2.5-flash",
+    "openai/gpt-4.1-mini",
+    "anthropic/claude-haiku-4.5"
+  ]
+}

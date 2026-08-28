@@ -1,0 +1,47 @@
+[
+  {
+    "id": "apc-01-boots",
+    "system": "You are an e-commerce copywriter. Return ONLY HTML. No markdown, no commentary, no <html>/<body> wrapper.",
+    "user": "Write a product description in English for the product titled \"Aria Suede Ankle Boots\". Integrate the SEO keyword \"suede ankle boots for women\" naturally. Length: 120-250 words. Use <h2>, <p>, and <ul><li> only.",
+    "keyword": "suede ankle boots for women",
+    "min_words": 120,
+    "max_words": 250,
+    "allowed_tags": ["h2", "p", "ul", "li"]
+  },
+  {
+    "id": "apc-02-standmixer",
+    "system": "You are an e-commerce copywriter. Return ONLY HTML. No markdown, no commentary, no <html>/<body> wrapper.",
+    "user": "Write a product description in English for the product titled \"Vortex Pro 6-Speed Stand Mixer\". Integrate the SEO keyword \"stand mixer for baking\" naturally. Length: 120-250 words. Use <h2>, <p>, and <ul><li> only.",
+    "keyword": "stand mixer for baking",
+    "min_words": 120,
+    "max_words": 250,
+    "allowed_tags": ["h2", "p", "ul", "li"]
+  },
+  {
+    "id": "apc-03-yogamat",
+    "system": "You are an e-commerce copywriter. Return ONLY HTML. No markdown, no commentary, no <html>/<body> wrapper.",
+    "user": "Write a product description in English for the product titled \"TerraFlow Non-Slip Yoga Mat\". Integrate the SEO keyword \"non-slip yoga mat\" naturally. Length: 120-250 words. Use <h2>, <p>, and <ul><li> only.",
+    "keyword": "non-slip yoga mat",
+    "min_words": 120,
+    "max_words": 250,
+    "allowed_tags": ["h2", "p", "ul", "li"]
+  },
+  {
+    "id": "apc-04-dogbed",
+    "system": "You are an e-commerce copywriter. Return ONLY HTML. No markdown, no commentary, no <html>/<body> wrapper.",
+    "user": "Write a product description in English for the product titled \"Cloudnest Orthopedic Dog Bed\". Integrate the SEO keyword \"orthopedic dog bed for large dogs\" naturally. Length: 120-250 words. Use <h2>, <p>, and <ul><li> only.",
+    "keyword": "orthopedic dog bed for large dogs",
+    "min_words": 120,
+    "max_words": 250,
+    "allowed_tags": ["h2", "p", "ul", "li"]
+  },
+  {
+    "id": "apc-05-deskLamp",
+    "system": "You are an e-commerce copywriter. Return ONLY HTML. No markdown, no commentary, no <html>/<body> wrapper.",
+    "user": "Write a product description in English for the product titled \"Lumen Arc LED Desk Lamp\". Integrate the SEO keyword \"led desk lamp with adjustable brightness\" naturally. Length: 120-250 words. Use <h2>, <p>, and <ul><li> only.",
+    "keyword": "led desk lamp with adjustable brightness",
+    "min_words": 120,
+    "max_words": 250,
+    "allowed_tags": ["h2", "p", "ul", "li"]
+  }
+]

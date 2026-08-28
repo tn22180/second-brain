@@ -189,3 +189,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Beszel chốt làm monitoring máy cho fleet-control, nhúng qua API vào detail từng máy + logo project; homepage (gethomepage) đã loại
 - [ ] (×1) Commit message viết ra scratchpad `/private/tmp/claude-*/scratchpad/` không sống qua turn — `git commit -F` fail "could not read log file"
 - [ ] (×1) seo có 3 hướng vá security cùng lúc: bind integration key theo shop, deny client writes 5 collection per-shop, cross-app token đọc từ env (đều Draft, chưa merge)
+
+### memory candidates 2026-08-28
+- [ ] (×1) Blog public API cho TS AI Agent: shop doc resolve từ `ctx.state.user`, key cũ cần backfill script (blogs `f321b3088`, FAL-757)
+- [ ] (×1) Merchant vẫn self-serve tạo integration key được — bind-shop không chặn đường tạo, chỉ chặn dùng chéo
+- [ ] (×1) Gen integration key cần `keys.json` local, thiếu file → `ENOENT`, không phải lỗi credential
+- [ ] (×1) Point sprint FAL bỏ qua task có Issue Links (point gộp vào task tổng) và task của techlead Lâm; point 0 = để trống trên Jira
+- [ ] (×1) Billing report tự động trượt 2 ngày (26-27/08) không có alert — trùng pattern gcloud auth hết hạn

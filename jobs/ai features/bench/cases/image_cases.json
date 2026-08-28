@@ -1,0 +1,17 @@
+[
+  {
+    "id": "img-01-skincare-flatlay",
+    "prompt": "A blog featured image, 16:9 aspect ratio, top-down flat lay of minimalist skincare bottles on a marble surface with soft natural light and a small green plant, clean e-commerce editorial style, no text, no watermark.",
+    "target_aspect": "16:9"
+  },
+  {
+    "id": "img-02-sneaker-hero",
+    "prompt": "A blog featured image, 16:9 aspect ratio, a single white running sneaker floating over a gradient studio background with dramatic side lighting and soft shadow, product photography style, no text, no watermark.",
+    "target_aspect": "16:9"
+  },
+  {
+    "id": "img-03-coffee-lifestyle",
+    "prompt": "A blog featured image, 16:9 aspect ratio, a cozy lifestyle scene of a ceramic coffee mug on a wooden table near a rainy window, warm tones, shallow depth of field, no text, no watermark.",
+    "target_aspect": "16:9"
+  }
+]
