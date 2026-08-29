@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1c146y6` · 2026-08-29 · SEO · apigen2 · GET /api/shop-locales returns 500 for shop 0ltudxG72pPOc2VBiCJh because shopController.getShopLocales issues i · — · fix_disabled
 - `493wip` · 2026-08-28 · BLOG · subscriberenewsubscribertokenshandler · Not a request failure: redis.service escalates a self-healing idle-socket ECONNRESET to severity=ERROR on a fi · — · fix_disabled
 - `1bdvcyp` · 2026-08-28 · BLOG · proxy · Shop aDzmkG8VhlzTJqE6koko's Shopify Admin GraphQL cost bucket was exhausted (THROTTLED) for ~6 minutes, and be · — · fix_disabled
 - `y3m984` · 2026-08-28 · BLOG · api · setupTemplates' asset.get catch returns undefined for every non-404 failure, so the Shopify REST 429 on the re · — · fix_disabled
