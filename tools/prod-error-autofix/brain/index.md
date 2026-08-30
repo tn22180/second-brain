@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `x5vqr6` · 2026-08-29 · SEO · apisagen2 · The offline Shopify access token stored for shop q890gzQb2oI5TAvF2k86 (pqrqfr-j0.myshopify.com) is rejected by · — · fix_disabled
 - `1c146y6` · 2026-08-29 · SEO · apigen2 · GET /api/shop-locales returns 500 for shop 0ltudxG72pPOc2VBiCJh because shopController.getShopLocales issues i · — · fix_disabled
 - `493wip` · 2026-08-28 · BLOG · subscriberenewsubscribertokenshandler · Not a request failure: redis.service escalates a self-healing idle-socket ECONNRESET to severity=ERROR on a fi · — · fix_disabled
 - `1bdvcyp` · 2026-08-28 · BLOG · proxy · Shop aDzmkG8VhlzTJqE6koko's Shopify Admin GraphQL cost bucket was exhausted (THROTTLED) for ~6 minutes, and be · — · fix_disabled
@@ -410,7 +411,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `ha4bhr` · 2026-08-03 · BLOG · proxy · Shopify's Admin GraphQL answered ezarc-tools.myshopify.com with an in-band GraphQL error body ("Internal error · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
 - `vvgnr` · 2026-08-03 · BLOG · apiv2 · OpenRouter answered HTTP 200 for the callModel stream and then emitted a 429 'google/gemini-2.5-flash-lite is  · — · inconclusive
 - `pmbm66` · 2026-08-03 · BLOG · apiv2 · OpenRouter returned its 429 'google/gemini-2.5-flash-lite is temporarily rate-limited upstream' as an in-band  · https://gitlab.com/avada/blogs/-/merge_requests/825 · mr_open
-- `3mppft` · 2026-08-12 · BLOG · api · no verified cause · — · inconclusive
+- `3mppft` · 2026-08-30 · BLOG · api · afterLoginService dereferences `shop.id` with no null guard (packages/functions/src/services/after-login.servi · — · fix_disabled
 - `nb3ce` · 2026-08-28 · SEO · apigen2 · getPromptCollection reads collection metafields over Shopify REST (shopify.metafield.list with metafield[owner · — · fix_disabled
 - `1ag0h4n` · 2026-08-03 · SEO · apigen2 · Duplicate of fingerprint h9cev0 (MR https://gitlab.com/avada/seo/-/merge_requests/2095 open, unmerged): the br · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
 - `ioi4d9` · 2026-08-03 · SEO · syncelasticsearchchunkgen2 · syncElasticsearchChunkGen2 is declared memory: '1GiB' with no `concurrency` override, so Cloud Run runs it at  · — · infra
