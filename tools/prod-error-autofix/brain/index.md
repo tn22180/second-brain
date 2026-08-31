@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `14y4p9m` · 2026-08-30 · SEO · apigen2 · apigen2 instance 00a41e8c1d80… was OOM-killed at 2026-08-30T13:28:17.644902Z ('Memory limit of 2048 MiB exceed · — · infra
 - `x5vqr6` · 2026-08-29 · SEO · apisagen2 · The offline Shopify access token stored for shop q890gzQb2oI5TAvF2k86 (pqrqfr-j0.myshopify.com) is rejected by · — · fix_disabled
 - `1c146y6` · 2026-08-29 · SEO · apigen2 · GET /api/shop-locales returns 500 for shop 0ltudxG72pPOc2VBiCJh because shopController.getShopLocales issues i · — · fix_disabled
 - `493wip` · 2026-08-28 · BLOG · subscriberenewsubscribertokenshandler · Not a request failure: redis.service escalates a self-healing idle-socket ECONNRESET to severity=ERROR on a fi · — · fix_disabled
@@ -377,7 +378,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `klsiut` · 2026-08-04 · SEO · apisagen2 · GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request  · — · inconclusive
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
-- `1h0gjn4` · 2026-08-14 · SEO · apigen2 · Shopify REST `metafield.list` answered HTTP 429 for shop f7gyAstbmRKIprVvNT24 during GET /api/analysis/page/69 · — · inconclusive
+- `1h0gjn4` · 2026-08-30 · SEO · apigen2 · Shopify REST answered HTTP 429 to getAllMetafields' `shopify.metafield.list` for shop sl3ZiH1q5RIjyZcXsLaa; pr · — · fix_disabled
 - `1mv41mw` · 2026-08-25 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
