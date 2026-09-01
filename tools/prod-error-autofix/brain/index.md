@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `lzwaid` · 2026-08-31 · BLOG · api · Shopify's Admin GraphQL answered the articleUpdate mutation with HTTP 2xx carrying a top-level `errors` array  · — · fix_disabled
+- `12re8xl` · 2026-08-31 · BLOG · api · Shopify's Admin GraphQL answered the articleUpdate mutation with HTTP 2xx and a top-level `errors` array (`ext · — · fix_disabled
+- `1ettj8o` · 2026-08-31 · BLOG · api · Shopify Admin GraphQL answered the articleUpdate mutation with a top-level `errors` array (INTERNAL_SERVER_ERR · — · fix_disabled
 - `14y4p9m` · 2026-08-30 · SEO · apigen2 · apigen2 instance 00a41e8c1d80… was OOM-killed at 2026-08-30T13:28:17.644902Z ('Memory limit of 2048 MiB exceed · — · infra
 - `x5vqr6` · 2026-08-29 · SEO · apisagen2 · The offline Shopify access token stored for shop q890gzQb2oI5TAvF2k86 (pqrqfr-j0.myshopify.com) is rejected by · — · fix_disabled
 - `1c146y6` · 2026-08-29 · SEO · apigen2 · GET /api/shop-locales returns 500 for shop 0ltudxG72pPOc2VBiCJh because shopController.getShopLocales issues i · — · fix_disabled
@@ -374,8 +377,8 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `ghv4ok` · 2026-08-04 · SEO · lighthouseauditrunnergen2 · Two of 62 lighthouseauditrunnerGen2 cold-start containers in the 15:30–16:30Z hour never bound :8080 and were  · — · infra
 - `yo3dfr` · 2026-08-12 · SEO · lighthouseauditrunnergen2 · Two distinct causes share this 30-minute window: the 2 alerted 503s are infra (cold-start containers exceeding · https://gitlab.com/avada/seo/-/merge_requests/2102 · mr_open
 - `1d6kx48` · 2026-08-22 · SEO · proxygen2 · Not a code defect: the single alerted 503 is a Cloud Run frontend-to-container connection error on proxygen2 i · — · infra
-- `3xz8u3` · 2026-08-04 · SEO · apisagen2 · no verified cause · — · inconclusive
-- `klsiut` · 2026-08-04 · SEO · apisagen2 · GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request  · — · inconclusive
+- `3xz8u3` · 2026-09-01 · SEO · apisagen2 · GET /apiSa/resource-report recomputes a full Shopify catalog scan inline on the request thread for shop ScPYO6 · — · fix_disabled
+- `klsiut` · 2026-09-01 · SEO · apisagen2 · GET /apiSa/resource-report recomputes a full Shopify catalog scan inline on the request thread with no cross-r · — · fix_disabled
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
 - `1h0gjn4` · 2026-08-30 · SEO · apigen2 · Shopify REST answered HTTP 429 to getAllMetafields' `shopify.metafield.list` for shop sl3ZiH1q5RIjyZcXsLaa; pr · — · fix_disabled

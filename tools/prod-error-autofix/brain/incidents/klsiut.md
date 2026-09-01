@@ -3,46 +3,45 @@ service: apisagen2
 message: HTTP 504 GET /apiSa/resource-report
 app: SEO
 repo: seo
-date: 2026-08-04T15:49:35.028Z
-status: inconclusive
-attempt: 1
+date: 2026-09-01T08:31:04.612Z
+status: fix_disabled
+attempt: 2
 
 # SEO · apisagen2 · klsiut
 
-**Outcome.** smoke gate reproduce_not_failing
+**Outcome.** fix lane disabled — analysed and reported, no MR
 
-**Root cause.** GET /apiSa/resource-report runs an unbounded, cache-miss-only full Shopify catalog scan inline on the request thread (countResourcesWithFaq), and on one large shop that scan exceeded apiSaGen2's configured timeoutSeconds: 540, so Cloud Run terminated 23 consecutive requests at exactly 540.000s.
+**Root cause.** GET /apiSa/resource-report recomputes a full Shopify catalog scan inline on the request thread with no cross-request dedup and no throttle retry, so shop ScPYO6AfYjTJVQrebap4's 43 overlapping calls in 30 minutes each ran the same serial 250-node-per-page GraphQL walk, exhausted that shop's Shopify GraphQL cost bucket (44 `Throttled` errors), and two of the surviving scans ran past apiSaGen2's `timeoutSeconds: 540` and were killed by Cloud Run as the alerted 504s.
 
-**Mechanism.** Every one of the 23 failing requests has latency 540.000xxx s, matching `timeoutSeconds: 540` on apiSaGen2 (packages/functions/src/handlers/exports/httpFunctions.js:54) to the millisecond — P4, this identifies which limit fired. The request log carries no application log line because the container was killed mid-request, so the controller's catch never ran (and SEO's logger is bare console/severity DEFAULT anyway — P7). The endpoint is analysisController.getResourceReport (routes/api.js:220). Its only unbounded work is countResourcesWithFaq (analysisController.js:262 → generateBulkService.js:258): a serial `while (hasNext)` cursor walk (generateBulkService.js:266) over all four resource types at FAQ_SCAN_PAGE_SIZE = 250 (generateBulkService.js:182), with no page cap, no time budget, no early exit. Each page is an expensive GraphQL document — 250 nodes each carrying `faqMetafields: metafields(namespace:"faqs", first: 250)` plus images and two metafield lookups (graphql/query/products/productsPaginated.graphql:23). Cost scales linearly with catalog size, and the same endpoint on the same service returned 200 in 0.096s–49.4s across 20 other calls in the preceding 24h — 49.4s at 06:46:58Z shows the scan already runs tens of seconds on a mid-size shop. Because saveResourceReportCache is only reached after the whole scan completes (analysisController.js:289), a shop that cannot finish inside 540s never writes a cache entry, so every retry rescans from scratch: 23 requests between 15:21:45Z and 15:26:10Z, all 540s, none cached, none succeeding. The 200 at 15:21:26Z (0.187s) was a cache hit; the 504 burst starts 19s later alongside a fresh app-boot burst (/apiSa/shops, /apiSa/subscription, /apiSa/blockLoader, /apiSa/shopify/shop?fragment=productVendors), i.e. a different, larger shop with a cold cache — inferred, since request logs carry no shopId. This is not instance sickness: during the same 540s window the same instances served ~120 other /apiSa/* requests (settings, revert/history, shopify/productsBestSeller, history-optimize) in 0.02–2.4s, and the only non-request log entries are Cloud Run AUTOSCALING/startup-probe INFO lines — no OOM, no cold-start failure.
+**Mechanism.** Both alerted requests have latency 539.999639370s and 539.999714555s against `timeoutSeconds: 540` declared on apiSaGen2 (packages/functions/src/handlers/exports/httpFunctions.js:55) — P4, that identifies which limit fired. Neither carries an application log line, because the container was killed mid-request so the controller's catch at analysisController.js:293 never ran. The route is analysisController.getResourceReport (routes/api.js:220). Its only unbounded work is countResourcesWithFaq (analysisController.js:263), a serial `while (hasNext)` cursor walk (generateBulkService.js:266) across all four resource types at FAQ_SCAN_PAGE_SIZE = 250 (generateBulkService.js:182), each page an expensive document where every one of the 250 nodes also pulls `faqMetafields: metafields(namespace:"faqs", first: 250)` plus images and two metafield lookups (graphql/query/products/productsPaginated.graphql:23). There is no page cap, no time budget and no early exit. Three code facts turn that into the observed 504 burst. (1) No single-flight: 43 requests to this one endpoint landed in the 30-minute window, latencies spread 0.168s (a cache hit) → 9.5s → 69s → 116s → 295s → 421s → 489s → 540s, i.e. every new call starts its own full scan while previous scans are still walking, and all of them share one shop's Shopify GraphQL cost bucket. (2) No throttle retry: analysisController.js:261 builds the client as `initShopify(shop, {autoLimit: true, maxRetries: 0})`, and shopifyService.js:77 resolves that to `autoLimit: autoLimit && !maxRetries` = true — but autoLimit is the REST leaky-bucket only. fetchTabPage issues a bare `shopify.graphql(...)` (generateBulkService.js:338) that is never wrapped in this repo's own `shopifyRetryGraphQL` (shopifyService.js:547), which exists precisely to back off on `extensions.code === 'THROTTLED'` (shopifyService.js:536-537). So one cost-limit hit aborts an entire multi-minute scan: 44 log lines `[getResourceReport] ScPYO6AfYjTJVQrebap4 Throttled RequestError: Throttled` with the stack in shopify-api-node/index.js:299 `maybeError`, all one shop. (3) No partial progress: saveResourceReportCache is reached only after the whole scan completes (analysisController.js:276 and :290), and the catch answers 200 with `success:false` (analysisController.js:294), so every throttled or timed-out attempt caches nothing and the FE's TanStack query (packages/assets/src/pages/AiContent/Report.js:23, duplicated in GenerateBulk.js:96) re-asks against an empty cache; the merchant's Scan button sets `refresh=true` (Report.js:35), which skips the cache check at analysisController.js:248 outright — 8 of the 43 requests carry it. Not instance sickness and not infra: the two kills are exact timeout matches, not OOM, and the window's non-request log lines are all this same Throttled family.
 
-Confidence: `medium`
+Confidence: `high`
 
 ## Code
-- `packages/functions/src/handlers/exports/httpFunctions.js:54` — apiSaGen2 declared timeoutSeconds: 540 — the exact limit the 23 requests hit (540.000s)
+- `packages/functions/src/handlers/exports/httpFunctions.js:55` — apiSaGen2 declares timeoutSeconds: 540 — the limit both alerted requests hit at 539.9996s
 - `packages/functions/src/routes/api.js:220` — route registration mapping /resource-report to analysisController.getResourceReport
-- `packages/functions/src/controllers/analysisController.js:262` — the request thread awaits the full catalog scan inline; only unbounded work in the handler
-- `packages/functions/src/services/generateBulkService.js:266` — unbounded `while (hasNext)` serial cursor loop over all four tabs — no page cap, no deadline, no early exit
+- `packages/functions/src/controllers/analysisController.js:263` — the request thread awaits the full catalog scan inline — the only unbounded work in the handler
+- `packages/functions/src/controllers/analysisController.js:261` — client built with maxRetries: 0; autoLimit is REST-only, so GraphQL cost throttling is unhandled
+- `packages/functions/src/services/generateBulkService.js:338` — fetchTabPage issues a bare shopify.graphql() — not wrapped in shopifyRetryGraphQL, so one THROTTLED kills the whole scan
+- `packages/functions/src/services/shopifyService.js:547` — shopifyRetryGraphQL — the repo's existing THROTTLED backoff helper this call path bypasses
+- `packages/functions/src/services/shopifyService.js:77` — autoLimit: autoLimit && !maxRetries — confirms autoLimit is on but covers REST buckets only
+- `packages/functions/src/services/generateBulkService.js:266` — unbounded serial `while (hasNext)` cursor loop over all four tabs — no page cap, no deadline, no early exit
 - `packages/functions/src/services/generateBulkService.js:182` — FAQ_SCAN_PAGE_SIZE = 250 — page size of the scan
-- `packages/functions/src/graphql/query/products/productsPaginated.graphql:23` — each of the 250 nodes per page also pulls metafields(first: 250), making each page expensive
-- `packages/functions/src/controllers/analysisController.js:289` — cache is written only after the entire scan finishes, so a timing-out shop never caches and every retry rescans
-- `packages/functions/src/controllers/analysisController.js:249` — RESOURCE_REPORT_CACHE_TTL 10min cache-hit path — explains the 0.096–0.19s 200s and why only cold-cache calls 504
+- `packages/functions/src/graphql/query/products/productsPaginated.graphql:23` — each of the 250 nodes per page also pulls metafields(first: 250), making each page very expensive in GraphQL cost points
+- `packages/functions/src/controllers/analysisController.js:290` — cache written only after the entire scan finishes, so a throttled or timed-out shop never caches and every retry rescans from scratch
+- `packages/functions/src/controllers/analysisController.js:293` — the catch that emitted the 44 '[getResourceReport] ScPYO6AfYjTJVQrebap4 Throttled' lines, answering 200 success:false instead of surfacing the failure
+- `packages/functions/src/controllers/analysisController.js:248` — refresh=true bypasses the 10-minute cache entirely — 8 of the 43 window requests carry it
+- `packages/assets/src/pages/AiContent/Report.js:35` — the Scan button sets refresh=true and refetches, adding a fresh full rescan per click
 
 ## Evidence
-- 23 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.requestUrl:"/apiSa/resource-report" AND httpRequest.status=504 AND timestamp>="2026-08-01T00:00:00Z"`
-- 20 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.requestUrl:"/apiSa/resource-report" AND httpRequest.status=200 AND timestamp>="2026-08-03T15:00:00Z" AND timestamp<="2026-08-04T16:00:00Z"`
-- 120 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.status=200 AND timestamp>="2026-08-04T15:21:45Z" AND timestamp<="2026-08-04T15:24:15Z" AND logName="projects/avada-seo/logs/run.googleapis.com%2Frequests"`
-- 8 matching entries: `resource.labels.service_name="apisagen2" AND timestamp>="2026-08-04T15:21:00Z" AND timestamp<="2026-08-04T15:35:00Z" AND NOT logName="projects/avada-seo/logs/run.googleapis.com%2Frequests"`
+- 2 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.requestUrl:"/apiSa/resource-report" AND httpRequest.status=504 AND timestamp>="2026-09-01T08:11:35Z" AND timestamp<="2026-09-01T08:41:35Z"`
+- 44 matching entries: `resource.labels.service_name="apisagen2" AND textPayload:"[getResourceReport]" AND textPayload:"Throttled" AND timestamp>="2026-09-01T08:11:35Z" AND timestamp<="2026-09-01T08:41:35Z"`
+- 43 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.requestUrl:"/apiSa/resource-report" AND timestamp>="2026-09-01T08:11:35Z" AND timestamp<="2026-09-01T08:41:35Z"`
+- 12 matching entries: `resource.labels.service_name="apisagen2" AND httpRequest.requestUrl:"/apiSa/resource-report" AND httpRequest.status=200 AND timestamp>="2026-09-01T07:30:00Z" AND timestamp<="2026-09-01T08:00:00Z"`
 
 ## Job
 - analyze rounds: 1
-- cost: $4.09
-- tests: 809 tests, 5 failing · baseline 5 failing · reproduce check did not pass
-
-```
-.../functions/src/controllers/analysisController.js     | 10 +++++++---
- packages/functions/src/services/generateBulkService.js  | 17 +++++++++++++++--
- 2 files changed, 22 insertions(+), 5 deletions(-)
-```
+- cost: $2.55
 
 ## Verdict
 
