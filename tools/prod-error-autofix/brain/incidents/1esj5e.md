@@ -1,46 +1,35 @@
 fingerprint: 1esj5e
 service: embedappgen2
-message: HTTP 504 GET /embed
+message: HTTP 500 GET /embed
 app: SEO
 repo: seo
-date: 2026-08-12T09:56:51.934Z
-status: inconclusive
-attempt: 1
+date: 2026-09-01T17:17:21.114Z
+status: infra
+attempt: 2
 
 # SEO · embedappgen2 · 1esj5e
 
-**Outcome.** smoke gate reproduce_not_failing
+**Outcome.** infra class — reported, no MR
 
-**Root cause.** packages/functions/src/handlers/embed.js serves every /embed page render by awaiting a single node-fetch of https://seo.apps.avada.io/embed-template.html with no timeout, no retry and no cache, so when that Firebase Hosting fetch stalls the request runs past embedAppGen2's undeclared (default 60s) Cloud Run timeout and returns 504.
+**Root cause.** Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during 2026-09-01T17:05–17:16Z made embedappgen2 cold-start containers fail the Cloud Run STARTUP TCP probe with DEADLINE_EXCEEDED, so Cloud Run answered the queued /embed requests with 503 readiness-check failures and rejected one at admission with a 500 at latency 0s.
 
-**Mechanism.** embedAppGen2 is declared at handlers/exports/httpFunctions.js:28 with memory/minInstances/region/vpc but no `timeoutSeconds`, so firebase-functions v2 applies the 60s default. Its only handler (handlers/embed.js:20-29) has exactly one await chain: fetch() of the static template (:25) then .text() (:26). node-fetch v2 has no default timeout, so a stalled upstream read blocks the whole request. All 4 504s in the alert window carry latency 59.998682s / 59.999631s / 60.000343s / 60.000358s — the 60s cap to the millisecond — with responseSize 72 and no application log line, because Cloud Run terminates the request before any catch runs. The same instance (001548f72936c15e6754…, the single minInstances:1 container serving all 67 requests in the window) logged 3 FetchError ECONNRESET pairs naming that exact URL at 01:49:02, 02:12:01 and 02:13:06Z — the reset variant of the same stalled upstream. Latency of the surviving 200s in the same window confirms upstream degradation rather than local CPU starvation: 13 of 63 successes took over 10s (max 46.99s) to serve one static HTML file. Secondary defect: the ECONNRESET variant does NOT surface as a 500 to the client — middleware/errorHandler.js:30 takes the non-JSON branch and calls ctx.render('error') without setting ctx.status, so Koa answers HTTP 200 with an error page; that is why the 24h request log holds 5 504s and zero 500s despite 6 ECONNRESET stderr lines. firebase.json:47 `cleanUrls: true` also makes the request cost two sequential Hosting round-trips (301 /embed-template.html -> /embed-template, which is why the error string names the extensionless URL), doubling the stall surface.
+**Mechanism.** embedAppGen2 is declared at packages/functions/src/handlers/exports/httpFunctions.js:29 with minInstances 1 in production and no concurrency override, so the ~30-request burst at 17:08Z forced Cloud Run to scale out revision embedappgen2-00352-hin. Five of those cold-start containers never bound :8080: five 'Default STARTUP TCP probe failed 1 time consecutively for container "worker" on port 8080. The instance was not started. Connection failed with status DEADLINE_EXCEEDED.' entries at 17:07:59, 17:11:02, 17:11:55, 17:13:51, 17:15:13Z. Two of those instance IDs map one-to-one onto the alerted 503s: instance 00a41e8c1d645eec… probe-failed at 17:11:02.117819Z and its queued request 17:05:59.877644Z returned 503 after 245.114122s; instance 00a41e8c1d322a6e… probe-failed at 17:11:55.924968Z and its queued request 17:06:36.046736Z returned 503 after 241.143920s — the request sat in the Cloud Run queue for the full container-start attempt and got 'The request failed because the instance failed the readiness check.' The alerted 500 (17:07:39.230297Z) carries latency 0s, responseSize absent and NO instanceId label, i.e. it never reached a container — an admission rejection during the same fault. The fault is not specific to this service: 45 STARTUP-probe failures across 13 distinct avada-seo Cloud Run services (changelogtriggers-shops 10, authsagen2 8, webhookpublishthemegen2 5, embedappgen2 5, bulkauditfixapplygen2 4, …) fired in the same 16:50–17:30Z window, matching the already-recorded 2026-09-01 platform fault fingerprints (1qj4dz7, 1sc23g3, 15bqjgv, 9y4a2r). Application code is excluded by measurement, not assumption: the /embed handler's only blocking I/O is the embed-template fetch at packages/functions/src/handlers/embed.js:34, and 68 requests in the same 30-minute window returned 200 at 0.11–0.52s, so that fetch was healthy throughout; stderr is empty (0 entries) and there is no application log line anywhere near the failures, consistent with the container dying before app code runs. The whole 5xx set for 24h is these five events (4× 503 at 241–258s, 1× 500 at 0s), all inside 17:05:59–17:09:49Z.
 
-Confidence: `high`
+Confidence: `high` · infra class, not auto-fixed
 
 ## Code
-- `packages/functions/src/handlers/embed.js:25` — The only blocking I/O in the handler: fetch(`https://${appConfig.baseUrl}/embed-template.html`) with no AbortController/timeout, no retry, no cache — one outbound HTTPS call per page render.
-- `packages/functions/src/handlers/embed.js:26` — await embedData.text() — the second half of the same un-timeboxed read; the ECONNRESET stack lands on node-fetch's response stream.
-- `packages/functions/src/handlers/exports/httpFunctions.js:28` — embedAppGen2 = onRequest({memory, minInstances, region, ...vpcSettings}) declares no timeoutSeconds, so the gen2 default 60s applies — the exact 60.000s latency of all 5 504s in 24h.
-- `packages/functions/src/middleware/errorHandler.js:30` — Non-JSON branch renders the error view without assigning ctx.status, so the ECONNRESET failures answer 200 with an error page instead of 5xx — they never appear in httpRequest.status>=500.
-- `firebase.json:47` — cleanUrls: true makes /embed-template.html a 301 to /embed-template, so each render is two sequential Hosting round-trips; the error message names the redirected URL.
+- `packages/functions/src/handlers/exports/httpFunctions.js:29` — embedAppGen2 = onRequest({memory:'1GiB', minInstances: isProduction ? 1 : 0, region, ...vpcSettings}) — one warm instance, no concurrency cap, so a request burst forces the cold starts that the platform fault then killed at the STARTUP probe.
+- `packages/functions/src/handlers/embed.js:34` — The handler's only blocking I/O (fetch of the embed template). Named to exclude it: 68 requests in the same window served 200 in 0.11–0.52s, so this path was not the cause of these five 5xx.
 
 ## Evidence
-- 4 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-08-07T01:47:06.245Z" AND timestamp<="2026-08-07T02:17:06.245Z" AND logName:"requests" AND httpRequest.status>=500`
-- 6 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-08-07T01:47:06.245Z" AND timestamp<="2026-08-07T02:17:06.245Z" AND textPayload:"ECONNRESET"`
-- 67 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-08-07T01:47:06.245Z" AND timestamp<="2026-08-07T02:17:06.245Z" AND logName:"requests"`
-- 5 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-08-06T02:17:06Z" AND timestamp<="2026-08-07T02:17:06Z" AND logName:"requests" AND httpRequest.status>=500`
+- 5 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-09-01T16:57:23.113Z" AND timestamp<="2026-09-01T17:27:23.113Z" AND textPayload:"STARTUP TCP probe failed"`
+- 45 matching entries: `resource.type="cloud_run_revision" AND timestamp>="2026-09-01T16:50:00Z" AND timestamp<="2026-09-01T17:30:00Z" AND textPayload:"STARTUP TCP probe failed"`
+- 5 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-08-31T17:27:23Z" AND timestamp<="2026-09-01T17:27:23Z" AND logName:"requests" AND httpRequest.status>=500`
+- 68 matching entries: `(resource.labels.service_name="embedappgen2") AND timestamp>="2026-09-01T16:57:23.113Z" AND timestamp<="2026-09-01T17:27:23.113Z" AND logName:"requests" AND httpRequest.status=200`
 
 ## Job
-- analyze rounds: 1
-- cost: $4.22
-- tests: 927 tests, 6 failing · baseline 6 failing · reproduce check did not pass
-
-```
-packages/functions/src/handlers/embed.js           | 58 ++++++++++++++++++++--
- .../src/handlers/exports/httpFunctions.js          |  1 +
- packages/functions/src/middleware/errorHandler.js  |  1 +
- 3 files changed, 56 insertions(+), 4 deletions(-)
-```
+- analyze rounds: 2
+- cost: $2.81
 
 ## Verdict
 

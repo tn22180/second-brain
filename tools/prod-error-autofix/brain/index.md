@@ -7,6 +7,84 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `xg1b4z` · 2026-09-02 · SEO · apigen2 · Shopify's Admin REST answered 400 {"error":"app_not_installed"} to the @avada/core `shopifyCharge` middleware  · — · fix_disabled
+- `1ln0r66` · 2026-09-02 · BLOG · api · A single transient GCS read timeout on the article-content blob articles/DwpmAlCKmCX4PyGrvcJ5/618667639131/en/ · — · fix_disabled
+- `zfngxj` · 2026-09-02 · SEO · apigen2 · GET /api/sitemaps/subSitemaps returned 500 twice for the shop on custom domain allsaints.hk because trace-redi · — · fix_disabled
+- `rkqy9z` · 2026-09-01 · BLOG · api · Not a code defect: one warm api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) los · — · infra
+- `iys335` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / z87lko / dp63np / ds0z0c / · — · infra
+- `1qpf53w` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `a2sfer` · 2026-09-01 · BLOG · api · Infra, not code: one warm api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) stopp · — · infra
+- `51ju23` · 2026-09-01 · BLOG · api · Infra, not code: one warm api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) lost  · — · infra
+- `1nhj0su` · 2026-09-01 · BLOG · api · The alerted 504 on GET /api/competitors is collateral from one wedged api container: instance 00a41e8c1d37609e · — · infra
+- `9gr0tm` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `1x259rc` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `xe6pyj` · 2026-09-01 · BLOG · api · Infra, not code: one api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) lost its o · — · infra
+- `jgz6px` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `dp63np` · 2026-09-01 · BLOG · api · One api instance (00a41e8c1d37609ee7…6591570d, revision api-00163-mox) lost its outbound dependency I/O at ~20 · — · infra
+- `1posgwo` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `l1sgx5` · 2026-09-01 · BLOG · api · Duplicate of the recorded 2026-09-01 BLOG api family (1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v / 1hwr0fe  · — · infra
+- `z87lko` · 2026-09-01 · BLOG · api · One api container (instance 00a41e8c1d37609ee7…6591570d, revision api-00163-mox) stopped completing its outbou · — · infra
+- `1hwr0fe` · 2026-09-01 · BLOG · api · Duplicate of recorded fingerprints 1sob2ko / 11ovwfj / 1904bct / hqnw25 / 5nlg6v — one api instance (00a41e8c1 · — · infra
+- `5nlg6v` · 2026-09-01 · BLOG · api · Duplicate of recorded fingerprints 1sob2ko / hqnw25 / 11ovwfj / 1904bct — one api instance (00a41e8c1d3760, re · — · infra
+- `hqnw25` · 2026-09-01 · BLOG · api · Duplicate of recorded fingerprints 1sob2ko / 11ovwfj / 1904bct — same instance, same window, same 20 requests: · — · infra
+- `11ovwfj` · 2026-09-01 · BLOG · api · One api instance (00a41e8c1d3760…6591570d, revision api-00163-mox) wedged its event loop at ~18:21:30Z on the  · — · fix_disabled
+- `1904bct` · 2026-09-01 · BLOG · api · One api instance (00a41e8c1d3760, revision api-00163-mox) had its Memorystore socket go half-open, and because · — · fix_disabled
+- `330j6j` · 2026-09-01 · BLOG · authsa · Infra, not code: a bounded platform-side container-start fault swept avada-blog-app/us-central1 during 2026-09 · — · infra
+- `hicizs` · 2026-09-01 · BLOG · authsa · Infra, not code: a platform-side container-start fault swept avada-blog-app/us-central1 during 2026-09-01T16:3 · — · infra
+- `lridf6` · 2026-09-01 · SEO · handlehooksubscribergen2 · Infra, not code: four handlehooksubscribergen2 cold-start containers on revision -00343-zaq failed their Cloud · — · infra
+- `o53i00` · 2026-09-01 · SEO · recursivesubscribergen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T17:30–18: · — · infra
+- `fmm7qb` · 2026-09-01 · SEO · optimizesubscribergen2 · Duplicate of recorded fingerprint 31428 (same service, same revision optimizesubscribergen2-00343-rep, same in · — · infra
+- `31428` · 2026-09-01 · SEO · optimizesubscribergen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T17:30–18: · — · infra
+- `1icmfls` · 2026-09-01 · BLOG · ontokenuserwritten · onTokenUserWritten is declared cpu: 0.5 with no minInstances, so its cold start takes 84.5s; a burst of 7 Toke · — · infra
+- `1e62l7j` · 2026-09-01 · BLOG · api · A ~4-second DNS failure resolving the merchant custom domain fixstudios.com from the api container made all 7  · — · fix_disabled
+- `17whf6b` · 2026-09-01 · SEO · handlehooksubscribergen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` o · — · infra
+- `1uldgv` · 2026-09-01 · SEO · scanspeedscoresubscriberv2gen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` o · — · infra
+- `7idu8p` · 2026-09-01 · BLOG · api · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned `EIO: i/o error, re · — · infra
+- `6u2krl` · 2026-09-01 · SEO · bulkauditfixproductgen2 · Infra, not code: a bounded platform-side container-start fault swept avada-seo/us-central1 during the 2026-09- · — · infra
+- `vtubke` · 2026-09-01 · SEO · fixauditcontentgen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T17:24–17: · — · infra
+- `srjhey` · 2026-09-01 · BLOG · api · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned `EIO: i/o error, re · — · infra
+- `1e74nc3` · 2026-09-01 · SEO · apisagen2 · Duplicate of recorded fingerprints 10y5ot5 / 1st9nfu / 1ombwxy / 10gpf63 / znz9xj / 1l9w2m4: infra, not code — · — · infra
+- `znz9xj` · 2026-09-01 · SEO · apisagen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` o · — · infra
+- `1l9w2m4` · 2026-09-01 · SEO · apisagen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` t · — · infra
+- `txdvop` · 2026-09-01 · SEO · handleoptimizeimagegen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T17:00–18: · — · infra
+- `10gpf63` · 2026-09-01 · SEO · apisagen2 · Duplicate of recorded fingerprints 10y5ot5 / 1st9nfu / 1ombwxy: infra, not code — the Cloud Run container file · — · infra
+- `1ombwxy` · 2026-09-01 · SEO · apisagen2 · Duplicate of recorded fingerprints 10y5ot5 / 1st9nfu: infra, not code — the Cloud Run container filesystem in  · — · infra
+- `1st9nfu` · 2026-09-01 · SEO · apisagen2 · Duplicate of recorded fingerprint 10y5ot5: infra, not code — the Cloud Run container filesystem in avada-seo/u · — · infra
+- `1gbu5l7` · 2026-09-01 · SEO · partnerintegrationsubscribergen2 · Infra, not code: a platform-side container-filesystem fault swept avada-seo/us-central1 during 2026-09-01T17:1 · — · infra
+- `10y5ot5` · 2026-09-01 · SEO · apisagen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` t · — · infra
+- `29rvxn` · 2026-09-01 · BLOG · embedapp · Duplicate of recorded fingerprints kmu32w / y8dc6e / 1ocmru: infra, not code — the Cloud Run container filesys · — · infra
+- `1ocmru` · 2026-09-01 · BLOG · embedapp · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned EIO on readFileSync · — · infra
+- `y8dc6e` · 2026-09-01 · BLOG · embedapp · Duplicate of recorded fingerprint kmu32w (same service, same revision embedapp-00160-siq, same 30-minute windo · — · infra
+- `kmu32w` · 2026-09-01 · BLOG · embedapp · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned EIO on readFileSync · — · infra
+- `13ojanr` · 2026-09-01 · SEO · partnerintegrationsubscribergen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T15:02–17: · — · infra
+- `7zue8o` · 2026-09-01 · SEO · savealtversionsubscribergen2 · Duplicate of recorded fingerprint 18882z (same service, same revision savealtversionsubscribergen2-00343-rad,  · — · infra
+- `18882z` · 2026-09-01 · SEO · savealtversionsubscribergen2 · Infra, not code: a platform-side container-filesystem fault swept avada-seo/us-central1 during 2026-09-01T16:5 · — · infra
+- `2p53oz` · 2026-09-01 · SEO · ext-credit-histories-bq-export-fsexportbigquery · Duplicate of recorded fingerprints 1v639fk / vzfm82 (same service, same revision -00002-yel, same two cold-sta · — · infra
+- `vzfm82` · 2026-09-01 · SEO · ext-credit-histories-bq-export-fsexportbigquery · Duplicate of recorded fingerprint 1v639fk (same service, same 30-minute window, same two cold-start instances) · — · infra
+- `1v639fk` · 2026-09-01 · SEO · ext-credit-histories-bq-export-fsexportbigquery · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T17:01–17: · — · infra
+- `1mccpq` · 2026-09-01 · SEO · bulkauditfixapplygen2 · Infra, not code: a bounded platform-side container-start fault in avada-seo/us-central1 during 2026-09-01T15:0 · — · infra
+- `15bqjgv` · 2026-09-01 · SEO · scanissuessubscribergen2 · Infra, not code: a bounded platform-side container-start fault in avada-seo/us-central1 during the 2026-09-01  · — · infra
+- `opk9ua` · 2026-09-01 · IMG-OPT · aiapi · Duplicate of recorded fingerprint 9q3esh (same revision aiapi-00129-neh, same 5 instances, same 3 EIO stacks,  · — · infra
+- `9q3esh` · 2026-09-01 · IMG-OPT · aiapi · Infra, not code: the Cloud Run container filesystem in app-plaza-image-optimizer/us-central1 returned EIO on r · — · infra
+- `1nmx045` · 2026-09-01 · SEO · resolveallredirectsubscribergen2 · Infra, not code: the alerted 503 is a Cloud Run readiness failure — two consecutive cold-start containers of r · — · infra
+- `m2ghuu` · 2026-09-01 · SEO · resolveallredirectsubscribergen2 · Infra, not code: one cold-start container of resolveallredirectsubscribergen2 (instance 00a41e8c1d367acc…, rev · — · infra
+- `u7yyss` · 2026-09-01 · IMG-OPT · scanspeedscoresubscriberv2 · Duplicate of recorded fingerprint 1n2wy73 (same instance 00a41e8c1d61ca2b…, same revision -00179-viy, same sec · — · infra
+- `1n2wy73` · 2026-09-01 · IMG-OPT · scanspeedscoresubscriberv2 · Infra, not code: the Cloud Run container filesystem returned EIO on readFileSync during Node module load, so i · — · infra
+- `mzokuq` · 2026-09-01 · SEO · webhookpublishthemegen2 · webhookPublishThemeGen2 is declared with no `minInstances` and no `timeoutSeconds` override, so it runs on the · — · fix_disabled
+- `2flazo` · 2026-09-01 · BLOG · auth · Not a code defect: auth is declared with concurrency 10 and no minInstances, so at its ~0.9 rps / 0.17s median · — · infra
+- `1qj4dz7` · 2026-09-01 · SEO · handlegenfaqsgen2 · Infra, not code: a bounded platform-side container-start fault in avada-seo/us-central1 during the 2026-09-01  · — · infra
+- `8u02yx` · 2026-09-01 · AEO · auth · Not a code defect: both warm `auth` instances were reclaimed by the platform at 15:16:19–15:16:24Z, and for th · — · infra
+- `1up1ei8` · 2026-09-01 · SEO · resumestuckbulkfixjobsgen2 · Infra, not code: a bounded platform-side container-start fault in avada-seo/us-central1 on 2026-09-01 (~14:56Z · — · infra
+- `9y4a2r` · 2026-09-01 · SEO · resumestuckbulkfixjobsgen2 · Infra, not code: a platform-side container-start fault swept avada-seo/us-central1 during 2026-09-01T15:00–15: · — · infra
+- `jirp4l` · 2026-09-01 · BLOG · oncreateuser · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 at 2026-09-01T15:03:5xZ m · — · infra
+- `me5nt2` · 2026-09-01 · BLOG · knowledgebase · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 at 2026-09-01T14:59:5xZ s · — · infra
+- `mcfuet` · 2026-09-01 · BLOG · knowledgebase · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 at 2026-09-01T14:59:5xZ s · — · infra
+- `iae7wm` · 2026-09-01 · BLOG · oncreateuser · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 at 2026-09-01T14:59:5xZ k · — · infra
+- `1sc23g3` · 2026-09-01 · SEO · fixauditcontentgen2 · Infra, not code: a bounded platform-side container-start fault in avada-seo/us-central1 between 15:00:55Z and  · — · infra
+- `1lmd4wh` · 2026-09-01 · IMG-OPT · changelogtriggers-shops · changelogTriggers-shops runs the full packages/functions/src/index.js import graph on Cloud Run's smallest tie · — · infra
+- `1bazm02` · 2026-09-01 · IMG-OPT · changelogtriggers-shops · changelogTriggers-{shops,shopInfos,subscriptions} are the only Cloud Run services in app-plaza-image-optimizer · — · infra
+- `1ocard1` · 2026-09-01 · IMG-OPT · changelogtriggers-subscriptions · changelogTriggers-* are the only Cloud Run services in app-plaza-image-optimizer deployed at the firebase-func · — · infra
+- `1xhzkxi` · 2026-09-01 · IMG-OPT · changelogtriggers-subscriptions · changelogTriggers-* are the only functions in this repo deployed with no memory/cpu override — config/changelo · — · infra
 - `lzwaid` · 2026-08-31 · BLOG · api · Shopify's Admin GraphQL answered the articleUpdate mutation with HTTP 2xx carrying a top-level `errors` array  · — · fix_disabled
 - `12re8xl` · 2026-08-31 · BLOG · api · Shopify's Admin GraphQL answered the articleUpdate mutation with HTTP 2xx and a top-level `errors` array (`ext · — · fix_disabled
 - `1ettj8o` · 2026-08-31 · BLOG · api · Shopify Admin GraphQL answered the articleUpdate mutation with a top-level `errors` array (INTERNAL_SERVER_ERR · — · fix_disabled
@@ -221,9 +299,9 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `6ya4nu` · 2026-08-14 · SEO · bulkauditfixdispatchgen2 · Duplicate of fingerprint 1w98ui1 (already recorded infra, no MR): the same platform-side container-start fault · — · infra
 - `1mzc7t9` · 2026-08-14 · BLOG · proxy · Infra, not code: a platform-side container-start fault in avada-blog-app/us-central1 during the 04:2x–04:3xZ b · — · infra
 - `blfh15` · 2026-08-14 · BLOG · api · PUT /api/article/630025421087 for shop lGFvPaSOKCGOsGrvYOXi fails deterministically because the articleUpdate  · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
-- `14ywrzy` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
+- `14ywrzy` · 2026-09-01 · BLOG · proxy · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned `EIO: i/o error, re · — · infra
 - `1d04pkl` · 2026-08-17 · BLOG · api · The Blog editor fires several concurrent PUT /api/article/:id saves for the same article, and because prepareG · https://gitlab.com/avada/blogs/-/merge_requests/881 · mr_open
-- `h47mgc` · 2026-08-14 · BLOG · proxy · no verified cause · — · inconclusive
+- `h47mgc` · 2026-09-01 · BLOG · proxy · Duplicate of recorded fingerprint 14ywrzy: infra, not code — the Cloud Run container filesystem in avada-blog- · — · infra
 - `1w98ui1` · 2026-08-14 · SEO · bulkauditfixdispatchgen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:14–04:45Z window · — · infra
 - `1db4z7z` · 2026-08-14 · SEO · optimizestoresubscribergen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
 - `1lwydlk` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
@@ -231,10 +309,10 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `16ubfhn` · 2026-08-14 · SEO · apigen2 · Infra, not code: a platform-side container-start/filesystem fault in avada-seo/us-central1 during the 04:00–05 · — · infra
 - `kjv3nd` · 2026-08-14 · SEO · extensiongen2 · Duplicate of fingerprint 1r74ll6 (already recorded infra, no MR): the same platform-side container-start fault · — · infra
 - `pva4gd` · 2026-08-14 · SEO · changelogtriggers-shops · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 during the 04:0x–04:3xZ h · — · infra
-- `koudd9` · 2026-08-14 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `koudd9` · 2026-09-01 · SEO · proxygen2 · Infra, not code: the Cloud Run container filesystem in avada-seo/us-central1 returned `EIO: i/o error, read` o · — · infra
 - `1r74ll6` · 2026-08-14 · SEO · extensiongen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during the 04:00–05:00Z hour o · — · infra
 - `l1uerj` · 2026-08-14 · BLOG · proxy · Duplicate of fingerprints j5n4n6 / mgvvdq (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerg · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
-- `1qrdito` · 2026-08-14 · SEO · proxygen2 · no verified cause · — · inconclusive
+- `1qrdito` · 2026-09-01 · SEO · proxygen2 · Infra, not code: one proxygen2 cold-start container (instance 00a41e8c1d967a…, revision proxygen2-00351-riz) n · — · infra
 - `j5n4n6` · 2026-08-14 · BLOG · proxy · Shopify Admin GraphQL answered two isolated POSTs with HTTP 404 at 04:14:11Z and 04:16:34Z, and the storefront · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
 - `8g3u6t` · 2026-08-14 · SEO · onupdateshopgen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:09:45Z and 04: · — · infra
 - `1470mjt` · 2026-08-14 · SEO · authgen2 · Infra, not code: a platform-side container-filesystem fault in avada-seo/us-central1 between 04:10:31Z and 04: · — · infra
@@ -343,7 +421,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `r7wbvq` · 2026-08-12 · BLOG · api · GET /api/articles without an `order` query param makes articleController.list pass ctx.query straight into get · https://gitlab.com/avada/blogs/-/merge_requests/865 · mr_open
 - `pzbsf9` · 2026-08-12 · SEO · embedappgen2 · Duplicate of fingerprint 1wnpppy (MR https://gitlab.com/avada/seo/-/merge_requests/2169 open, unmerged — commi · https://gitlab.com/avada/seo/-/merge_requests/2169 · mr_open
 - `1wnpppy` · 2026-08-12 · SEO · embedappgen2 · packages/functions/src/handlers/embed.js:25 serves every /embed* page render by awaiting a single node-fetch v · https://gitlab.com/avada/seo/-/merge_requests/2169 · mr_open
-- `1esj5e` · 2026-08-12 · SEO · embedappgen2 · packages/functions/src/handlers/embed.js serves every /embed page render by awaiting a single node-fetch of ht · — · inconclusive
+- `1esj5e` · 2026-09-01 · SEO · embedappgen2 · Infra, not code: a platform-side container-start fault in avada-seo/us-central1 during 2026-09-01T17:05–17:16Z · — · infra
 - `1xpeltw` · 2026-08-12 · IMG-OPT · job:image-optimize-worker · no verified cause · — · inconclusive
 - `1cpfsn4` · 2026-08-12 · SEO · embedappgen2 · embedAppGen2's request handler awaits a single node-fetch of https://<APP_BASE_URL>/embed-template.html with n · — · inconclusive
 - `1lt18sh` · 2026-08-12 · BLOG · api · Duplicate of fingerprint 1qmdvrl (MR https://gitlab.com/avada/blogs/-/merge_requests/863 open, unmerged): the  · https://gitlab.com/avada/blogs/-/merge_requests/863 · mr_open
@@ -478,12 +556,12 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `19t4boc` · 2026-08-22 · SEO · apigen2 · The Bulk Generator's "generate again" button fires one POST /api/regenerateBulkItem per selected row with no c · — · fix_disabled
 - `1npmocs` · 2026-07-31 · BLOG · api · genIdeas requests a plain-text completion (getCompletion default format='text', no zodSchema), so nothing cons · — · deferred
 - `1m8run2` · 2026-07-31 · BLOG · apisa · Duplicate of fingerprint 3349gs (MR 802 already open, unmerged): shop fKUMrHXwtJca3KNWMU6X's recentOpenedArtic · https://gitlab.com/avada/blogs/-/merge_requests/802 · mr_open
-- `1sob2ko` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
-- `lkawju` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
+- `1sob2ko` · 2026-09-01 · BLOG · api · One api instance (00a41e8c1d37609ee7…6591570d, revision api-00163-mox) stopped serving at 2026-09-01T18:21:35Z · — · infra
+- `lkawju` · 2026-09-01 · BLOG · api · Infra, not code: the Cloud Run container filesystem in avada-blog-app/us-central1 returned `EIO: i/o error, re · — · infra
 - `zd4n21` · 2026-07-31 · SEO · reconcilependingfinalizegen2 · reconcilePendingFinalizeGen2 is declared memory: '512MiB' while the shared src/ import graph every gen2 contai · — · infra
 - `1lkslmo` · 2026-07-31 · SEO · reconcilependingfinalizegen2 · reconcilePendingFinalizeGen2 is the only Cloud Function in the repo declared at memory: '512MiB', and loading  · — · infra
 - `1xgc0td` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
-- `16ynda3` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
+- `16ynda3` · 2026-09-01 · BLOG · api · Infra, not code: one warm api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) stopp · — · infra
 - `htf1kk` · 2026-08-03 · BLOG · apiv2 · OpenRouter answers HTTP 200 then emits a 429 'temporarily rate-limited upstream' error frame inside the alread · — · inconclusive
 - `1gzakue` · 2026-07-31 · BLOG · api · The shared axios client in packages/functions/src/helpers/api.js is created with no `timeout`, so every Shopif · — · deferred
 - `q012sa` · 2026-07-31 · BLOG · api · seoProxyApi's catch decides severity from `e.response?.status`, which is undefined for a socket-level ECONNRES · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
@@ -494,7 +572,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1wkwfie` · 2026-07-31 · BLOG · api · The pooled ioredis socket to Memorystore 10.68.191.235 was reset (ECONNRESET) three times in 24h; ioredis reco · https://gitlab.com/avada/blogs/-/merge_requests/808 · mr_open
 - `2dg7th` · 2026-07-31 · BLOG · api · The Firestore Commit RPC behind `collection.add()` in `createArticle` hit its 60s per-attempt deadline on one  · — · infra
 - `se28ls` · 2026-07-31 · BLOG · api · Duplicate of fingerprint 1hjewuf: the OpenRouter completion behind /api/gen-ai-suggested/:type comes back as a · https://gitlab.com/avada/blogs/-/merge_requests/804 · mr_open
-- `ds0z0c` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
+- `ds0z0c` · 2026-09-01 · BLOG · api · Infra, not code: one api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) lost the a · — · infra
 - `4khzsv` · 2026-07-31 · BLOG · api · getRedirectTracer races trace-redirect against delay(3000), and delay resolves undefined — so every /api/recen · https://gitlab.com/avada/blogs/-/merge_requests/805 · mr_open
 - `1hjewuf` · 2026-08-03 · BLOG · api · Duplicate of fingerprint pboq3f (MR https://gitlab.com/avada/blogs/-/merge_requests/826 open, unmerged): durin · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
 - `1j7e5xr` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
