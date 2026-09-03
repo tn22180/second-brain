@@ -23,9 +23,9 @@ Không có tool TaskCreate trong session này — bảng dưới là tracker duy
 | 5a | BLOG: mở Muse sang content image + vá `ensureDataUrl` | general-purpose / sonnet | ✅ | 0/5 | clean | 23/23 pass · $215/tháng đã mở khoá |
 | 4b | Bench Ollama text cho BLOG | general-purpose / sonnet | ✅ | 0/5 | clean | **gemma4:31b thắng — nhanh 2×, $0** |
 | 5b | BLOG: port lớp ollama text + fallback | general-purpose / opus | ✅ | 0/5 | clean | 66/66 pass · gộp vào MR !869 |
-| 6 | Bench model Ollama cho APC description | general-purpose / sonnet | ⬜ | 0/5 | — | cần Task 3 |
+| 6 | Bench model Ollama cho APC description | inline | ✅ | 0/5 | clean | **incumbent flash-lite bét bảng 4,40** · $0,060 |
 | 7a | APC: bỏ nhánh `MODEL_ALIASES → gpt-4.1-mini` | cavecrew-builder / haiku | ⬜ | 0/5 | — | hoãn tới sau Task 6: đường có-ảnh chưa bench |
-| 7b | APC: port ollama vào gateway | general-purpose / opus | ⬜ | 0/5 | — | cần Task 1,6 |
+| 7b | APC: port ollama vào gateway | inline | ✅ | 0/5 | clean | **MR !194** · 56/56 pass · key riêng |
 | 8 | Review + security toàn nhánh 2 repo | cavecrew-reviewer / sonnet | 🔄 | 0/5 | clean (BLOG) | BLOG xong → MR !869; APC chờ Task 7 |
 
 ### Log
@@ -407,4 +407,106 @@ Phần ảnh thì không có cờ — merge là đổi luôn.
 
 Env cần set trong `PRODUCTION_ENV_FILE` của môi trường muốn bật:
 `OLLAMA_API_KEYS` (bắt buộc, key #2), `OLLAMA_BASE_URL` (tuỳ chọn), `OLLAMA_TIMEOUT_MS` (tuỳ chọn).
+
+---
+
+## Task 6 — bench APC description, 2026-09-03
+
+7 model × 5 case × 3 judge. 110 call OpenRouter ($0,0603) + 25 call Ollama. Ollama chạy
+**key #2 (`7cbb4392`)** — key #1 đang phục vụ SEO prod và prod đang đói concurrency (85%
+fallback 5 ngày qua là 429/no-account), bench không được cướp slot.
+
+| model | score | spread | latency | tag hợp lệ | $/call |
+|---|---|---|---|---|---|
+| `ollama:glm-5.3-flash` | **4,99** | 0,04 | 10,29s | 5/5 | $0 |
+| `ollama:nemotron-3-nano:30b` | 4,99 | 0,04 | 29,68s | 5/5 | $0 |
+| `openai/gpt-4.1-mini` (đường có ảnh) | 4,98 | 0,04 | 4,52s | 5/5 | $0,00047 |
+| `ollama:gemma4:31b` | 4,83 | 0,32 | 2,13s | 5/5 | $0 |
+| `ollama:gpt-oss:120b` | 4,77 | 0,32 | 3,08s | 4/5 (`<em>`) | $0 |
+| `ollama:deepseek-v4-flash:0731` | 4,75 | 0,56 | 4,31s | 5/5 | $0 |
+| `google/gemini-2.5-flash-lite` (đường text) | **4,40** | **1,36** | 1,94s | 5/5 | $0,00012 |
+
+**Sửa số của chính bench.** Bảng harness in `allowed_tags_compliance 0/5` cho `gemma4:31b`
+và `gemini-2.5-flash-lite`. Sai — case trong `cases/text_cases.json` chỉ cho `h2,p,ul,li`,
+còn prompt thật của APC cho cả `<strong>` và `<br>` (`getPrompt.js:202,307`). Thẻ duy nhất
+hai model đó thêm là `<strong>`, hợp lệ ở prod. Tính lại theo policy thật thì chỉ
+`gpt-oss:120b` vi phạm (`<em>`). Cột trên là số đã tính lại.
+
+**Phát hiện chính: model đang chạy prod cho đường text-only là model tệ nhất trong 7.**
+`gemini-2.5-flash-lite` 4,40 và spread 1,36 — judge bất đồng hơn 1 điểm, tức chất lượng
+không ổn định giữa các lần. Sáu model còn lại đều spread ≤ 0,56. Mọi ứng viên Ollama đều
+thắng nó.
+
+`gpt-4.1-mini` — cái brief gọi là "khá cũ" — thực ra 4,98, hạng 3. Nó không phải vấn đề.
+
+**Hai đường, hai ngân sách latency** (`generatorController.js:159` vs `:146`):
+- `GENERATE_SINGLE_TYPE` → `await generateContent` inline, merchant chờ.
+- bulk → `publishTopic('bulkGenerate')`, trả `processId` ngay, Pub/Sub xử lý.
+
+**Chưa bench: đường có ảnh.** `gpt-4.1-mini` chỉ phục vụ request **kèm ảnh** của shop không
+bật `enableGpt41`. Đếm prod `ai-product-copy`: **1/10.395 shop** bật cờ đó, nên `openai/gpt-4.1`
+coi như chết, còn `gpt-4.1-mini` ôm toàn bộ đường có-ảnh. Bench này text-only → **Task 7a vẫn
+chưa đủ căn cứ để bỏ `MODEL_ALIASES`**. Không có record nào lưu model đã dùng nên cũng không
+đo được tỉ trọng request có ảnh từ dữ liệu.
+
+---
+
+## Task 7b — plan (APC ollama route)
+
+- **Goal**: request text-only của APC đi Ollama `gemma4:31b` bằng **key riêng của APC**, mọi
+  lỗi rơi về OpenRouter `gemini-2.5-flash-lite` như hôm nay. Không set key = không đổi gì.
+- **Files allowed**: `config/ollama.js` (mới), `services/ollama/{index,keyPool}.js` (mới),
+  `services/aiService.gateway.js` (sửa), test cho các file trên. Không đụng file khác.
+- **Approach**: client shape-compatible với `client.chat.completions.create` để vòng retry sẵn
+  có ở `aiService.gateway.js:150` dùng lại nguyên. Bỏ port native `/api/chat` như SEO — Ollama
+  Cloud có `/v1/chat/completions` OpenAI-compatible, đo thật 200 OK.
+- **Test command**: `./node_modules/.bin/jest packages/functions` — phải xanh, và số test tăng.
+- **Risk**: `generateFromPrompt` là đường sinh content chính của cả app. Sai là merchant nhận
+  mô tả rỗng. Giảm bằng: opt-in theo env, fallback ôm mọi lỗi, đường có-ảnh không đụng tới.
+- **Rollback**: xoá `OLLAMA_API_KEYS` khỏi env → route tắt, không cần revert code.
+
+### Ba thứ đo được, quyết định thiết kế
+
+**1. `reasoning_effort: 'minimal'` BẬT thinking trên Ollama.** Gateway gửi param này mọi call
+(`aiService.gateway.js:157`). Đo trên `gemma4:31b`, prompt APC thật, 5 lần mỗi biến thể:
+
+| body | content | reasoning | latency |
+|---|---|---|---|
+| y hệt gateway hiện tại | 1297 | **2773** | 5,79s |
+| `think:false`, bỏ `reasoning_effort` | 1374 | 0 | **3,62s** |
+
+2.773 ký tự reasoning bị `extractTextFromResponse` vứt đi — trả tiền latency cho đúng số 0.
+`think:false` một mình không đủ: thêm lại `reasoning_effort` thì reasoning quay về (635 ký tự).
+Nên leg Ollama phải **strip `reasoning_effort` + `enable_thinking`, thêm `think:false`**.
+
+**2. Reasoning ăn `max_tokens` → content rỗng.** Ở `max_tokens: 200`, một lần đo trả
+`content: ""` với `reasoning` 608 ký tự. `extractTextFromResponse` đọc `choices[0].message.content`
+→ rỗng → gateway retry 3 lần rồi trả `text: ''`. **Hỏng câm, không throw.** Với APC hiện tại
+rủi ro là lý thuyết: `estimateTranslateMaxTokens` sàn ở 8080 và `MAX_TOKENS` = 8080, không caller
+nào truyền nhỏ hơn. Vẫn phải guard vì rỗng-nhưng-200 không phải lỗi mà fallback thấy được.
+
+**3. Đường có-ảnh không đụng.** `gpt-4.1-mini` đạt 4,98 ở bench và chưa ai đo Ollama trên vision.
+`hasImage` giữ nguyên OpenRouter.
+
+### Task 7b xong — MR !194
+
+https://git.avada.net/avada/ai-product-copy/-/merge_requests/194 (project 330, base `master`),
+6 file, +610/−2.
+
+```
+nhánh:       5 suite / 56 test  — toàn xanh
+master sạch: 3 suite / 39 test  — toàn xanh
+```
+APC không có baseline fail nào, khác BLOG. +17 test / 2 suite mới.
+
+Security: 0 secret, 0 `console.log`, 0 log prompt/PII, 0 file cấm, 0 dep mới. Host outbound mới
+duy nhất là `ollama.com` — đúng mục đích thay đổi.
+
+Hai lỗ hổng của harness phải né trong file test chứ không sửa config: jest repo này chưa expose
+`AbortController` global, và package `openai` cần fetch shim. Stub `AbortController` tự viết
+tay chứ không lấy từ package `abort-controller` — nó chỉ tồn tại như transitive install, không
+package.json nào khai.
+
+**Chưa làm, có lý do:** `glm-5.3-flash` (4,99) cho đường bulk. `generateFromPrompt` hiện không
+có tín hiệu nào phân biệt sync với bulk, nên tách đường là MR riêng.
 

@@ -1,0 +1,129 @@
+{
+  "records": [
+    {
+      "model": "openai/gpt-5.4-image-2",
+      "latency_s": 23.446,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.009446,
+      "case_id": "img-01-skincare-flatlay",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-01-skincare-flatlay__openai_gpt-5.4-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "openai/gpt-image-2",
+      "latency_s": 23.077,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.00929,
+      "case_id": "img-01-skincare-flatlay",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-01-skincare-flatlay__openai_gpt-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "meta/muse-image",
+      "latency_s": 10.792,
+      "ok": true,
+      "media_type": "image/webp",
+      "cost": 0.01,
+      "case_id": "img-01-skincare-flatlay",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-01-skincare-flatlay__meta_muse-image.webp",
+      "width": 2048,
+      "height": 1152,
+      "aspect_ratio": 1.7778,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "openai/gpt-5.4-image-2",
+      "latency_s": 16.243,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.004246,
+      "case_id": "img-02-sneaker-hero",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-02-sneaker-hero__openai_gpt-5.4-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "openai/gpt-image-2",
+      "latency_s": 17.939,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.004105,
+      "case_id": "img-02-sneaker-hero",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-02-sneaker-hero__openai_gpt-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "meta/muse-image",
+      "latency_s": 17.797,
+      "ok": true,
+      "media_type": "image/webp",
+      "cost": 0.01,
+      "case_id": "img-02-sneaker-hero",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-02-sneaker-hero__meta_muse-image.webp",
+      "width": 2048,
+      "height": 1152,
+      "aspect_ratio": 1.7778,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "openai/gpt-5.4-image-2",
+      "latency_s": 18.448,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.00427,
+      "case_id": "img-03-coffee-lifestyle",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-03-coffee-lifestyle__openai_gpt-5.4-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "openai/gpt-image-2",
+      "latency_s": 19.034,
+      "ok": true,
+      "media_type": "image/png",
+      "cost": 0.00412,
+      "case_id": "img-03-coffee-lifestyle",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-03-coffee-lifestyle__openai_gpt-image-2.png",
+      "width": 1672,
+      "height": 941,
+      "aspect_ratio": 1.7768,
+      "aspect_16x9_compliant": true
+    },
+    {
+      "model": "meta/muse-image",
+      "latency_s": 10.586,
+      "ok": true,
+      "media_type": "image/webp",
+      "cost": 0.01,
+      "case_id": "img-03-coffee-lifestyle",
+      "file_path": "/Users/nguyentuan/Documents/second-brain/jobs/ai features/bench/images/img-03-coffee-lifestyle__meta_muse-image.webp",
+      "width": 2048,
+      "height": 1152,
+      "aspect_ratio": 1.7778,
+      "aspect_16x9_compliant": true
+    }
+  ],
+  "total_spend": 0.065477,
+  "calls_made": 9,
+  "aborted_on_spend_cap": false,
+  "models": [
+    "openai/gpt-5.4-image-2",
+    "openai/gpt-image-2",
+    "meta/muse-image"
+  ]
+}

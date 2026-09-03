@@ -1,0 +1,1393 @@
+{
+  "records": [
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 9.005,
+        "ok": true,
+        "output": "<h2>Step Into Sophistication with Aria Suede Ankle Boots</h2>\n\n<p>Elevate your seasonal wardrobe with the Aria Suede Ankle Boots, where timeless elegance meets modern comfort. Meticulously crafted from premium, soft-touch materials, these boots offer a sleek silhouette that seamlessly transitions from a polished office look to a relaxed weekend ensemble. Whether you are pairing them with tailored trousers or your favorite denim, these boots provide the perfect balance of edge and refinement.</p>\n\n<p>Finding the ideal pair of suede ankle boots for women can be a challenge, but the Aria collection solves this by combining a supportive block heel with a cushioned insole for all-day wearability. The durable outsole ensures stability on various terrains, making them a reliable choice for the urban commuter or the fashion-forward explorer.</p>\n\n<ul>\n    <li>Premium high-grade suede upper for a luxurious finish.</li>\n    <li>Ergonomic cushioned footbed for enhanced comfort.</li>\n    <li>Stable block heel designed for extended wear.</li>\n    <li>Easy-slip-on design with a reinforced side zipper.</li>\n    <li>Available in a range of versatile neutral tones.</li>\n</ul>",
+        "cost": 0.0001108008,
+        "completion_tokens": 242,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 108,
+          "completion_tokens": 242,
+          "total_tokens": 350,
+          "cost": 0.0001108008,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00011192,
+            "upstream_inference_prompt_cost": 1.512e-05,
+            "upstream_inference_completions_cost": 9.68e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 161,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 0.961,
+          "cost": 0.000310563,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, meets all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, meets all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.56,
+          "cost": 0.000287496,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Meets all requirements with natural keyword use and well-structured, persuasive copy.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Meets all requirements with natural keyword use and well-structured, persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.764,
+          "cost": 0.00105534,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated in second paragraph, no template leakage, persuasive and professional tone throughout.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated in second paragraph, no template leakage, persuasive and professional tone throughout.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 2.767,
+        "ok": true,
+        "output": "<h2>Step Into Timeless Elegance with Aria Suede Ankle Boots</h2>\n\n<p>Elevate your seasonal wardrobe with the Aria Suede Ankle Boots, where sophisticated design meets everyday functionality. Crafted from premium, buttery-soft suede, these boots offer a refined silhouette that seamlessly transitions from a day at the office to an evening out with friends. Whether you are pairing them with cropped trousers or your favorite autumn dress, they provide a polished finish to any ensemble.</p>\n\n<p>Finding the perfect pair of suede ankle boots for women means balancing style with comfort. The Aria collection features a contoured footbed and a stable block heel, ensuring you can stay on your feet from dawn until dusk without compromising on grace. The durable sole provides essential grip, making them a reliable choice for crisp morning commutes and city strolls.</p>\n\n<ul>\n    <li>Premium water-resistant suede upper for a luxurious feel.</li>\n    <li>Ergonomic cushioned insole for all-day support.</li>\n    <li>Classic side-zip closure for effortless wear.</li>\n    <li>Versatile neutral tones to complement every outfit.</li>\n    <li>Sturdy block heel for optimal stability and height.</li>\n</ul>",
+        "cost": 0.0,
+        "completion_tokens": 245,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 245,
+          "prompt_eval_count": 107
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 167,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.21,
+          "cost": 0.000313929,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, adheres to all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, adheres to all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.318,
+          "cost": 0.000290664,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Meets all requirements with natural keyword use and well-structured, persuasive copy.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Meets all requirements with natural keyword use and well-structured, persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.667,
+          "cost": 0.00106128,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated in second paragraph, no template leakage, persuasive and well-structured copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated in second paragraph, no template leakage, persuasive and well-structured copy.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.638,
+        "ok": true,
+        "output": "<h2>Aria Suede Ankle Boots</h2>\n\n<p>Step into effortless style with the Aria Suede Ankle Boots. Crafted from sumptuously soft, premium suede, these boots are designed to elevate any outfit, from casual weekend wear to chic evening ensembles. The rich texture of the suede adds a touch of luxury, while the classic ankle boot silhouette ensures timeless appeal. Whether you're running errands or heading out for a night on the town, these versatile <strong>suede ankle boots for women</strong> offer both comfort and sophistication.</p>\n\n<p>Featuring a comfortable block heel that provides just the right amount of lift, the Aria boots are perfect for all-day wear. The sleek design is complemented by subtle detailing, making them a standout addition to your footwear collection. Easy to slip on and off, they boast a durable construction built to last. Discover your new favorite go-to boots and experience the perfect blend of fashion and function.</p>\n\n<ul>\n<li>Premium, soft suede upper</li>\n<li>Comfortable block heel for all-day wear</li>\n<li>Timeless ankle boot silhouette</li>\n<li>Versatile styling options</li>\n<li>Durable construction</li>\n</ul>",
+        "cost": 0.000103356,
+        "completion_tokens": 240,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 240,
+          "total_tokens": 324,
+          "cost": 0.000103356,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001044,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 9.6e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 167,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 0.964,
+          "cost": 0.000310266,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, meets all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, meets all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.83,
+          "cost": 0.00029304,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Well-written copy with natural keyword use; minor HTML tag issue with <strong> not allowed.",
+          "raw": "{\"constraints\":5,\"html_validity\":4,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Well-written copy with natural keyword use; minor HTML tag issue with <strong> not allowed.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.732,
+          "cost": 0.00104544,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 4,
+            "keyword_integration": 2,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Word count ~215 is within range; keyword awkwardly bolded mid-sentence rather than naturally integrated; <strong> tag used but not in allowed list.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 4, \"keyword_integration\": 2, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Word count ~215 is within range; keyword awkwardly bolded mid-sentence rather than naturally integrated; <strong> tag used but not in allowed list.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 4.568,
+        "ok": true,
+        "output": "<h2>Elevate Your Kitchen with the Vortex Pro 6-Speed Stand Mixer</h2>\n\n<p>Experience professional-grade precision in your own home with the Vortex Pro 6-Speed Stand Mixer. Whether you are whipping up a light meringue, kneading heavy sourdough, or mixing a rich chocolate cake batter, this powerful appliance handles every task with ease. Designed for versatility and durability, it is the ultimate stand mixer for baking enthusiasts who demand consistency and efficiency.</p>\n\n<p>The Vortex Pro features a high-torque motor and a spacious stainless steel bowl, ensuring you have plenty of room for large batches. With six adjustable speed settings, you can transition seamlessly from a slow stir to a high-speed whip, giving you total control over your textures.</p>\n\n<ul>\n    <li><strong>6-Speed Versatility:</strong> Precision controls for folding, mixing, and whipping.</li>\n    <li><strong>High-Capacity Bowl:</strong> Large stainless steel bowl perfect for family-sized recipes.</li>\n    <li><strong>Durable Build:</strong> Heavy-duty construction to prevent sliding during heavy kneading.</li>\n    <li><strong>Complete Accessory Kit:</strong> Includes a wire whisk, dough hook, and flat beater.</li>\n    <li><strong>Easy Clean-Up:</strong> Dishwasher-safe attachments for a hassle-free experience.</li>\n</ul>",
+        "cost": 0.0001218888,
+        "completion_tokens": 270,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 108,
+          "completion_tokens": 270,
+          "total_tokens": 378,
+          "cost": 0.0001218888,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 32,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00012312,
+            "upstream_inference_prompt_cost": 1.512e-05,
+            "upstream_inference_completions_cost": 0.000108
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 164,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.197,
+          "cost": 0.00033561,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.645,
+          "cost": 0.000300564,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with natural keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with natural keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.246,
+          "cost": 0.00108801,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated twice, no template leakage, persuasive and professional copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated twice, no template leakage, persuasive and professional copy.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 2.998,
+        "ok": true,
+        "output": "<h2>Elevate Your Kitchen with the Vortex Pro 6-Speed Stand Mixer</h2>\n\n<p>Experience professional-grade performance in your own home with the Vortex Pro 6-Speed Stand Mixer. Engineered for precision and power, this versatile appliance takes the hard work out of food preparation, allowing you to focus on the art of creation. Whether you are whipping up light meringues or kneading heavy sourdough, this is the ultimate stand mixer for baking enthusiasts who demand consistency and durability.</p>\n\n<p>Equipped with a high-torque motor and six adjustable speed settings, the Vortex Pro adapts to every recipe with ease. From a gentle stir to a high-speed whip, you have total control over your textures. The oversized stainless steel mixing bowl ensures you have plenty of room for family-sized batches, while the sleek, modern design complements any countertop.</p>\n\n<ul>\n<li><strong>6 Dynamic Speed Settings:</strong> Seamlessly transition from folding ingredients to high-speed aeration.</li>\n<li><strong>Premium Stainless Steel Bowl:</strong> Durable, rust-resistant, and easy to clean for maximum hygiene.</li>\n<li><strong>Multi-Purpose Attachments:</strong> Includes a wire whip, dough hook, and flat beater for all your culinary needs.</li>\n<li><strong>Stability-Lock Base:</strong> Heavy-duty construction prevents walking during heavy kneading cycles.</li>\n</ul>",
+        "cost": 0.0,
+        "completion_tokens": 276,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 276,
+          "prompt_eval_count": 107
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 182,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 0.969,
+          "cost": 0.000322542,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, adheres to all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, adheres to all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.579,
+          "cost": 0.000301752,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with excellent keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with excellent keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.906,
+          "cost": 0.00109989,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 248 words, all allowed tags used correctly, keyword naturally integrated in first paragraph, no template leakage, persuasive and professional copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 248 words, all allowed tags used correctly, keyword naturally integrated in first paragraph, no template leakage, persuasive and professional copy.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.863,
+        "ok": true,
+        "output": "<h2>Vortex Pro 6-Speed Stand Mixer: Your Ultimate Baking Companion</h2>\n<p>Unleash your inner baker with the Vortex Pro 6-Speed Stand Mixer. Engineered for both novice enthusiasts and seasoned pros, this powerful appliance is designed to make every baking project a breeze. From light meringues to dense bread doughs, its robust 6-speed motor and planetary mixing action ensure consistent, thorough results every time. The Vortex Pro is the perfect <strong>stand mixer for baking</strong>, transforming your kitchen into a culinary haven.</p>\n<ul>\n<li><strong>Powerful 6-Speed Motor:</strong> Effortlessly tackle a wide range of recipes with variable speed control.</li>\n<li><strong>Planetary Mixing Action:</strong> Guarantees that all ingredients are incorporated evenly for superior texture and consistency.</li>\n<li><strong>Generous Capacity Bowl:</strong> The large stainless steel bowl is perfect for family-sized batches of cookies, cakes, and more.</li>\n<li><strong>Durable Construction:</strong> Built with high-quality materials for long-lasting performance and reliability.</li>\n<li><strong>Quiet Operation:</strong> Enjoy a peaceful baking experience without excessive noise.</li>\n<li><strong>Easy to Clean:</strong> Detachable accessories are dishwasher safe for hassle-free cleanup.</li>\n</ul>\n<p>Elevate your baking game with the Vortex Pro. Its intuitive design and exceptional performance make it an indispensable tool for anyone who loves to create in the kitchen.</p>",
+        "cost": 0.00012474,
+        "completion_tokens": 294,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 294,
+          "total_tokens": 378,
+          "cost": 0.00012474,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.000126,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 0.0001176
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 186,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.187,
+          "cost": 0.000343035,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.647,
+          "cost": 0.000327492,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Mostly meets word count and tag constraints; strong keyword use and persuasive copy.",
+          "raw": "{\"constraints\": 4, \"html_validity\": 4, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Mostly meets word count and tag constraints; strong keyword use and persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.885,
+          "cost": 0.0010692,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 1,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Contains disallowed <strong> tags; word count is 218 (within range); keyword naturally integrated.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 1, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Contains disallowed <strong> tags; word count is 218 (within range); keyword naturally integrated.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 8.06,
+        "ok": true,
+        "output": "<h2>Elevate Your Practice with the TerraFlow Non-Slip Yoga Mat</h2>\n\n<p>Experience ultimate stability and comfort with the TerraFlow, a premium <strong>non-slip yoga mat</strong> designed for practitioners of all levels. Whether you are mastering a challenging inversion or finding stillness in a restorative pose, our advanced grip technology ensures you stay firmly planted, even during the most intense hot yoga sessions. Engineered with high-density cushioning, it provides the perfect balance of support and joint protection to keep you comfortable throughout your entire flow.</p>\n\n<p>The TerraFlow is crafted from eco-friendly, biodegradable materials that are gentle on the planet and your skin. Its moisture-wicking surface prevents slips and slides, allowing you to focus entirely on your breath and alignment rather than your footing.</p>\n\n<ul>\n    <li><strong>Advanced Grip Surface:</strong> A specialized texture that maximizes traction for a secure, non-slip experience.</li>\n    <li><strong>Optimal Cushioning:</strong> High-density foam reduces impact on knees, elbows, and wrists.</li>\n    <li><strong>Eco-Conscious Material:</strong> Made from non-toxic, sustainable materials that are free from harmful chemicals.</li>\n    <li><strong>Easy Maintenance:</strong> Antimicrobial properties make it simple to wipe clean after every workout.</li>\n</ul>",
+        "cost": 9.90693e-05,
+        "completion_tokens": 266,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 266,
+          "total_tokens": 373,
+          "cost": 9.90693e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00010007,
+            "upstream_inference_prompt_cost": 9.63e-06,
+            "upstream_inference_completions_cost": 9.044e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 170,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.725,
+          "cost": 0.000334719,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.38,
+          "cost": 0.000309276,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "The copy is well-written and integrates the keyword naturally, but it uses <strong> tags which are not allowed.",
+          "raw": "{\"constraints\":4,\"html_validity\":4,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"The copy is well-written and integrates the keyword naturally, but it uses <strong> tags which are not allowed.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.98,
+          "cost": 0.00100881,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 1,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tag which is not in allowed list; word count is 218 (within range).",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 1, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tag which is not in allowed list; word count is 218 (within range).\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 1.887,
+        "ok": true,
+        "output": "<h2>Elevate Your Practice with the TerraFlow Non-Slip Yoga Mat</h2>\n<p>Experience ultimate stability and comfort with the TerraFlow Non-Slip Yoga Mat, designed for practitioners who refuse to let a sliding surface disrupt their flow. Whether you are mastering a challenging arm balance or sinking into a deep restorative stretch, our advanced grip technology ensures you stay grounded. This high-performance non-slip yoga mat provides a secure foundation on any floor surface, giving you the confidence to push your limits without hesitation.</p>\n<p>Crafted from eco-friendly, high-density materials, the TerraFlow combines plush cushioning with exceptional durability. The targeted thickness protects your joints from hard surfaces while maintaining a firm connection to the ground for optimal balance.</p>\n<ul>\n    <li><strong>Superior Traction:</strong> Professional-grade grip that prevents slipping even during the sweatiest hot yoga sessions.</li>\n    <li><strong>Joint Support:</strong> Optimized density provides the perfect balance of support and stability for knees and elbows.</li>\n    <li><strong>Eco-Conscious Build:</strong> Made from sustainable, non-toxic materials that are safe for you and the planet.</li>\n    <li><strong>Easy Maintenance:</strong> Moisture-resistant surface that wipes clean effortlessly after every workout.</li>\n</ul>",
+        "cost": 0.0,
+        "completion_tokens": 259,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 259,
+          "prompt_eval_count": 106
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 168,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 0.959,
+          "cost": 0.00031284,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, persuasive, and adheres to all constraints perfectly.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, persuasive, and adheres to all constraints perfectly.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.369,
+          "cost": 0.000292644,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with natural keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with natural keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.816,
+          "cost": 0.00102267,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, valid HTML, natural keyword integration, persuasive copy with strong benefit-driven messaging.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, valid HTML, natural keyword integration, persuasive copy with strong benefit-driven messaging.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.848,
+        "ok": true,
+        "output": "<h2>TerraFlow Non-Slip Yoga Mat: Your Foundation for Fearless Flow</h2>\n\n<p>Elevate your practice and find your center with the TerraFlow Non-Slip Yoga Mat. Designed for yogis of all levels, this mat provides unparalleled grip and stability, ensuring you can move through every pose with confidence. Say goodbye to slippery surfaces and hello to a secure foundation that supports your every twist, lunge, and inversion. Whether you're a beginner finding your balance or an experienced practitioner pushing your limits, the TerraFlow non-slip yoga mat is your ultimate companion.</p>\n\n<ul>\n<li><b>Superior Grip:</b> Our advanced textured surface offers exceptional traction, even during the sweatiest sessions, keeping you firmly planted.</li>\n<li><b>Optimal Cushioning:</b> Experience the perfect balance of comfort and support with a density designed to protect your joints without compromising stability.</li>\n<li><b>Durable & Eco-Friendly:</b> Crafted from high-quality, sustainable materials, this mat is built to last and kind to the planet.</li>\n<li><b>Easy to Clean:</b> Simply wipe down your mat after practice for effortless maintenance.</li>\n<li><b>Lightweight & Portable:</b> Take your practice anywhere with this easy-to-carry mat, perfect for studio, home, or outdoor sessions.</li>\n</ul>",
+        "cost": 0.000113949,
+        "completion_tokens": 267,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 83,
+          "completion_tokens": 267,
+          "total_tokens": 350,
+          "cost": 0.000113949,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001151,
+            "upstream_inference_prompt_cost": 8.3e-06,
+            "upstream_inference_completions_cost": 0.0001068
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 175,
+        "tags_used": [
+          "b",
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "b"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.052,
+          "cost": 0.000315513,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, persuasive, and adheres to all constraints perfectly.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, persuasive, and adheres to all constraints perfectly.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.673,
+          "cost": 0.000298584,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Meets all requirements with natural keyword use and well-structured, persuasive copy.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Meets all requirements with natural keyword use and well-structured, persuasive copy.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.728,
+          "cost": 0.00105039,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Word count is 198 (within range), but <b> tags are not in the allowed list, making HTML invalid and violating constraints.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Word count is 198 (within range), but <b> tags are not in the allowed list, making HTML invalid and violating constraints.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 5.907,
+        "ok": true,
+        "output": "<h2>Ultimate Comfort for Your Four-Legged Friend</h2>\n\n<p>Give your pet the gift of restorative sleep with the Cloudnest Orthopedic Dog Bed. Engineered with high-density memory foam, this premium bed provides targeted joint relief and superior spinal support, making it the ideal orthopedic dog bed for large dogs who struggle with stiffness or hip dysplasia. The breathable, plush top layer creates a cozy sanctuary, ensuring your pet stays comfortable throughout the night.</p>\n\n<p>Designed for durability and convenience, the Cloudnest features a reinforced base that prevents sagging over time, maintaining its supportive shape regardless of your dog's size. The removable, machine-washable cover makes cleanup effortless, keeping your home fresh and your pet hygienic.</p>\n\n<ul>\n  <li><strong>Advanced Memory Foam:</strong> Relieves pressure points and supports aching joints.</li>\n  <li><strong>Heavy-Duty Construction:</strong> Specifically reinforced to support heavier breeds.</li>\n  <li><strong>Breathable Fabric:</strong> Regulates temperature for year-round comfort.</li>\n  <li><strong>Easy Maintenance:</strong> Zip-off cover for quick and easy washing.</li>\n  <li><strong>Non-Slip Bottom:</strong> Stays securely in place on hardwood or tile floors.</li>\n</ul>",
+        "cost": 9.31788e-05,
+        "completion_tokens": 252,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 108,
+          "completion_tokens": 252,
+          "total_tokens": 360,
+          "cost": 9.31788e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 32,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 9.412e-05,
+            "upstream_inference_prompt_cost": 8.44e-06,
+            "upstream_inference_completions_cost": 8.568e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 155,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.088,
+          "cost": 0.00031383,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, meets all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, meets all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.537,
+          "cost": 0.00029502,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with natural keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with natural keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.801,
+          "cost": 0.00108207,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated in context, no template leakage, persuasive and well-structured copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated in context, no template leakage, persuasive and well-structured copy.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 2.049,
+        "ok": true,
+        "output": "<h2>Give Your Pet the Gift of Weightless Sleep</h2>\n<p>Treat your furry friend to the ultimate sanctuary with the Cloudnest Orthopedic Dog Bed. Specifically engineered to alleviate joint pressure and support aging muscles, this premium bed provides a therapeutic sleep experience that helps your pet wake up feeling refreshed and energized. Whether they are curling up for a nap or settling in for the night, the high-density memory foam contours to their unique shape, ensuring maximum comfort.</p>\n<p>Designed for durability and scale, this is the perfect <strong>orthopedic dog bed for large dogs</strong> who require extra support to maintain mobility and reduce stiffness. The breathable, hypoallergenic cover is gentle on the skin and easily removable for quick cleaning, keeping your home fresh and your pet healthy.</p>\n<ul>\n    <li><strong>Premium Memory Foam:</strong> Relieves pressure points in hips, joints, and spine.</li>\n    <li><strong>Extra-Large Dimensions:</strong> Spacious enough for the biggest breeds to stretch out fully.</li>\n    <li><strong>Removable Washable Cover:</strong> Durable, water-resistant fabric for effortless maintenance.</li>\n    <li><strong>Non-Slip Bottom:</strong> Keeps the bed securely in place on hardwood or tile floors.</li>\n</ul>",
+        "cost": 0.0,
+        "completion_tokens": 252,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 252,
+          "prompt_eval_count": 107
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 169,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.045,
+          "cost": 0.00030888,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, persuasive, and meets all constraints perfectly.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, persuasive, and meets all constraints perfectly.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.582,
+          "cost": 0.000294228,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with natural keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with natural keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.851,
+          "cost": 0.00103752,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Strong copy with natural keyword placement; minor constraint issue: 189 words is within range, but <strong> tags used without permission.",
+          "raw": "```json\n{\"constraints\": 4, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Strong copy with natural keyword placement; minor constraint issue: 189 words is within range, but <strong> tags used without permission.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 2.374,
+        "ok": true,
+        "output": "<h2>Cloudnest Orthopedic Dog Bed: Ultimate Comfort for Your Canine Companion</h2>\n<p>Give your beloved dog the gift of unparalleled comfort and support with the Cloudnest Orthopedic Dog Bed. Designed with your pet's well-being in mind, this luxurious bed is the perfect sanctuary for rest and rejuvenation. Whether you have a senior pup experiencing joint pain or a young, energetic dog who deserves the best, the Cloudnest offers superior cushioning and pressure relief.</p>\n<p>Crafted with high-density orthopedic foam, this bed actively contours to your dog's body, alleviating pressure points and promoting healthy joint alignment. This makes it an ideal <strong>orthopedic dog bed for large dogs</strong>, providing ample space and robust support to accommodate their size and weight. The durable, yet soft, plush cover is not only incredibly comfortable but also easy to clean, ensuring a hygienic sleeping environment for your furry friend.</p>\n<ul>\n<li>High-density orthopedic foam for superior support and pressure relief.</li>\n<li>Generously sized to comfortably fit large breeds.</li>\n<li>Plush, removable, and machine-washable cover for easy cleaning.</li>\n<li>Non-slip base to keep the bed securely in place.</li>\n<li>Promotes joint health and alleviates pain for dogs of all ages.</li>\n</ul>",
+        "cost": 0.00011484,
+        "completion_tokens": 269,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 269,
+          "total_tokens": 353,
+          "cost": 0.00011484,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.000116,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 0.0001076
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 185,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.018,
+          "cost": 0.000316701,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output perfectly adheres to all constraints and provides high-quality, persuasive copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output perfectly adheres to all constraints and provides high-quality, persuasive copy.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.783,
+          "cost": 0.000296208,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy meets all constraints with natural keyword use and well-formed HTML.",
+          "raw": "{\"constraints\":5,\"html_validity\":5,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"The copy meets all constraints with natural keyword use and well-formed HTML.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.006,
+          "cost": 0.00108702,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tag which is not in allowed list; word count is 246, exceeding the 250-word maximum by acceptable margin but constraint violation exists.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tag which is not in allowed list; word count is 246, exceeding the 250-word maximum by acceptable margin but constraint violation exists.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 9.203,
+        "ok": true,
+        "output": "<h2>Illuminate Your Workspace with the Lumen Arc LED Desk Lamp</h2>\n\n<p>Elevate your home office or study nook with the Lumen Arc LED Desk Lamp, where minimalist Scandinavian design meets cutting-edge lighting technology. Featuring a sleek, curved silhouette and a premium matte finish, this lamp doesn't just provide light\u2014it serves as a sophisticated piece of modern decor that complements any interior style.</p>\n\n<p>Experience ultimate versatility with a high-performance <strong>led desk lamp with adjustable brightness</strong>, allowing you to transition seamlessly from a soft, warm glow for late-night reading to a crisp, focused white light for intense productivity. The flicker-free technology reduces eye strain, ensuring you stay focused and comfortable during long working hours.</p>\n\n<ul>\n  <li><strong>Customizable Lighting:</strong> Three distinct color modes and stepless dimming to suit your mood.</li>\n  <li><strong>Flexible Arc Arm:</strong> Easily pivot the head to direct light exactly where you need it.</li>\n  <li><strong>Energy Efficient:</strong> Advanced LED technology reduces power consumption while maximizing output.</li>\n  <li><strong>Touch Control Interface:</strong> Intuitive one-touch operation for effortless brightness adjustments.</li>\n  <li><strong>Space-Saving Base:</strong> A compact footprint that maximizes your desk real estate.</li>\n</ul>",
+        "cost": 9.74655e-05,
+        "completion_tokens": 265,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 265,
+          "total_tokens": 372,
+          "cost": 9.74655e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 32,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 9.845e-05,
+            "upstream_inference_prompt_cost": 8.35e-06,
+            "upstream_inference_completions_cost": 9.01e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 172,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.111,
+          "cost": 0.000337194,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The output adheres to all constraints, uses valid HTML, integrates the keyword naturally, and provides high-quality, persuasive copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The output adheres to all constraints, uses valid HTML, integrates the keyword naturally, and provides high-quality, persuasive copy.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 2.008,
+          "cost": 0.000327492,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 4,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "The copy is well-written and integrates the keyword naturally, but it uses <strong> tags which are not allowed and the word count is slightly under 120 words.",
+          "raw": "{\"constraints\":4,\"html_validity\":4,\"keyword_integration\":4,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"The copy is well-written and integrates the keyword naturally, but it uses <strong> tags which are not allowed and the word count is slightly under 120 words.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.75,
+          "cost": 0.00106326,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent output with natural keyword integration, though the <strong> tag usage exceeds allowed tags\u2014only h2, p, ul, li permitted.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent output with natural keyword integration, though the <strong> tag usage exceeds allowed tags\u2014only h2, p, ul, li permitted.\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "ollama:gemma4:31b",
+        "provider": "ollama",
+        "latency_s": 2.677,
+        "ok": true,
+        "output": "<h2>Illuminate Your Workspace with the Lumen Arc LED Desk Lamp</h2>\n\n<p>Elevate your home office or study area with the Lumen Arc LED Desk Lamp, where sophisticated modern design meets high-performance lighting. Engineered for those who demand both style and functionality, this lamp features a sleek, arched silhouette that provides expansive coverage over your desk, reducing eye strain and eliminating dark spots during late-night projects.</p>\n\n<p>Customization is at the heart of the Lumen Arc experience. As a versatile <strong>led desk lamp with adjustable brightness</strong>, it allows you to transition seamlessly from a soft, ambient glow for relaxing reading to a crisp, intense light for detailed technical work. Whether you are coding, sketching, or studying, you can find the perfect luminosity to match your task and mood.</p>\n\n<ul>\n    <li><strong>Touch-Sensitive Controls:</strong> Effortlessly toggle between brightness levels with a single tap.</li>\n    <li><strong>Eye-Care Technology:</strong> Flicker-free LED panels prevent ocular fatigue during extended use.</li>\n    <li><strong>Flexible Positioning:</strong> The sturdy yet adjustable arm ensures light is directed exactly where you need it.</li>\n    <li><strong>Energy Efficient:</strong> Low-power consumption LEDs reduce electricity costs while providing superior brilliance.</li>\n</ul>",
+        "cost": 0.0,
+        "completion_tokens": 259,
+        "reasoning_tokens": null,
+        "raw_usage": {
+          "eval_count": 259,
+          "prompt_eval_count": 106
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 176,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.008,
+          "cost": 0.000315612,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy is well-written, meets all constraints, and integrates the keyword naturally.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy is well-written, meets all constraints, and integrates the keyword naturally.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.815,
+          "cost": 0.000306504,
+          "ok": true,
+          "scores": {
+            "constraints": 4,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Meets most constraints well but slightly under minimum word count and uses disallowed <strong> tags.",
+          "raw": "{\"constraints\":4,\"html_validity\":4,\"keyword_integration\":5,\"no_leakage\":5,\"copy_quality\":4,\"notes\":\"Meets most constraints well but slightly under minimum word count and uses disallowed <strong> tags.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.566,
+          "cost": 0.0010791,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Strong copy quality and keyword integration, but uses <strong> tags which are not in the allowed list, and word count is 246 (within range but close to limit).",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Strong copy quality and keyword integration, but uses <strong> tags which are not in the allowed list, and word count is 246 (within range but close to limit).\"}\n```"
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.705,
+        "ok": true,
+        "output": "<h2>Lumen Arc LED Desk Lamp</h2>\n\n<p>Illuminate your workspace with the sleek and modern Lumen Arc LED Desk Lamp. Designed for both style and functionality, this lamp provides optimal lighting for any task. Whether you're reading, working, or crafting, the Lumen Arc delivers crisp, clear light that reduces eye strain and enhances productivity. Its elegant, minimalist design complements any d\u00e9cor, making it a perfect addition to your home or office.</p>\n\n<p>Experience unparalleled control over your lighting environment. This advanced <strong>led desk lamp with adjustable brightness</strong> allows you to effortlessly set the perfect mood and intensity. Choose from multiple brightness levels to suit your needs, from a soft ambient glow to a bright, focused beam. The flexible gooseneck design ensures you can direct light exactly where you need it, offering maximum versatility.</p>\n\n<ul>\n    <li>Multiple adjustable brightness settings for customized lighting</li>\n    <li>Energy-efficient LED technology for long-lasting performance</li>\n    <li>Flexible gooseneck for precise light positioning</li>\n    <li>Modern and stylish design to enhance any workspace</li>\n    <li>Reduces eye strain for comfortable extended use</li>\n</ul>",
+        "cost": 0.000102069,
+        "completion_tokens": 237,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 83,
+          "completion_tokens": 237,
+          "total_tokens": 320,
+          "cost": 0.000102069,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001031,
+            "upstream_inference_prompt_cost": 8.3e-06,
+            "upstream_inference_completions_cost": 9.48e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 164,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "google/gemini-2.5-flash",
+          "latency_s": 1.043,
+          "cost": 0.0003267,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"The copy adheres to all constraints, uses valid HTML, integrates the keyword naturally, and is well-written and persuasive.\"}"
+        },
+        {
+          "judge": "openai/gpt-4.1-mini",
+          "latency_s": 1.912,
+          "cost": 0.000293436,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Well-written copy with natural keyword use; minor HTML tag issue with <strong> not allowed.",
+          "raw": "{\"constraints\":5,\"html_validity\":4,\"keyword_integration\":4,\"no_leakage\":5,\"copy_quality\":5,\"notes\":\"Well-written copy with natural keyword use; minor HTML tag issue with <strong> not allowed.\"}"
+        },
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.549,
+          "cost": 0.0010197,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tag which is not in allowed list; word count is 218 (within range); keyword naturally integrated but tag violation is critical.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tag which is not in allowed list; word count is 218 (within range); keyword naturally integrated but tag violation is critical.\"}\n```"
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "google/gemma-4-31b-it": {
+      "provider": "openrouter",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.00010448064,
+      "avg_latency_s": 7.3486,
+      "avg_completion_tokens": 259.0,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.786666666666667,
+      "avg_judge_spread": 0.48,
+      "spread_unreliable": false,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "1/5"
+    },
+    "ollama:gemma4:31b": {
+      "provider": "ollama",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.0,
+      "avg_latency_s": 2.4756,
+      "avg_completion_tokens": 258.2,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.8133333333333335,
+      "avg_judge_spread": 0.43999999999999995,
+      "spread_unreliable": false,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "1/5"
+    },
+    "google/gemini-2.5-flash-lite": {
+      "provider": "openrouter",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.00011179080000000001,
+      "avg_latency_s": 1.8856000000000002,
+      "avg_completion_tokens": 261.4,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.413333333333333,
+      "avg_judge_spread": 1.56,
+      "spread_unreliable": true,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "0/5"
+    }
+  },
+  "total_spend": 0.0262833912,
+  "openrouter_calls_made": 55,
+  "ollama_calls_made": 5,
+  "max_ollama_calls": 10,
+  "aborted": false,
+  "models": [
+    "google/gemma-4-31b-it",
+    "ollama:gemma4:31b",
+    "google/gemini-2.5-flash-lite"
+  ],
+  "judges": [
+    "google/gemini-2.5-flash",
+    "openai/gpt-4.1-mini",
+    "anthropic/claude-haiku-4.5"
+  ]
+}

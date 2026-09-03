@@ -196,3 +196,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Gen integration key cần `keys.json` local, thiếu file → `ENOENT`, không phải lỗi credential
 - [ ] (×1) Point sprint FAL bỏ qua task có Issue Links (point gộp vào task tổng) và task của techlead Lâm; point 0 = để trống trên Jira
 - [ ] (×1) Billing report tự động trượt 2 ngày (26-27/08) không có alert — trùng pattern gcloud auth hết hạn
+
+### memory candidates 2026-09-03
+- [ ] (×1) APC text-only gen chạy Ollama Cloud `gemma-4-31b-it` với 2 API key riêng, tách pool SEO, fallback OpenRouter cùng weights (APC `4997af9`, `b13513b`, `868bc02`)
+- [ ] (×1) Ollama Cloud cap in-flight theo dedicated slots của subscription, không theo burst đo được — size plan cũng theo slots (seo `8066b1f890`, APC `b2a1fab`)
+- [ ] (×1) Blog gen ảnh mặc định = `meta/muse-image` qua OpenRouter (blogs !869); `openai/gpt-5.4-image-2` + `openai/gpt-image-2` đã bench, không timeout
+- [ ] (×1) Worker fleet "processing ảo" = handler không settle, không phải job thật — check handler trước khi restart box (seo `8428ea87e3`)
+- [ ] (×1) Task Jira Tung: khi uninstall phải dọn liquid đã insert vào theme, hướng chuyển sang theme app extensions (app SEO)

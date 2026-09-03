@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1hnjphz` · 2026-09-02 · BLOG · api · A transient GCS read fault (39.5s hang then `read ETIMEDOUT`) on the previous version's content blob made getC · — · fix_disabled
+- `1jir04o` · 2026-09-02 · BLOG · api · Not a request failure: article 572072919074 no longer resolves in Shopify for shop viKH2hMHuRtfLQx5EuD1, and g · — · fix_disabled
+- `2kb6y1` · 2026-09-02 · BLOG · api · The single multipart write to GCS in putContent (file.save, resumable:false, no timeout and no retry) hit a tr · — · fix_disabled
 - `xg1b4z` · 2026-09-02 · SEO · apigen2 · Shopify's Admin REST answered 400 {"error":"app_not_installed"} to the @avada/core `shopifyCharge` middleware  · — · fix_disabled
 - `1ln0r66` · 2026-09-02 · BLOG · api · A single transient GCS read timeout on the article-content blob articles/DwpmAlCKmCX4PyGrvcJ5/618667639131/en/ · — · fix_disabled
 - `zfngxj` · 2026-09-02 · SEO · apigen2 · GET /api/sitemaps/subSitemaps returned 500 twice for the shop on custom domain allsaints.hk because trace-redi · — · fix_disabled
@@ -491,7 +494,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1r6hbdn` · 2026-08-03 · BLOG · api · During an OpenRouter rate-limit window on Google's Gemini SKUs, one translation chunk exhausted getCompletion' · https://gitlab.com/avada/blogs/-/merge_requests/829 · mr_open
 - `qftd5e` · 2026-08-03 · BLOG · proxy · Duplicate of fingerprint ha4bhr (MR https://gitlab.com/avada/blogs/-/merge_requests/827 open, unmerged): Shopi · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
 - `ha4bhr` · 2026-08-03 · BLOG · proxy · Shopify's Admin GraphQL answered ezarc-tools.myshopify.com with an in-band GraphQL error body ("Internal error · https://gitlab.com/avada/blogs/-/merge_requests/827 · mr_open
-- `vvgnr` · 2026-08-03 · BLOG · apiv2 · OpenRouter answered HTTP 200 for the callModel stream and then emitted a 429 'google/gemini-2.5-flash-lite is  · — · inconclusive
+- `vvgnr` · 2026-09-02 · BLOG · apiv2 · OpenRouter answered HTTP 200 for the callModel stream then emitted an in-band 429 'google/gemini-2.5-flash-lit · — · fix_disabled
 - `pmbm66` · 2026-08-03 · BLOG · apiv2 · OpenRouter returned its 429 'google/gemini-2.5-flash-lite is temporarily rate-limited upstream' as an in-band  · https://gitlab.com/avada/blogs/-/merge_requests/825 · mr_open
 - `3mppft` · 2026-08-30 · BLOG · api · afterLoginService dereferences `shop.id` with no null guard (packages/functions/src/services/after-login.servi · — · fix_disabled
 - `nb3ce` · 2026-08-28 · SEO · apigen2 · getPromptCollection reads collection metafields over Shopify REST (shopify.metafield.list with metafield[owner · — · fix_disabled
@@ -562,7 +565,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1lkslmo` · 2026-07-31 · SEO · reconcilependingfinalizegen2 · reconcilePendingFinalizeGen2 is the only Cloud Function in the repo declared at memory: '512MiB', and loading  · — · infra
 - `1xgc0td` · 2026-07-31 · BLOG · api · no verified cause · — · inconclusive
 - `16ynda3` · 2026-09-01 · BLOG · api · Infra, not code: one warm api container (instance 00a41e8c1d37609ee7bc…6591570d, revision api-00163-mox) stopp · — · infra
-- `htf1kk` · 2026-08-03 · BLOG · apiv2 · OpenRouter answers HTTP 200 then emits a 429 'temporarily rate-limited upstream' error frame inside the alread · — · inconclusive
+- `htf1kk` · 2026-09-02 · BLOG · apiv2 · OpenRouter answered HTTP 200 and then emitted an in-band 429 'google/gemini-2.5-flash-lite is temporarily rate · — · fix_disabled
 - `1gzakue` · 2026-07-31 · BLOG · api · The shared axios client in packages/functions/src/helpers/api.js is created with no `timeout`, so every Shopif · — · deferred
 - `q012sa` · 2026-07-31 · BLOG · api · seoProxyApi's catch decides severity from `e.response?.status`, which is undefined for a socket-level ECONNRES · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open
 - `ixc1eq` · 2026-07-31 · BLOG · api · Duplicate of fingerprint 1w64e0z (MR 810 already open, unmerged): shopifyRetryGraphQL decides retryability wit · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open

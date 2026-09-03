@@ -16,8 +16,9 @@
 - [seo worker memoryMb là copy GCF](seo-worker-memory-measured.md) — RSS đo thật nhỏ hơn 2–8x (recursive 4096 khai vs 499 peak); budget prod 5190 nên không tier nào chạm cap concurrency.
 - [seo fleet→GCF spill](seo-fleet-gcf-spill.md) — dispatchWork 3 gates + spill theo MEMORY (MR2204): job.memoryMb > maxFreeMb (worker:mem hash). KHÔNG có ngưỡng queue tổng. Spill OFF ở prod tới khi FLEET_SPILL_ENABLED=true.
 - [fleet-control public hosting](fleet-control-public-hosting.md) — fleet.tuannv-dev.site via Cloudflare Tunnel(cloudflared@central)+Access(Google/OTP); config in /etc/cloudflared not ~; REDIS_PORT=6380; basic-auth off + ufw deny tailscale0:3900.
-- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18, origin=git.avada.net, gitlab.com đổi tên gitlab-old. Bảng remote trong second-brain/CLAUDE.md đã sai.
+- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18. Group `avada` trên gitlab.com nay READ-ONLY → worker-sdk hết remote ghi được. Bảng remote trong second-brain/CLAUDE.md đã sai.
 - [seo prod deploy theo tag](seo-prod-deploy-by-tag.md) — merge master KHÔNG deploy; pipeline master chỉ có docs_gate. Cắt tag mới deploy. Đừng nhầm với silent-freeze.
+- [blog prod deploy theo tag](blogs-prod-deploy-by-tag.md) — `only: - tags`; 2026-09-03 master hơn tag cuối 183 commit, fix bot nằm chết 3 tuần. `git tag --contains <sha>` trước khi kết luận prod thiếu fix.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
 - [AEO/APC đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — remote gitlab.com vẫn push được nhưng là mirror chết: MR merge xong prod không nhận; CI variable cũng không đi theo.
 - [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
@@ -39,3 +40,4 @@
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
+- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — colima (không Docker Desktop); watchdog launchd phải mirror ra ~/Library/Application Support vì TCC chặn ~/Documents; gitlab.token cần scope `api`.

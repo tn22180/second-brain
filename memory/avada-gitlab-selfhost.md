@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2d25a023-2f18-4a64-8eef-a173ed27b2b3
-  modified: 2026-08-19T00:00:00.000Z
+  modified: 2026-09-03T00:00:00.000Z
 ---
 
 Avada chạy GitLab self-host tại `https://git.avada.net` — **19.1.0 Community Edition**
@@ -29,5 +29,17 @@ admin**, endpoint admin trả 403 vì thiếu scope `admin_mode`.
 **API `git.avada.net` bị Cloudflare chặn theo User-Agent.** `urllib`/script mặc định trả
 `403 error code: 1010` trên **mọi** endpoint, kể cả `/user` — nhìn y hệt token hết quyền nhưng
 không phải. Gửi kèm UA trình duyệt (`Mozilla/5.0 …Chrome/…`) là qua ngay. Đừng đi rotate token.
+
+**Group `avada` trên gitlab.com đã bị khoá READ-ONLY** (phát hiện 2026-09-03 khi push
+`worker-sdk`): `remote: Your top-level group is over the user limit and has been placed in a
+read-only state.` → push trả **403**. Repo nào chưa cutover sang self-host thì hiện **không có
+remote ghi được**. `@avada-falcon/worker-sdk` là trường hợp đó: origin vẫn
+`gitlab.com/avada/seoon-team/worker-sdk`, và git.avada.net **chưa có** project đó
+(`avada/worker-sdk` và `avada/seoon-team/worker-sdk` đều 404). Muốn ship sdk phải tạo project
+self-host trước, hoặc đẩy tạm sang namespace cá nhân `tn22180`.
+
+`fleet-control` = `gitlab.com/tn22180/falcon-tech-lead-manager` (namespace cá nhân, KHÔNG bị
+khoá, vẫn push được). Trunk của nó là **`master`**; `origin/main` chỉ có "Initial commit" —
+đừng nhắm MR vào `main`.
 
 Liên quan: [[seo-master-no-detect-worker]], [[gen2-deploy-silent-freeze]], [[avada-gitlab-host-migration]]
