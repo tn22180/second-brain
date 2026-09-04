@@ -1,13 +1,13 @@
-fingerprint: 1oer5cs
+fingerprint: 1spv2uj
 service: api
-message: NotFoundError: Your charge doesn't exist
-app: IMG-OPT
-repo: avada-image-optimizer
-date: 2026-09-03T21:06:49.361Z
+message: [getCompletions] GiY4uTUhj7tvBiRNuIPk ReferenceError: creditPayload is not defined
+app: BLOG
+repo: blogs
+date: 2026-09-03T22:52:47.636Z
 status: inconclusive
-attempt: 3
+attempt: 1
 
-# IMG-OPT · api · 1oer5cs
+# BLOG · api · 1spv2uj
 
 **Outcome.** timeout: killed after 480000ms
 

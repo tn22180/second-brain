@@ -1,13 +1,13 @@
-fingerprint: 1oer5cs
+fingerprint: bqpdh3
 service: api
-message: NotFoundError: Your charge doesn't exist
-app: IMG-OPT
-repo: avada-image-optimizer
-date: 2026-09-03T21:06:49.361Z
+message: HTTP 500 POST /api/blog-assist
+app: BLOG
+repo: blogs
+date: 2026-09-03T22:35:32.366Z
 status: inconclusive
-attempt: 3
+attempt: 1
 
-# IMG-OPT · api · 1oer5cs
+# BLOG · api · bqpdh3
 
 **Outcome.** timeout: killed after 480000ms
 

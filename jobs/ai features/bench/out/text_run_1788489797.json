@@ -1,0 +1,1398 @@
+{
+  "records": [
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "provider": "openrouter",
+        "latency_s": 4.651,
+        "ok": true,
+        "output": "<h2>Aria Suede Ankle Boots</h2>\n<p>Step into effortless style and comfort with the Aria Suede Ankle Boots, designed for the modern woman who values both fashion and functionality. These suede ankle boots for women are crafted from premium, soft suede that offers a luxurious look and feel, perfect for elevating any outfit from casual to chic.</p>\n<p>Featuring a sleek silhouette and a versatile neutral tone, the Aria boots seamlessly complement your wardrobe year-round. The cushioned insole ensures all-day comfort, while the sturdy outsole provides excellent traction, making them ideal for both city streets and weekend adventures.</p>\n<ul>\n  <li>Made from high-quality, durable suede material</li>\n  <li>Comfortable cushioned insole for extended wear</li>\n  <li>Stylish and versatile design suitable for any occasion</li>\n  <li>Secure side zipper for easy on and off</li>\n  <li>Non-slip rubber outsole for reliable grip</li>\n</ul>\n<p>Whether paired with jeans, skirts, or dresses, these suede ankle boots for women offer the perfect blend of sophistication and practicality. Update your footwear collection with the Aria Suede Ankle Boots and enjoy timeless style every step of the way.</p>",
+        "cost": 0.000458964,
+        "completion_tokens": 266,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 95,
+          "completion_tokens": 266,
+          "total_tokens": 361,
+          "cost": 0.000458964,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004636,
+            "upstream_inference_prompt_cost": 3.8e-05,
+            "upstream_inference_completions_cost": 0.0004256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 169,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 3.454,
+          "cost": 0.00103059,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 2.74,
+          "cost": 0.0002193345,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent adherence to all constraints and high-quality copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent adherence to all constraints and high-quality copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.2,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 1.376,
+        "ok": true,
+        "output": "<h2>Step Into Timeless Elegance with Aria Suede Ankle Boots</h2>\n\n<p>Elevate your footwear collection with the Aria Suede Ankle Boots, where sophisticated design meets everyday comfort. Crafted from premium, buttery-soft materials, these suede ankle boots for women offer a versatile silhouette that transitions seamlessly from a professional office setting to a casual weekend brunch. Whether paired with a flowing midi dress or your favorite skinny jeans, the Aria boots add an instant touch of refinement to any ensemble.</p>\n\n<p>Designed with the modern woman in mind, these boots feature a curated balance of style and functionality. The subtle heel provides just enough lift to enhance your posture without sacrificing stability, while the cushioned insole ensures you can stay on your feet from morning until night.</p>\n\n<ul>\n  <li><strong>Premium Quality:</strong> Luxurious faux-suede finish for a high-end look and feel.</li>\n  <li><strong>All-Day Comfort:</strong> Padded footbed and breathable lining to prevent fatigue.</li>\n  <li><strong>Versatile Styling:</strong> A classic pointed toe and sleek ankle profile that complements any outfit.</li>\n  <li><strong>Secure Fit:</strong> Durable side zipper for easy on-and-off wear.</li>\n</ul>",
+        "cost": 0.0003299175,
+        "completion_tokens": 253,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 253,
+          "total_tokens": 360,
+          "cost": 0.0003299175,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00033325,
+            "upstream_inference_prompt_cost": 8.025e-05,
+            "upstream_inference_completions_cost": 0.000253
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 167,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.882,
+          "cost": 0.00109791,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution across all dimensions: 218 words within range, valid HTML structure, keyword naturally integrated twice, no template leakage, and persuasive copy with strong benefit-driven messaging.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution across all dimensions: 218 words within range, valid HTML structure, keyword naturally integrated twice, no template leakage, and persuasive copy with strong benefit-driven messaging.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 2.971,
+          "cost": 0.0001776852,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Flawless execution meeting all prompt requirements.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Flawless execution meeting all prompt requirements.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.145,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.894,
+        "ok": true,
+        "output": "<h2>Aria Suede Ankle Boots</h2>\n\n<p>Step into effortless style and unparalleled comfort with the Aria Suede Ankle Boots. Crafted from luxuriously soft, genuine suede, these boots are designed to elevate any outfit, from casual jeans to chic dresses. The timeless silhouette features a flattering ankle height and a subtly pointed toe, creating a sophisticated look that never goes out of fashion. Whether you're heading to brunch with friends or a night out on the town, these versatile suede ankle boots for women are your perfect companion.</p>\n\n<p>Designed with both aesthetics and practicality in mind, the Aria boots boast a durable sole for all-day wear and a comfortable heel that adds just the right amount of lift without sacrificing stability. The plush interior lining ensures a cozy feel with every step, making them ideal for transitional weather. Invest in a pair of Aria Suede Ankle Boots and experience the perfect blend of luxury, comfort, and enduring style.</p>\n\n<ul>\n    <li>Premium genuine suede upper</li>\n    <li>Comfortable and stylish ankle height</li>\n    <li>Subtly pointed toe for a refined look</li>\n    <li>Durable sole for long-lasting wear</li>\n    <li>Cozy interior lining</li>\n    <li>Versatile design for various occasions</li>\n</ul>",
+        "cost": 0.000112464,
+        "completion_tokens": 263,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 263,
+          "total_tokens": 347,
+          "cost": 0.000112464,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001136,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 0.0001052
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-01-boots",
+        "word_count": 184,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.682,
+          "cost": 0.00107811,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated twice, no leakage, persuasive and well-structured copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, all allowed tags used correctly, keyword naturally integrated twice, no leakage, persuasive and well-structured copy.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 2.653,
+          "cost": 0.0001969605,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Flawless execution meeting all requirements with natural keyword integration.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Flawless execution meeting all requirements with natural keyword integration.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.16,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "provider": "openrouter",
+        "latency_s": 5.123,
+        "ok": true,
+        "output": "<h2>Vortex Pro 6-Speed Stand Mixer</h2>\n<p>Discover the ultimate kitchen companion with the Vortex Pro 6-Speed Stand Mixer, designed to elevate your baking experience. Whether you're whipping up delicate meringues or kneading dense dough, this stand mixer for baking offers unparalleled power and precision. Its robust motor and versatile speed settings ensure consistent results every time, making it an essential tool for both novice bakers and seasoned professionals.</p>\n<p>The Vortex Pro features a sleek, durable design with a large stainless steel bowl that accommodates big batches, perfect for family gatherings or special occasions. Its easy-to-use controls and secure attachments make mixing, beating, and whipping effortless, saving you time and effort in the kitchen.</p>\n<ul>\n  <li>6 adjustable speed settings for precise control</li>\n  <li>Powerful motor designed for heavy-duty mixing</li>\n  <li>Generous 5-quart stainless steel bowl</li>\n  <li>Includes dough hook, flat beater, and wire whisk attachments</li>\n  <li>Non-slip feet for stability during operation</li>\n</ul>\n<p>Upgrade your baking routine with the Vortex Pro 6-Speed Stand Mixer \u2014 the perfect stand mixer for baking enthusiasts who demand quality, efficiency, and style.</p>",
+        "cost": 0.000466488,
+        "completion_tokens": 271,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 94,
+          "completion_tokens": 271,
+          "total_tokens": 365,
+          "cost": 0.000466488,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004712,
+            "upstream_inference_prompt_cost": 3.76e-05,
+            "upstream_inference_completions_cost": 0.0004336
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 170,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.026,
+          "cost": 0.00105138,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, valid HTML, keyword naturally integrated twice, no leakage, persuasive and professional copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, valid HTML, keyword naturally integrated twice, no leakage, persuasive and professional copy.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 4.394,
+          "cost": 0.0001613106,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent output with natural keyword integration and strong copy quality.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent output with natural keyword integration and strong copy quality.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.167,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 1.644,
+        "ok": true,
+        "output": "<h2>Elevate Your Kitchen with the Vortex Pro 6-Speed Stand Mixer</h2>\n\n<p>Experience professional-grade performance in your own home with the Vortex Pro. Whether you are whipping up a light meringue or kneading heavy sourdough, this powerful appliance is the ultimate stand mixer for baking enthusiasts who demand precision and durability. Designed to handle everything from delicate batters to dense doughs, the Vortex Pro takes the manual labor out of your favorite recipes.</p>\n\n<p>Featuring a high-torque motor and six versatile speed settings, you can easily transition from a slow stir to a high-speed whip with a simple turn of the dial. The large-capacity stainless steel bowl ensures you have plenty of room for family-sized batches, while the sleek, modern design complements any countertop.</p>\n\n<ul>\n  <li><strong>6-Speed Precision:</strong> Tailor your mixing speed to suit any ingredient or recipe.</li>\n  <li><strong>High-Capacity Bowl:</strong> Large stainless steel basin perfect for bulk baking.</li>\n  <li><strong>Durable Build:</strong> Engineered with premium materials for long-lasting reliability.</li>\n  <li><strong>Versatile Attachments:</strong> Includes a whisk, dough hook, and flat beater for maximum flexibility.</li>\n  <li><strong>Stability First:</strong> Non-slip suction feet prevent walking during high-speed operation.</li>\n</ul>",
+        "cost": 0.0003526875,
+        "completion_tokens": 276,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 276,
+          "total_tokens": 383,
+          "cost": 0.0003526875,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00035625,
+            "upstream_inference_prompt_cost": 8.025e-05,
+            "upstream_inference_completions_cost": 0.000276
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 175,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.787,
+          "cost": 0.00114048,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, all allowed tags used correctly, 'stand mixer for baking' naturally integrated in first paragraph, no template leakage, persuasive and professional tone throughout.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, all allowed tags used correctly, 'stand mixer for baking' naturally integrated in first paragraph, no template leakage, persuasive and professional tone throughout.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.462,
+          "cost": 0.0002110878,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "All criteria perfectly met with excellent copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"All criteria perfectly met with excellent copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.162,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.672,
+        "ok": true,
+        "output": "<h2>Vortex Pro 6-Speed Stand Mixer: Your Ultimate Baking Companion</h2>\n\n<p>Unleash your inner baker with the Vortex Pro 6-Speed Stand Mixer. Designed for both novice and experienced home cooks, this powerful appliance makes tackling any recipe a breeze. From delicate meringues to dense bread doughs, its robust 500-watt motor and durable all-metal construction ensure consistent, high-quality results every time. This exceptional <strong>stand mixer for baking</strong> features six precise speed settings, allowing you to gradually incorporate ingredients for perfect texture and aeration. The generous 5.5-quart stainless steel bowl provides ample space for large batches, while the included attachments cover all your mixing needs.</p>\n\n<ul>\n    <li>Powerful 500-watt motor for effortless mixing</li>\n    <li>Six variable speed settings for ultimate control</li>\n    <li>5.5-quart stainless steel bowl for large capacity</li>\n    <li>Includes: Dough hook, whisk, and flat beater</li>\n    <li>Durable all-metal construction for long-lasting performance</li>\n    <li>Tilt-head design for easy access to the bowl</li>\n</ul>",
+        "cost": 0.000102168,
+        "completion_tokens": 237,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 237,
+          "total_tokens": 321,
+          "cost": 0.000102168,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001032,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 9.48e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-02-standmixer",
+        "word_count": 142,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.959,
+          "cost": 0.00104049,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 3,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tag which is not in allowed list; word count is 189 (within range); keyword integration is natural but slightly forced with emphasis tag.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 3, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tag which is not in allowed list; word count is 189 (within range); keyword integration is natural but slightly forced with emphasis tag.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 8.438,
+          "cost": 0.0002030193,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent adherence to all requirements with natural keyword use and persuasive copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent adherence to all requirements with natural keyword use and persuasive copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.17,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "provider": "openrouter",
+        "latency_s": 4.301,
+        "ok": true,
+        "output": "<h2>TerraFlow Non-Slip Yoga Mat</h2>\n<p>Enhance your yoga practice with the TerraFlow Non-Slip Yoga Mat, designed to provide superior grip and comfort. Whether you're a beginner or an experienced yogi, this mat ensures stability and support through every pose, helping you maintain perfect alignment without slipping.</p>\n<p>Crafted from eco-friendly, high-density materials, the TerraFlow mat offers excellent cushioning to protect your joints during intense sessions. Its textured surface delivers exceptional traction, making it the ideal non-slip yoga mat for all types of workouts, including hot yoga and Pilates.</p>\n<ul>\n  <li>Durable, eco-conscious materials for long-lasting performance</li>\n  <li>Textured surface ensures maximum grip and prevents slipping</li>\n  <li>Extra cushioning for joint support and comfort</li>\n  <li>Lightweight and easy to roll up for convenient portability</li>\n  <li>Available in multiple vibrant colors to match your style</li>\n</ul>\n<p>Choose the TerraFlow Non-Slip Yoga Mat to elevate your practice with confidence and comfort. Experience the perfect balance of stability and softness for a more focused and enjoyable workout every time.</p>",
+        "cost": 0.000436392,
+        "completion_tokens": 252,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 94,
+          "completion_tokens": 252,
+          "total_tokens": 346,
+          "cost": 0.000436392,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004408,
+            "upstream_inference_prompt_cost": 3.76e-05,
+            "upstream_inference_completions_cost": 0.0004032
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 156,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.657,
+          "cost": 0.00100683,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.074,
+          "cost": 0.0001525491,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Flawless execution across all criteria.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Flawless execution across all criteria.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.146,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 2.02,
+        "ok": true,
+        "output": "<h2>Elevate Your Practice with the TerraFlow Non-Slip Yoga Mat</h2>\n\n<p>Experience ultimate stability and mindful movement with the TerraFlow <strong>non-slip yoga mat</strong>. Engineered for practitioners of all levels, this premium mat combines high-density cushioning with an advanced grip surface to ensure you stay grounded during the most challenging poses. Whether you are mastering a downward dog or flowing through a rigorous Vinyasa session, our innovative texture prevents sliding, allowing you to focus entirely on your breath and alignment.</p>\n\n<p>Crafted from eco-friendly, biodegradable materials, the TerraFlow is as kind to the planet as it is to your joints. The optimal thickness provides superior joint support while maintaining the stability needed for balance exercises.</p>\n\n<ul>\n  <li><strong>Advanced Grip Technology:</strong> A specialized surface that ensures a secure hold, even during sweaty hot yoga sessions.</li>\n  <li><strong>Eco-Conscious Material:</strong> Made from non-toxic, sustainable TPE that is free from harmful phthalates.</li>\n  <li><strong>Joint Protection:</strong> High-density foam reduces impact on knees, elbows, and ankles.</li>\n  <li><strong>Easy Maintenance:</strong> Moisture-resistant surface that wipes clean in seconds.</li>\n  <li><strong>Lightweight & Portable:</strong> Includes a convenient carrying strap for effortless transport to the studio.</li>\n</ul>",
+        "cost": 0.000354915,
+        "completion_tokens": 279,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 106,
+          "completion_tokens": 279,
+          "total_tokens": 385,
+          "cost": 0.000354915,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0003585,
+            "upstream_inference_prompt_cost": 7.95e-05,
+            "upstream_inference_completions_cost": 0.000279
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 176,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.756,
+          "cost": 0.00104742,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tags which are not in the allowed list; word count is 247, within range but uses forbidden HTML.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tags which are not in the allowed list; word count is 247, within range but uses forbidden HTML.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.885,
+          "cost": 0.0002132559,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Output perfectly meets all specified requirements with high-quality copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Output perfectly meets all specified requirements with high-quality copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.152,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.886,
+        "ok": true,
+        "output": "<h2>TerraFlow Non-Slip Yoga Mat: Conquer Your Flow</h2>\n\nExperience unparalleled stability and comfort with the TerraFlow Non-Slip Yoga Mat. Designed for yogis of all levels, this mat provides the perfect foundation for your practice, allowing you to deepen poses and transition between them with confidence. Say goodbye to slipping and sliding, and hello to a truly grounded and centered experience.\n\nCrafted from premium, eco-friendly materials, the TerraFlow mat offers exceptional grip, even during the most demanding workouts. Its unique textured surface ensures your hands and feet stay firmly planted, preventing injuries and enhancing your focus. Whether you're flowing through a Vinyasa sequence, holding a challenging Warrior pose, or finding stillness in Savasana, this non-slip yoga mat is your reliable partner.\n\n<h3>Key Features:</h3>\n<ul>\n<li>Superior non-slip surface for ultimate grip and stability.</li>\n<li>Durable and eco-friendly construction for long-lasting use.</li>\n<li>Optimal cushioning to protect your joints during practice.</li>\n<li>Lightweight and portable for easy transport to the studio or outdoors.</li>\n<li>Easy to clean and maintain for hygiene and longevity.</li>\n</ul>\n\nInvest in your practice and elevate your yoga journey with the TerraFlow Non-Slip Yoga Mat. It's more than just a mat; it's an essential tool for achieving your wellness goals.",
+        "cost": 0.000119493,
+        "completion_tokens": 281,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 83,
+          "completion_tokens": 281,
+          "total_tokens": 364,
+          "cost": 0.000119493,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001207,
+            "upstream_inference_prompt_cost": 8.3e-06,
+            "upstream_inference_completions_cost": 0.0001124
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-03-yogamat",
+        "word_count": 194,
+        "tags_used": [
+          "h2",
+          "h3",
+          "li",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "h3"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.764,
+          "cost": 0.00104643,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "h3 tag used but not in allowed list; word count ~245 is within range but h3 violation is critical.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"h3 tag used but not in allowed list; word count ~245 is within range but h3 violation is critical.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 2.627,
+          "cost": 0.0001892187,
+          "ok": true,
+          "scores": {
+            "constraints": 3,
+            "html_validity": 3,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent copy and keyword use, but uses an unallowed h3 tag and slightly under word count.",
+          "raw": "{\"constraints\": 3, \"html_validity\": 3, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent copy and keyword use, but uses an unallowed h3 tag and slightly under word count.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.16,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "provider": "openrouter",
+        "latency_s": 5.807,
+        "ok": true,
+        "output": "<h2>Cloudnest Orthopedic Dog Bed</h2>\n<p>Give your beloved pet the ultimate comfort with the Cloudnest Orthopedic Dog Bed, specially designed to support the unique needs of large breeds. This orthopedic dog bed for large dogs combines premium memory foam with a durable, breathable cover to provide exceptional support and pressure relief. Whether your dog is recovering from an injury or simply aging gracefully, this bed helps soothe joints and muscles, promoting restful sleep and better overall health.</p>\n<p>Crafted with both comfort and durability in mind, the Cloudnest Orthopedic Dog Bed features a removable, machine-washable cover that makes cleaning effortless. Its spacious design accommodates large dogs with ease, ensuring they have plenty of room to stretch out and relax.</p>\n<ul>\n  <li>High-density memory foam for superior joint support</li>\n  <li>Water-resistant, breathable cover for added durability</li>\n  <li>Non-slip bottom keeps the bed securely in place</li>\n  <li>Removable and machine-washable cover for easy maintenance</li>\n  <li>Generous size perfect for large dog breeds</li>\n</ul>\n<p>Invest in the Cloudnest Orthopedic Dog Bed and provide your furry friend with a cozy retreat that promotes health and happiness. It's the perfect choice when searching for an orthopedic dog bed for large dogs that prioritizes both comfort and longevity.</p>",
+        "cost": 0.000495396,
+        "completion_tokens": 289,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 95,
+          "completion_tokens": 289,
+          "total_tokens": 384,
+          "cost": 0.000495396,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0005004,
+            "upstream_inference_prompt_cost": 3.8e-05,
+            "upstream_inference_completions_cost": 0.0004624
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 193,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "ul"
+        ],
+        "disallowed_tags": [],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.813,
+          "cost": 0.00106722,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 218 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 218 words, valid HTML structure, keyword naturally integrated twice, persuasive copy with clear benefits and features.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 4.721,
+          "cost": 0.0002148102,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Output perfectly meets all prompt requirements with natural keyword use and high-quality copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Output perfectly meets all prompt requirements with natural keyword use and high-quality copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.161,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 14.165,
+        "ok": true,
+        "output": "<h2>Give Your Pet the Gift of Weightless Sleep</h2>\n\n<p>Treat your furry friend to the ultimate sanctuary with the Cloudnest Orthopedic Dog Bed. Engineered with premium high-density memory foam, this bed provides superior joint support and pressure relief, making it the ideal orthopedic dog bed for large dogs and senior pets who struggle with mobility or joint pain.</p>\n\n<p>The Cloudnest is designed to contour to your dog's unique shape, distributing weight evenly to prevent sore spots and promote a deeper, more restorative sleep. Whether they are curling up for a nap or crashing after a long walk, the breathable fabric and plush topping ensure maximum comfort in every season.</p>\n\n<ul>\n  <li><strong>Advanced Joint Support:</strong> High-density foam base reduces pressure on hips and joints.</li>\n  <li><strong>Durable & Breathable:</strong> Premium upholstery resists wear while keeping your pet cool.</li>\n  <li><strong>Easy Maintenance:</strong> Features a removable, machine-washable cover for effortless cleaning.</li>\n  <li><strong>Non-Slip Bottom:</strong> Stays securely in place on hardwood, tile, or carpeted floors.</li>\n</ul>",
+        "cost": 9.00306e-05,
+        "completion_tokens": 236,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 236,
+          "total_tokens": 343,
+          "cost": 9.00306e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 9.094e-05,
+            "upstream_inference_prompt_cost": 1.07e-05,
+            "upstream_inference_completions_cost": 8.024e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 154,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.658,
+          "cost": 0.00103851,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated, no leakage, persuasive and well-structured copy.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent execution: 198 words, all allowed tags used correctly, keyword naturally integrated, no leakage, persuasive and well-structured copy.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 4.804,
+          "cost": 0.0002005047,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent adherence to all requirements with high-quality persuasive copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent adherence to all requirements with high-quality persuasive copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.17,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.811,
+        "ok": true,
+        "output": "<h2>Cloudnest Orthopedic Dog Bed: Unparalleled Comfort for Your Beloved Companion</h2>\n\n<p>Give your furry friend the gift of ultimate comfort and support with the Cloudnest Orthopedic Dog Bed. Designed with your dog's well-being in mind, this luxurious bed is more than just a place to sleep \u2013 it's a sanctuary for rest and rejuvenation. We understand that larger breeds require extra care, which is why this is the perfect <strong>orthopedic dog bed for large dogs</strong>, providing ample space and superior cushioning.</p>\n\n<p>Crafted with high-density orthopedic foam, the Cloudnest bed expertly contours to your dog's body, alleviating pressure points and soothing aching joints. This makes it an ideal choice for senior dogs, those with arthritis, or any dog that deserves a truly restorative sleep. The plush, yet durable, cover is both soft to the touch and easy to clean, ensuring a hygienic and inviting resting spot.</p>\n\n<ul>\n    <li><strong>Superior Orthopedic Support:</strong> High-density foam relieves joint pressure and promotes healthy spinal alignment.</li>\n    <li><strong>Spacious Design:</strong> Generously sized to accommodate large breeds comfortably.</li>\n    <li><strong>Durable & Easy to Clean:</strong> Removable, machine-washable cover for hassle-free maintenance.</li>\n    <li><strong>Luxurious Comfort:</strong> Soft, plush fabric creates an inviting and cozy environment.</li>\n    <li><strong>Promotes Restful Sleep:</strong> Helps reduce tossing and turning, leading to deeper, more restorative sleep.</li>\n</ul>",
+        "cost": 0.000133848,
+        "completion_tokens": 317,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 84,
+          "completion_tokens": 317,
+          "total_tokens": 401,
+          "cost": 0.000133848,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001352,
+            "upstream_inference_prompt_cost": 8.4e-06,
+            "upstream_inference_completions_cost": 0.0001268
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-04-dogbed",
+        "word_count": 203,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.979,
+          "cost": 0.00111474,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent copy with natural keyword integration; minor deduction for <strong> tags which aren't in the allowed list.",
+          "raw": "```json\n{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent copy with natural keyword integration; minor deduction for <strong> tags which aren't in the allowed list.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.982,
+          "cost": 0.0002242152,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 5,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Output perfectly meets all specified requirements with high-quality copy.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 5, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Output perfectly meets all specified requirements with high-quality copy.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.185,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "openai/gpt-4.1-mini",
+        "provider": "openrouter",
+        "latency_s": 3.289,
+        "ok": true,
+        "output": "<h2>Lumen Arc LED Desk Lamp</h2>\n<p>Illuminate your workspace with the Lumen Arc LED Desk Lamp, designed to provide optimal lighting for any task. This sleek and modern lamp features an energy-efficient LED light source that delivers bright, clear illumination while consuming minimal power. Perfect for reading, studying, or working, it enhances focus and reduces eye strain.</p>\n<p>What sets the Lumen Arc apart is its customizable lighting options. As a premium <strong>led desk lamp with adjustable brightness</strong>, you can easily tailor the light intensity to suit your needs, whether you require a soft glow for relaxation or a strong beam for detailed work. The adjustable arm and swivel head offer flexibility in directing light exactly where you need it, ensuring maximum comfort and productivity.</p>\n<ul>\n  <li>Energy-saving LED technology with long lifespan</li>\n  <li>Multiple brightness levels for personalized lighting</li>\n  <li>Flexible arm and swivel head for easy adjustment</li>\n  <li>Sleek, modern design to complement any desk setup</li>\n  <li>Touch control for effortless operation</li>\n</ul>",
+        "cost": 0.000412632,
+        "completion_tokens": 237,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 94,
+          "completion_tokens": 237,
+          "total_tokens": 331,
+          "cost": 0.000412632,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0004168,
+            "upstream_inference_prompt_cost": 3.76e-05,
+            "upstream_inference_completions_cost": 0.0003792
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 157,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 121.312,
+          "ok": false,
+          "error": {
+            "status": null,
+            "message": "TimeoutError: The read operation timed out"
+          },
+          "cost": 0.0
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.037,
+          "cost": 0.000207405,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent copy with a minor HTML tag violation.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent copy with a minor HTML tag violation.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.236,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemma-4-31b-it",
+        "provider": "openrouter",
+        "latency_s": 7.9,
+        "ok": true,
+        "output": "<h2>Illuminate Your Workspace with the Lumen Arc LED Desk Lamp</h2>\n\n<p>Elevate your home office or study area with the Lumen Arc LED Desk Lamp, where sophisticated design meets cutting-edge functionality. Featuring a sleek, minimalist silhouette and a flexible neck, this lamp provides targeted lighting exactly where you need it, reducing eye strain and enhancing productivity during long working hours.</p>\n\n<p>Experience complete control over your environment with our advanced <strong>led desk lamp with adjustable brightness</strong>. Whether you need a soft, warm glow for late-night reading or a crisp, cool light for detailed technical work, the intuitive touch-controls allow you to transition seamlessly between lighting modes to suit your mood and task.</p>\n\n<ul>\n  <li><strong>Customizable Lighting:</strong> Multiple brightness levels and color temperatures to reduce glare and flicker.</li>\n  <li><strong>Ergonomic Arc Design:</strong> A space-saving footprint with a wide reach for maximum desk coverage.</li>\n  <li><strong>Energy Efficient:</strong> High-performance LEDs that consume less power while providing superior illumination.</li>\n  <li><strong>Modern Aesthetic:</strong> A matte finish that complements any contemporary interior decor.</li>\n</ul>",
+        "cost": 8.99811e-05,
+        "completion_tokens": 239,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 107,
+          "completion_tokens": 239,
+          "total_tokens": 346,
+          "cost": 8.99811e-05,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 9.089e-05,
+            "upstream_inference_prompt_cost": 9.63e-06,
+            "upstream_inference_completions_cost": 8.126e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 161,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 2.887,
+          "cost": 0.00101673,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 4,
+            "keyword_integration": 2,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Output exceeds word limit (282 words vs. 250 max) and uses <strong> tag which is not in allowed list.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 4, \"keyword_integration\": 2, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Output exceeds word limit (282 words vs. 250 max) and uses <strong> tag which is not in allowed list.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 2.005,
+          "cost": 0.0003947625,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 5,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent copy with natural keyword use, but strong tag is not allowed.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 5, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent copy with natural keyword use, but strong tag is not allowed.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.166,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    },
+    {
+      "generation": {
+        "model": "google/gemini-2.5-flash-lite",
+        "provider": "openrouter",
+        "latency_s": 1.811,
+        "ok": true,
+        "output": "<h2>Lumen Arc LED Desk Lamp</h2>\n<p>Illuminate your workspace with the sleek and modern Lumen Arc LED Desk Lamp. Designed for both style and functionality, this lamp provides optimal lighting for any task. Whether you're studying, working, or reading, the Lumen Arc delivers crisp, clear light that reduces eye strain and enhances productivity. Its elegant curved design adds a touch of sophistication to any desk, while its robust construction ensures durability.</p>\n<p>Experience customizable illumination with our advanced LED technology. This <strong>led desk lamp with adjustable brightness</strong> allows you to effortlessly control the light intensity to suit your needs and preferences. Choose from multiple brightness levels to create the perfect ambiance for late-night study sessions, detailed crafting, or focused work. The energy-efficient LED bulbs provide long-lasting performance, saving you money on electricity bills.</p>\n<ul>\n<li>Multiple adjustable brightness levels for personalized lighting.</li>\n<li>Energy-efficient LED technology for reduced power consumption.</li>\n<li>Sleek, modern curved design to complement any workspace.</li>\n<li>Reduces eye strain for comfortable extended use.</li>\n<li>Durable construction for long-lasting reliability.</li>\n</ul>",
+        "cost": 0.000103653,
+        "completion_tokens": 241,
+        "reasoning_tokens": 0,
+        "raw_usage": {
+          "prompt_tokens": 83,
+          "completion_tokens": 241,
+          "total_tokens": 324,
+          "cost": 0.000103653,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0001047,
+            "upstream_inference_prompt_cost": 8.3e-06,
+            "upstream_inference_completions_cost": 9.64e-05
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "case_id": "apc-05-deskLamp",
+        "word_count": 165,
+        "tags_used": [
+          "h2",
+          "li",
+          "p",
+          "strong",
+          "ul"
+        ],
+        "disallowed_tags": [
+          "strong"
+        ],
+        "in_word_range": true
+      },
+      "judges": [
+        {
+          "judge": "anthropic/claude-haiku-4.5",
+          "latency_s": 1.821,
+          "cost": 0.00101574,
+          "ok": true,
+          "scores": {
+            "constraints": 2,
+            "html_validity": 2,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 4
+          },
+          "notes": "Uses <strong> tag which is not in allowed list; word count is 218 (within range); keyword naturally integrated but tag violation is critical.",
+          "raw": "```json\n{\"constraints\": 2, \"html_validity\": 2, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 4, \"notes\": \"Uses <strong> tag which is not in allowed list; word count is 218 (within range); keyword naturally integrated but tag violation is critical.\"}\n```"
+        },
+        {
+          "judge": "deepseek/deepseek-chat-v3.1",
+          "latency_s": 3.827,
+          "cost": 0.0001960398,
+          "ok": true,
+          "scores": {
+            "constraints": 5,
+            "html_validity": 4,
+            "keyword_integration": 4,
+            "no_leakage": 5,
+            "copy_quality": 5
+          },
+          "notes": "Excellent copy with a minor HTML validity issue.",
+          "raw": "{\"constraints\": 5, \"html_validity\": 4, \"keyword_integration\": 4, \"no_leakage\": 5, \"copy_quality\": 5, \"notes\": \"Excellent copy with a minor HTML validity issue.\"}"
+        },
+        {
+          "judge": "qwen/qwen3-235b-a22b-instruct",
+          "latency_s": 0.151,
+          "ok": false,
+          "error": {
+            "status": 400,
+            "message": "{\"error\":{\"message\":\"qwen/qwen3-235b-a22b-instruct is not a valid model ID\",\"code\":400},\"user_id\":\"org_3DQoCtag2TFnSz7TsMl9gsaC3TP\"}"
+          },
+          "cost": 0.0
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "openai/gpt-4.1-mini": {
+      "provider": "openrouter",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.00045397440000000003,
+      "avg_latency_s": 4.634200000000001,
+      "avg_completion_tokens": 263.0,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.88,
+      "avg_judge_spread": 0.08000000000000007,
+      "spread_unreliable": false,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "4/5"
+    },
+    "google/gemma-4-31b-it": {
+      "provider": "openrouter",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.00024350634000000005,
+      "avg_latency_s": 5.420999999999999,
+      "avg_completion_tokens": 256.6,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.68,
+      "avg_judge_spread": 0.5599999999999999,
+      "spread_unreliable": false,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "0/5"
+    },
+    "google/gemini-2.5-flash-lite": {
+      "provider": "openrouter",
+      "cases_attempted": 5,
+      "failures": 0,
+      "avg_cost_per_call": 0.0001143252,
+      "avg_latency_s": 1.8148,
+      "avg_completion_tokens": 267.8,
+      "avg_reasoning_tokens": 0.0,
+      "avg_quality_score_1to5": 4.38,
+      "avg_judge_spread": 0.76,
+      "spread_unreliable": false,
+      "fmt1_label": "word_range_compliance",
+      "fmt2_label": "allowed_tags_compliance",
+      "fmt1_compliance": "5/5",
+      "fmt2_compliance": "1/5"
+    }
+  },
+  "total_spend": 0.0220137687,
+  "openrouter_calls_made": 44,
+  "ollama_calls_made": 0,
+  "max_ollama_calls": 40,
+  "aborted": false,
+  "models": [
+    "openai/gpt-4.1-mini",
+    "google/gemma-4-31b-it",
+    "google/gemini-2.5-flash-lite"
+  ],
+  "judges": [
+    "anthropic/claude-haiku-4.5",
+    "deepseek/deepseek-chat-v3.1",
+    "qwen/qwen3-235b-a22b-instruct"
+  ]
+}

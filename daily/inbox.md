@@ -203,3 +203,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Blog gen ảnh mặc định = `meta/muse-image` qua OpenRouter (blogs !869); `openai/gpt-5.4-image-2` + `openai/gpt-image-2` đã bench, không timeout
 - [ ] (×1) Worker fleet "processing ảo" = handler không settle, không phải job thật — check handler trước khi restart box (seo `8428ea87e3`)
 - [ ] (×1) Task Jira Tung: khi uninstall phải dọn liquid đã insert vào theme, hướng chuyển sang theme app extensions (app SEO)
+
+### memory candidates 2026-09-04
+- [ ] (×1) APC chốt `gemma-4-31b-it` thay `gemini-2.5-flash-lite` — chất lượng vẫn dưới `gpt-4.1-mini`, đổi vì cost chứ không vì quality
+- [ ] (×1) Feature Google Search Console (seo) chạy local cần OAuth client GCP riêng + `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_ID`; thiếu redirect URI → `Access blocked: Authorization Error`
+- [ ] (×1) Jira FAL — assignee của FAL-605/606 là truongnn, tuannv chỉ ở vai reviewer; lọc "task của mình" phải tách assignee vs reviewer

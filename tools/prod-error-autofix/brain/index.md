@@ -7,6 +7,12 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `9z8gy9` · 2026-09-04 · IMG-OPT · webhookAppSubscriptionUpdate · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the UpdateFunctio · — · infra
+- `ysmvd` · 2026-09-04 · BLOG · apisa · no verified cause · — · inconclusive
+- `1spv2uj` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
+- `bqpdh3` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
+- `13ibnmu` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
+- `edt5jw` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
 - `1hnjphz` · 2026-09-02 · BLOG · api · A transient GCS read fault (39.5s hang then `read ETIMEDOUT`) on the previous version's content blob made getC · — · fix_disabled
 - `1jir04o` · 2026-09-02 · BLOG · api · Not a request failure: article 572072919074 no longer resolves in Shopify for shop viKH2hMHuRtfLQx5EuD1, and g · — · fix_disabled
 - `2kb6y1` · 2026-09-02 · BLOG · api · The single multipart write to GCS in putContent (file.save, resumable:false, no timeout and no retry) hit a tr · — · fix_disabled
@@ -507,7 +513,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `wtekj7` · 2026-08-03 · BLOG · proxy · getShopifyArticleById swallows its own `throw new Error('Article not found')` and returns `{}`, so getPreview  · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `1fxxcv6` · 2026-08-02 · BLOG · api · getSettingDataConfig calls `shopify.asset.get(themeId, {'asset[key]': 'config/settings_data.json'})` with no r · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
 - `18xbru1` · 2026-08-02 · SEO · apisagen2 · On a Shopify REST 429, handleResolveRedirectSkipError's update-path catch handler fires an unguarded second RE · https://gitlab.com/avada/seo/-/merge_requests/2107 · mr_open
-- `1oer5cs` · 2026-08-12 · IMG-OPT · api · Not an app-src defect: a request carrying charge_id=43806792180 — a literal that exists in no `charges` doc in · — · inconclusive
+- `1oer5cs` · 2026-09-03 · IMG-OPT · api · no verified cause · — · inconclusive
 - `hhp84a` · 2026-08-02 · BLOG · apisa · getShopifyArticleById swallows its own `throw new Error('Article not found')` and returns `{}` (shopifyGraphQl · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `luol15` · 2026-08-02 · SEO · apigen2 · Duplicate of fingerprint h9cev0 (MR https://gitlab.com/avada/seo/-/merge_requests/2095 open, unmerged): the br · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
 - `19mrmo0` · 2026-08-02 · SEO · changelogtriggers-shops · The month-boundary credit reset wrote 6915 shop docs in ~2.5 minutes (vs 4-67 on ordinary nights), and every w · — · infra
