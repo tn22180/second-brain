@@ -7,6 +7,8 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `3wpu86` · 2026-09-05 · BLOG · api · A one-off Shopify Admin REST 400 thrown inside the pre-route @avada/core auth/charge middleware on GET /api/sh · — · fix_disabled
+- `ppdptj` · 2026-09-04 · BLOG · apiv2 · Not a request failure: OpenRouter's meta/muse-image provider rejected one content-image prompt with HTTP 400 ' · — · fix_disabled
 - `9z8gy9` · 2026-09-04 · IMG-OPT · webhookAppSubscriptionUpdate · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the UpdateFunctio · — · infra
 - `ysmvd` · 2026-09-04 · BLOG · apisa · no verified cause · — · inconclusive
 - `1spv2uj` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
@@ -469,7 +471,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
 - `1h0gjn4` · 2026-08-30 · SEO · apigen2 · Shopify REST answered HTTP 429 to getAllMetafields' `shopify.metafield.list` for shop sl3ZiH1q5RIjyZcXsLaa; pr · — · fix_disabled
-- `1mv41mw` · 2026-08-25 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
+- `1mv41mw` · 2026-09-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
 - `19yp12q` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) was OOM-killed at 2026-08-04T10:33:21.448Z (2060 MiB use · — · infra
