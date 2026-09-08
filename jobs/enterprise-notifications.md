@@ -167,6 +167,8 @@ Started: 2026-08-07
 | 6 | Independent review of both branches, then fix what it found | cavecrew-reviewer / sonnet | ✅ | 1/5 | clean | 5 fixed, 1 closed with tests, 1 open question |
 | 7 | Add the shop email line to both alerts | inline | ✅ | 1/5 | clean | seo 24/24, img 20/20 green; both docs gates PASS |
 | 8 | Audit message formatting: bold the tier + label every field | inline | ✅ | 1/5 | clean | seo 26/26, img 22/22; verified against Slack's own parse |
+| 9 | seo only: alert when a shop subscribes to the Pro tier | inline | ✅ | 1/5 | clean | 36/36 green (10 new); docs_gate PASS — **superseded, see task 10** |
+| 10 | MR 2229 conflict → found the feature already on master; salvage the two real gaps | inline | ✅ | 1/5 | clean | 68/68 alert tests; docs_gate PASS |
 
 ### Task 6 — independent review, and what came of it
 
@@ -901,3 +903,135 @@ id"* — asserts `*Enterprise*` is present and `*<planId>*` is not, in both aler
 
 Commits `1d65fd31d467` (seo) and `bca1650a` (img), pushed. Security: clean — formatting only, no
 new data in the message, nothing outside the two service files, their tests and the feature doc.
+
+
+#### ✅ Task 9: seo only — Pro-tier subscribe alert
+
+Asked for after task 8: the same Slack alert when a shop crosses up into the **Pro** tier, in the
+**seo app only**. The image app is out of scope — it has no Pro/Expert split worth a second alert.
+
+- Agent: inline (global rule: no subagents unless asked)
+- Status: ✅ completed — commit `d25371c546`, pushed
+- Plan:
+  - Goal: `afterCharge` posts one extra message to the same channel when a shop moves up into the
+    Pro tier from below it, and posts nothing extra on an Enterprise upgrade or a Pro→Pro move.
+  - Files allowed: `packages/functions/src/services/slack/enterpriseAlertService.js`,
+    `packages/functions/src/services/subscriptionService.js`,
+    `packages/functions/src/services/slack/__tests__/enterpriseAlertService.test.js`,
+    `docs/features/enterprise-alerts.md`
+  - Approach: a `notifyProUpgrade` beside `notifyEnterpriseUpgrade`, sharing `field()`,
+    `shopLink()` and `crispLink()` so the two messages cannot drift. Rejected: a `tier` parameter
+    on the existing function — the two gates differ and one branchy function is harder to read
+    than two flat ones.
+  - Test command: `npx jest packages/functions/src/services/slack/__tests__/enterpriseAlertService.test.js`
+    from the repo root, expected all green with the new Pro cases.
+  - Risk: the tier gate. `isProPlan()` is **not** usable here — see below.
+  - Rollback: additive; revert the commit.
+
+**The gate, and why the obvious one is wrong.** `proPlans`
+(`packages/functions/src/config/subscription/plans.js:127-134`) deliberately *includes*
+`ENTERPRISE` and `ENTERPRISE_23`, so `isProPlan(plan)` is true for an Enterprise shop and gating on
+it would fire both alerts on every Enterprise upgrade. The correct predicate is the existing
+`nonEnterprisePaidPlans` (`:141`), whose own doc comment warns about exactly this trap. Gate:
+
+```
+isProTier(plan) && !isProTier(oldPlanId) && !isEnterprisePlan(oldPlanId)
+```
+
+The third clause stops an Enterprise→Pro **downgrade** from being announced as a new sale.
+
+**Decisions taken with the user:** `<!channel>` on the Pro alert too, same as Enterprise; the two
+BFCM bundle plans count as Pro (they are paid, below Enterprise, and a bundle purchase is a real
+sale). No login/online alert for Pro — a Pro shop is online every day and that would drown the
+channel.
+
+### Result
+
+`notifyProUpgrade` in the same service file, called from `subscriptionService.js:177` one line below
+the Enterprise call. The two gates are mutually exclusive, so a charge produces at most one message.
+
+The email / billing-interval / Crisp block was pulled into one `detailLines()` builder shared by all
+three alerts — the block had already been copy-pasted twice and a third copy would have drifted.
+Behaviour is unchanged: the login alert passes no `planInterval`, so it still has no interval line.
+
+```
+📈 *[Avada SEO]* Acme (acme.myshopify.com) is now on *Pro* (pro_22), previously free.
+*Email:* owner@acme.com
+*Billing interval:* yearly
+*Crisp:* Open conversation
+@channel
+```
+
+| Check | Result |
+|---|---|
+| Alert unit tests | 36/36 (26 existing + 10 new) |
+| `packages/functions` suite | 715 pass, 2 fail — `shopify2026Client`, `workListStore`, both pre-existing and untouched by this diff |
+| eslint (Node 20) | exit 0 |
+| docs_gate citations | PASS — 443 anchored checked |
+
+Security: **clean**. 226 insertions over 4 files. No secret added; nothing new logged (the Crisp
+rejection is still swallowed before it reaches the logger); no Firestore query added, so shop
+scoping is unchanged; `plan`/`oldPlanId` still come from `ctx.state.charge` behind `verifyCharge`;
+no forbidden file touched; no new dependency or outbound host. Blast radius: `afterCharge`, a live
+billing path — the new function swallows everything and `afterCharge` has its own outer try/catch,
+so the worst case is a missing or duplicate Slack message, never a blocked upgrade.
+
+**Correction to the MR links recorded under task 8:** `seo`'s `origin` is **git.avada.net**, not
+gitlab.com — the app cut over on 2026-08-18 and the gitlab.com group is read-only. The seo MR must
+be opened at `https://git.avada.net/avada/seo/-/merge_requests/new`. `avada-image-optimizer` is
+still on gitlab.com, so its link was right.
+
+#### ✅ Task 10: MR 2229 is dead — master already has the feature
+
+Asked to resolve MR 2229's conflict against master. Merging it would have been wrong.
+
+- Agent: inline
+- Status: ✅ completed — commit `59f680a09e` on `fix/pro-alert-bfcm-and-crisp`, pushed
+
+**What the conflict actually was.** Four `add/add` conflicts, on files this branch thought it was
+creating. Master already carries the whole feature:
+
+- The Enterprise alerts landed byte-identical to this branch's `1d65fd31d4` —
+  `git diff origin/master 1d65fd31d4` on `enterpriseAlertService.js` is three lines, all of them
+  `export` keywords added to `enterpriseChannel`, `shopLink` and `field`.
+- A Pro alert shipped separately: hailt's `1ba78f5a90`, merged as `979f1825df` on 2026-09-04, as a
+  new `proAlertService.js` called from `subscriptionService.js:173`. Its commit message cites the
+  same `isProPlan`/`proPlans` trap, so it was found independently.
+- `entChannelId` is also wired on master (`packages/functions/src/config/slack.js:12`).
+
+**Why a naive resolution was dangerous.** Keeping this branch's `notifyProUpgrade` next to master's
+`notifyProPlanChange` puts both on `afterCharge` — every Pro subscribe would have posted **two**
+messages to the CS channel. The conflict markers do not surface that; the duplication only shows up
+by reading the merged call site.
+
+**Decision (user's, asked before acting): close 2229, salvage the deltas into a small MR off
+master.** Two real gaps in hailt's version:
+
+1. **BFCM bundles never alerted.** The gate was the literal `[PRO_21, PRO_22]`, so
+   `bfcm_bundle_dropshipper` / `bfcm_bundle_growth_merchant` were silent — the *more* valuable sale
+   ($50/$60 a month against `pro_22`'s $34.95). Now `nonEnterprisePaidPlans`, which is the same
+   `proPlans` list minus the Enterprise ids, so it still cannot double-fire on Enterprise.
+2. **No Crisp line.** Dropped on the grounds that `findSessionIdByDomain` returns `null` for every
+   SEO shop — true on a dev machine, where the credential answers `404 not_subscribed`, but
+   unmeasured in production, and the Enterprise alerts on the same path already pay for the lookup.
+   Restored, with the uncertainty written into the doc rather than asserted away.
+
+hailt's version is **better** in one place and it was kept: an Enterprise → Pro move gets its own
+`⬇️ has *downgraded* from *Enterprise*` sentence. This branch had gone silent on it, which loses the
+churn signal CS most wants.
+
+| Check | Result |
+|---|---|
+| `slack/` + `subscriptionService.enterpriseAlert` | 68/68 |
+| `packages/functions` | 1243 pass, 3 fail — `shopify2026Client`, `workListStore`, `chatKeyFailover`, `detect-changed-functions`; all pre-existing on master, none imports alert code |
+| eslint (Node 20) | exit 0 |
+| docs_gate citations | PASS — 513 anchored |
+
+Security: clean. 91 insertions / 4 files, no secret, nothing new logged, no query added, no new
+dependency or outbound host. Blast radius: one extra bounded (5s) Crisp request per Pro charge,
+swallowed on rejection.
+
+**Process note worth keeping.** Two people ran the same brief through Claude in parallel and shipped
+two implementations of the same feature; the second only found out at merge time, 167 commits later.
+Checking `git log origin/master -- <the file you are about to create>` before starting would have
+cost one command.

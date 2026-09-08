@@ -1,4 +1,5 @@
 - [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
+- [Check master before building](check-master-before-building.md) — grep master cho feature TRƯỚC khi code; team chạy song song cùng 1 brief qua Claude, MR 2229 build xong mới biết master đã có.
 - [Verify the branch before diagnosing](verify-branch-before-diagnosing.md) — pin the tree before ANY code claim; the worktree you sit in feels like truth. Fired twice: SEO-260714, then a whole doc set written 207 commits behind master.
 - [Docs from code: shared layer first](docs-from-code.md) — Tony's rule; common layer before per-domain, else skills can't justify why-not-claude-md and you get two taxonomies.
 - [Verify skill citations against disk](verify-skill-citations-against-disk.md) — Avada skills get copied between apps and cite code that doesn't exist; grep every symbol, "0 occurrences" is the finding.
@@ -41,3 +42,7 @@
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
 - [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — colima (không Docker Desktop); watchdog launchd phải mirror ra ~/Library/Application Support vì TCC chặn ~/Documents; gitlab.token cần scope `api`.
+- [seo local clone is shallow](seo-local-clone-shallow.md) — merge-base rỗng / "unrelated histories" với origin/master là do shallow (68 graft), không phải lịch sử khác; đã `fetch --unshallow` 2026-09-07.
+- [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights trừ 5 credit action `gscInsights`.
+- [seo MCP prod OAuth: redirect_uri chưa whitelist](seo-mcp-oauth-shopify-callback.md) — /mcp-oauth/shopify-callback phải thêm tay ở Partner Dashboard; shopify.app*.toml gitignored nên repo không mang được.
+- [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy.

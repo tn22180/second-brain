@@ -36,14 +36,37 @@ The gate is presence, not size: the SKU arrives as one whole row per project per
 backlog leaves a hole, while a genuine storage drop (`avada-blog-app` fell $1.56 → $0.20/day
 on 2026-08-20 after a purge) is a small but complete number.
 
-`meta.completeness` in the data JSON carries `probeDate`, `settled`, `walkedBackDays` and a
-per-candidate `trail`. When nothing settles the report is still written — with a ⚠️ banner in
-the markdown and in the Telegram summary saying the numbers are a floor. An explicit `--date`
-skips the walk entirely and reports exactly that day.
+### Imputation (when the SKU stops arriving at all)
 
-Expect the report day to lag more than 2 days during a backlog, and to repeat the same day
-across consecutive runs until the export catches up. That is the point: a repeated correct
-number beats a fresh wrong one.
+Walking back only works while the export is *late*. On 2026-09-03 the `Cloud Firestore
+Storage` SKU stopped landing outright — a clean cliff after 40+ days at ~$16.40/day
+account-wide — and the walk pinned the report to 2026-09-02 for three consecutive runs,
+re-posting the same numbers to Telegram each morning.
+
+So when the probe day is unsettled, `billing_data.py` first tries to **impute** the missing
+flat SKU from the median of the newest 7 non-zero values in the prior 14 days (zeros are
+dropped — a run of holes would otherwise drag the baseline to 0 exactly when it is needed),
+then re-runs the walk on the patched rows. It only adopts the result if that lands on a
+*newer* day than the honest walk would have.
+
+Guard against imputing over a real hole: a candidate project-day is skipped when its
+**non-flat** cost is below `--impute-min-ratio` (default 0.6) of its own trailing median —
+that day is missing more than this one SKU. `--no-impute` restores the pre-2026-09 behaviour
+(walk back to a fully-landed day, however stale).
+
+`meta.completeness` in the data JSON carries `probeDate`, `settled`, `walkedBackDays`, a
+per-candidate `trail`, and `imputed` (`sku`, the per-project-day `rows` used, their `total`,
+and anything `skipped` by the ratio guard). `settled` stays **false** when imputation was
+needed — it reports whether the export actually delivered, not whether the report is
+publishable. The markdown and the Telegram summary show an ℹ️ banner naming the estimated
+amount. When nothing settles even after imputation the report is still written, with the
+older ⚠️ floor banner. An explicit `--date` skips the walk but still imputes — it pins the
+day, not the hole in it, which is what backfilling 2026-09-03..05 needed. `--no-impute` turns
+that off too.
+
+Expect the report day to lag more than 2 days during a backlog. It should no longer repeat
+the same day across consecutive runs: a $16/day flat charge estimated to <3% beats freezing
+on a stale day.
 
 ## Preconditions
 

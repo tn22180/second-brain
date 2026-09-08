@@ -159,7 +159,17 @@ def render(data, apps_cfg, settings, sugg, camel_by_app):
     L.append(f"| **Rolling 30** | {dates['r30Start']} → {dates['r30End']} |")
     L.append("| **Nguồn** | BigQuery Billing Export |\n")
     comp = meta.get("completeness") or {}
-    if comp.get("settled") is False:
+    imp = comp.get("imputed")
+    if imp:
+        who = ", ".join(f"`{r['project_id']}` {r['date']} ~${r['cost']:.2f}" for r in imp["rows"])
+        L.append(f"> ℹ️ **SKU `{imp['sku']}` chưa về** cho ngày này — đã ước tính "
+                 f"**~${imp['total']:.2f}** từ median 7 ngày gần nhất (SKU phẳng, spread <3%). "
+                 f"Phần còn lại là số thật.\n"
+                 + (f"> Ước tính: {who}\n" if who else "")
+                 + (f"> Không ước tính (ngày thiếu nhiều hơn 1 SKU): "
+                    f"`{'`, `'.join(s['project_id'] + ' ' + s['date'] for s in imp['skipped'])}`\n"
+                    if imp.get("skipped") else ""))
+    elif comp.get("settled") is False:
         oldest = comp["trail"][-1]["d1"] if comp.get("trail") else dates["d1"]
         holes = sorted({pid for t in comp.get("trail", []) for pid in t.get("missingFlatSku", [])})
         L.append(f"> ⚠️ **Số liệu chưa chốt** — billing export còn backfill, không ngày nào "

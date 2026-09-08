@@ -1,0 +1,109 @@
+{
+  "emptyImageAlt": {
+    "title": "Image alt",
+    "bad": "Missing alt attribute",
+    "badDescription": "Several images lack alt text. Adding alt text will improve SEO and accessibility",
+    "good": "All images on your page have alt attributes",
+    "onlyAlt": "Several images lack alt text. Adding alt text will improve SEO and accessibility",
+    "manyAlt": "An image lacks alt text. Adding alt text will improve SEO and accessibility",
+    "solution": "Fill in the alt text for all your images"
+  },
+  "imagesAlt": {
+    "title": "Image alt length",
+    "improve": "Lengthy alt texts",
+    "improveDescription": "Some image alt texts are too long",
+    "good": "All image alt texts are appropriately concise, under 100 characters",
+    "solution": "Keep alt text under 100 characters"
+  },
+  "metaTitle": {
+    "title": "Title tag",
+    "bad": "Missing meta title",
+    "badDescription": "No title tag found; this is crucial for SEO and should be added",
+    "good": "Title tag is present, boosting search visibility",
+    "solution": "Add title to page"
+  },
+  "titleTagLength": {
+    "title": "Title tag length",
+    "improve": "Lengthy title",
+    "improveDescription": "The page title should be shorter",
+    "good": "Title tag length is optimal, under 100 characters",
+    "solution": "Keep page title tag under 100 characters"
+  },
+  "titleTagKeyword": {
+    "title": "Title tag keyword",
+    "improve": "Keywords misplaced in title",
+    "improveDescription": "Keywords present in title tag, but not at the start",
+    "good": "Title tag correctly starts with target keywords",
+    "solution": "Set target keywords towards the beginning"
+  },
+  "metaDescription": {
+    "title": "Meta description",
+    "bad": "Meta description is missing",
+    "badDescription": "No meta description found; crucial for SEO and should be added",
+    "good": "Meta description is set, enhancing page's SEO",
+    "solution": "Add meta description to page"
+  },
+  "metaDescriptionLength": {
+    "title": "Meta description length",
+    "improve": "Adjust Meta Description length",
+    "improveDescription": "Meta description length inconsistent",
+    "good": "Meta description length is optimal, within 155-160 characters",
+    "solution": "Aim for a meta description length of 155-160 characters"
+  },
+  "subheading": {
+    "title": "Subheading distribution",
+    "improve": "Increase Subheading Use",
+    "improveDescription": "Make sure to enter subheading for text longer than 300 words",
+    "good": "Subheadings well-distributed in content over 300 words"
+  },
+  "internalLink": {
+    "title": "Internal links",
+    "improve": "Need internal link",
+    "improveDescription": "You should have the most internal links pointing to a cornerstone content",
+    "good": "Good internal links"
+  },
+  "outboundLinks": {
+    "title": "Outbound links",
+    "improve": "No outbound links appear in this page",
+    "improveDescription": "You should add some outbound links to high authority sites to improve your SEO",
+    "good": "Have outbound links"
+  },
+  "keyphrase": {
+    "title": "Use of main keyword",
+    "bad": "Need update main keyword",
+    "badDescription": "Main keyword should appear in suggested position",
+    "good": "Good main keyword"
+  },
+  "passiveVoice": {
+    "title": "Passive voice",
+    "improve": "Passive voice detected",
+    "improveDescription": "In most cases, active sentences are easier to understand than passive sentences",
+    "good": "No passive voice"
+  },
+  "textLength": {
+    "title": "Text length",
+    "improve": "Text length not enough",
+    "improveDescription": "Preferably posts with 1000 words or more",
+    "good": "Good text length"
+  },
+  "transitionWord": {
+    "title": "Use of transition words",
+    "improve": "Add transition words",
+    "improveDescription": "You should use some transition words to improve readability",
+    "good": "Good transition words"
+  },
+  "googleStructureData": {
+    "title": "Google Structure Data",
+    "bad": "Add Google structured data",
+    "badDescription": "You have not enabled Google Structured Data for eCommerce",
+    "good": "Structured Data for eCommerce is enabled on your shop"
+  },
+  "speedScore": {
+    "title": "page load speed",
+    "bad": "Your page's performance is significantly below average",
+    "badDescription": "A good score of average website is between 60 and 75",
+    "improve": "Your page's performance is satisfactory",
+    "improveDescription": "Enhance your website's performance to match top sites (80-90 score)",
+    "good": "Your website's speed is excellent"
+  }
+}

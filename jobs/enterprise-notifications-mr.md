@@ -1,62 +1,73 @@
-# MR descriptions — feat/enterprise-slack-alert
+# MR descriptions
 
-Paste into the MR body. Both branches target `master`, tick "delete source branch".
+> **MR 2229 (`feat/enterprise-slack-alert`) is dead — close it, do not merge.** Master already
+> carries this whole feature: the Enterprise alerts landed byte-identical to that branch (only three
+> helpers gained `export`), and hailt shipped a Pro alert in `1ba78f5a90`, merged as
+> `979f1825df` on 2026-09-04. Merging 2229 would have run `notifyProUpgrade` and
+> `notifyProPlanChange` side by side and posted **two** messages for every Pro subscribe.
+> What survives from it is the MR below.
 
 ---
 
-## avada/seo — `feat(alerts): Slack alert when an Enterprise shop subscribes or logs in`
+## avada/seo — `fix(alerts): alert on BFCM bundle sales and attach the Crisp link to Pro`
 
-Two Slack alerts to a CS channel, modelled on the existing 1-star login alert: one when a shop
-**crosses up into** the Enterprise tier, one when an Enterprise shop is **online**.
+Branch `fix/pro-alert-bfcm-and-crisp`, off current master. Open at
+**https://git.avada.net/avada/seo/-/merge_requests/new?merge_request%5Bsource_branch%5D=fix%2Fpro-alert-bfcm-and-crisp**
+— this app moved off gitlab.com on 2026-08-18 and the gitlab.com group is read-only.
 
-- **Tier from `shop.plan`**, not a Crisp tag — no cron, no hand-tagging, no 24h lag, no shop missed.
-- **Alert A** fires from `afterCharge` on `isEnterprisePlan(plan) && !isEnterprisePlan(oldPlanId)`.
-  Both values come from `ctx.state.charge`; the shop snapshot is still stale there. No dedup — one
-  charge is one event.
-- **Alert B** fires from `buildPostLoginTasks`, embed-only, deduped **once per shop per UTC day**
-  via a new `enterpriseAlerts` collection. Fail-open: a dedup read that errors still sends.
-- **Crisp link** resolved live by domain, then filtered on this app's segment — the Crisp website is
-  shared across every Avada app, so a text match alone can point CS at another product's
-  conversation. Bounded at 5s; the `crisp-api` client sets no deadline of its own.
-- Neither alert can break its host: both swallow, and `afterLogin` / `afterCharge` each have their
-  own outer try/catch. Worst case is a missing or duplicated Slack message.
+Two narrow gaps in the Pro alert shipped in `!<pro-plan-slack-alert>`.
 
-Feature doc: `docs/features/enterprise-alerts.md`.
+**1. A BFCM bundle produced no alert.** The gate listed the two literal Pro ids, so
+`bfcm_bundle_dropshipper` and `bfcm_bundle_growth_merchant` went silent — and those are the more
+valuable sale, $50 and $60 a month against `pro_22`'s $34.95. The gate is now
+`nonEnterprisePaidPlans`, which is the same `proPlans` list with the Enterprise ids filtered out, so
+it still cannot double-fire on an Enterprise upgrade. Two consequences, both wanted and both tested:
+a bundle → `pro_22` move now reads as a move *inside* the tier and stays silent, and an
+Enterprise → bundle move gets the downgrade sentence.
 
-**Heads-up, not part of this MR:** the reachable Crisp credential answers `404 not_subscribed`. If
-production's is the same, this app will never render a Crisp link — and `syncCrispOneStarShops` is
-already failing silently for the same reason.
+**2. The Crisp line was missing.** It was dropped because the credential reachable from a dev
+machine answers `404 not_subscribed`. That is a dev-machine measurement; production has not been
+checked, and the Enterprise alerts on the same code path already pay for the lookup. Restored, with
+the reasoning written into the feature doc so the next reader does not re-derive it. `crispLink` is
+exported from the Enterprise service alongside the three helpers this file already borrows.
+
+Not touched: the downgrade sentence, the trial decision, the channel, the wording. The Enterprise
+alerts are unchanged apart from one added `export`.
 
 ### What CS sees
 
 ```
-🚀 *[Avada SEO]* Acme (acme.myshopify.com) is now on *Enterprise* (enterprise_23), previously pro_22.
+🚀 *[Avada SEO]* Acme (acme.myshopify.com) is now on *Pro* (bfcm_bundle_growth_merchant), previously free.
 *Email:* owner@acme.com
-*Billing interval:* yearly
-*Crisp:* Open conversation
-@channel
-
-💎 *[Avada SEO]* Acme (acme.myshopify.com, plan: enterprise_23) — an *Enterprise* customer — is online now.
-*Email:* owner@acme.com
+*Billing interval:* monthly
 *Crisp:* Open conversation
 @channel
 ```
 
-Verified by posting the real service output to the channel and reading it back through
-`conversations.history` — Slack's own parse confirms the bold runs, both links and
-`broadcast:channel`.
+### Verification
 
-### Before merging
+| Check | Result |
+|---|---|
+| `slack/` + `subscriptionService.enterpriseAlert` suites | 68/68 |
+| `packages/functions` suite | 1243 pass, 3 fail — `shopify2026Client`, `workListStore`, `chatKeyFailover`, `detect-changed-functions`; all pre-existing on master and none imports alert code |
+| eslint (Node 20) | exit 0 |
+| docs_gate citations | PASS — 513 anchored checked |
 
-`SLACK_ENT_CHANNEL_ID=C0BPGHGSY3S` must be set in the staging and production function config.
-Unset, both alerts fall back to `SLACK_CS_CHANNEL_ID` — degraded, not broken. The bot is already
-invited to the channel; without that, `chat.postMessage` answers `channel_not_found` on a valid id.
+Security: clean. 91 insertions over 4 files. No secret; nothing new logged; no Firestore query, so
+shop scoping is unchanged; `plan`/`oldPlanId` still come from `ctx.state.charge`; no forbidden file;
+no new dependency or outbound host — the Crisp lookup is a call this code path already made for
+Enterprise. Blast radius: one extra bounded (5s) Crisp request per Pro charge, swallowed on
+rejection, on a path whose caller already has its own try/catch.
 
 ---
 
 ## avada/avada-image-optimizer — `feat(alerts): Slack alert when an Expert-tier shop subscribes or logs in`
 
-Same feature as the SEO app's MR, against this app's top tier (`expert`). Both alerts land in one
+Open at **https://gitlab.com/avada/avada-image-optimizer/-/merge_requests/new** — this app is still
+on gitlab.com. **Unaffected by any of the above**; this MR is still live and still needs opening.
+
+Same as the SEO app's two Enterprise-tier alerts, against this app's top tier (`expert`). The Pro
+alert is SEO-only and is **not** part of this MR. Both alerts land in one
 channel and are byte-identical apart from the app label, so CS reads them as one system.
 
 - **Tier test is `getBasePlan(plan) === EXPERT`**, never a raw `=== EXPERT` — plan ids carry a
@@ -94,4 +105,11 @@ carries a hardcoded Crisp API key, committed since `e8d17aab`. The same key is i
 
 ### Before merging
 
-Same `SLACK_ENT_CHANNEL_ID=C0BPGHGSY3S` requirement as the SEO MR.
+`SLACK_ENT_CHANNEL_ID=C0BPGHGSY3S` must be set in this app's staging and production function
+config. Unset, both alerts fall back to `SLACK_CS_CHANNEL_ID` — degraded, not broken. The bot must
+also be invited to the channel; without that, `chat.postMessage` answers `channel_not_found` on a
+valid id.
+
+> The SEO app no longer needs this step: `entChannelId` is already wired on master
+> (`packages/functions/src/config/slack.js:12`) with the same fallback. Confirm the env var is set
+> in `avada-seo` and `avad-seo-staging` if the Enterprise alerts are landing in the CS channel.

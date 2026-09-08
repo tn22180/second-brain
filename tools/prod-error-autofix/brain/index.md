@@ -7,10 +7,30 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `fp7w87` · 2026-09-08 · SEO · mcpoauthgen2 · The MCP client fetched the same /mcp-oauth/shopify-callback URL twice within 1 second; the first fetch consume · — · fix_disabled
+- `ohyb5f` · 2026-09-08 · BLOG · api · Shopify's Admin API reset the TLS connection (ECONNRESET, "socket hang up") on one of the two bare `initShopif · — · fix_disabled
+- `18rdy2b` · 2026-09-08 · SEO · sidekickgen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 1 instead of  · — · fix_disabled
+- `9bn15e` · 2026-09-08 · AEO · handleHookSubscriber · handleHookSubscriber (1GB gen1) was OOM-killed twice while running processLlmsTxtSyncResult for shop gltnDRUK9 · — · infra
+- `1kbc5wp` · 2026-09-08 · IMG-OPT · optimizeStoreSubscriber · subscribeOptimizeStore clears the gift-run flag via updateShopData(shop.id, {speedUpFreeRunStartedAt: null}),  · — · fix_disabled
+- `2wf7hx` · 2026-09-08 · BLOG · syncsubscribeactivecharge · Not code: the 2026-09-07T13:00:23Z Cloud Scheduler tick for syncSubscribeActiveCharge was rejected at the Clou · — · infra
+- `anhcuz` · 2026-09-08 · BLOG · api · genFaqsElm JSON.parse's the raw OpenRouter completion, but the request never asks for JSON mode — getPromptAIG · — · fix_disabled
+- `4yy9ds` · 2026-09-08 · BLOG · api · genFaqsElm asks OpenRouter for a plain-text completion (getCompletion default format='text', no zodSchema) and · — · fix_disabled
+- `hl4uy7` · 2026-09-08 · BLOG · api · Shopify Admin GraphQL answered one transient HTTP 502 to the `shopLocales` query that articleController.update · — · fix_disabled
+- `1yzz8r3` · 2026-09-08 · IMG-OPT · resetQuotaCycleSchedule · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the Firebase CLI' · — · infra
+- `d2z5nh` · 2026-09-08 · BLOG · apisa · articleController.list still fans out one storefront HTML GET per article in a single unbounded Promise.all, s · — · fix_disabled
+- `1ckq01e` · 2026-09-08 · SEO · apigen2 · Shopify Admin GraphQL answered one transient HTTP 500 to shop FrCPD4Xd0SYZCzg4F3dP (dru-era.myshopify.com) at  · — · fix_disabled
+- `1lea9rp` · 2026-09-08 · BLOG · api · During the 2026-09-06 08:35–08:46Z Shopify Admin brownout, Shopify REST answered HTTP 500 to the bare, unretri · — · fix_disabled
+- `1cv0dcf` · 2026-09-08 · BLOG · api · Same 2026-09-06 08:35–08:46Z Shopify Admin brownout already recorded for BLOG api instance 00a41e8c1d6dd670 (f · — · fix_disabled
+- `1flj6a` · 2026-09-08 · BLOG · api · Shopify Admin GraphQL brownouted HTTP 500 to api instance 00a41e8c1d6dd670 during 08:35–08:38Z, and fetchAllIm · — · fix_disabled
+- `1iuj6y0` · 2026-09-08 · BLOG · api · Duplicate of the recorded 2026-09-06 08:35–08:46Z BLOG api Shopify Admin brownout family (fingerprints 4nac83  · — · fix_disabled
+- `gnx4is` · 2026-09-08 · BLOG · api · articleController.getOne awaits shopLocalesGraphQL(shopify) at articleController.js:224 — outside the try that · — · fix_disabled
+- `a2foaq` · 2026-09-08 · BLOG · api · Shopify Admin API brownouted HTTP 500 for this api instance during 08:35–08:46Z, and `void syncShopDataFromSho · — · fix_disabled
+- `13fxio6` · 2026-09-08 · BLOG · api · Duplicate of recorded fingerprint 4nac83 (same 30-min window, same instance 00a41e8c1d6dd670, revision api-001 · — · fix_disabled
+- `4nac83` · 2026-09-08 · BLOG · api · Shopify Admin API returned HTTP 500/503 to this instance for ~4 minutes (08:35:13–08:39:09Z, plus a tail at 08 · — · fix_disabled
 - `3wpu86` · 2026-09-05 · BLOG · api · A one-off Shopify Admin REST 400 thrown inside the pre-route @avada/core auth/charge middleware on GET /api/sh · — · fix_disabled
 - `ppdptj` · 2026-09-04 · BLOG · apiv2 · Not a request failure: OpenRouter's meta/muse-image provider rejected one content-image prompt with HTTP 400 ' · — · fix_disabled
 - `9z8gy9` · 2026-09-04 · IMG-OPT · webhookAppSubscriptionUpdate · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the UpdateFunctio · — · infra
-- `ysmvd` · 2026-09-04 · BLOG · apisa · no verified cause · — · inconclusive
+- `ysmvd` · 2026-09-08 · BLOG · apisa · errorHandler's catch block unconditionally re-emits every caught error via ctx.app.emit('error', ...), and err · — · fix_disabled
 - `1spv2uj` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
 - `bqpdh3` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
 - `13ibnmu` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
@@ -197,7 +217,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `17mauzc` · 2026-08-18 · BLOG · changelogtriggers-shops · The brand-new gen2 Firestore trigger changelogTriggers-shops was created by firestore-bigquery-changelog's reg · — · infra
 - `1q1pmhv` · 2026-08-28 · BLOG · api · getTrashArticles always appends `where('deletedAt','>=',expiryDaysAgo)` and then `orderBy(sortKey)`, so the Tr · — · fix_disabled
 - `xy8ebm` · 2026-08-18 · SEO · apigen2 · @avada/core 4.8.2's setSession does `cookies[key] = value` on whatever decryptText('__session') returns; for t · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
-- `jjeu1l` · 2026-08-17 · SEO · apigen2 · @avada/core 4.8.2's setSession assigns a property onto whatever decryptText('__session') returns; a browser-pr · — · inconclusive
+- `jjeu1l` · 2026-09-08 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 3 instead of  · — · fix_disabled
 - `r6ig4i` · 2026-08-28 · BLOG · api · @avada/core 4.8.2's setSession assigns a property onto whatever decryptText('__session') returns without check · — · fix_disabled
 - `1qodvk0` · 2026-08-17 · BLOG · api · @avada/core 4.8.2's setSession assumes decryptText('__session') always returns an object; when the cookie decr · — · inconclusive
 - `37aerf` · 2026-08-17 · AEO · cleanupAiReferralVisitsScheduler · Not a runtime failure: the single ERROR is a Cloud Functions gen1 deploy audit log — the 2026-08-17T10:29:22.8 · — · infra
@@ -515,7 +535,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `wtekj7` · 2026-08-03 · BLOG · proxy · getShopifyArticleById swallows its own `throw new Error('Article not found')` and returns `{}`, so getPreview  · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `1fxxcv6` · 2026-08-02 · BLOG · api · getSettingDataConfig calls `shopify.asset.get(themeId, {'asset[key]': 'config/settings_data.json'})` with no r · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
 - `18xbru1` · 2026-08-02 · SEO · apisagen2 · On a Shopify REST 429, handleResolveRedirectSkipError's update-path catch handler fires an unguarded second RE · https://gitlab.com/avada/seo/-/merge_requests/2107 · mr_open
-- `1oer5cs` · 2026-09-03 · IMG-OPT · api · no verified cause · — · inconclusive
+- `1oer5cs` · 2026-09-08 · IMG-OPT · api · Not a request failure: ~3–6s after every successful plan upgrade, a follow-up call into @avada/core's shopifyC · — · fix_disabled
 - `hhp84a` · 2026-08-02 · BLOG · apisa · getShopifyArticleById swallows its own `throw new Error('Article not found')` and returns `{}` (shopifyGraphQl · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `luol15` · 2026-08-02 · SEO · apigen2 · Duplicate of fingerprint h9cev0 (MR https://gitlab.com/avada/seo/-/merge_requests/2095 open, unmerged): the br · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
 - `19mrmo0` · 2026-08-02 · SEO · changelogtriggers-shops · The month-boundary credit reset wrote 6915 shop docs in ~2.5 minutes (vs 4-67 on ordinary nights), and every w · — · infra

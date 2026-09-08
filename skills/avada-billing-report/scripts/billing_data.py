@@ -46,6 +46,12 @@ def parse_args():
                    help="how many days behind today to probe first (default 2)")
     p.add_argument("--max-walk", type=int, default=4,
                    help="max extra days to walk back looking for a settled day (default 4)")
+    p.add_argument("--no-impute", action="store_true",
+                   help="never substitute a trailing median for a missing flat storage SKU; "
+                        "walk back to a fully-landed day instead")
+    p.add_argument("--impute-min-ratio", type=float, default=0.6,
+                   help="refuse to impute a day whose non-flat cost is below this fraction of "
+                        "its trailing median — it is missing more than the flat SKU (default 0.6)")
     p.add_argument("--tz", default="UTC", help="timezone for the day boundary (default UTC)")
     p.add_argument("--all-projects", action="store_true", help="include *-staging projects")
     p.add_argument("--budget", type=float, default=3500.0, help="monthly budget target (default 3500)")
@@ -154,6 +160,74 @@ def day_completeness(flat, day, lookback=7):
         got = flat.get((pid, day), 0.0)
         checks[pid] = (got > 0, round(got / med, 3))
     return checks
+
+
+# A day can go missing more than the flat SKU. Imputing then hides a real hole, so the
+# day's remaining cost has to still look like itself before the substitution is allowed.
+IMPUTE_LOOKBACK = 14
+IMPUTE_SAMPLE = 7
+
+
+def nonflat_by_day(rows):
+    out = defaultdict(float)
+    for r in rows:
+        if not r["flat_sku"]:
+            out[(r["project_id"], r["usage_date"])] += r["cost"]
+    return out
+
+
+def trailing_positive_median(series, pid, day, lookback=IMPUTE_LOOKBACK, want=IMPUTE_SAMPLE):
+    """Median of the newest `want` non-zero values in the `lookback` days before `day`.
+
+    Zeros are dropped rather than averaged in: a run of missing days would otherwise drag
+    the baseline to 0 exactly when it is needed.
+    """
+    vals = []
+    for i in range(1, lookback + 1):
+        v = series.get((pid, day - timedelta(days=i)), 0.0)
+        if v > 0:
+            vals.append(v)
+        if len(vals) >= want:
+            break
+    if len(vals) < 3:
+        return None
+    vals.sort()
+    return vals[len(vals) // 2]
+
+
+def impute_flat_sku(rows, days, min_ratio):
+    """Synthesize the flat 'Cloud Firestore Storage' row for days the export owes us.
+
+    The SKU is storage-at-rest — one row per project per day, <3% spread, and the last
+    thing the export writes. From 2026-09-03 it stopped arriving entirely, which froze
+    the report on 2026-09-02 for three consecutive runs. A trailing median of a
+    near-constant charge beats republishing a stale day.
+    """
+    flat = flat_sku_by_day(rows)
+    nonflat = nonflat_by_day(rows)
+    meta = {}
+    for r in rows:
+        meta.setdefault(r["project_id"], (r["project_name"], r["currency"]))
+    synth, used, skipped = [], [], []
+    for day in days:
+        for pid in sorted({p for p, _ in flat}):
+            if flat.get((pid, day), 0.0) > 0:
+                continue
+            base = trailing_positive_median(flat, pid, day)
+            if base is None or base < FLAT_SKU_FLOOR:
+                continue
+            nf_base = trailing_positive_median(nonflat, pid, day)
+            ratio = round(nonflat.get((pid, day), 0.0) / nf_base, 3) if nf_base else None
+            if ratio is not None and ratio < min_ratio:
+                skipped.append({"date": day.isoformat(), "project_id": pid, "nonFlatRatio": ratio})
+                continue
+            name, currency = meta.get(pid, (pid, "USD"))
+            synth.append({"project_id": pid, "project_name": name, "currency": currency,
+                          "bucket": "Firestore / Storage", "flat_sku": True, "fn_id": None,
+                          "usage_date": day, "cost": round(base, 6), "imputed": True})
+            used.append({"date": day.isoformat(), "project_id": pid,
+                         "cost": round(base, 2), "nonFlatRatio": ratio})
+    return synth, used, skipped
 
 
 def pick_settled_day(rows, probe, max_walk):
@@ -294,11 +368,47 @@ def main():
                                   "win_start": win_start.isoformat(),
                                   "win_end": win_end.isoformat()}))
 
+    imputed = None
+
+    def imputed_meta(used, skipped, keep):
+        return {
+            "sku": "Cloud Firestore Storage",
+            "rows": [u for u in used if u["date"] in keep],
+            "total": round(sum(u["cost"] for u in used if u["date"] in keep), 2),
+            "skipped": [s for s in skipped if s["date"] in keep],
+            "minNonFlatRatio": args.impute_min_ratio,
+        }
+
     if args.date:
         d1, settled, trail = probe, None, []
+        # An explicit date pins the day, not the hole in it: backfilling a day the export
+        # never finished (2026-09-03..05) is exactly when the estimate is needed.
+        if not args.no_impute:
+            days = [probe, probe - timedelta(days=1)]
+            synth, used, skipped = impute_flat_sku(rows, days, args.impute_min_ratio)
+            if synth:
+                rows = rows + synth
+                imputed = imputed_meta(used, skipped, {d.isoformat() for d in days})
     else:
         d1, settled, trail = pick_settled_day(rows, probe, walk)
-        if not settled:
+        if not (settled and d1 == probe) and not args.no_impute:
+            # d2 of the oldest candidate needs the SKU too — the headline is a delta.
+            days = [probe - timedelta(days=i) for i in range(walk + 2)]
+            synth, used, skipped = impute_flat_sku(rows, days, args.impute_min_ratio)
+            if synth:
+                patched = rows + synth
+                cand, ok, cand_trail = pick_settled_day(patched, probe, walk)
+                if ok and cand > d1:
+                    rows = patched
+                    d1, settled, trail = cand, False, cand_trail
+                    imputed = imputed_meta(
+                        used, skipped,
+                        {cand.isoformat(), (cand - timedelta(days=1)).isoformat()})
+        if imputed:
+            sys.stderr.write(
+                f"Note: {imputed['sku']} missing — imputed {imputed['total']:.2f} across "
+                f"{len(imputed['rows'])} project-days to report {d1} instead of a stale day.\n")
+        elif not settled:
             sys.stderr.write(
                 f"WARNING: no settled day in {earliest}..{probe} — the billing export is "
                 f"still backfilling. Reporting {d1} anyway; treat it as a floor.\n")
@@ -335,6 +445,7 @@ def main():
                 "lagDays": args.lag_days,
                 "settled": settled,
                 "walkedBackDays": (probe - d1).days,
+                "imputed": imputed,
                 "trail": trail,
             },
         },

@@ -96,7 +96,10 @@ def build_message(data, apps_cfg, settings):
     L.append(f"🔥 GCP Cost Report — {dates['d1']}")
     L.append(f"📆 DoD: {dates['d2']} → {dates['d1']}")
     comp = meta.get("completeness") or {}
-    if comp.get("settled") is False:
+    imp = comp.get("imputed")
+    if imp:
+        L.append(f"ℹ️ SKU {imp['sku']} chưa về — ước tính ~${imp['total']:.2f} từ median 7 ngày.")
+    elif comp.get("settled") is False:
         L.append("⚠️ Số liệu CHƯA CHỐT — export còn backfill, các số dưới là sàn.")
     elif comp.get("walkedBackDays"):
         L.append(f"ℹ️ Lùi {comp['walkedBackDays']} ngày ({comp['probeDate']} chưa về đủ data).")
