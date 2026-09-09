@@ -10,6 +10,24 @@ TZ_ARG="${TZ_ARG:-Asia/Ho_Chi_Minh}"
 # this job overnight; a service account's stored key refreshes tokens indefinitely.
 export CLOUDSDK_CORE_ACCOUNT="${CLOUDSDK_CORE_ACCOUNT:-tony-cli@avada-seo.iam.gserviceaccount.com}"
 
+# The 06:00 launchd fire can land before wifi associates after a wake, and bq then dies
+# on "Failed to resolve oauth2.googleapis.com" — with set -e that kills the whole job,
+# so no report, no Telegram, no daily.html. Wait for the token endpoint to answer first.
+wait_for_network() {
+  local tries=10 delay=30 i
+  for ((i = 1; i <= tries; i++)); do
+    if /usr/bin/curl -sS -o /dev/null -m 10 https://oauth2.googleapis.com/ 2>/dev/null; then
+      [ "$i" -gt 1 ] && echo "network up after $(( (i - 1) * delay ))s" >&2
+      return 0
+    fi
+    echo "network not up yet (attempt $i/$tries), retrying in ${delay}s" >&2
+    sleep "$delay"
+  done
+  echo "oauth2.googleapis.com unreachable after $(( tries * delay ))s — aborting" >&2
+  return 1
+}
+wait_for_network
+
 /opt/homebrew/bin/python3 "$SKILL/scripts/render_report.py" --tz "$TZ_ARG"
 
 # Post GCP cost summary to Telegram (only when configured — silent skip otherwise).

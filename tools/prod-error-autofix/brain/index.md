@@ -7,6 +7,12 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1y50rr7` · 2026-09-09 · SEO · ollamaquotaalertgen2 · no verified cause · — · inconclusive
+- `qp6czb` · 2026-09-09 · SEO · apigen2 · GET /api/genFaqBulk/fWnE11VkwlBaGq5ShBiu returns 500 deterministically because that bulk's item list holds at  · — · fix_disabled
+- `17g9p6f` · 2026-09-09 · SEO · apisagen2 · GET /apiSa/genFaqBulk/HPAqhHJo9kED8jNXivTO returns 500 deterministically because bulk HPAqhHJo9kED8jNXivTO ref · — · fix_disabled
+- `135nfbs` · 2026-09-09 · BLOG · api · getProductsGraphQL hand-builds the Shopify GraphQL document by splicing the merchant's raw `search` query para · — · fix_disabled
+- `cc6ylg` · 2026-09-09 · SEO · apisagen2 · POST /apiSa/optimize/start returned 500 for shop I3yH6dXvmClplCf6eEvU because Shopify Admin GraphQL answered o · — · fix_disabled
+- `l2ih0y` · 2026-09-09 · SEO · apisagen2 · GET /apiSa/republish returns 500 whenever any Shopify Admin REST call inside it answers 429, because republish · — · fix_disabled
 - `fp7w87` · 2026-09-08 · SEO · mcpoauthgen2 · The MCP client fetched the same /mcp-oauth/shopify-callback URL twice within 1 second; the first fetch consume · — · fix_disabled
 - `ohyb5f` · 2026-09-08 · BLOG · api · Shopify's Admin API reset the TLS connection (ECONNRESET, "socket hang up") on one of the two bare `initShopif · — · fix_disabled
 - `18rdy2b` · 2026-09-08 · SEO · sidekickgen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 1 instead of  · — · fix_disabled
@@ -392,7 +398,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `154s6rb` · 2026-08-12 · BLOG · api · Shopify Admin GraphQL answered a `files(first:250)` page POST with HTTP 502 for shop LNcuFl5eNNlAlRh7dUDq at 2 · — · deferred
 - `1tb355r` · 2026-08-12 · SEO · apigen2 · packages/functions/src/controllers/devController.js uses `shopifyConfig` at two call sites but has no `import  · https://gitlab.com/avada/seo/-/merge_requests/2180 · mr_open
 - `1l9y5gr` · 2026-08-14 · SEO · apigen2 · packages/functions/src/controllers/devController.js uses the identifier `CHECKLIST_KEY` in the `done_checklist · https://gitlab.com/avada/seo/-/merge_requests/2199 · mr_open
-- `rpe1y2` · 2026-08-12 · BLOG · api · getProductsGraphQL interpolates the merchant's raw search text into a double-quoted GraphQL string literal, so · — · deferred
+- `rpe1y2` · 2026-09-09 · BLOG · api · getProductsGraphQL interpolates the merchant's raw `search` text into a double-quoted GraphQL string literal,  · — · fix_disabled
 - `ri5pmt` · 2026-08-12 · SEO · apisagen2 · Merge d71f665015 (feat/worker-pubsub-migration, master 2026-08-11T08:49:48Z) deleted `import appConfig from '@ · — · inconclusive
 - `1lqxi03` · 2026-08-12 · BLOG · proxy · The single Shopify Admin GraphQL call in getArticlesByTagWithPagination (tag.service.js:246) is issued through · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
 - `17l3oan` · 2026-08-12 · BLOG · api · Duplicate of fingerprint 1re07yj (MR https://gitlab.com/avada/blogs/-/merge_requests/859 open, unmerged — a445 · https://gitlab.com/avada/blogs/-/merge_requests/859 · mr_open

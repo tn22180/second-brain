@@ -208,3 +208,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) APC chốt `gemma-4-31b-it` thay `gemini-2.5-flash-lite` — chất lượng vẫn dưới `gpt-4.1-mini`, đổi vì cost chứ không vì quality
 - [ ] (×1) Feature Google Search Console (seo) chạy local cần OAuth client GCP riêng + `VITE_GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_ID`; thiếu redirect URI → `Access blocked: Authorization Error`
 - [ ] (×1) Jira FAL — assignee của FAL-605/606 là truongnn, tuannv chỉ ở vai reviewer; lọc "task của mình" phải tách assignee vs reviewer
+
+### memory candidates 2026-09-09
+- [ ] (×1) MCP verify endpoint (seo) bắt buộc có `/shopifyDomain` trong path — bỏ đi khách không verify được (`a21709c642`)
+- [ ] (×1) Enterprise upgrade alert exclude shop có tag Crisp `ent_no_reply` — CS đã offer 2 lần không trả lời
+- [ ] (×1) Fleet box giờ key-only SSH (`PasswordAuthentication no`), key `dongnv` đã revoke — worker không đi qua SSH nên không ảnh hưởng
+- [ ] (×1) `Error: json: unknown field "proto"` khi deploy worker product — schema config sai field, không phải lỗi network
+- [ ] (×1) Billing report 6h lại trượt (2026-09-09) — lần thứ 3 im lặng chết, pattern gcloud auth hết hạn, vẫn chưa có alert

@@ -169,6 +169,7 @@ Started: 2026-08-07
 | 8 | Audit message formatting: bold the tier + label every field | inline | ✅ | 1/5 | clean | seo 26/26, img 22/22; verified against Slack's own parse |
 | 9 | seo only: alert when a shop subscribes to the Pro tier | inline | ✅ | 1/5 | clean | 36/36 green (10 new); docs_gate PASS — **superseded, see task 10** |
 | 10 | MR 2229 conflict → found the feature already on master; salvage the two real gaps | inline | ✅ | 1/5 | clean | 68/68 alert tests; docs_gate PASS |
+| 11 | Exclude shops tagged `ent_no_reply` in Crisp from the **online** alert, both apps | inline | ✅ | 1/5 | clean | seo 41/41 + docs_gate PASS; img 30/30 + docs_gate PASS |
 
 ### Task 6 — independent review, and what came of it
 
@@ -1035,3 +1036,49 @@ swallowed on rejection.
 two implementations of the same feature; the second only found out at merge time, 167 commits later.
 Checking `git log origin/master -- <the file you are about to create>` before starting would have
 cost one command.
+
+#### ✅ Task 11: `ent_no_reply` — CS opt-out for the online alert
+
+Asked 2026-09-09: CS offers an Enterprise shop help; after two unanswered offers they tag the Crisp
+conversation `ent_no_reply`, and the daily "is online now" ping should stop for that shop.
+
+- Branch `feat/ent-no-reply-exclude` in both repos, off `origin/master` (`seo` `c3ed5127f3`,
+  `img` `2b121203`) — the old `*-wt-ent-alert` worktrees are dead, master carries the feature.
+- Commits: `seo` `bf6e88d873`, `img` `0de1a446`. Not pushed, no MR opened yet.
+
+**Online alert only, decided with the user.** A new Enterprise subscription still fires: one charge
+is one event, it is money, and a shop that just paid has stopped being a no-reply.
+
+**The check is free in `seo` and costs one call in `img`,** because the two apps get their Crisp
+link differently:
+
+| repo | how the segment is read |
+|---|---|
+| `seo` | `findSessionIdByDomain.js` gained `findConversationByDomain()` returning `{sessionId, segments}`; the default export unwraps the id for the upgrade and Pro alerts. The alert already made this call for the link, so the opt-out adds **no** Crisp request. |
+| `img` | new `services/crisp/getConversationSegments.js` → `getConversationMetas(website_id, shop.crispSessionId)`, bounded 5s. This app stores the session id on the shop doc and never searched Crisp by domain, so it is one extra call per Enterprise login. |
+
+**Fail-open, and stamped.** No conversation, no match, or Crisp down means no information, so the
+alert goes out — a shop that never opened a chat can never be tagged. A shop that *is* tagged gets
+`markOnlineAlerted` anyway: the stamp means "decided today", not "alerted today", and without it a
+tagged shop would cost one Crisp lookup per login instead of one per day. Untagging in Crisp
+restores the alert on the next day's first login, no deploy.
+
+Config lives beside the app label (`config/enterpriseAlert.js` `excludeSegment`) in both repos, the
+same shape as `lowRatingAlert.excludeSegment` (`cs-skip-alert`) — one Crisp website, one naming
+convention.
+
+| Check | seo | img |
+|---|---|---|
+| Alert + Crisp unit tests | 41/41 (+5 new) | 30/30 (+8 new) |
+| eslint (`DISABLE_V8_COMPILE_CACHE=1`) | exit 0 | exit 0 |
+| docs_gate | PASS — 517 anchored | PASS — 207 anchored |
+
+Pre-existing failures, untouched by the diff and unrelated to alert code: `seo`
+`shopify2026Client.test.js`; `img` five suites that cannot load at all —
+`GOOGLE_APPLICATION_CREDENTIALS` points at a missing `~/.openclaw/firebase-sa.json`, and
+`falcon-event-tracker` (added to master on 2026-09-04) is absent from the local install the
+worktree symlinks.
+
+Docs: `seo` `docs/features/enterprise-alerts.md` gained an "Opt-out" section and its citations were
+re-anchored. `img` has no feature doc for this alert (it never had one) — the seo doc carries the
+cross-app note.
