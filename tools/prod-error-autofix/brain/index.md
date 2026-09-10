@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1pqydjx` · 2026-09-10 · SEO · mcpgen2 · no verified cause · — · inconclusive
+- `mne0rk` · 2026-09-10 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields a primitive number instead of an o · — · fix_disabled
+- `c7rec9` · 2026-09-09 · SEO · handleoptimizeimagegen2 · no verified cause · — · inconclusive
 - `1y50rr7` · 2026-09-09 · SEO · ollamaquotaalertgen2 · no verified cause · — · inconclusive
 - `qp6czb` · 2026-09-09 · SEO · apigen2 · GET /api/genFaqBulk/fWnE11VkwlBaGq5ShBiu returns 500 deterministically because that bulk's item list holds at  · — · fix_disabled
 - `17g9p6f` · 2026-09-09 · SEO · apisagen2 · GET /apiSa/genFaqBulk/HPAqhHJo9kED8jNXivTO returns 500 deterministically because bulk HPAqhHJo9kED8jNXivTO ref · — · fix_disabled
@@ -580,7 +583,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `hqfte0` · 2026-07-31 · BLOG · proxy · Duplicate of fingerprints 9m7zmo / 14ydm3m / phe6lm (MR 798 open, unmerged): article gid://shopify/Article/560 · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `1zjaa5` · 2026-07-31 · BLOG · proxy · Article gid://shopify/Article/560458924077 no longer exists in Shopify for glacierfrostco.myshopify.com, so ge · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
 - `at2cvw` · 2026-07-31 · BLOG · proxy · getShopifyArticleById catches its own `throw new Error('Article not found')` and returns `{}`, so getPreview t · https://gitlab.com/avada/blogs/-/merge_requests/798 · mr_open
-- `nkovr` · 2026-07-31 · BLOG · api · Shopify's Admin GraphQL answered HTTP 503 to one `files(first:250)` page request for shop fKUMrHXwtJca3KNWMU6X · — · deferred
+- `nkovr` · 2026-09-09 · BLOG · api · A single transient Shopify Admin GraphQL HTTP 503 on one `files(first:250)` page for shop S6tXkqv1jHwO5skA6gtK · — · fix_disabled
 - `lajh7i` · 2026-08-03 · BLOG · proxy · no verified cause · — · inconclusive
 - `xhe0fj` · 2026-07-31 · BLOG · api · Duplicate of fingerprint rq3qf8 / 1w64e0z (MR 810 open, unmerged): Shopify Admin GraphQL answered one transien · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open
 - `rq3qf8` · 2026-07-31 · BLOG · api · Shopify Admin GraphQL answered one transient HTTP 503 to shop FqpPuSM3XKz0LLkZXe24's shopLocales query, and sh · https://gitlab.com/avada/blogs/-/merge_requests/810 · mr_open

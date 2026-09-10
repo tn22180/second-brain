@@ -22,7 +22,8 @@
 - [seo prod deploy theo tag](seo-prod-deploy-by-tag.md) — merge master KHÔNG deploy; pipeline master chỉ có docs_gate. Cắt tag mới deploy. Đừng nhầm với silent-freeze.
 - [blog prod deploy theo tag](blogs-prod-deploy-by-tag.md) — `only: - tags`; 2026-09-03 master hơn tag cuối 183 commit, fix bot nằm chết 3 tuần. `git tag --contains <sha>` trước khi kết luận prod thiếu fix.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
-- [AEO/APC đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — remote gitlab.com vẫn push được nhưng là mirror chết: MR merge xong prod không nhận; CI variable cũng không đi theo.
+- [Crisp plugin mất, prod chết](crisp-plugin-lost-prod-dead.md) — mọi read Crisp prod trả `not_subscribed` từ ~08-10; list 1-sao đóng băng 07-29; token mới mới ở seo .env.local, prod chưa update.
+- [4 repo đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — AEO/APC/seo/img; remote gitlab.com là mirror chết (img sau 416 commit) và giờ read-only 403; glab đã auth cả 2 host.
 - [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.
 - [seo .env.avada-seo local override](seo-env-avada-seo-local-override.md) — local-only override for hand-deploying fns to prod; canonical prod env = CI PRODUCTION_ENV_FILE. internalGen2 is a function, not an env.
@@ -38,7 +39,7 @@
 - [claude -p cost is notional](claude-cli-cost-is-notional.md) — `total_cost_usd` là quy đổi API, chạy trên gói không bị trừ; đừng in `$` trần như tiền mất.
 - [seo optimize-image Cloud Run job](seo-optimize-image-cloud-run-job.md) — alt/image prod chạy ở Cloud Run JOB, deploy chỉ theo tag + title `[deploy-cloud-run-production]`; trôi 4 tuần sau master.
 - [seo central box access](seo-central-box-access.md) — box thật `avada@100.87.235.36`, fleet-control ở `/home/avada/fleet-control`; deploy.sh commit sẵn 2 default sai, sudo cần password.
-- [seo worker box credential surface](seo-worker-box-credential-surface.md) — key `e2049477` trên 3 box = 11 role admin prod (kể cả serviceAccountTokenCreator); `avada` ∈ docker nên ≡ root; dọn 2026-09-09 còn đúng 4 file SA.
+- [seo worker box credential surface](seo-worker-box-credential-surface.md) — key `e2049477` = 11 role admin prod, nằm **0644 trên box2** → coi như đã lộ; đếm đủ 10/9 là 8 file SA (không phải 4); box2 cả cây `Projects/seo` 0777.
 - [Bull Board vs fleet-control](seo-bullboard-grafana-vs-fleet-control.md) — cùng Redis/BullMQ (Bull Board có quyền ghi, không redact); Grafana chỉ đọc Loki. Đã khoá về 127.0.0.1 24/08.
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.

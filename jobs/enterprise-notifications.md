@@ -1044,7 +1044,9 @@ conversation `ent_no_reply`, and the daily "is online now" ping should stop for 
 
 - Branch `feat/ent-no-reply-exclude` in both repos, off `origin/master` (`seo` `c3ed5127f3`,
   `img` `2b121203`) — the old `*-wt-ent-alert` worktrees are dead, master carries the feature.
-- Commits: `seo` `bf6e88d873`, `img` `0de1a446`. Not pushed, no MR opened yet.
+- MRs: `seo` **!2250**, `img` **!280**, both on `git.avada.net`. `img` had to be rebased onto
+  `gitavada/master` (`ff6027a8`) — its local `origin` still points at the gitlab.com mirror, which
+  is **416 commits behind** and now answers `403 read-only` on push.
 
 **Online alert only, decided with the user.** A new Enterprise subscription still fires: one charge
 is one event, it is money, and a shop that just paid has stopped being a no-reply.
@@ -1056,6 +1058,11 @@ link differently:
 |---|---|
 | `seo` | `findSessionIdByDomain.js` gained `findConversationByDomain()` returning `{sessionId, segments}`; the default export unwraps the id for the upgrade and Pro alerts. The alert already made this call for the link, so the opt-out adds **no** Crisp request. |
 | `img` | new `services/crisp/getConversationSegments.js` → `getConversationMetas(website_id, shop.crispSessionId)`, bounded 5s. This app stores the session id on the shop doc and never searched Crisp by domain, so it is one extra call per Enterprise login. |
+
+**Two spellings accepted.** `excludeSegments: ['ent_no_reply', 'ent-no-reply']`. The agreed name is
+the underscore one, but every other segment on this Crisp website is hyphenated — `ent-backfill`,
+`ent-t1`, `ent-dfy-wait`, `cs-skip-alert`, `1-star` — so a hyphen typed out of habit would leave the
+shop alerting with nothing to show the tag was ignored.
 
 **Fail-open, and stamped.** No conversation, no match, or Crisp down means no information, so the
 alert goes out — a shop that never opened a chat can never be tagged. A shop that *is* tagged gets
@@ -1082,3 +1089,28 @@ worktree symlinks.
 Docs: `seo` `docs/features/enterprise-alerts.md` gained an "Opt-out" section and its citations were
 re-anchored. `img` has no feature doc for this alert (it never had one) — the seo doc carries the
 cross-app note.
+
+#### Measured against live Crisp, 2026-09-10
+
+The Crisp plugin token had been lost. Everything below was measured, not assumed.
+
+- The token deployed in prod answers `404 not_subscribed` for **every** endpoint. Prod logs
+  (`avada-seo`): `[getData:getConversations] not_subscribed` daily, **552 occurrences in 30 days**,
+  earliest still in retention 2026-08-10. `crispSegments/oneStarShops.syncedAt` = **2026-07-29**,
+  21 shops (6 crisp + 15 appstore) — so the break landed between 07-29 and 08-10.
+- Consequences beyond this task: the low-rating login alert has been working from a **6-week-stale
+  list**, and the `*Crisp:* Open conversation` line in the Enterprise and Pro alerts has **never**
+  rendered in production. Task 10 recorded that as "unmeasured in production"; it is measured now.
+- A new token (`bf3b704a…`) works — `1-star` 61 conversations / 55 domains, `2-star` 6,
+  `cs-skip-alert` 1, `enterprise` **1028 conversations / 996 domains**. It currently exists only in
+  `seo/packages/functions/.env.local`. Prod still runs the dead key until
+  `CRISP_IDENTIFIER`/`CRISP_KEY` land in each repo's `PRODUCTION_ENV_FILE` and a tag is cut.
+- **`ent_no_reply` has 0 conversations** — CS has not started tagging. Five spellings were tried
+  (`ent_no_reply`, `ent-no-reply`, `ent-noreply`, `no-reply`, `ent-nr`), and a sweep of all 1028
+  conversations in the ENT segments turned up no no-reply tag of any shape. The code is therefore
+  inert-but-correct: the day CS tags a shop, it takes effect with no deploy.
+
+Scopes the replacement token needs, from the actual calls in `packages/functions/src` across the
+five apps: `website:conversation:sessions` (list/search — all five), `website:conversation:messages`
+(`sendMessageInConversation` — seo, blogs, AEO, img), `website:conversation:metas` read+write (img
+only: `updateConversationMetas` for `image_plan`, `getConversationMetas` for this opt-out).

@@ -215,3 +215,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Fleet box giờ key-only SSH (`PasswordAuthentication no`), key `dongnv` đã revoke — worker không đi qua SSH nên không ảnh hưởng
 - [ ] (×1) `Error: json: unknown field "proto"` khi deploy worker product — schema config sai field, không phải lỗi network
 - [ ] (×1) Billing report 6h lại trượt (2026-09-09) — lần thứ 3 im lặng chết, pattern gcloud auth hết hạn, vẫn chưa có alert
+
+### memory candidates 2026-09-10
+- [ ] (×1) SA SEO trên box2 còn được 1 project khác dùng chung — revoke key ảnh hưởng nhiều hơn 1 app
+- [ ] (×1) Job Registry (waspfish) phải reuse listener `onSnapshot` sẵn có, không mở stream mới — repo đã có 15+
+- [ ] (×1) `aiFixJobs` chỉ ghi cho bulk-fix, single fix không tạo job doc — đừng đọc collection này làm nguồn đủ

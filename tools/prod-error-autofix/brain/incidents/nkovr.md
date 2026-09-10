@@ -1,38 +1,40 @@
 fingerprint: nkovr
 service: api
-message: [fetchAllImagesFromShopify] fKUMrHXwtJca3KNWMU6X Error fetching images HTTPError: Response code 503 (Service Unavailable)
+message: [fetchAllImagesFromShopify] S6tXkqv1jHwO5skA6gtK Error fetching images HTTPError: Response code 503 (Service Unavailable)
 app: BLOG
 repo: blogs
-date: 2026-07-31T14:39:11.730Z
-status: deferred
+date: 2026-09-09T19:49:48.863Z
+status: fix_disabled
 attempt: 1
 
 # BLOG · api · nkovr
 
-**Outcome.** MR deferred by mr_per_repo_per_day
+**Outcome.** fix lane disabled — analysed and reported, no MR
 
-**Root cause.** Shopify's Admin GraphQL answered HTTP 503 to one `files(first:250)` page request for shop fKUMrHXwtJca3KNWMU6X at 13:13:52Z; `fetchAllImagesFromShopify` has no retry around `shopify.graphql`, so its catch logged the error, `break`ed the pagination loop, and returned the images collected so far — the caller then served HTTP 200 with a silently truncated (here empty) AI-image list.
+**Root cause.** A single transient Shopify Admin GraphQL HTTP 503 on one `files(first:250)` page for shop S6tXkqv1jHwO5skA6gtK aborted fetchAllImagesFromShopify's pagination loop; the catch logs and `break`s, so GET /api/get-list-ai-image answered 200 with a silently truncated AI-image list instead of failing.
 
-**Mechanism.** `getListImageAiGraphql` → `fetchAllImagesFromShopify` builds a Shopify client via `initShopify` (shopify-api-node 3.15.0, got under the hood, `autoLimit: true` only — no retry config). got's default retry policy covers 503 but only for idempotent methods; Admin GraphQL is POST, so the 503 is thrown straight through as `HTTPError: Response code 503 (Service Unavailable)` from `as-promise/index.js:118`. The `try` at packages/functions/src/services/imageGeneration.service.js:118 catches it, logs `[fetchAllImagesFromShopify] fKUMrHXwtJca3KNWMU6X Error fetching images`, and `break`s the `while` at line 128, so `allImages` is returned partial. `genImageAIController.get` never sees an exception and sets `ctx.status = 200`. That matches the request log: the only 5xx in the 30-min window is the 13:20:59Z /api/gen-ai-suggested/recommendBlogPost entry — there is no 5xx for /api/get-list-ai-image at 13:13:52Z. The 503 itself is upstream and transient, not shop-specific: a second, independent Shopify 503 hit the axios path (`shopifyRetryGraphQL` → `makeGraphQlApi` → `getShopLocales`) at 13:01:52Z in the same window, 12 minutes earlier, from a different HTTP client.
+**Mechanism.** genImageAIController.get → getListImageAiGraphql → fetchAllImagesFromShopify builds its client via initShopify (shopify-api-node, `autoLimit: true` only, no got retry/timeout config — shopifyService.js:26). Admin GraphQL is POST, which got's default retry policy excludes, so Shopify's 503 is thrown straight out of as-promise/index.js:118 as `HTTPError: Response code 503 (Service Unavailable)` — exactly the frame in the alert. The `try` around `await shopify.graphql(buildQuery(endCursor))` (imageGeneration.service.js:141) catches it, emits the alerted line at :149, and `break`s the `while` at :150, so `allImages` is returned partial at :154. getListImageAiGraphql then filters/paginates whatever was collected and the controller sets `ctx.status = 200` (genImageAIController.js:92). The request logs confirm the swallow: 7 GET /api/get-list-ai-image entries in the 30-min window, all HTTP 200, zero entries with status>=500 (requests read empty). The request at 19:46:37.279Z ran 20.20s against an 8.0s median for the other six, the only latency outlier and the one adjacent to the 19:46:57.485Z error. The 503 is transient and not shop-specific: exactly 1 fetchAllImagesFromShopify error in the full 24h preceding the alert. This is a recurrence of fingerprint nkovr (2026-07-31, shop fKUMrHXwtJca3KNWMU6X) — same file, same line, MR was deferred, defect still unfixed on master.
 
-Confidence: `medium`
+Confidence: `high`
 
 ## Code
-- `packages/functions/src/services/imageGeneration.service.js:119` — `await shopify.graphql(buildQuery(endCursor))` — the POST that received Shopify's 503; no retry wrapper
-- `packages/functions/src/services/imageGeneration.service.js:127` — the exact log line in the alert: logger.error('[fetchAllImagesFromShopify]', shop?.id, 'Error fetching images', error)
-- `packages/functions/src/services/imageGeneration.service.js:128` — `break` — a single transient 503 ends pagination and the partial list is returned as if complete
-- `packages/functions/src/services/imageGeneration.service.js:132` — `return allImages` — no signal to the caller that the sweep aborted early
-- `packages/functions/src/controllers/genImageAIController.js:88` — ctx.status = 200 on the truncated result, which is why the alert has no matching 5xx request log
-- `packages/functions/src/services/shopifyService.js:26` — initShopify constructs shopify-api-node with autoLimit only — no got retry/timeout options, so 5xx on POST is fatal on first attempt
+- `packages/functions/src/services/imageGeneration.service.js:141` — await shopify.graphql(buildQuery(endCursor)) — the POST that received Shopify's 503; no retry wrapper
+- `packages/functions/src/services/imageGeneration.service.js:149` — the exact alerted log line: logger.error('[fetchAllImagesFromShopify]', shop?.id, 'Error fetching images', error)
+- `packages/functions/src/services/imageGeneration.service.js:150` — break — one transient 503 ends pagination for good
+- `packages/functions/src/services/imageGeneration.service.js:154` — return allImages — partial sweep returned with no signal to the caller
+- `packages/functions/src/services/imageGeneration.service.js:189` — getListImageAiGraphql awaits fetchAllImagesFromShopify and treats its result as complete
+- `packages/functions/src/controllers/genImageAIController.js:92` — ctx.status = 200 on the truncated result — why the alert has no matching 5xx request log
+- `packages/functions/src/services/shopifyService.js:26` — initShopify constructs shopify-api-node with autoLimit only — no got retry/timeout, so a 5xx on POST is fatal on first attempt
 
 ## Evidence
-- 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-07-31T12:58:54.904Z" AND timestamp<="2026-07-31T13:28:54.904Z" AND jsonPayload.message:"fetchAllImagesFromShopify"`
-- 2 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-07-31T12:58:54.904Z" AND timestamp<="2026-07-31T13:28:54.904Z" AND jsonPayload.message:"status code 503"`
-- 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-07-31T12:58:54.904Z" AND timestamp<="2026-07-31T13:28:54.904Z" AND httpRequest.status>=500`
+- 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-09-09T19:32:11.176Z" AND timestamp<="2026-09-09T20:02:11.176Z" AND jsonPayload.message:"fetchAllImagesFromShopify"`
+- 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-09-08T20:02:11Z" AND timestamp<="2026-09-09T20:02:11Z" AND jsonPayload.message:"fetchAllImagesFromShopify"`
+- 7 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api") AND timestamp>="2026-09-09T19:32:11Z" AND timestamp<="2026-09-09T20:02:11Z" AND httpRequest.requestUrl:"get-list-ai-image"`
+- 1 matching entries: `(resource.labels.service_name="api" OR resource.labels.function_name="api" OR resource.labels.job_name="api") AND timestamp>="2026-09-09T19:32:11.176Z" AND timestamp<="2026-09-09T20:02:11.176Z" AND severity>=ERROR`
 
 ## Job
 - analyze rounds: 1
-- cost: $0.85
+- cost: $1.43
 
 ## Verdict
 
