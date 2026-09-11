@@ -7,6 +7,11 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `bt4oiw` · 2026-09-11 · BLOG · api · genIdeas requests a plain-text completion (getCompletion default format 'text', no zodSchema) and passes the r · — · fix_disabled
+- `1wo9q3s` · 2026-09-10 · BLOG · api · GET /api/shopify/productByCollections was called with the literal query string collectionId=undefined (Setting · — · fix_disabled
+- `itv3ay` · 2026-09-10 · BLOG · api · GET /api/shopify/productByCollections was called with the literal query string collectionId=undefined, and get · — · fix_disabled
+- `17l4t5k` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
+- `mqf2jh` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
 - `1pqydjx` · 2026-09-10 · SEO · mcpgen2 · no verified cause · — · inconclusive
 - `mne0rk` · 2026-09-10 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields a primitive number instead of an o · — · fix_disabled
 - `c7rec9` · 2026-09-09 · SEO · handleoptimizeimagegen2 · no verified cause · — · inconclusive
@@ -40,8 +45,8 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `ppdptj` · 2026-09-04 · BLOG · apiv2 · Not a request failure: OpenRouter's meta/muse-image provider rejected one content-image prompt with HTTP 400 ' · — · fix_disabled
 - `9z8gy9` · 2026-09-04 · IMG-OPT · webhookAppSubscriptionUpdate · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the UpdateFunctio · — · infra
 - `ysmvd` · 2026-09-08 · BLOG · apisa · errorHandler's catch block unconditionally re-emits every caught error via ctx.app.emit('error', ...), and err · — · fix_disabled
-- `1spv2uj` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
-- `bqpdh3` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
+- `1spv2uj` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
+- `bqpdh3` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
 - `13ibnmu` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
 - `edt5jw` · 2026-09-03 · BLOG · api · no verified cause · — · inconclusive
 - `1hnjphz` · 2026-09-02 · BLOG · api · A transient GCS read fault (39.5s hang then `read ETIMEDOUT`) on the previous version's content blob made getC · — · fix_disabled
@@ -246,7 +251,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `2t79bo` · 2026-08-15 · SEO · apigen2 · @avada/core 4.8.2's setSession assumes the decrypted `__session` cookie is an object; when a client presents a · https://gitlab.com/avada/seo/-/merge_requests/2104 · mr_open
 - `1abkxna` · 2026-08-15 · SEO · proxygen2 · GET /proxy/sitemap/collections.xml for pom-pom-london.myshopify.com returned 500 because trace-redirect@1.0.6, · https://gitlab.com/avada/seo/-/merge_requests/2195 · mr_open
 - `4f3kp8` · 2026-08-28 · SEO · handlespeedupbackgroundgen2 · handleSpeedupBackgroundGen2 fans out its per-page-type work with unbounded Promise.all over the 5 TYPE_PAGE en · — · infra
-- `1ciqzvj` · 2026-08-15 · SEO · resolveallredirectsubscribergen2 · no verified cause · — · inconclusive
+- `1ciqzvj` · 2026-09-11 · SEO · resolveallredirectsubscribergen2 · resolveAllRedirectSubscriberGen2 is deployed at memory '1GiB' with no `concurrency` override — Cloud Run runs  · — · infra
 - `dea93l` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb): the brow · — · fix_disabled
 - `1agqupy` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `118uoxk` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
@@ -500,7 +505,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
 - `1h0gjn4` · 2026-08-30 · SEO · apigen2 · Shopify REST answered HTTP 429 to getAllMetafields' `shopify.metafield.list` for shop sl3ZiH1q5RIjyZcXsLaa; pr · — · fix_disabled
-- `1mv41mw` · 2026-09-04 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
+- `1mv41mw` · 2026-09-10 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
 - `19yp12q` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) was OOM-killed at 2026-08-04T10:33:21.448Z (2060 MiB use · — · infra

@@ -220,3 +220,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) SA SEO trên box2 còn được 1 project khác dùng chung — revoke key ảnh hưởng nhiều hơn 1 app
 - [ ] (×1) Job Registry (waspfish) phải reuse listener `onSnapshot` sẵn có, không mở stream mới — repo đã có 15+
 - [ ] (×1) `aiFixJobs` chỉ ghi cho bulk-fix, single fix không tạo job doc — đừng đọc collection này làm nguồn đủ
+
+### memory candidates 2026-09-11
+- [ ] (×1) `ai-inline` (blogs) nằm ngoài app-bridge → `Failed to parse session token 'undefined': jwt must be provided`; phải tự cấp jwt, không dựa Shopify session (commit `ca8601fde`)
+- [ ] (×1) `gemma4:31b` không hợp lệ ở embed path của blogs → ai-inline chốt dùng OpenRouter; model ID Ollama Cloud không port thẳng sang provider khác
+- [ ] (×1) waspfish Job Registry — job control = stop + resume (stuck), không có "continue"; resume đã mở tới bulkFixContent
+- [ ] (×1) Firestore/Firebase realtime cho Job Registry không cần sửa rules
+- [ ] (×1) waspfish loading state prod khác local (đẹp ở 127.0.0.1:8765, xấu trên prod) — nghi build/asset path, chưa điều tra
