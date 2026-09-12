@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `skrvtw` · 2026-09-11 · BLOG · api · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 3 instead of  · — · fix_disabled
+- `1a9ls8s` · 2026-09-11 · SEO · apigen2 · POST /api/dev/optimize/repair-bulk returns 500 on every call because repairBulkOptimize calls `ctx.rest(result · — · fix_disabled
+- `f6ad3` · 2026-09-11 · SEO · apigen2 · no verified cause · — · inconclusive
 - `bt4oiw` · 2026-09-11 · BLOG · api · genIdeas requests a plain-text completion (getCompletion default format 'text', no zodSchema) and passes the r · — · fix_disabled
 - `1wo9q3s` · 2026-09-10 · BLOG · api · GET /api/shopify/productByCollections was called with the literal query string collectionId=undefined (Setting · — · fix_disabled
 - `itv3ay` · 2026-09-10 · BLOG · api · GET /api/shopify/productByCollections was called with the literal query string collectionId=undefined, and get · — · fix_disabled
