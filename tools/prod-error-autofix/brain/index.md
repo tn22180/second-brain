@@ -7,6 +7,10 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1trpn4m` · 2026-09-13 · BLOG · proxy · Shop 85725a.myshopify.com is locked in Shopify (Admin API answers HTTP 423 Locked) and tag.controller.js's isS · — · fix_disabled
+- `1ezqs23` · 2026-09-13 · BLOG · proxy · Shop 85725a.myshopify.com is locked in Shopify (Admin API answers HTTP 423 Locked), and tag.controller.js's is · — · fix_disabled
+- `ltehtg` · 2026-09-13 · BLOG · api · OpenRouter answered the muse-image generation call with a non-retryable HTTP 400 content-policy rejection ("Th · — · fix_disabled
+- `yfww8s` · 2026-09-13 · SEO · apisagen2 · POST /apiSa/dev/optimize/repair-bulk returns 500 on every call because repairBulkOptimize calls `ctx.rest(resu · — · fix_disabled
 - `skrvtw` · 2026-09-11 · BLOG · api · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 3 instead of  · — · fix_disabled
 - `1a9ls8s` · 2026-09-11 · SEO · apigen2 · POST /api/dev/optimize/repair-bulk returns 500 on every call because repairBulkOptimize calls `ctx.rest(result · — · fix_disabled
 - `f6ad3` · 2026-09-11 · SEO · apigen2 · no verified cause · — · inconclusive
@@ -448,7 +452,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1e34g1e` · 2026-08-12 · BLOG · apiv2 · createFile in handleUploadFile dereferences fileCreate.files[0] without ever checking fileCreate.userErrors or · https://gitlab.com/avada/blogs/-/merge_requests/867 · mr_open
 - `1vf9w45` · 2026-08-12 · BLOG · apiv2 · Duplicate of fingerprint sbztha (MR https://gitlab.com/avada/blogs/-/merge_requests/867 open, unmerged — fix c · https://gitlab.com/avada/blogs/-/merge_requests/867 · mr_open
 - `sbztha` · 2026-08-12 · BLOG · apiv2 · createFile reads fileCreate.files[0].fileErrors without ever checking fileCreate.userErrors, so when Shopify's · https://gitlab.com/avada/blogs/-/merge_requests/867 · mr_open
-- `1jtjnnm` · 2026-08-12 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `1jtjnnm` · 2026-09-12 · BLOG · apiv2 · Shopify's fileCreate mutation answered every one of the 7 image uploads for shop uKFnFp3INAEMsjB4EuRx with `fi · — · fix_disabled
 - `3l54x4` · 2026-08-22 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
 - `19tm31y` · 2026-08-12 · SEO · embedappgen2 · no verified cause · — · inconclusive
 - `1qz59l0` · 2026-08-12 · SEO · embedappgen2 · no verified cause · — · inconclusive

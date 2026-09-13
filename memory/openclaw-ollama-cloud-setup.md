@@ -21,3 +21,9 @@ CLI chết mà daemon vẫn sống là biểu hiện bình thường, không ph�
 **How to apply:** trước khi debug config openclaw, chạy `node -v` trong shell đó. Ollama Cloud key có thể
 không được phép gọi `/api/embed` → memory search vẫn trỏ `openai` và báo thiếu key; hoặc tắt bằng
 `openclaw config set agents.defaults.memorySearch.enabled false`, hoặc pull model embed local.
+
+**Config (2026-09-12):** cả 20 model ollama-cloud đã nằm trong `agents.defaults.models`; primary
+`kimi-k3`, fallback 6 con (glm-5.3 → deepseek-v4.1-flash → minimax-m3 → qwen3.5:397b →
+kimi-k2.7-code → gpt-oss:120b). `openclaw models list` KHÔNG filter provider sẽ in ctx/input sai
+(200k/text cho mọi dòng) — luôn chạy `--provider ollama-cloud` mới thấy metadata thật.
+Backup: `~/.openclaw/openclaw.json.pre-fullmodels-20260912`.
