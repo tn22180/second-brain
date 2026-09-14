@@ -1,5 +1,44 @@
 trong app có rất nhiều jobs chạy background như optimize ảnh, hay optimize content. có 1 vấn đề về trải nghiệm là khi chuyển trang sẽ không xem được tiến trình chạy và có bao nhiêu jobs đang chạy, vậy nên k muốn làm 1 pop nhỏ show dưới góc bên trái show các job đang chjay dạng chekclist đã xong đang chjay, cấp link vào trang xem chi tiết luôn, cần có UI UX đẹp, nhỏ gọn tránh LCP pagespeed app
 
+Feedback from BA:
+Image optimization / Alt text bị Stalled thì khách không tự gỡ được, không có nút stop, nút Continue không work
+
+Dock không có nút Stop cho job Stalled; nút Continue không có tác dụng (mục 2).
+Sau 15 phút trang tự mở khoá nút Optimize now (fix sau sự cố SEO-260827-btJ4n8), nhưng server vẫn coi job đang chạy nên từ chối: "Optimize process is already running".
+Cron tự gỡ job kẹt (reTriggerOptimize) bỏ qua store bản V25, mà store mới cài đều là V25 → cờ "đang optimize" không bao giờ tự tắt.
+Hệ quả: store bị khoá cả Image compression lẫn Alt text tới khi team gỡ.
+Mong muốn: server tự dọn job chết, hoặc cho khách Stop / chạy lại job Stalled.
+
+Nút Continue của Image optimization / Alt text trên dock không chạy tiếp job
+
+Nút này chỉ "chốt sớm" lượt chạy cho store được team bật bulk-apply trong DevZone, trong trường hợp Shopify đã cập nhật ảnh xong mà không báo về app. Nó không chạy tiếp ảnh còn lại.
+Store V25 thường (gần như toàn bộ khách) bấm vào không có tác dụng, không báo gì, job vẫn Stalled.
+Mong muốn: làm cho nó chạy tiếp job thật.
+
+Trang Alt text không báo lỗi khi không chạy lại được, giả như đang chạy
+
+Tình huống: job alt text chết giữa chừng. Dock báo Stalled, trang Alt text không báo gì. Khách bấm Optimize now để chạy lại.
+Thực tế: server từ chối ("Optimize process is already running"), nhưng trang không hiện lỗi mà hiện spinner và banner "please wait until it is completed" mãi. Cùng tình huống, trang Image compression có hiện lỗi.
+Hệ quả: khách tưởng đã chạy lại thành công, chờ vài tiếng tới vài ngày mới nhắn CS.
+
+Bulk AI fix: dock hiện nút Continue quá sớm, bấm không có tác dụng.
+
+Tình huống: sau 15 phút không có tiến độ, dock báo Stalled và hiện Continue. Khách bấm thì không có gì xảy ra, không báo lỗi.
+Thực tế: server chỉ nhận Continue khi run đã im 45 phút. Sau 45–60 phút app tự chạy tiếp, nên chức năng không hỏng, chỉ lệch mốc thời gian.
+Hệ quả: khách bấm không thấy gì, tưởng hỏng rồi nhắn CS.
+Mong muốn: thống nhất mốc Stalled giữa dock và server, và báo lỗi khi Continue bị từ chối.
+
+AI content (meta title / meta description / FAQ): job chết giữa chừng thì kẹt "In progress" mãi
+
+Tình huống: đang generate hàng loạt thì worker chết.
+Thực tế: job không bao giờ chuyển sang lỗi, không có gì tự dọn.
+Nút Generate của generator đó xám mãi.
+History ghi "In progress" mãi.
+Dock báo Stalled nhưng không có Stop hay Continue.
+
+Khách tự gỡ được bằng nút Cancel trên card, nhưng card không có dấu hiệu job đã chết nên khách không biết phải bấm.
+Mong muốn: tự đánh dấu lỗi cho job im quá lâu, hoặc báo trên card là job đã dừng.
+
 ---
 
 ## Progress
@@ -10,26 +49,26 @@ Design spec: `docs/superpowers/specs/2026-09-10-job-progress-dock-design.md`
 
 Tracking note: this session has no TaskCreate/TodoWrite tool, so this table is the only tracker.
 
-| #   | Task                                          | Agent / Model                 | Status | Rounds | Sec | Notes                          |
-| --- | --------------------------------------------- | ----------------------------- | ------ | ------ | --- | ------------------------------ |
-| 0   | Local env up (emulators + tunnel)             | inline                        | ✅     | 1/5    | —   | probes 200/200/200/401         |
-| 1   | Registry core: const + service + unit tests   | backend-implementer / opus    | ✅     | 2/5    | clean | 17/17 jest; race fixed in r2   |
-| 2   | Firestore rule for `shopJobs`                 | inline                        | ✅     | 1/5    | clean | get 200 / list 403 / write 403 |
-| 3   | Producer: image optimize + alt text           | backend-implementer / sonnet  | ✅     | 2/5    | clean | 9 sites; 3 branches indeterminate by decision |
-| 3a  | Registry: in-process throttle guard            | backend-implementer / sonnet  | ✅     | 1/5    | clean | 22/22 jest                     |
-| 3b  | Staleness rule (JOB_STALE_MS) + counts          | inline                        | ✅     | 1/5    | clean | NEW — dead run must not read as running |
-| 4   | FE: jobProgressContext (single onSnapshot)    | frontend-implementer / sonnet | ✅     | 2/5    | clean | ISO-timestamp sort bug fixed   |
-| 5   | FE: JobProgressDock component + i18n json     | frontend-implementer / sonnet | ✅     | 1/5    | clean | own 4.1KB lazy chunk           |
-| 6   | FE: mount in MainFrame + ownerPaths filter    | frontend-implementer / sonnet | ✅     | 1/5    | clean | 19 insertions, 1 file          |
-| 7   | Producer: bulk AI fix (`bulkFixJobs`)         | backend-implementer / sonnet  | ✅     | 1/5    | clean | 6 sites via one funnel         |
-| 8   | Producer: AI content, 3 sections              | backend-implementer / sonnet  | ✅     | 1/5    | clean | 5 sites, 16 new test cases     |
-| 14  | Add `JOB_STATUS.CANCELLED`                     | inline                        | ✅     | 1/5    | clean | 6 cancel paths split off failed |
-| 9   | Producer: internal link, 3 collections        | backend-implementer / sonnet  | ✅     | 1/5    | clean | 12 files, 10 helper tests      |
-| 10  | Producer: redirects, 4 collections            | backend-implementer / sonnet  | ✅     | 1/5    | clean | corrected my wrong collection  |
-| 11  | Producer: search index sync + chunk adapter   | backend-implementer / opus    | ✅     | 1/5    | clean | 10/10 adapter tests            |
-| 15  | Search-index progress must not sit at 100%     | opus → finished inline        | ✅     | 2/5    | clean | 17/17; agent died on rate limit |
-| 12  | i18n: `yarn update-label-claude` + skill       | skill `avada-update-label`    | ✅     | 1/5    | clean | 27 keys × 9 locales            |
-| 13  | Feature doc `docs/features/job-progress-dock.md` | inline                     | ✅     | 1/5    | clean |                                |
+| #   | Task                                             | Agent / Model                 | Status | Rounds | Sec   | Notes                                         |
+| --- | ------------------------------------------------ | ----------------------------- | ------ | ------ | ----- | --------------------------------------------- |
+| 0   | Local env up (emulators + tunnel)                | inline                        | ✅     | 1/5    | —     | probes 200/200/200/401                        |
+| 1   | Registry core: const + service + unit tests      | backend-implementer / opus    | ✅     | 2/5    | clean | 17/17 jest; race fixed in r2                  |
+| 2   | Firestore rule for `shopJobs`                    | inline                        | ✅     | 1/5    | clean | get 200 / list 403 / write 403                |
+| 3   | Producer: image optimize + alt text              | backend-implementer / sonnet  | ✅     | 2/5    | clean | 9 sites; 3 branches indeterminate by decision |
+| 3a  | Registry: in-process throttle guard              | backend-implementer / sonnet  | ✅     | 1/5    | clean | 22/22 jest                                    |
+| 3b  | Staleness rule (JOB_STALE_MS) + counts           | inline                        | ✅     | 1/5    | clean | NEW — dead run must not read as running       |
+| 4   | FE: jobProgressContext (single onSnapshot)       | frontend-implementer / sonnet | ✅     | 2/5    | clean | ISO-timestamp sort bug fixed                  |
+| 5   | FE: JobProgressDock component + i18n json        | frontend-implementer / sonnet | ✅     | 1/5    | clean | own 4.1KB lazy chunk                          |
+| 6   | FE: mount in MainFrame + ownerPaths filter       | frontend-implementer / sonnet | ✅     | 1/5    | clean | 19 insertions, 1 file                         |
+| 7   | Producer: bulk AI fix (`bulkFixJobs`)            | backend-implementer / sonnet  | ✅     | 1/5    | clean | 6 sites via one funnel                        |
+| 8   | Producer: AI content, 3 sections                 | backend-implementer / sonnet  | ✅     | 1/5    | clean | 5 sites, 16 new test cases                    |
+| 14  | Add `JOB_STATUS.CANCELLED`                       | inline                        | ✅     | 1/5    | clean | 6 cancel paths split off failed               |
+| 9   | Producer: internal link, 3 collections           | backend-implementer / sonnet  | ✅     | 1/5    | clean | 12 files, 10 helper tests                     |
+| 10  | Producer: redirects, 4 collections               | backend-implementer / sonnet  | ✅     | 1/5    | clean | corrected my wrong collection                 |
+| 11  | Producer: search index sync + chunk adapter      | backend-implementer / opus    | ✅     | 1/5    | clean | 10/10 adapter tests                           |
+| 15  | Search-index progress must not sit at 100%       | opus → finished inline        | ✅     | 2/5    | clean | 17/17; agent died on rate limit               |
+| 12  | i18n: `yarn update-label-claude` + skill         | skill `avada-update-label`    | ✅     | 1/5    | clean | 27 keys × 9 locales                           |
+| 13  | Feature doc `docs/features/job-progress-dock.md` | inline                        | ✅     | 1/5    | clean |                                               |
 
 Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11 in parallel → 12 → 13.
 (3a was inserted after task 3's recon; no producer may be wired before it.)
@@ -57,6 +96,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 ### Log
 
 #### ✅ Task 0: Local env up
+
 - Status: ✅ completed
 - `yarn install --frozen-lockfile` exit 0; functions babel build exit 0; assets production build exit 0
 - Emulators `All emulators ready`; probes: UI 200, `/` 200, `/embed` 200, `/api/settings` 401
@@ -69,6 +109,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
   run rewrote master's `APP_BASE_URL`
 
 #### 🔄 Task 1: Registry core
+
 - Agent: backend-implementer (opus)
 - Status: 🔄 in-progress
 - Plan:
@@ -114,6 +155,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Completed: 2026-09-10
 
 #### 🔄 Task 2: Firestore rule for `shopJobs`
+
 - Agent: inline (5 dictated lines — an agent for this is waste)
 - Status: 🔄 in-progress
 - Plan:
@@ -150,6 +192,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
   The last line is what makes the other three mean something: a neighbouring collection declared
   `allow read: if true` DOES list, so the check is measuring the rule and not just failing to reach
   Firestore.
+
 - Side effect of that discriminator: the cross-shop listing finding is now **confirmed empirically**,
   not merely read off the rules file. An unauthenticated client can list every shop's `bulkFixJobs`.
 - Security check: **clean**. Diff is 7 added lines in `firestore.rules` and nothing else.
@@ -161,8 +204,8 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Started: 2026-09-10
 - Completed: 2026-09-10
 
-
 #### 🔄 Task 4: FE jobProgressContext
+
 - Agent: frontend-implementer (sonnet). Dispatched in parallel with task 3's recon — the two share
   no files.
 - Status: 🔄 in-progress
@@ -207,6 +250,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Completed: 2026-09-10
 
 #### ⬜ Task 3a: Registry in-process throttle guard (NEW)
+
 - Agent: backend-implementer (sonnet)
 - Status: ⬜ pending
 - Why this exists: task 3's recon showed image-optimize increments its counters **once per image**
@@ -248,6 +292,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Started / Completed: 2026-09-10
 
 #### ✅ Task 3b: Staleness rule (NEW)
+
 - Agent: inline
 - Status: ✅ completed
 - Why this exists: found while reading `helpers/imageOptimize/isOptimizeRunActive.js` for task 3.
@@ -273,6 +318,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Security check: **clean**. Two files, no secret, no dependency, no forbidden file.
 
 #### 🔄 Task 5: JobProgressDock component
+
 - Agent: frontend-implementer (sonnet), instructed to invoke the `ui-ux-pro-max` skill first — the
   brief asks for "UI UX đẹp, nhỏ gọn" and this is the only part of the feature a merchant looks at.
 - Status: 🔄 in-progress. Dispatched in parallel with tasks 3 and 6.
@@ -296,6 +342,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
   - Rollback: additive, delete the folder.
 
 #### 🔄 Task 6: Mount in MainFrame
+
 - Agent: frontend-implementer (sonnet)
 - Status: 🔄 in-progress
 - Plan:
@@ -334,6 +381,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Started / Completed: 2026-09-10
 
 #### ✅ Task 3: Producer — image optimize + alt text
+
 - Agent: backend-implementer (sonnet). 2 rounds.
 - Round 1: wired 8 of the 10 sites I named and **refused two**, correctly. My call-site list was
   wrong: I had `productService.js:436` and `fileImageService.js:285-289` down as batch writes in the
@@ -355,10 +403,10 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
   - files (`services/optimize/optimizeImageJobLoop.js`) — `grep -c updateHistoryOptimize` = 0
   - blogs — `optimizeBlogImage` has only two callers, both manual OTM; there is no bulk recursion
     path for blogs at all
-  These runs show an indeterminate "Processing…" rather than a percentage. This is not the dock
-  failing: those pipelines have never counted progress, which is why the existing image page cannot
-  show a percentage for them either. Closing it means adding counters to three production optimize
-  pipelines — a different risk class from this additive feature, so it is out of scope here.
+    These runs show an indeterminate "Processing…" rather than a percentage. This is not the dock
+    failing: those pipelines have never counted progress, which is why the existing image page cannot
+    show a percentage for them either. Closing it means adding counters to three production optimize
+    pipelines — a different risk class from this additive feature, so it is out of scope here.
 - processed/total derivation verified against source, not taken on trust:
   `pages/Image/Progress/ProgressBar/ProgressBar.js:50` computes
   `(countImage / totalAllPageImageCount) * 100`, and the new
@@ -376,6 +424,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Ships to the worker fleet only via `[deploy-worker]` — `firebase deploy` does not update the box.
 
 #### ✅ Task 5: JobProgressDock
+
 - Verified: builds into its OWN chunk, `static/assets/JobProgressDock-*.js` at **4.1 KB** — the LCP
   constraint confirmed against the build artifact, not against a claim.
 - Checked the three things that silently fail: Polaris 13.9.5 `Box` really does accept
@@ -386,6 +435,7 @@ Order: 1 → 2 → 4 → **3a** → 3 → 5 → 6 (end-to-end viewable) → 7-11
 - Preview published for Tony: https://claude.ai/code/artifact/352a555f-795f-4a31-ab84-ca6af90e0a99
 
 #### ⬜ Task 12: i18n — route confirmed before it could block
+
 - Checked ahead rather than discovering it at the end: **`GOOGLE_TRANSLATE_API_KEY` is not set**
   anywhere — not in `packages/functions/.env`, not in the shell env — so `yarn update-label` would
   die at `commands/autoTranslateV2.js:8`, where the Translate client is constructed with it.
@@ -419,7 +469,7 @@ reverse order gives merchants a dock that shows nothing and cannot say why.
 ### TTL policy — authorised by Tony, blocked on auth
 
 `shopJobs.expireAt` needs a Firestore TTL policy or the field is inert: the 24h prune only runs
-when some *other* upsert happens, so a shop that stops running jobs keeps its finished rows forever.
+when some _other_ upsert happens, so a shop that stops running jobs keeps its finished rows forever.
 
 **Blocked:** `gcloud` returned `Reauthentication failed. cannot prompt during non-interactive
 execution` — needs `gcloud auth login` from Tony's own terminal.
@@ -447,6 +497,7 @@ The policy must read `ACTIVE`. Firestore TTL only acts on a **Timestamp** field;
 so the type is right — but an ISO string there would make the policy silently sweep nothing.
 
 #### ✅ Task 8: Producer — AI content (3 sections)
+
 - Agent: backend-implementer (sonnet), 1 round.
 - Wired 5 sites; section→type mapping isolated in
   `helpers/generateBulk/generateBulkJobRegistryMapping.js`. processed/total confirmed against
@@ -468,16 +519,17 @@ so the type is right — but an ISO string there would make the policy silently 
   actively improves tenant isolation rather than weakening it.
 
 #### ⬜ Task 14: Add `JOB_STATUS.CANCELLED` (NEW)
+
 - Raised by task 8's own concerns section, then confirmed by grep to be systemic rather than local.
 - `JOB_STATUS` has only `running` / `done` / `failed`, so **every merchant-initiated cancel reports
   as "Failed"**:
 
-  | Site | What the merchant actually did |
-  | --- | --- |
-  | `controllers/generateBulkController.js:307` | cancelled an AI content run |
-  | `controllers/seoController.js:873` | pressed Stop on image optimize |
-  | `controllers/bulkAuditFixController.js:296` | cancelled a bulk fix |
-  | `controllers/auditAgentController.js:263` | cancelled a search index sync |
+  | Site                                        | What the merchant actually did |
+  | ------------------------------------------- | ------------------------------ |
+  | `controllers/generateBulkController.js:307` | cancelled an AI content run    |
+  | `controllers/seoController.js:873`          | pressed Stop on image optimize |
+  | `controllers/bulkAuditFixController.js:296` | cancelled a bulk fix           |
+  | `controllers/auditAgentController.js:263`   | cancelled a search index sync  |
 
 - Why it matters here specifically: this feature's entire value is reporting status truthfully.
   Telling a merchant that the thing they deliberately stopped "failed" is wrong information, and it
@@ -488,6 +540,7 @@ so the type is right — but an ISO string there would make the policy silently 
   controllers. Editing them now would collide.
 
 #### ✅ Task 7: Producer — bulk AI fix
+
 - 6 sites, all hung off `services/bulkAuditFix/chain.js:checkJobCompletion`, the one funnel every
   product-terminal path already passes through (its own comment: "EVERY terminal exit of a product
   run must call this"). Reused its existing `getBulkFixJobById` read — no new Firestore read.
@@ -507,6 +560,7 @@ so the type is right — but an ISO string there would make the policy silently 
 - Security check: **clean**. `shopID` traced end to end and confirmed to be the Firestore doc id.
 
 #### ✅ Task 11: Producer — search index sync
+
 - Agent: backend-implementer (opus). Worth the model: it found a trap neither the spec nor the recon
   had seen.
 - **The trap.** `jobDataMigrate` is ONE doc reused per shop, and the chunk counters are never
@@ -534,6 +588,7 @@ so the type is right — but an ISO string there would make the policy silently 
   the path that would strand a `running` row until the staleness window.
 
 #### ⬜ Task 15: Search-index progress must not sit at 100% (NEW)
+
 - Raised by task 11 after implementing the spec exactly as written.
 - **My spec rule caused this**, not the implementation. "Sum `completedChunks_*` over
   `totalChunks_*`" means the run discovers its own size one resource type at a time, so the row
@@ -548,6 +603,7 @@ so the type is right — but an ISO string there would make the policy silently 
 - Not started: task 9 and 10 are still in flight.
 
 #### ✅ Task 9: Producer — internal link (3 collections)
+
 - 12 files. Completion for all three collections is counter-driven by Firestore `onUpdate` triggers
   (`handlers/trigger/on*UpdateHandler.js`), which is where DONE is written — a shape no other
   producer in this feature has.
@@ -562,6 +618,7 @@ so the type is right — but an ISO string there would make the policy silently 
   staleness rule.
 
 #### ✅ Task 10: Producer — redirects (4 collections)
+
 - **It corrected my brief.** I named `historyImport` and `hooks/useImportData.js:14` for redirect
   import; that is the unrelated product/CSV import flow. The real collection is
   `historyImportRedirects`, read live by `pages/Redirect404/List.js:115-131`. It wired the real one.
@@ -577,6 +634,7 @@ so the type is right — but an ISO string there would make the policy silently 
   the contradiction this design exists to prevent.
 
 #### ✅ Task 14: `JOB_STATUS.CANCELLED`
+
 - Done inline. Six merchant-cancel paths were reporting "Failed": `generateBulkController.js:305`,
   `seoController.js:873`, `auditAgentController.js:261`,
   `subscribeHandleDaily/WeeklyBrokenLinks.js`, and `bulkFixJobRegistryMapping.js`.
@@ -593,6 +651,7 @@ so the type is right — but an ISO string there would make the policy silently 
   rebuild clean, dock chunk 4.39 KB.
 
 #### ✅ Task 15: Search-index progress
+
 - The opus agent **died mid-task on a session rate limit** (resets 18:40). It had written the tests
   first and got no further, leaving the tree red at 13 failed / 4 passed. I finished it inline
   rather than restart a fresh agent against the same limit.
@@ -609,6 +668,7 @@ so the type is right — but an ISO string there would make the policy silently 
 - Verified: `jest packages/functions/src` → 1564 passed, 2 pre-existing failures. eslint 0.
 
 #### ✅ Task 12: i18n
+
 - Ran `yarn update-label-claude`; the `avada-update-label` skill translated 27 `JobProgressDock.*`
   keys into 9 locales.
 - Checked the script's "Removed: 2 keys" warning before agreeing to anything: the `en.json` diff is
@@ -621,6 +681,7 @@ so the type is right — but an ISO string there would make the policy silently 
   locales the repo's own tooling does not target is a repo-level decision, not this feature's.
 
 #### ✅ Task 13: Feature doc
+
 - `docs/features/job-progress-dock.md` — what it does, entry points, data model, the five
   duplication rules, the three truthfulness rules, cost controls, the split-deploy order, the TTL
   operations step, how to add a new job, known gaps, and the pre-existing bugs found along the way.

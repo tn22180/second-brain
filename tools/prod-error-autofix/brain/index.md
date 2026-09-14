@@ -7,6 +7,11 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `8phfr7` · 2026-09-14 · BLOG · api · Duplicate of recorded fingerprint 1qodvk0 / a3l435 / r6ig4i / skrvtw (BLOG setSession family, no fix on master · — · fix_disabled
+- `1nkkb2b` · 2026-09-14 · BLOG · api · POST /api/audit-agent/fix-issue (issueType KEYPHRASE) for shop OOXtLxadNvXkaPUPv2qs / article 570632470582 ret · — · fix_disabled
+- `1dxwrva` · 2026-09-14 · BLOG · proxy · Duplicate of recorded fingerprint 1lzrsah (same 07:02:27–28Z burst, same shop, same 4 log lines): Shopify has  · — · fix_disabled
+- `1lzrsah` · 2026-09-14 · BLOG · proxy · Shopify has placed shop c1ax1n-pj.myshopify.com 'under review' and its Admin GraphQL answers every articleTags · — · fix_disabled
+- `7i6zhr` · 2026-09-13 · AEO · api · no verified cause · — · inconclusive
 - `1trpn4m` · 2026-09-13 · BLOG · proxy · Shop 85725a.myshopify.com is locked in Shopify (Admin API answers HTTP 423 Locked) and tag.controller.js's isS · — · fix_disabled
 - `1ezqs23` · 2026-09-13 · BLOG · proxy · Shop 85725a.myshopify.com is locked in Shopify (Admin API answers HTTP 423 Locked), and tag.controller.js's is · — · fix_disabled
 - `ltehtg` · 2026-09-13 · BLOG · api · OpenRouter answered the muse-image generation call with a non-retryable HTTP 400 content-policy rejection ("Th · — · fix_disabled
@@ -581,7 +586,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `h9cev0` · 2026-07-31 · SEO · apigen2 · The browser sent a `__session` cookie that is not a valid Avada-encrypted session, and @avada/core's decryptTe · https://gitlab.com/avada/seo/-/merge_requests/2095 · mr_open
 - `5id62v` · 2026-08-14 · SEO · apigen2 · POST /api/audit-agent/fix-issue with issueType FAQS_ASSESSMENT for collection 331936399548 (shop J8OixlUUiVj6K · https://gitlab.com/avada/seo/-/merge_requests/2197 · mr_open
 - `1jt9dai` · 2026-07-31 · SEO · lighthouseauditrunnergen2 · One audit request to lighthouseauditrunnerGen2 sat queued for its caller's full 120s budget and was never plac · — · infra
-- `yt88f3` · 2026-07-31 · BLOG · apiv2 · createChatModel builds every LangGraph ChatOpenAI with `streaming: true`, so createFeaturedImageNode's non-str · — · deferred
+- `yt88f3` · 2026-09-13 · BLOG · apiv2 · createChatModel builds every LangGraph ChatOpenAI with `streaming: true`, so createFeaturedImageNode's single- · — · fix_disabled
 - `997lb2` · 2026-07-31 · BLOG · api · genIdeas asks OpenRouter for an unconstrained free-text completion (getAIResponse → getCompletion with format  · — · deferred
 - `4cha8x` · 2026-07-31 · SEO · proxygen2 · proxyGen2 is declared with concurrency: 2 and no minInstances, so at its steady-state 4–8 warm instances it ha · — · infra
 - `oivd0n` · 2026-08-04 · BLOG · api · A one-off HTTP 500 from the upstream Avada SEO proxy (https://seo.apps.avada.io/proxy/updateOvrList) hit seoPr · https://gitlab.com/avada/blogs/-/merge_requests/803 · mr_open

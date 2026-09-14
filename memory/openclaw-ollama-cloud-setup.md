@@ -27,3 +27,13 @@ không được phép gọi `/api/embed` → memory search vẫn trỏ `openai` 
 kimi-k2.7-code → gpt-oss:120b). `openclaw models list` KHÔNG filter provider sẽ in ctx/input sai
 (200k/text cho mọi dòng) — luôn chạy `--provider ollama-cloud` mới thấy metadata thật.
 Backup: `~/.openclaw/openclaw.json.pre-fullmodels-20260912`.
+
+**401 "Authentication failed" sau 2026-09-12 — KHÔNG phải key hết hạn (fixed 2026-09-14):** block
+`models.providers.ollama-cloud` viết tay hôm 09-12 khai `"api": "openai-completions"` trên từng model và
+**thiếu `baseUrl`** → openclaw default về `https://api.openai.com/v1/chat/completions`, gửi key Ollama sang
+OpenAI → 401. Log chỉ mặt thủ phạm ở dòng `[model-fetch] start ... url=`, luôn đọc url trước khi nghi key.
+Builtin def (`dist/extensions/ollama/openclaw.plugin.json`) là `baseUrl https://ollama.com` + `api ollama`;
+đã set đúng 2 field đó ở provider level và xoá `api` của cả 20 model. Backup:
+`~/.openclaw/openclaw.json.pre-baseurl-20260914`. Model id bare (`kimi-k3`), không hậu tố `:cloud` —
+`/api/tags` trả đúng 20 id này. Verify: `openclaw agent --agent main -m "say ok"` (cần `--agent`,
+không có nó báo "No target session selected").

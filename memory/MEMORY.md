@@ -48,4 +48,5 @@
 - [seo local clone is shallow](seo-local-clone-shallow.md) — merge-base rỗng / "unrelated histories" với origin/master là do shallow (68 graft), không phải lịch sử khác; đã `fetch --unshallow` 2026-09-07.
 - [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights trừ 5 credit action `gscInsights`.
 - [seo MCP prod OAuth: lỗi CSP form-action](seo-mcp-oauth-shopify-callback.md) — redirect_uri ĐÃ whitelist (16 callback 200); chết ở nhánh form vì form-action thiếu admin.shopify.com. Đếm POST /mcp-oauth/shop vs callback trước khi nghi whitelist.
-- [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy.
+- [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy. 401 09-12→09-14 là baseUrl thiếu (bay sang api.openai.com), không phải key.
+- [seo fleet GCS egress](seo-fleet-gcs-egress.md) — box ngoài GCP → mọi read GCS = egress $0.12/GiB; legacy FILE_PAGE tải lại cả fileImageJsonl mỗi batch 20 ảnh; SKU `Network Data Transfer GAE/Firebase Storage` bị report gộp vào "Firestore / Storage".

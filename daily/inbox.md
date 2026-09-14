@@ -227,3 +227,13 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) waspfish Job Registry — job control = stop + resume (stuck), không có "continue"; resume đã mở tới bulkFixContent
 - [ ] (×1) Firestore/Firebase realtime cho Job Registry không cần sửa rules
 - [ ] (×1) waspfish loading state prod khác local (đẹp ở 127.0.0.1:8765, xấu trên prod) — nghi build/asset path, chưa điều tra
+
+### jots 2026-09-14
+- [ ] **Cuối tháng 9 (≈2026-09-30): tạo task Jira FAL** follow-up JSONL disk cache (MR !2261, v1.86.24) — (a) legacy `FILE_PAGE` recursive → đọc manifest/shard như job-loop thay vì parse 94 MB mỗi batch; (b) `billing_data.py` tách SKU `Network Data Transfer GAE/Firebase Storage` khỏi bucket "Firestore / Storage"; (c) đo egress cả tháng 9 trước/sau 09-14 để báo cáo. #hold
+
+### memory candidates 2026-09-14
+- [ ] (×1) Ollama Cloud key đầu tiên của SEO đã lên gói Max ($100/tháng) từ 2026-09-14 — baseline cost khi so provider, khác gói Pro cũ
+- [ ] (×1) waspfish job dock — job cần MC review sau khi chạy (AI bulk fix, AI content) phải có sub-text 1 dòng nhắc preview; nằm trên nhánh `feat/job-dock-review-hint` (MR !2264)
+- [ ] (×1) Image optimization (waspfish) trạng thái "Stopped — no progress for too long" không render nút start again — resume V25 làm MR riêng
+- [ ] (×1) Filter alt text theo stock (SEO) scope chốt: product ở audit table + AI content, không áp cho alt image
+- [ ] (×1) Sort theo inventory ở `seo-audit/seoOnPage` không trả data — field inventory chưa được index/đổ vào doc audit, phải check nguồn trước khi sort FE
