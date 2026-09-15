@@ -1,6 +1,6 @@
 ---
 name: avada-gitlab-host-migration
-description: AEO, APC, seo và avada-image-optimizer đã chuyển sang GitLab self-hosted git.avada.net; remote gitlab.com còn lại là mirror chết — check remote trước khi cắt branch hay mở MR
+description: AEO, APC, seo, avada-image-optimizer và worker-sdk đã chuyển sang GitLab self-hosted git.avada.net (worker-sdk nằm ở avada/falcon/product, không phải avada/); remote gitlab.com read-only — check remote trước khi cắt branch hay mở MR
 metadata: 
   node_type: memory
   type: project
@@ -32,5 +32,14 @@ gitlab.com không tới prod. Đây là lý do `SWAGGER_JWT_SECRET` vẫn thiế
 `glab` **đã auth** cả `gitlab.com` và `git.avada.net` (kiểm 2026-09-10, `glab auth status`), nên
 `glab mr create --repo git.avada.net/avada/<repo> --source-branch … --target-branch master --yes`
 chạy thẳng — không cần link `merge_requests/new` thủ công nữa.
+
+Cập nhật 2026-09-15: **`worker-sdk`** chuyển nốt, nhưng path khác các app:
+`https://git.avada.net/avada/falcon/product/worker-sdk.git` (project id 525). Lý do: Tuan không có
+quyền tạo project trong `avada/seoon-team` trên host mới; `avada/falcon/product` (group 49,
+`project_creation_level: developer`) là group Falcon đang chứa seo-suite/seo-on-blog/product-copy.
+Local clone: `origin` = host mới, `gitlab-old` = gitlab.com (5 branch mirror đủ). gitlab.com giờ chặn
+cả API write (`POST repository/branches` → pre-receive hook 403), không chỉ push.
+`glab api -X POST projects` bị auto-mode classifier chặn ("Public Data-Sharing Upload") — Tuan phải
+tự chạy dòng đó. npm publish `@avada-falcon/worker-sdk` vẫn manual, tách khỏi MR.
 
 Liên quan: [[gen2-deploy-silent-freeze]]

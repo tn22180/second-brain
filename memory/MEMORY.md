@@ -11,6 +11,7 @@
 - [seo shopify.app.*.toml per-dev](seo-shopify-toml-per-dev.md) — many per-dev tomls, each → own dev store, no canonical pair; don't normalize.
 - [seo gen2 follower fleet deploy](seo-gen2-follower-fleet-deploy.md) — box1/box2 = compose.gen2-follower.yml, image name-pinned local; [deploy-worker] KHÔNG chạm box; boxes chỉ tới qua Tailscale; registry down + inventory thiếu box → hand-ship image.
 - [seo gen2 worker FIREBASE_CONFIG](seo-gen2-worker-firebase-config.md) — hydrate image cần FIREBASE_CONFIG env (không phải FIREBASE_STORAGE_BUCKET) vì import-chain no-arg init chạy trước block bucket của worker.mjs.
+- [seo fleet stuck-slot leak](seo-fleet-stuck-slot-leak.md) — heartbeat xanh ≠ nhận việc; job treo giữ BullMQ slot, worker:active=0 đánh lừa. Nhìn processedOn trong bull:*:active; fix seo !2271 + worker-sdk !1.
 - [fleet-control Queues DOWN semantics](fleet-control-queues-down-semantics.md) — "Queues DOWN" = 1+ failed job trong 24h window, cosmetic; worker liveness (up===0) là row riêng. metrics:jobs giữ count độc lập với bull:*.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
 - [seo fleet Tailscale ACL auto-deploy](seo-fleet-tailscale-acl-autodeploy.md) — central=tag:deploy, box1/box2=tag:worker-box, accept rule → non-interactive SSH. Gotchas: box1 --ssh off, box2 was user-owned untagged, SSH-into-central needs dst:tag:deploy (autogroup:self ≠ tagged nodes).
@@ -23,7 +24,7 @@
 - [blog prod deploy theo tag](blogs-prod-deploy-by-tag.md) — `only: - tags`; 2026-09-03 master hơn tag cuối 183 commit, fix bot nằm chết 3 tuần. `git tag --contains <sha>` trước khi kết luận prod thiếu fix.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
 - [Crisp plugin mất, prod chết](crisp-plugin-lost-prod-dead.md) — mọi read Crisp prod trả `not_subscribed` từ ~08-10; list 1-sao đóng băng 07-29; token mới mới ở seo .env.local, prod chưa update.
-- [4 repo đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — AEO/APC/seo/img; remote gitlab.com là mirror chết (img sau 416 commit) và giờ read-only 403; glab đã auth cả 2 host.
+- [5 repo đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — AEO/APC/seo/img ở `avada/`, worker-sdk ở `avada/falcon/product/` (09-15); gitlab.com read-only 403 cả push lẫn API; glab đã auth cả 2 host.
 - [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
 - [Firestore 409 index exists = no-op](firestore-409-index-noop.md) — redeploying an existing composite index returns 409; it's a no-op, not a deploy error.
 - [seo .env.avada-seo local override](seo-env-avada-seo-local-override.md) — local-only override for hand-deploying fns to prod; canonical prod env = CI PRODUCTION_ENV_FILE. internalGen2 is a function, not an env.

@@ -239,5 +239,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Sort theo inventory ở `seo-audit/seoOnPage` không trả data — field inventory chưa được index/đổ vào doc audit, phải check nguồn trước khi sort FE
 
 ### memory candidates 2026-09-15
-- [ ] (×1) worker-sdk executor từ `2b9a426` reject handler vượt timeout để BullMQ free slot — fleet worker "chết"/"processing ảo" trước đây là slot bị handler treo giữ, không phải box down; check handler settle trước khi restart box
-- [ ] (×1) worker-sdk vẫn push được lên remote mới (commit 2026-09-15 dưới `tuannv@avada.email`) — xác nhận lại remote nào đang ghi, vì group `avada` trên gitlab.com đã read-only
+- [ ] (×2) worker-sdk executor từ `2b9a426` reject handler vượt timeout để BullMQ free slot — fleet worker "chết"/"processing ảo" trước đây là slot bị handler treo giữ, không phải box down; check handler settle trước khi restart box
+- [ ] (×2) worker-sdk vẫn push được lên remote mới (commit 2026-09-15 dưới `tuannv@avada.email`) — xác nhận lại remote nào đang ghi, vì group `avada` trên gitlab.com đã read-only
+
+### memory candidates 2026-09-15
+- [ ] (×1) Chưa có quyền tạo project trong group `seoon-team` trên git.avada.net (2026-09-15) — worker-sdk migrate kẹt, cần admin cấp quyền
+- [ ] (×1) waspfish job dock — job stuck resume trả `forbidden` khi smoke test local (2 job, 2026-09-15); check auth path của resume trước khi nghi job state
