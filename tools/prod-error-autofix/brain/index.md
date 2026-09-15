@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `2exedr` · 2026-09-14 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
+- `1bq78y3` · 2026-09-14 · SEO · apigen2 · GET /api/page-content returned 500 because Shopify Admin REST answered 429 (Too Many Requests) to the unretrie · — · fix_disabled
+- `tqoh3h` · 2026-09-14 · BLOG · api · The Shopify Admin GraphQL POST for one files(first:250) page in fetchAllImagesFromShopify hit a transport-leve · — · fix_disabled
 - `8phfr7` · 2026-09-14 · BLOG · api · Duplicate of recorded fingerprint 1qodvk0 / a3l435 / r6ig4i / skrvtw (BLOG setSession family, no fix on master · — · fix_disabled
 - `1nkkb2b` · 2026-09-14 · BLOG · api · POST /api/audit-agent/fix-issue (issueType KEYPHRASE) for shop OOXtLxadNvXkaPUPv2qs / article 570632470582 ret · — · fix_disabled
 - `1dxwrva` · 2026-09-14 · BLOG · proxy · Duplicate of recorded fingerprint 1lzrsah (same 07:02:27–28Z burst, same shop, same 4 log lines): Shopify has  · — · fix_disabled

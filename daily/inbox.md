@@ -237,3 +237,7 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Image optimization (waspfish) trạng thái "Stopped — no progress for too long" không render nút start again — resume V25 làm MR riêng
 - [ ] (×1) Filter alt text theo stock (SEO) scope chốt: product ở audit table + AI content, không áp cho alt image
 - [ ] (×1) Sort theo inventory ở `seo-audit/seoOnPage` không trả data — field inventory chưa được index/đổ vào doc audit, phải check nguồn trước khi sort FE
+
+### memory candidates 2026-09-15
+- [ ] (×1) worker-sdk executor từ `2b9a426` reject handler vượt timeout để BullMQ free slot — fleet worker "chết"/"processing ảo" trước đây là slot bị handler treo giữ, không phải box down; check handler settle trước khi restart box
+- [ ] (×1) worker-sdk vẫn push được lên remote mới (commit 2026-09-15 dưới `tuannv@avada.email`) — xác nhận lại remote nào đang ghi, vì group `avada` trên gitlab.com đã read-only
