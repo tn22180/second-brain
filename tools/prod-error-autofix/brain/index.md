@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1a2aqmf` · 2026-09-16 · BLOG · proxy · no verified cause · — · inconclusive
 - `2exedr` · 2026-09-14 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
 - `1bq78y3` · 2026-09-14 · SEO · apigen2 · GET /api/page-content returned 500 because Shopify Admin REST answered 429 (Too Many Requests) to the unretrie · — · fix_disabled
 - `tqoh3h` · 2026-09-14 · BLOG · api · The Shopify Admin GraphQL POST for one files(first:250) page in fetchAllImagesFromShopify hit a transport-leve · — · fix_disabled

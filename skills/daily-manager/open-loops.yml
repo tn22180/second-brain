@@ -62,3 +62,9 @@
   pri: low
   what: "Token prompt-audit MCP vẫn là placeholder trong ~/.claude.json"
   since: 2026-07-06
+
+- id: monthly-points
+  pri: high
+  what: "Cuối tháng: tạo task tính point tháng 2026-09 cho team (RECURRING monthly)"
+  note: "Xong tháng nào thì sửa tay tháng trong 'what' sang tháng sau — KHÔNG set done. Tháng 09 kèm 3 MR dev-zone credit grants (seo !2276, blogs !892, ai-product-copy !197); brief jobs/dev-zone-credit-grant-history.md"
+  since: 2026-09-16
