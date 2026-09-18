@@ -20,5 +20,9 @@ Mint/revoke bằng `packages/functions/scripts/internal-key.js` (list|mint|revok
 **Why:** Tony chọn full quyền cho key này (tool có write), IP động nên không allowlist được — nên
 thứ giữ được trách nhiệm chỉ còn hash + TTL ngắn + actor/ticket + audit + revoke.
 
+AEO port 2026-09-18: branch `feat/FAL-761-internal-support-key` (3 commit, chưa MR), GET query như
+seo; `internal-key.js` bên AEO bắt buộc `GOOGLE_CLOUD_PROJECT`. TS AI xin key AEO → mint key này
+(`seo-on-aeo`), KHÔNG đưa key `aeo-integration` merchant. Blog related-keywords cho TS = MR !879.
+
 **How to apply:** app khác dính cùng lỗi (xem [[integration-key-unbound-fleetwide]]) thì bê nguyên
 shape này, đừng thêm cờ `allShops` vào `integrationKeys`.

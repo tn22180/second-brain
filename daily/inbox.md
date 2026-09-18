@@ -247,3 +247,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) waspfish job dock — job stuck resume trả `forbidden` khi smoke test local (2 job, 2026-09-15); check auth path của resume trước khi nghi job state
 
 - [ ] (manual 2026-09-16) Cuối tháng (due 2026-09-29): tạo task tính point tháng 2026-09 cho team. Kèm 3 MR dev-zone credit grants (seo !2276, blogs !892, ai-product-copy !197), brief jobs/dev-zone-credit-grant-history.md
+
+### memory candidates 2026-09-18
+- [ ] (×1) ADC local trỏ `/Users/nguyentuan/.openclaw/firebase-sa.json` (file không còn) → mọi script gen key / Firestore fail `Could not load the default credentials`. Sửa đường dẫn ADC trước khi nghi quyền.
+- [ ] (×1) Lỗi enable app setting `Preset '<name>' Invalid value for type in block ... Type must be defined in schema` = preset tham chiếu block type chưa khai trong schema. Fix ở schema/preset, không phải data shop.
+- [ ] (×1) 3 MR TS AI API (APC !190, blogs !864, seo !2176) lên prod rồi mới chuyển key vào env qua MR riêng. Cần check key cũ đã rotate chưa.
+- [ ] (×1) Menu `/affiliate` ẩn trên prod từ 2026-09-18 để dùng thử nội bộ. Merchant chưa thấy, đừng coi là bug "menu mất".

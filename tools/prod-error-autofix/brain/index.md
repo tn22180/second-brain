@@ -7,6 +7,20 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1dew7rz` · 2026-09-18 · BLOG · api · Duplicate of recorded fingerprint 1fxldhb: no request failed. A Python-urllib smoke test of the newly shipped  · — · fix_disabled
+- `1fxldhb` · 2026-09-18 · BLOG · api · No request failed. A Python-urllib smoke test of the newly shipped GET /api/related-keywords sent the made-up  · — · fix_disabled
+- `17fxucx` · 2026-09-18 · BLOG · syncsubscribeactivecharge · No request failed. redis.service.js turns a self-healing idle-socket ECONNRESET into a severity=ERROR page usi · — · fix_disabled
+- `y89mhl` · 2026-09-18 · SEO · apisagen2 · This is a duplicate of recorded fingerprint 18d0hk9: the same burst on the same apisagen2 instance in the same · — · fix_disabled
+- `1l0me4f` · 2026-09-18 · SEO · apisagen2 · Duplicate of recorded fingerprint 18d0hk9 (same burst, same apisagen2 instance, same window): the standalone a · — · fix_disabled
+- `19xs00l` · 2026-09-18 · SEO · apisagen2 · Duplicate of recorded fingerprint 18d0hk9, same burst in the same window. The standalone admin's useAffiliateR · — · fix_disabled
+- `nkdnsy` · 2026-09-18 · SEO · apisagen2 · Duplicate of recorded fingerprint 18d0hk9 (same burst, same window). The standalone admin's useAffiliateRealti · — · fix_disabled
+- `2320cr` · 2026-09-18 · SEO · apisagen2 · Duplicate of recorded fingerprint 18d0hk9 (same burst, same window). The standalone admin's useAffiliateRealti · — · fix_disabled
+- `rth6m3` · 2026-09-18 · SEO · apisagen2 · Duplicate of recorded fingerprint 18d0hk9, same burst in the same window. The standalone admin's useAffiliateR · — · fix_disabled
+- `18d0hk9` · 2026-09-18 · SEO · apisagen2 · The standalone admin's useAffiliateRealtime hook calls signInWithCustomToken(auth, token) on the same Firebase · — · fix_disabled
+- `vspx0a` · 2026-09-18 · SEO · syncelasticsearchchunkgen2 · The alerted 'no available instance' 500 was a scale-from-zero race. At 2026-09-18T04:34:37Z, a single syncToEl · — · infra
+- `132sis2` · 2026-09-17 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `1i1vyyr` · 2026-09-17 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `1x47a3c` · 2026-09-17 · SEO · handleexportbrokenurlsgen2 · no verified cause · — · inconclusive
 - `lc0iwc` · 2026-09-16 · SEO · authgen2 · no verified cause · — · inconclusive
 - `1a2aqmf` · 2026-09-16 · BLOG · proxy · no verified cause · — · inconclusive
 - `2exedr` · 2026-09-14 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
