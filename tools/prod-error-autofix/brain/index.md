@@ -7,6 +7,11 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `2yaavp` · 2026-09-19 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
+- `1yw6spj` · 2026-09-19 · SEO · apigen2 · The router-wide decodeUri middleware on /api calls decodeURIComponent a second time on values Koa has already  · — · fix_disabled
+- `1rtg9x7` · 2026-09-18 · BLOG · api · One Shopify Admin REST connection was reset (`read ECONNRESET`) during the unretried, unguarded `shopify.asset · — · fix_disabled
+- `1cbcx5r` · 2026-09-18 · BLOG · apisa · Duplicate of recorded fingerprint 1j8pv1p, now on the standalone service (apisa): the editor's Related Blogs t · — · fix_disabled
+- `1j8pv1p` · 2026-09-18 · BLOG · api · The editor's Related Blogs tab sent GET /api/shopify/postByBlog with an Article gid as `blogId` (gid://shopify · — · fix_disabled
 - `1dew7rz` · 2026-09-18 · BLOG · api · Duplicate of recorded fingerprint 1fxldhb: no request failed. A Python-urllib smoke test of the newly shipped  · — · fix_disabled
 - `1fxldhb` · 2026-09-18 · BLOG · api · No request failed. A Python-urllib smoke test of the newly shipped GET /api/related-keywords sent the made-up  · — · fix_disabled
 - `17fxucx` · 2026-09-18 · BLOG · syncsubscribeactivecharge · No request failed. redis.service.js turns a self-healing idle-socket ECONNRESET into a severity=ERROR page usi · — · fix_disabled
