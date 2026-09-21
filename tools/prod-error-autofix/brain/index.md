@@ -7,6 +7,10 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `v2oq6a` · 2026-09-21 · BLOG · api · GET /api/shopify/postByBlog is called with an Article gid in the `blogId` param (4 of 4 calls in the window),  · — · fix_disabled
+- `1n81ob2` · 2026-09-21 · BLOG · api · GET /api/shopify/postByBlog was called 4/4 times with an Article gid as `blogId` (gid://shopify/Article/100628 · — · fix_disabled
+- `1agchp0` · 2026-09-21 · BLOG · api · Duplicate of the recorded BLOG setSession family (1qodvk0 / a3l435 / r6ig4i / skrvtw / 8phfr7, no fix on maste · — · fix_disabled
+- `1wy94x1` · 2026-09-21 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `2yaavp` · 2026-09-19 · SEO · apigen2 · Duplicate of the recorded @avada/core setSession family (h9cev0 / xy8ebm / 2t79bo / cfkgba / 8nzlcb / dea93l / · — · fix_disabled
 - `1yw6spj` · 2026-09-19 · SEO · apigen2 · The router-wide decodeUri middleware on /api calls decodeURIComponent a second time on values Koa has already  · — · fix_disabled
 - `1rtg9x7` · 2026-09-18 · BLOG · api · One Shopify Admin REST connection was reset (`read ECONNRESET`) during the unretried, unguarded `shopify.asset · — · fix_disabled
@@ -292,7 +296,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1agqupy` · 2026-08-14 · SEO · apigen2 · no verified cause · — · inconclusive
 - `118uoxk` · 2026-08-14 · BLOG · auth · no verified cause · — · inconclusive
 - `sp18eo` · 2026-08-14 · BLOG · api · GET /api/settings failed for shop gddoilEQDA3qDbQch9xb because the bare, unretried `shopify.asset.get(themeId, · https://gitlab.com/avada/blogs/-/merge_requests/818 · mr_open
-- `1f5odgw` · 2026-08-15 · IMG-OPT · auth · no verified cause · — · inconclusive
+- `1f5odgw` · 2026-09-20 · IMG-OPT · auth · Shop tmbe07-59.myshopify.com fired three /auth OAuth redirects in 49s (19:51:18.557Z state=249303479813608, 19 · — · fix_disabled
 - `1e4p2an` · 2026-08-14 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `ge6iq5` · 2026-08-14 · AEO · proxy · no verified cause · — · inconclusive
 - `1t97xtj` · 2026-08-14 · BLOG · subscribebatcharticlesummary · no verified cause · — · inconclusive
@@ -631,7 +635,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1f3smxv` · 2026-08-14 · BLOG · proxy · A one-off Shopify Admin GraphQL HTTP 503 on the single `articles` query in getArticlesByTagWithPagination beca · https://gitlab.com/avada/blogs/-/merge_requests/871 · mr_open
 - `100ms51` · 2026-08-22 · SEO · apigen2 · GET /api/resource-report computes its answer inline on the request path: on a cache miss it walks the shop's e · — · fix_disabled
 - `pboq3f` · 2026-08-03 · BLOG · api · During a 13.5-hour intermittent OpenRouter rate limit on Google's Gemini SKUs, getCompletion's last-attempt fa · https://gitlab.com/avada/blogs/-/merge_requests/826 · mr_open
-- `ri78d8` · 2026-07-31 · SEO · apisagen2 · no verified cause · — · inconclusive
+- `ri78d8` · 2026-09-21 · SEO · apisagen2 · no verified cause · — · inconclusive
 - `epfkly` · 2026-08-01 · BLOG · reviewupdatesschedule · Every run of reviewUpdatesSchedule since Chrome was restored on the container (2026-07-31) dies in getPageRevi · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
 - `n7z34s` · 2026-08-02 · BLOG · reviewupdatesschedule · Duplicate of fingerprints pf3lkx / epfkly (MR https://gitlab.com/avada/blogs/-/merge_requests/814 open, unmerg · https://gitlab.com/avada/blogs/-/merge_requests/814 · mr_open
 - `19t4boc` · 2026-08-22 · SEO · apigen2 · The Bulk Generator's "generate again" button fires one POST /api/regenerateBulkItem per selected row with no c · — · fix_disabled

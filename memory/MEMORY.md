@@ -51,3 +51,10 @@
 - [seo MCP prod OAuth: lỗi CSP form-action](seo-mcp-oauth-shopify-callback.md) — redirect_uri ĐÃ whitelist (16 callback 200); chết ở nhánh form vì form-action thiếu admin.shopify.com. Đếm POST /mcp-oauth/shop vs callback trước khi nghi whitelist.
 - [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy. 401 09-12→09-14 là baseUrl thiếu (bay sang api.openai.com), không phải key.
 - [seo fleet GCS egress](seo-fleet-gcs-egress.md) — box ngoài GCP → mọi read GCS = egress $0.12/GiB; legacy FILE_PAGE tải lại cả fileImageJsonl mỗi batch 20 ảnh; SKU `Network Data Transfer GAE/Firebase Storage` bị report gộp vào "Firestore / Storage".
+- [seo embed metafield bị wipe câm](seo-embed-metafield-silent-wipe.md) — storefront đọc app metafield `seo.meta2`, không đọc Firestore; 3 lỗi cộng dồn, FE vẫn báo "Saved". So updateTime doc vs updatedAt metafield trước khi nghi theme/cache.
+- [seo /chatbot cross-tenant settings](seo-chatbot-router-cross-tenant.md) — bot token dùng chung + shopId từ query → đọc google.tokens của shop bất kỳ; MR !2286 chỉ vá nhánh MCP.
+- [MCP_OAUTH_SECRET yếu](seo-mcp-oauth-secret-weak.md) — prod ký token MCP bằng chuỗi 5 ký tự; brute-force được → forge token, cần rotate.
+- [errorAlerts đổi sang lastSeenMs](seo-erroralerts-lastseenms.md) — feed KHÔNG chết; `--order lastSeen` loại hết doc sau 2026-07-23. TTL 1 ngày. Reader đã vá ở diagnose.js + skill prod-logs.
+- [APC không có consumer prod-error](apc-prod-error-no-consumer.md) — sink có, subscription 0, `handleProdErrorAlertGen2` 404 → mọi lỗi prod APC bị vứt; code có sẵn, chưa deploy.
+- [SA image-optimizer của bot đã bị revoke](falcon-bot-img-sa-key-revoked.md) — key `f7b48da0` không còn trên GCP → fs-query app đó trả UNAUTHENTICATED, bot diagnose mù.
+- [Orca ăn TCC, ~/Documents chết](orca-tcc-documents-block.md) — terminal host là Orca.app (không phải iTerm); Orca auto-update → mất quyền Documents giữa session, `git` báo `Unable to read current working directory`. Quit hẳn + xoá entry rồi re-grant.

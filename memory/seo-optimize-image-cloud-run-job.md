@@ -14,6 +14,13 @@ merge master đều KHÔNG đụng tới nó → nó trôi lại sau master hàn
 `4bddc09` của 2026-07-22, tức 4 tuần, còn qwen3-vl làm alt model mặc định trong khi master đã
 sang gemma từ 08-19).
 
+Đo lại 2026-09-21: image vẫn pin `:d311adc15f` (2026-08-26) — **trễ 26 ngày / 196 commit
+`packages/functions`**, trong đó 18 commit đụng `services/optimize` + `helpers/optimize`
+(gồm cả loạt dead-run-release / resume của v1.86.27). Nghĩa là mọi fix backend optimize
+merge vào master đều CHƯA sống trong job này. Nhánh FILE_PAGE của
+`optimizeImageJobLoop`/`optimizeBulkJob` chạy trong job → fix cursor phải cắt tag kèm
+`[deploy-cloud-run-production]` mới tới nơi.
+
 Khi soi "model nào đang chạy ở prod", phải check job này, không chỉ `gcloud run services list`.
 Nó cũng vô hình trong log: `getOpenRouterImageAlt` không log tên model ở nhánh thành công.
 

@@ -1,0 +1,268 @@
+{
+  "baseUrl": "https://space.avada.net",
+  "probedAt": "2026-07-22",
+  "project": {
+    "key": "FAL",
+    "id": "10800"
+  },
+  "issueTypes": {
+    "Task": "10001",
+    "Bug": "10310",
+    "Incurred": "10600",
+    "Sub-task": "10002"
+  },
+  "subtaskEnabled": true,
+  "requiredOnCreate": {
+    "Task": [
+      "summary",
+      "project",
+      "issuetype"
+    ],
+    "Bug": [
+      "summary",
+      "project",
+      "issuetype"
+    ],
+    "Incurred": [
+      "summary",
+      "project",
+      "issuetype"
+    ],
+    "Sub-task": [
+      "summary",
+      "project",
+      "issuetype",
+      "parent"
+    ]
+  },
+  "falconAppRequired": false,
+  "falconApps": [
+    "SEO",
+    "Blog",
+    "APC",
+    "AEO",
+    "Feed",
+    "Ads",
+    "Pixels",
+    "Speed",
+    "Canva",
+    "Team"
+  ],
+  "priorityAllowed": [
+    "Highest",
+    "High",
+    "Medium",
+    "Low"
+  ],
+  "devPointAllowed": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "8",
+    "13",
+    "21",
+    "34",
+    "55",
+    "89"
+  ],
+  "testerPointAllowed": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "8",
+    "13",
+    "21",
+    "34",
+    "55",
+    "89"
+  ],
+  "dueDateOnScreen": true,
+  "fields": {
+    "falconApp": "customfield_11203",
+    "prd": "customfield_11201",
+    "staging": "customfield_11200",
+    "mergeRequest": "customfield_10800",
+    "baPoint": "customfield_10701",
+    "devPoint": "customfield_11204",
+    "testerPoint": "customfield_11202",
+    "designerPoint": "customfield_10702",
+    "assignees": "customfield_10700",
+    "sprint": "customfield_10101"
+  },
+  "priorityDefault": {
+    "name": "Medium",
+    "id": "3"
+  },
+  "issueLinkTypes": [
+    {
+      "name": "Blocks",
+      "outward": "blocks",
+      "inward": "is blocked by"
+    },
+    {
+      "name": "Cloners",
+      "outward": "clones",
+      "inward": "is cloned by"
+    },
+    {
+      "name": "Detected",
+      "outward": "detected by",
+      "inward": "detected"
+    },
+    {
+      "name": "Duplicate",
+      "outward": "duplicates",
+      "inward": "is duplicated by"
+    },
+    {
+      "name": "Finish-to-Finish link (WBSGantt)",
+      "outward": "Linked issue cannot finish until this issue finishes.",
+      "inward": "Cannot finish until linked issue is finished."
+    },
+    {
+      "name": "Finish-to-Start link (WBSGantt)",
+      "outward": "Linked issue cannot start until this issue finishes.",
+      "inward": "Cannot start until linked issue finishes."
+    },
+    {
+      "name": "Hierarchy link (WBSGantt)",
+      "outward": "contains",
+      "inward": "is contained in"
+    },
+    {
+      "name": "Identify",
+      "outward": "identify in",
+      "inward": "identify"
+    },
+    {
+      "name": "Problem/Incident",
+      "outward": "causes",
+      "inward": "is caused by"
+    },
+    {
+      "name": "QAlity Test",
+      "outward": "tests",
+      "inward": "is tested by"
+    },
+    {
+      "name": "Relates",
+      "outward": "relates to",
+      "inward": "relates to"
+    },
+    {
+      "name": "Requirement",
+      "outward": "covers",
+      "inward": "covered by"
+    },
+    {
+      "name": "RTM Tree Relation",
+      "outward": "parent of",
+      "inward": "child of"
+    },
+    {
+      "name": "Start-to-Finish link (WBSGantt)",
+      "outward": "Linked issue cannot finish until this issue starts.",
+      "inward": "Cannot finish until linked issue starts."
+    },
+    {
+      "name": "Start-to-Start link (WBSGantt)",
+      "outward": "Linked issue can start after this issue starts.",
+      "inward": "Cannot start until linked issue starts."
+    },
+    {
+      "name": "Test Case",
+      "outward": "includes",
+      "inward": "included in"
+    },
+    {
+      "name": "Test Execution",
+      "outward": "executed by",
+      "inward": "executed from"
+    }
+  ],
+  "statuses": [
+    "Archived",
+    "Doing",
+    "Done",
+    "QA/ QC",
+    "Review Done",
+    "Reviewing",
+    "Test Staging",
+    "Testing Production",
+    "To Do",
+    "Waiting For Review",
+    "Waiting To Live",
+    "Waiting To Test"
+  ],
+  "sprintFieldId": "customfield_10101",
+  "transitionsSampledFrom": "FAL-295",
+  "transitions": [
+    {
+      "id": "11",
+      "name": "To Do",
+      "to": "To Do"
+    },
+    {
+      "id": "41",
+      "name": "Doing",
+      "to": "Doing"
+    },
+    {
+      "id": "61",
+      "name": "Waiting To Test",
+      "to": "Waiting To Test"
+    },
+    {
+      "id": "71",
+      "name": "Test Staging",
+      "to": "Test Staging"
+    },
+    {
+      "id": "81",
+      "name": "Waiting For Review",
+      "to": "Waiting For Review"
+    },
+    {
+      "id": "91",
+      "name": "Reviewing",
+      "to": "Reviewing"
+    },
+    {
+      "id": "101",
+      "name": "Review Done",
+      "to": "Review Done"
+    },
+    {
+      "id": "111",
+      "name": "Waiting To Live",
+      "to": "Waiting To Live"
+    },
+    {
+      "id": "121",
+      "name": "Testing Production",
+      "to": "Testing Production"
+    },
+    {
+      "id": "131",
+      "name": "QA/ QC",
+      "to": "QA/ QC"
+    },
+    {
+      "id": "141",
+      "name": "Archived",
+      "to": "Archived"
+    },
+    {
+      "id": "251",
+      "name": "done",
+      "to": "Done"
+    },
+    {
+      "id": "51",
+      "name": "Move",
+      "to": "Doing"
+    }
+  ]
+}

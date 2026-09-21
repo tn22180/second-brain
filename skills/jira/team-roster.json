@@ -1,0 +1,32 @@
+{
+  "teams": {
+    "Linh · Tuân · Lâm": {
+      "apps": ["Speed", "SEO", "AEO", "Blog", "APC"],
+      "board": "Board 1 _ Linh _ Tuân & Lâm",
+      "boardId": 10030,
+      "defined": true,
+      "members": {
+        "po": ["linhnq"],
+        "techlead": ["tuannv", "lamln"],
+        "ba": ["bachdv", "anhbl"],
+        "dev": ["hailt", "taing", "minhpt", "ducnm01", "truongnn", "tunglv"],
+        "tester": ["tranggt", "dungtt"]
+      }
+    },
+    "Nghĩa · Tam": {
+      "apps": ["Feed", "Ads", "Pixels", "Canva"],
+      "board": "Board 2 _ Nghĩa _ Tam",
+      "boardId": 10031,
+      "defined": true,
+      "members": {
+        "techlead": ["nghiavt"],
+        "ba": ["tamnc", "anhbl"],
+        "dev": ["anhnt3", "trungph"],
+        "tester": ["trangdt"]
+      }
+    }
+  },
+  "unassignedManagers": [],
+  "designers": ["dungta"],
+  "note": "Cap nhat 2026-07-16 (GOP TEAM): Falcon con 2 team = 2 board giao viec tren Jira (bo cau truc 3-team Speed/Organic/Paid cu; Board 3 _ Lam _ Bach id 10032 cua Speed da GOP vao Board 1). Board 1 (id 10030 'Board 1 _ Linh _ Tuan & Lam') = gop team Speed + Organic: PO linhnq, 2 Tech Lead [tuannv, lamln], BA bachdv, 6 Dev [hailt, taing, minhpt, ducnm01, truongnn, tunglv], 2 Tester [tranggt, dungtt]; apps Speed+SEO+AEO+Blog+APC. Board 2 (id 10031 'Board 2 _ Nghia _ Tam') = team Paid nguyen: TL nghiavt, BA tamnc, 2 Dev [anhnt3, trungph], Tester trangdt; apps Feed/Ads/Pixels/Canva. Chi GOP - khong ai roi, tong van 19 nguoi. Falcon App 'Team' = task noi bo (automation/tooling/quy trinh), khong thuoc app nao, filter CA 2 board deu bat => task Team len ca 2 board. Ten board hay doi -> doc live qua GET /rest/agile/1.0/board?projectKeyOrId=FAL, bam boardId (10030/10031). Sprint chay CHUNG ca Falcon, tao/start/close tu Master board 10028. SO SPRINT DOI MOI 2 TUAN - luon doc live qua GET /rest/agile/1.0/board/10028/sprint?state=active, DUNG tin so ghi trong file. LUU Y 2 con so khac nhau: 'Falcon Sprint N' la TEN team dat (dem 1,2,3...), con id la so noi bo cua Jira dung chung toan instance (Solar/AR/MT cung an so) nen nhay cach - map: Sprint 1=id 59, Sprint 2=id 62, Sprint 3=id 64, Sprint 4=id 66. Tai 2026-09-04: Falcon Sprint 4 (Jira id 66), chay 24/08-06/09, active tren ca 2 board + Master. BAY TEN: tranggt (Trang GT, Tester Board 1) KHAC trangdt (Trang DT, Tester Board 2); dungta (Designer dung chung) KHAC dungtt (Trinh Thi Dung, Tester Board 1). Designer dung CHUNG ca Falcon o mang top-level 'designers' (1 nguoi: dungta); task naming Solar tag [DESIGN] dung 1 designer -> tu giao, nhieu -> mac dinh nguoi tao. Cap nhat 2026-09-04 (BA moi): Bui Lan Anh 'Esther' (anhbl) lam BA cho CA team Falcon tu 01/09/2026 => nam trong 'ba' cua CA HAI board, khong gan rieng board nao (dung chung giong designer dungta); van kiem CS Lead ben Support. Da cap quyen tao issue tren FAL 2026-09-04 (project role Manager id 10202). Lich su: 2026-07-13 them app Team + Canva(Paid) + Tester Organic/Paid + nhieu designer; 2026-07-10 anh Lam define 3 team goc qua BRIEF."
+}

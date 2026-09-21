@@ -253,3 +253,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Lỗi enable app setting `Preset '<name>' Invalid value for type in block ... Type must be defined in schema` = preset tham chiếu block type chưa khai trong schema. Fix ở schema/preset, không phải data shop.
 - [ ] (×1) 3 MR TS AI API (APC !190, blogs !864, seo !2176) lên prod rồi mới chuyển key vào env qua MR riêng. Cần check key cũ đã rotate chưa.
 - [ ] (×1) Menu `/affiliate` ẩn trên prod từ 2026-09-18 để dùng thử nội bộ. Merchant chưa thấy, đừng coi là bug "menu mất".
+
+### memory candidates 2026-09-21
+- [ ] (×1) Gen bulk meta description (seo) fallback về template mặc định sinh tên shop + CTA → vi phạm Google Merchant Center; không phải do template khách tự đặt
+- [ ] (×1) Search Console OAuth token bị trả nguyên về client (seo, fix `7873be4ba0`) — cùng họ cross-tenant với `/chatbot`; coi token GSC đã lộ, cần rotate
+- [ ] (×1) HTML comment của theme app extension leak vào DOM storefront — trúng cả seo (structured-data) lẫn blogs; audit mọi extension render comment
+- [ ] (×1) 2 legacy ScriptTag Dev Zone (seo) đã vô tác dụng, đã xoá `db4da6fa38` — không restore
+- [ ] (×1) JEV (typesafe.ai System One) đánh giá ở vai tool sinh kết quả, Claude Code là lớp phân tích — không thay pipeline agent hiện có
