@@ -7,6 +7,19 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `15bgeed` · 2026-09-22 · BLOG · apisa · Duplicate of recorded fingerprints 1ukaxj0 / ta670i / 1cbcx5r (same app, service, endpoint, shop and article,  · — · fix_disabled
+- `1ukaxj0` · 2026-09-22 · BLOG · apisa · GET /apiSa/shopify/postByBlog was called 4/4 times with an Article gid as `blogId` (gid://shopify/Article/7063 · — · fix_disabled
+- `ta670i` · 2026-09-22 · BLOG · apisa · GET /apiSa/shopify/postByBlog was called 4/4 times with an Article gid in the blogId param (gid://shopify/Arti · — · fix_disabled
+- `a55qns` · 2026-09-21 · BLOG · api · getShopifyArticleById's author-sync side effect writes the whole article back to Shopify via articleUpdate — i · — · fix_disabled
+- `1swwpv5` · 2026-09-21 · BLOG · api · Duplicate of recorded fingerprints 1yxrius / ucdb8c / 6lwjkn (same app, service, shop, article and second; sti · — · fix_disabled
+- `1yxrius` · 2026-09-21 · BLOG · api · One PUT /api/article/668046393581 from shop xyc3oRZkHw8jzKBFzip0 carried an article payload over 10 MB, and ar · — · fix_disabled
+- `6lwjkn` · 2026-09-21 · BLOG · api · Duplicate of recorded fingerprint ucdb8c (same app/service/shop/article/second, no fix on master): one PUT /ap · — · fix_disabled
+- `ucdb8c` · 2026-09-21 · BLOG · api · One PUT /api/article/668046393581 from shop xyc3oRZkHw8jzKBFzip0 carried an article payload larger than 10 MB, · — · fix_disabled
+- `da9qai` · 2026-09-21 · BLOG · api · No request failed: the alerted 413 is a per-image vision failure that getVisionCompletion swallows — it catche · — · fix_disabled
+- `1n1zitj` · 2026-09-21 · BLOG · api · Duplicate of recorded fingerprints nldp9d / 1wesr5x / 1pjm3cl (same app, service, shop, request and second: BL · — · fix_disabled
+- `1pjm3cl` · 2026-09-21 · BLOG · api · Duplicate of recorded fingerprints nldp9d / 1wesr5x (same app/service/message/day, still unfixed on master): t · — · fix_disabled
+- `1wesr5x` · 2026-09-21 · BLOG · api · Duplicate of recorded fingerprint nldp9d (same app/service/message/window, no fix on master): the AI Assistant · — · fix_disabled
+- `nldp9d` · 2026-09-21 · BLOG · api · The AI Assistant modal's Cancel button is wired as `onAction: handleChangeActive`, so Polaris passes the click · — · fix_disabled
 - `v2oq6a` · 2026-09-21 · BLOG · api · GET /api/shopify/postByBlog is called with an Article gid in the `blogId` param (4 of 4 calls in the window),  · — · fix_disabled
 - `1n81ob2` · 2026-09-21 · BLOG · api · GET /api/shopify/postByBlog was called 4/4 times with an Article gid as `blogId` (gid://shopify/Article/100628 · — · fix_disabled
 - `1agchp0` · 2026-09-21 · BLOG · api · Duplicate of the recorded BLOG setSession family (1qodvk0 / a3l435 / r6ig4i / skrvtw / 8phfr7, no fix on maste · — · fix_disabled

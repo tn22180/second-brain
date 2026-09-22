@@ -260,3 +260,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) HTML comment của theme app extension leak vào DOM storefront — trúng cả seo (structured-data) lẫn blogs; audit mọi extension render comment
 - [ ] (×1) 2 legacy ScriptTag Dev Zone (seo) đã vô tác dụng, đã xoá `db4da6fa38` — không restore
 - [ ] (×1) JEV (typesafe.ai System One) đánh giá ở vai tool sinh kết quả, Claude Code là lớp phân tích — không thay pipeline agent hiện có
+
+### memory candidates 2026-09-22
+- [ ] (×1) Fix-bug automation chạy native trên Mac (launchd) thay Docker — container không đủ quyền hệ thống để fix sâu; Docker giữ làm rollback
+- [ ] (×1) Hermes agent dùng cho công việc, OpenClaw cho cá nhân — 2 launchd gateway tách vai, chung `OLLAMA_API_KEY`, đọc skill chung từ `~/.claude/skills`
+- [ ] (×1) `second-brain/.env` giờ giữ key cho tooling second-brain — check file này trước khi nghi thiếu credential
+- [ ] (×1) FAL-872 là task gốc cho nhóm task Judge.me/product-option assign Tung + Giáp Thu Trang, tuannv reviewer

@@ -5,7 +5,7 @@ description: START HERE when maintaining this repo — what the bot is, the modu
 
 # falcon-fix-bot — maintainer's overview
 
-Team bug-fix bot in ONE Docker container. Hourly: scans the Avada Slack support channels (seo-suite-support + blog-support; crisis-management removed 2026-07-21 per user),
+Team bug-fix bot, one hourly loop — a **native launchd daemon** since 2026-09-22 (Docker is the rollback, see [[bot-deploy]]). Hourly: scans the Avada Slack support channels (seo-suite-support + blog-support; crisis-management removed 2026-07-21 per user),
 auto-fixes high-confidence bugs of the 4 Organic apps (branch → MR → merge-on-green →
 gated PRODUCTION deploy via git tag), tags the responsible dev for everything else.
 
@@ -46,10 +46,11 @@ chosen because the predecessor (kael-autofix) empirically failed when the model 
 | `ops-commands.js` | ops-channel admin surface: `help`/`config`/`admin`/`recheck`/`continue` — parse → authorize (admins only) → dispatch — see §commands below | act for a non-admin |
 | `runtime-config.js` | Slack-settable config overlay (`data/state/runtime-config.json`); `sanitize()` is the key allowlist — THE security boundary for the whole feature | let a rollout flag (AUTO_DEPLOY/DRY_RUN/TEST_MODE/…) through the overlay |
 | `ledger.js` | append-only seen.jsonl (last-line-wins), per-channel watermark, daily counts, per-bug command cursor | delete/rewrite history |
-| `claude.js` | `runClaude` (timeout 20m + 1 retry + logFile), fail-closed `parseVerdict` | permission-skip by default (opt-in flag) |
+| `claude.js` | `runClaude` (timeout 20m + 1 retry + logFile), fail-closed `parseVerdict`, arg building | emit `--dangerously-skip-permissions` — it is gone; sessions take a `profile` |
+| `permissions.js` | the two session profiles (`investigate` read-only, `edit`) as default-deny allowlists + the shared deny backstop | hand out bare `Bash` (a guard test fails) — see [[bot-safety-gates]] |
 | `report.js` | `makeReport(lang)` — all human-facing text, vi default | logic |
 | `config.js` | config.json + env parsing (safe defaults: DRY_RUN/TEST_MODE=true), merges the `runtime-config.js` overlay over env for models/cron | — |
-| `sync-claude-tools.js` | installs claude/agents/* + team-ops plugin skills into container ~/.claude (both layouts) | — |
+| `sync-claude-tools.js` | installs claude/agents/* + team-ops plugin skills into the daemon's OWN `$HOME/.claude` (both layouts) | point at the operator's real HOME |
 
 `tools/`: vendored `slk` (Slack CLI, ESM, own package.json) · `get-thread.js` + `lib/parse.js`
 (thread→JSON; 9 unit tests) · `crisp.js` · `fetch-captures.js` (screenshots) · `fs-query.js`
@@ -252,8 +253,9 @@ command, which takes precedence over both the job env var and its legacy fallbac
 ## Operate
 
 ```bash
-docker compose build && docker compose run --rm falcon-fix-bot --once   # one run
-docker compose up -d                                                    # hourly daemon
+HOME=$PWD/home ./bin/node src/main.js --once                            # one run
+launchctl kickstart -k gui/$(id -u)/com.falcon-fix-bot.daemon           # restart the hourly daemon
+tail -f data/logs/daemon.out.log                                        # what it is doing
 touch data/state/PAUSED                                                 # pause (rm to resume)
 npm test                                                                # MUST stay green (count only grows)
 # node --test test/<file>.test.js — always a FILE path, never a directory (Node 22 trap)

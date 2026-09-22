@@ -55,6 +55,45 @@ order of checks, update the table — order is part of the spec.
   token with a stray newline leaks verbatim through fetch's Headers TypeError (reproduced).
   git.js wraps all token-bearing ops in `withRedacted`.
 
+## Session permissions (`permissions.js`) — default-deny, not skip-permissions
+
+Until 2026-09-22 every tool-using session ran `--dangerously-skip-permissions`
+and the blast radius was the container. The daemon runs natively now, so that
+radius would be the workstation: the same user that holds gcloud credentials,
+prod service accounts and an SSH-reachable worker fleet. Sessions therefore run
+under a profile — an explicit `--allowedTools` list, with everything unlisted
+refused (headless has nobody to prompt).
+
+| profile | used by | may |
+|---|---|---|
+| `investigate` | `diagnose.js` | read the repo; read-only `git`/`ls`/`rg`/`jq` |
+| `edit` | `fixer.js` | the above **+** `Edit`/`Write` and the repo's own `yarn`/`npm`/`node --test` |
+| *(none)* | `selector.js`, `learn.js` | nothing — text reply only |
+
+Two facts measured against claude 2.1.278 on 2026-09-22, both load-bearing:
+
+1. **A deny rule beats an allow rule at every scope.** `--allowedTools "Bash"`
+   plus `--disallowedTools "Bash(rm:*)"` refuses `rm`.
+2. **A prefix DENY is porous.** `Bash(rm:*)` does NOT stop `/bin/rm -f <path>` —
+   it deleted the probe file on the first try. Absolute paths, `env`, `xargs`
+   and `sh -c` all walk around it.
+
+(2) is why **the allowlist is the boundary and the deny list is only a
+backstop**. Do not describe `DENY` as containment, and never widen a profile by
+adding bare `Bash` — a guard test fails if you do. `DENY` still earns its place:
+it keeps `git push`/`git tag`/`git commit`, `glab`, `gcloud`, `firebase`, `ssh`
+and `sudo` out even if a broader allow arrives later, and it stops the session
+reaching for a ship path that belongs to `git.js` and `deploy.js`.
+
+Failure mode of a too-tight allowlist is a fix session that quietly does
+nothing — `checkFixResult` reports that as `EMPTY_DIFF`, not a crash. Widen one
+prefix at a time. Guard tests: `test/permissions.test.js`, `test/claude.test.js`.
+
+The sessions also run under the daemon's **own `HOME`**, not the operator's:
+otherwise they inherit the operator's SessionStart hooks and memory files, which
+is unrequested prompt steering a session whose output `parseVerdict` parses
+fail-closed. Verified by probe both ways on 2026-09-22.
+
 ## Shopify is READ-ONLY (`tools/shop-token.js`)
 
 `assertReadOnlyQuery` **parses** the GraphQL document with graphql-js (no regex sniffing —

@@ -58,3 +58,4 @@
 - [APC không có consumer prod-error](apc-prod-error-no-consumer.md) — sink có, subscription 0, `handleProdErrorAlertGen2` 404 → mọi lỗi prod APC bị vứt; code có sẵn, chưa deploy.
 - [SA image-optimizer của bot đã bị revoke](falcon-bot-img-sa-key-revoked.md) — key `f7b48da0` không còn trên GCP → fs-query app đó trả UNAUTHENTICATED, bot diagnose mù.
 - [Orca ăn TCC, ~/Documents chết](orca-tcc-documents-block.md) — terminal host là Orca.app (không phải iTerm); Orca auto-update → mất quyền Documents giữa session, `git` báo `Unable to read current working directory`. Quit hẳn + xoá entry rồi re-grant.
+- [Hermes = việc, OpenClaw = cá nhân](hermes-work-openclaw-personal.md) — 2 gateway launchd tách vai; hermes dùng unix socket không chiếm port; chung OLLAMA_API_KEY; `adopt_external_logins` phải false kẻo mượn login Claude Code; skill đọc chung từ ~/.claude/skills.

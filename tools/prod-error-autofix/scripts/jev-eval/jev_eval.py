@@ -98,14 +98,25 @@ def build(args):
     print(f"eval.jsonl: {n} fingerprints, {pos} labelled infra ({pos/n:.1%}), {n-pos} app")
 
 
-def read_key(name, path_env):
-    key = os.environ.get(name)
-    if key:
-        return key
-    p = os.environ.get(path_env) or str(HERE / f".{name.lower()}")
+def read_key(names, path_env):
+    """Accepts several env names because the key is filed under JEV_API_KEY in one
+    place and TYPESAFE_API_KEY in the vendor's own docs."""
+    if isinstance(names, str):
+        names = [names]
+    for n in names:
+        if os.environ.get(n):
+            return os.environ[n]
+    p = os.environ.get(path_env) or str(HERE / f".{names[0].lower()}")
     if os.path.exists(p):
-        return Path(p).read_text().strip()
-    sys.exit(f"no {name}: export it, or put it in {p} (chmod 600)")
+        txt = Path(p).read_text().strip()
+        # A dotenv line wins over a bare-key file, so the same flag takes either shape.
+        for line in txt.splitlines():
+            line = line.strip().removeprefix("export ").strip()
+            for n in names:
+                if line.startswith(f"{n}="):
+                    return line.split("=", 1)[1].strip().strip("\'\"")
+        return txt
+    sys.exit(f"no key: export {' or '.join(names)}, or put it in {p} (chmod 600)")
 
 
 def ask_jev(state, key, model):
@@ -200,11 +211,11 @@ def run(args):
     if out_path.exists() and not args.fresh:
         done = {json.loads(l)["fp"] for l in open(out_path)}
     if args.provider == "jev":
-        key, fn, model = read_key("TYPESAFE_API_KEY", "TYPESAFE_API_KEY_FILE"), ask_jev, args.model or "jev-latest"
+        key, fn, model = read_key(["TYPESAFE_API_KEY", "JEV_API_KEY"], "TYPESAFE_API_KEY_FILE"), ask_jev, args.model or "jev-latest"
     elif args.provider == "cli":
         key, fn, model = None, ask_cli, args.model or "haiku"
     else:
-        key, fn, model = read_key("ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY_FILE"), ask_claude, args.model or "claude-haiku-4-5-20251001"
+        key, fn, model = read_key(["ANTHROPIC_API_KEY"], "ANTHROPIC_API_KEY_FILE"), ask_claude, args.model or "claude-haiku-4-5-20251001"
     todo = [i for i in items if i["fp"] not in done]
     print(f"{args.provider} / {model}: {len(todo)} to run ({len(done)} cached)")
     errs = 0
