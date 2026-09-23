@@ -1,3 +1,4 @@
+import {redactSecret} from '../audit/securitySchema';
 import {err, spawnRunner, type GcloudResult, type Runner} from './run';
 
 /**
@@ -67,21 +68,30 @@ function num(v: unknown): number | undefined {
   return undefined;
 }
 
+/**
+ * Redacted here, at the one point every log line enters the pipeline, because a
+ * prod log line is a live credential surface: seo's initShopify prints the
+ * merchant's Shopify access token verbatim, and a Cloud Run revision dump carries
+ * the service's whole env. Entries land in the brain and the eval corpus, which
+ * are committed — five weeks of pushes were blocked over exactly this.
+ */
 export function compact(raw: unknown): LogEntry {
   const e = (raw ?? {}) as Record<string, unknown>;
   const json = (e.jsonPayload ?? {}) as Record<string, unknown>;
   const error = (json.error ?? {}) as Record<string, unknown>;
   const http = (e.httpRequest ?? {}) as Record<string, unknown>;
   const message = str(json.message) ?? str(e.textPayload) ?? str(error.message);
+  const stack = str(error.stack);
+  const url = str(http.requestUrl);
   return {
     timestamp: str(e.timestamp),
     severity: str(e.severity),
     tag: str(json.tag),
-    message: message?.slice(0, MAX_MESSAGE),
-    stack: str(error.stack)?.slice(0, MAX_STACK),
+    message: message === undefined ? undefined : redactSecret(message).slice(0, MAX_MESSAGE),
+    stack: stack === undefined ? undefined : redactSecret(stack).slice(0, MAX_STACK),
     status: num(http.status),
     method: str(http.requestMethod),
-    url: str(http.requestUrl),
+    url: url === undefined ? undefined : redactSecret(url),
     latencySeconds: num(http.latency),
     insertId: str(e.insertId)
   };

@@ -139,3 +139,5 @@ Test: `npx jest packages/functions/src` từ root worktree.
 - **Test command:** `controllers/__tests__/ownership.idor.test.js` (mới) + full suite.
 - **Risk:** doc analysis legacy có `shopID` sai → merchant thật bị 403 (helper đã dùng ở `updateAnalysis` nên đã được kiểm ngoài prod). Thêm 1 Firestore read/request ở 3 handler analysis.
 - **Rollback:** revert commit task 7.
+- **Result:** `52c409dbd63`. 2 round (round 1 test mock Firestore bị jest-hoist chặn). Test mới 7/7: `analysisController.ownership` (3 route → 403, không đọc shop), `repositories/__tests__/ownership.bulkWrites` (doc shop khác → Forbidden, doc mình + doc mới vẫn ghi; sitemap chỉ ghi doc mình), `featureReq/__tests__/blockUser` (body `blockId: victim` bị bỏ). `historyOptimizeController.getOne` + `revertByListImageLogId` không có test (import graph nặng) — guard chép y hệt `revertByHistoryId`. Full suite: 2 test fail baseline, node:stream flaky. Sec: clean.
+- **Ghi lại:** `blockUserReq` vẫn lấy từ body → shop bị block tự gửi `blockUserReq:false` là tự gỡ block. Đúng ra là hành động moderation của staff → nên gate DevZone; chưa làm vì không rõ staff dùng session gì (magic-link sẽ gãy).

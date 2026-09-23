@@ -24,10 +24,10 @@ Repo **không có** skill `security` — §8 dùng checklist sàn.
 ✅
 ✅ G7 / 🚧 G6 BLOCKED
 ✅
-| 7 | G6 isTeamAvada + G11 competitors | ✅ 0ef86964d | 1 | clean | gate tại chỗ bằng middleware `requireDevZone` thay vì dời route (0 đổi FE) |
+✅
 | 8 | G18 POST /api/shop allowlist | ✅ 6f04c7962 | 1 | clean | 9 field merchant; dev zone + internal session giữ blocklist |
 | 9 | G17 /proxy/ai-summary/blogs | ✅ 4eb437a92 | 1 | clean | 0 caller → xoá route + handler + route map |
-| 10 | G4 OAuth Google popup: không `state`, `postMessage("*")`, không check origin | general-purpose / opus | auth | |
+| 10 | G4 OAuth Google popup | ✅ 2fbff2606 | 2 | fixed | + XSS inline script qua `state` (tự phát hiện, vá cùng); FE+BE phải cùng tag |
 | 11 | G3+G5 log header/shop object ra console + Sentry (`clientFetchSSE.js`, `debugHelper.js`, `ModalImport.js`) | cavecrew-builder / haiku | code | |
 | 12 | G2 rules mở: `articles`, `blog-media/{shopId}` | general-purpose / opus | rules | file cấm §8 → **được phép rõ ràng**; kiểm client SDK trước |
 
@@ -194,3 +194,21 @@ Baseline trước khi sửa: 89 suite, 2 fail sẵn (`redis.service.test.js` thi
 - Rollback: revert commit.
 - Test: bỏ fix → 2/3 đỏ; có fix → 3/3. Suite 95 / 2 fail baseline, 619/620.
 - Sec: clean.
+
+**Task 10 — G4** — ✅ `2fbff2606`
+- Goal: token GA chỉ tới đúng opener của app; opener chỉ nhận message từ popup mình mở.
+- Files allowed: `controllers/googleController.js`, `assets/src/pages/Analytics/GoogleAnalyticsConfig.jsx`, test.
+- Approach: `state = {nonce, origin}` do FE sinh (`crypto.getRandomValues`). Callback (`googleController.js:117-131` cũ) postMessage tới
+  `origin` nếu thuộc allowlist {origin redirect URI, `APP_BASE_URL`, twin `.web.app`↔`.firebaseapp.com`}, không thì origin chính callback;
+  bỏ `"*"`. FE `handleMessage` (`GoogleAnalyticsConfig.jsx:159` cũ) check `event.source === popup`, `event.origin === origin(redirect_uri)`,
+  `data.nonce === nonce`. Không cần session/secret: allowlist chặn người nhận, nonce chặn message giả.
+- Test command: jest functions + `controllers/__tests__/googleOauthCallback.test.js`; assets build `vite build` (embed, prod) — `✓ built in 15.66s`.
+- Risk: FE chạy trên origin ngoài allowlist → message rơi, GA connect không xong. Kiểm env (chỉ host, không giá trị bí mật):
+  `.env.prod` `APP_BASE_URL` và `GOOGLE_ANALYTICS_REDIRECT_URI` cùng host `avada-blog-app.web.app`; hosting 1 site. FE mới + BE cũ
+  → FE bỏ message không có nonce → phải deploy functions + hosting cùng tag (tag blog deploy cả hai).
+- Rollback: revert commit.
+- Sec: **fixed** — tự phát hiện `state` (attacker kiểm soát, Google echo nguyên) được nhét thẳng vào `<script>` → reflected XSS trên origin app;
+  vá bằng escape `<`, U+2028/2029 (có test).
+- Rounds 2: build vòng 1 fail do chạy `vite` ngoài `packages/assets` (config dùng path tương đối) → chạy qua node với cwd assets.
+  `yarn workspace @avada/assets run production:embed` chết `cross-env: command not found` (bin chỉ khai ở root) — lỗi môi trường, không do code.
+- Test: bỏ fix → 5/5 đỏ; có fix → 5/5. Suite 96 / 2 fail baseline, 624/625.

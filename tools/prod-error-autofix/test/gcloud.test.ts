@@ -1,5 +1,6 @@
 import {describe, expect, test} from 'bun:test';
 import {probeDeploy} from '../src/gcloud/deploy';
+import {FAKE_SHOPIFY_TOKEN, FAKE_SLACK_TOKEN} from './fixtures/fakeSecrets';
 import {buildFilters, compact, fetchLogs, serviceClause, summarize} from '../src/gcloud/logs';
 import {classifyFailure, type RunResult, type Runner} from '../src/gcloud/run';
 
@@ -115,6 +116,18 @@ describe('compact', () => {
   test('missing everything yields undefined, not throws', () => {
     expect(compact(undefined).message).toBeUndefined();
     expect(compact({}).timestamp).toBeUndefined();
+  });
+
+  // seo's initShopify prints the merchant's token next to the shop domain, so an
+  // entry that reaches the brain unredacted commits a live credential.
+  test('a credential in the payload never survives into the entry', () => {
+    const entry = compact({
+      jsonPayload: {message: `shop.myshopify.com ${FAKE_SHOPIFY_TOKEN}`, error: {stack: `at init (${FAKE_SLACK_TOKEN})`}},
+      httpRequest: {requestUrl: `https://x.test/cb?key=${FAKE_SHOPIFY_TOKEN}`}
+    });
+    expect(entry.message).toBe('shop.myshopify.com <redacted>');
+    expect(entry.stack).not.toContain(FAKE_SLACK_TOKEN);
+    expect(entry.url).not.toContain(FAKE_SHOPIFY_TOKEN);
   });
 });
 

@@ -133,6 +133,14 @@ describe('redactSecret', () => {
   // very tool authenticates with the second.
   test('hyphen-separated vendor keys are stripped too', () => {
     expect(redactSecret(FAKE_GITLAB_PAT)).toBe('<redacted>');
+  });
+
+  // A connection string hides a short password between punctuation the blob rules
+  // skip; the host stays so the finding still says which database it is about.
+  test('a URI password is stripped and the host survives', () => {
+    expect(redactSecret('mongodb+srv://svc:pa55word@cluster0.mongodb.net/db')).toBe(
+      'mongodb+srv://svc:<redacted>@cluster0.mongodb.net/db'
+    );
     expect(redactSecret('sk-ant-api03-AbCdEfGhIjKl-mNoPqRs')).toBe('<redacted>');
   });
 

@@ -79,12 +79,20 @@ const SECRET_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * Runs before the rules above and keeps the scheme, user and host, so a finding
+ * still names the database it is about. A connection string is the one shape the
+ * blob rules miss: the password in `mongodb+srv://user:pw@host` is usually under
+ * 32 chars and sits between punctuation the other patterns skip.
+ */
+const URI_CREDENTIAL = /\b([a-z][a-z0-9+.-]*:\/\/[^\s:@/]+):[^\s@/]+@/gi;
+
+/**
  * Called where a finding is BUILT, not where it is sent. `audit_findings.title`
  * is persisted to `state.db`; a value stripped only on the way to Telegram would
  * already be on disk.
  */
 export function redactSecret(text: string): string {
-  let out = text;
+  let out = text.replace(URI_CREDENTIAL, '$1:<redacted>@');
   for (const re of SECRET_PATTERNS) out = out.replace(re, '<redacted>');
   return out;
 }

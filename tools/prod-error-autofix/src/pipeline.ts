@@ -1,5 +1,6 @@
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {redactSecret} from './audit/securitySchema';
 import {analyze, type AnalyzeOutcome} from './agent/analyze';
 import type {Analysis} from './agent/analysisSchema';
 import type {ClaudeRunner} from './agent/claudeCli';
@@ -351,7 +352,10 @@ async function runJob(deps: PipelineDeps, input: JobInput): Promise<JobResult> {
   if (logsRes.ok) {
     logs = logsRes.value;
     logsPath = join(dir, 'logs.json');
-    writeFileSync(logsPath, JSON.stringify(logs.raw, null, 2), 'utf8');
+    // The raw payloads are the unredacted ones; a prod log line carries live
+    // merchant tokens and, on a revision dump, the service's whole env. This file
+    // is read back by the agent and quoted into the brain, which is committed.
+    writeFileSync(logsPath, redactSecret(JSON.stringify(logs.raw, null, 2)), 'utf8');
     log(`${fingerprint} logs: ${summarize(logs)}`);
   } else if (logsRes.failure === 'auth' || logsRes.failure === 'permission') {
     const replied = await say(
