@@ -1,0 +1,60 @@
+.npmrc	1	secret	Same private npm registry _authToken committed in root .npmrc	2026-09-15 23:00:05
+.yarnrc.yml	6	secret	Private npm registry auth token (registry.avada.io) committed and tracked in .yarnrc.yml	2026-09-15 23:00:05
+firebase.storage.rules	5	shop_scoping	Cloud Storage rule allows unconditional read and write to /blog-media/{shopId}/ for every shop	2026-08-31 23:00:00
+firestore.rules	5	shop_scoping	articles collection is world-readable and world-writable with no shop predicate	2026-09-06 23:13:57
+firestore.rules	6	shop_scoping	articles collection is world-readable and world-writable	2026-09-02 23:08:07
+packages/assets/src/components/SeoLegacyPlanModal/SeoLegacyPlanModal.jsx	54	credential_exposure	Cross-app SEO integration access token is compiled into the React bundle and sent from the browser	2026-08-26 03:05:10
+packages/assets/src/helpers/clientFetchSSE.js	42	secret_in_log	SSE debug context snapshots the full request header set including three <redacted>	2026-09-06 23:13:57
+packages/assets/src/helpers/utils/debugHelper.js	11	secret_in_log	Sentry captureException forwards the caller's whole context object as extra	2026-09-06 23:13:57
+packages/assets/src/pages/Analytics/GoogleAnalyticsConfig.jsx	159	credential_exposure	Frontend stores Google OAuth tokens from an unvalidated window message	2026-09-06 23:13:57
+packages/assets/src/pages/ContentManager/PostManagement/ManageTable/ModalImport.js	189	secret_in_log	console.log of the whole shop object, which carries the GA service-account private key	2026-09-06 23:13:57
+packages/functions/.npmrc	1	secret	Same private npm registry _authToken committed in packages/functions/.npmrc	2026-09-15 23:00:05
+packages/functions/src/FeatureReq/featureReq.controller.js	88	untrusted_input	Any merchant can post feature-request comments as 'Avada team' (blue tick) by sending `isTeamAvada: true`; non-team branch also trusts body `shopId`/`parentId`	2026-09-14 23:00:05
+packages/functions/src/FeatureReq/featureReq.controller.js	158	shop_scoping	POST /api/block-user-req deletes another shop's feature-request data from a body-supplied id	2026-09-11 23:06:11
+packages/functions/src/FeatureReq/featureReq.controller.js	162	shop_scoping	POST /block-user-req lets any merchant session batch-delete another shop's feature-request comments	2026-09-15 23:00:05
+packages/functions/src/commands/autoTranslateV2.js	7	secret	Google Cloud Translate API key hardcoded in a command script	2026-08-26 09:19:42
+packages/functions/src/commands/syncShopsToBigQuery.js	33	credential_exposure	Shop backfill to BigQuery strips only top-level keys containing 'token'; nested googleAnalytics.serviceAccountKey is exported	2026-09-14 23:00:05
+packages/functions/src/config/changelog.js	11	credential_exposure	Firestore→BigQuery changelog streams the whole `shops` document (Shopify accessToken + GA serviceAccountKey) to the cross-app CRM dataset	2026-09-14 23:00:05
+packages/functions/src/const/appIntegationKeys.js	4	secret	Production SEO integration access token hardcoded in the tree	2026-08-26 09:19:42
+packages/functions/src/controllers/authorController.js	199	shop_scoping	DELETE /author deletes any shop's author docs by id	2026-09-15 23:00:05
+packages/functions/src/controllers/blogAssist.controller.js	49	shop_scoping	POST /blog-assist writes into another shop's blogAssist doc and echoes its contents back	2026-09-06 23:13:57
+packages/functions/src/controllers/blogAssist.controller.js	79	shop_scoping	Blog-assist AI content is looked up by `blogId` alone, with no shop filter	2026-09-01 23:00:00
+packages/functions/src/controllers/blogAssist.controller.js	80	shop_scoping	GET /blog-assist/:blogId/:assistFor returns any shop's AI-generated content	2026-09-06 23:13:57
+packages/functions/src/controllers/competitorsController.js	20	shop_scoping	Global competitor blocklist (DevZone admin data) writable/deletable by any merchant — can lock other merchants out	2026-09-14 23:00:05
+packages/functions/src/controllers/componentsController.js	58	shop_scoping	`PUT /api/components` writes to any component document id from the request body	2026-08-29 23:00:00
+packages/functions/src/controllers/componentsController.js	61	shop_scoping	PUT /components overwrites any components doc by id, body spread unfiltered	2026-09-15 23:00:05
+packages/functions/src/controllers/devZoneController.js	185	untrusted_input	dev_zone set-token lets a merchant write their own AI token balance	2026-08-26 09:19:42
+packages/functions/src/controllers/devZoneController.js	188	untrusted_input	dev_zone `set-token` lets a merchant set their own AI token balance from the request body	2026-08-26 03:05:10
+packages/functions/src/controllers/devZoneController.js	630	credential_exposure	PUT /api/dev_zone?type=redis-get reads any Redis key, and the shop cache holds Shopify accessToken	2026-08-26 09:19:42
+packages/functions/src/controllers/devZoneController.js	668	credential_exposure	Dev zone `redis-get`/`redis-keys` return raw cached shop docs of ANY shop, including plaintext Shopify accessToken	2026-09-15 23:00:05
+packages/functions/src/controllers/devZoneController.js	683	credential_exposure	dev_zone `redis-get` returns arbitrary cache keys, including shop docs that contain `accessToken`	2026-08-29 23:00:00
+packages/functions/src/controllers/genAIBlogController.js	67	shop_scoping	POST /gen-ai-blog reads and then completes another shop's generation record	2026-09-06 23:13:57
+packages/functions/src/controllers/genAIBlogController.js	165	shop_scoping	PUT /gen-ai-blog/:id resets any shop's generation history record	2026-09-06 23:13:57
+packages/functions/src/controllers/googleController.js	117	credential_exposure	Google OAuth access_token + refresh_token posted to window.opener with targetOrigin "*" from an unauthenticated callback with no state nonce	2026-09-15 23:00:05
+packages/functions/src/controllers/googleController.js	120	credential_exposure	Google OAuth tokens posted to a wildcard origin via `postMessage(..., "*")`	2026-09-01 23:00:00
+packages/functions/src/controllers/googleController.js	124	credential_exposure	Google OAuth access+refresh tokens (offline, analytics scopes) posted to window.opener with targetOrigin "*" on an unauthenticated route	2026-09-14 23:00:05
+packages/functions/src/controllers/googleController.js	127	credential_exposure	Google OAuth tokens broadcast via postMessage with targetOrigin `"*"`	2026-08-29 23:00:00
+packages/functions/src/controllers/integrationKeyController.js	15	credential_exposure	GET /api/integration/keys returns any integration key, including its accessToken, with no scoping	2026-08-26 09:19:42
+packages/functions/src/controllers/integrationKeyController.js	31	authn	POST /api/integration/keys lets any merchant mint an integration credential	2026-08-26 09:19:42
+packages/functions/src/controllers/langGraphController.js	42	untrusted_input	Client-minted generationId is used verbatim as the token-deduction idempotency key	2026-09-11 23:06:11
+packages/functions/src/controllers/langGraphController.js	168	untrusted_input	Client-supplied `generationId` is the token-deduction idempotency key — replaying it yields unlimited free blog+image generations	2026-09-14 23:00:05
+packages/functions/src/controllers/settingsController.js	36	untrusted_input	GET /api/settings?domain= overrides the authenticated session shop	2026-09-06 23:13:57
+packages/functions/src/controllers/settingsController.js	94	shop_scoping	PUT /settings persists body-supplied `shopId`, letting a merchant re-home their settings doc onto another shop's storefront	2026-09-14 23:00:05
+packages/functions/src/controllers/settingsController.js	253	authn	GET /proxy/ai-summary/blogs has no authentication and dumps any shop's articles	2026-09-02 23:08:07
+packages/functions/src/controllers/shopController.js	129	untrusted_input	POST /api/shop writes almost any shop field — blockFields only strips plan/isDevZone/installedAt/isLegacyPlan/pricingVersion	2026-09-15 23:00:05
+packages/functions/src/controllers/shopController.js	142	untrusted_input	POST /api/shop writes the raw request body into the shop document with no field allowlist	2026-08-26 03:05:10
+packages/functions/src/controllers/shopController.js	321	shop_scoping	getBlogCustomer takes shopId from the request body and uses that shop's Shopify client	2026-08-26 09:19:42
+packages/functions/src/controllers/shopController.js	323	shop_scoping	getBlogCustomer takes `shopId` from the request body and reads that shop's article with its own credential	2026-08-26 03:05:10
+packages/functions/src/controllers/shopController.js	324	shop_scoping	POST /api/get-article-customer fetches any shop's article using that shop's Shopify token	2026-09-15 23:00:05
+packages/functions/src/controllers/shopController.js	326	shop_scoping	POST /api/get-article-customer loads any shop by body `shopId` and reads its article with that shop's Shopify token	2026-09-14 23:00:05
+packages/functions/src/controllers/sidebarAdsController.js	113	shop_scoping	DELETE /sidebarAds deletes any sidebarAds doc by id	2026-09-15 23:00:05
+packages/functions/src/controllers/sidebarAdsController.js	143	shop_scoping	PUT /sidebarAds/:id updates any sidebarAds doc, whole body spread into the update	2026-09-15 23:00:05
+packages/functions/src/graphql/codegen.js	7	secret	Shopify Admin API access token (shpua_ format) hardcoded as fallback default for the codegen dev store	2026-09-15 23:00:05
+packages/functions/src/helpers/helpers.js	26	credential_exposure	prepareShop re-adds googleAnalytics.serviceAccountKey (full SA JSON with private_key) to every GET /api/shop and /api/shops response	2026-09-15 23:00:05
+packages/functions/src/middleware/swaggerAuth.js	31	credential_exposure	POST /proxy/swagger-token mints a full API session for any shop named in the request body	2026-08-26 03:05:10
+packages/functions/src/middleware/validateAccessToken.js	44	shop_scoping	validateAccessToken never binds integration.shopId to X-SEO-Shop-Domain — any integration key acts on any shop	2026-09-15 23:00:05
+packages/functions/src/repositories/integrationRepository.js	95	credential_exposure	Integration keys stored in plaintext and looked up by equality; MCP tokens in the same app are sha256-hashed	2026-09-14 23:00:05
+packages/functions/src/routes/api.js	295	authn	PUT /api/dev_zone exposes a full admin console to any authenticated merchant	2026-08-26 09:19:42
+packages/functions/src/routes/proxy.js	18	authn	Unauthenticated POST /proxy/swagger-token mints a session JWT for an arbitrary shop domain	2026-08-26 09:19:42
+packages/functions/src/services/config/crisp.js	6	secret	Crisp REST API identifier and secret key committed as literals	2026-08-26 03:05:10
+services/proxy-go/internal/handler/youtube.go	45	secret_in_log	YOUTUBE_API_KEY logged and echoed to anonymous callers via *url.Error from the captions request	2026-09-15 23:00:05

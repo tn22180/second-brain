@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `19358w6` · 2026-09-23 · SEO · apigen2 · Not an app defect: a credential-scanner sweep probing /api/.env variants hit the public apigen2 Cloud Run URL, · — · infra
 - `15bgeed` · 2026-09-22 · BLOG · apisa · Duplicate of recorded fingerprints 1ukaxj0 / ta670i / 1cbcx5r (same app, service, endpoint, shop and article,  · — · fix_disabled
 - `1ukaxj0` · 2026-09-22 · BLOG · apisa · GET /apiSa/shopify/postByBlog was called 4/4 times with an Article gid as `blogId` (gid://shopify/Article/7063 · — · fix_disabled
 - `ta670i` · 2026-09-22 · BLOG · apisa · GET /apiSa/shopify/postByBlog was called 4/4 times with an Article gid in the blogId param (gid://shopify/Arti · — · fix_disabled

@@ -1,0 +1,83 @@
+.npmrc	1	secret	Committed private npm registry auth token (registry.avada.io)	2026-09-15 23:00:05
+.yarnrc.yml	12	secret	Same registry token duplicated as npmAuthToken in tracked .yarnrc.yml	2026-09-14 23:00:05
+extensions/firestore-bigquery-export.env	4	credential_exposure	Whole `shops` documents — which carry accessToken/accessTokenHash — mirrored into BigQuery with no field filter	2026-09-09 23:00:05
+extensions/firestore-bigquery-export.env	20	credential_exposure	The whole `shops` collection is streamed to BigQuery and through an external transform endpoint with no field exclusion	2026-08-30 23:00:00
+firestore.rules	8	authn	`generateBulk` and its `items` subcollection are world read+write from any client	2026-09-13 23:00:00
+packages/functions/.npmrc	1	secret	Third committed copy of the registry token in packages/functions/.npmrc	2026-09-14 23:00:05
+packages/functions/src/commands/getAccessToken.js	7	credential_exposure	CLI command decrypts and prints a merchant's Shopify access token in plaintext	2026-09-15 23:00:05
+packages/functions/src/commands/testAuth.js	14	secret	Hardcoded Google OAuth client secret (GOCSPX- format) in a committed script	2026-09-05 23:13:02
+packages/functions/src/config/pickFields.js	236	untrusted_input	AICreditQuota is in neither blockFields nor privilegedFields, so a merchant can self-grant credits via POST /api/shop	2026-09-20 23:00:00
+packages/functions/src/const/appIntegationKeys.js	2	secret	Live cross-app integration access tokens hardcoded in the source tree	2026-08-26 03:23:04
+packages/functions/src/controllers/aiChatController.js	67	untrusted_input	AI credit cost for the `faqs` action is read from request body `numberOfFaqs`, allowing a negative cost that refunds credits	2026-09-13 23:00:00
+packages/functions/src/controllers/analysisController.js	408	shop_scoping	GET /api/analysis/:type/:id returns another shop's analysis document	2026-09-09 23:00:05
+packages/functions/src/controllers/analysisController.js	429	shop_scoping	GET /analysis/:type/:id returns another shop's analysis doc	2026-09-13 23:00:00
+packages/functions/src/controllers/analysisController.js	624	shop_scoping	POST /publish-resource/:type/:id reads and overwrites another shop's analysis doc	2026-09-13 23:00:00
+packages/functions/src/controllers/analysisController.js	666	shop_scoping	publishResource overwrites another shop's analysis doc and re-stamps it with the attacker's shopID	2026-09-09 23:00:05
+packages/functions/src/controllers/analysisController.js	762	shop_scoping	GET /api/analysis/:type/:id/meta-tags returns another shop's analysis doc as auditData	2026-09-09 23:00:05
+packages/functions/src/controllers/blogAppIntegrationController.js	15	credential_exposure	GET /api/integration/blogApp/keys returns the raw integration document including its plaintext accessToken	2026-09-20 23:00:00
+packages/functions/src/controllers/blogAppIntegrationController.js	16	credential_exposure	GET /api/integration/blogApp/keys?name=<any> returns the integration accessToken to any authenticated shop	2026-09-14 23:00:05
+packages/functions/src/controllers/chatbotController.js	242	credential_exposure	Decrypted Google service-account JSON + Bing IndexNow key written into a theme-readable Shopify shop metafield	2026-09-09 23:00:05
+packages/functions/src/controllers/creditCartController.js	101	untrusted_input	Credit-bundle activation trusts `charge_id` from the redirect query without confirming the charge with Shopify	2026-09-15 23:00:05
+packages/functions/src/controllers/creditCartController.js	133	untrusted_input	AI credits granted from an unauthenticated ?charge_id= with no Shopify charge-status check	2026-09-19 23:00:00
+packages/functions/src/controllers/historyOptimizeController.js	119	shop_scoping	GET /history-optimize/:id reads any shop's optimize history with no ownership check	2026-09-20 23:00:00
+packages/functions/src/controllers/integrationKeyController.js	15	credential_exposure	GET /api/integration/keys?name= returns any global integration key's raw accessToken to any authenticated shop	2026-08-26 03:23:04
+packages/functions/src/controllers/integrationKeyController.js	41	untrusted_input	createOne mints an integration key for a shopId taken from the request body	2026-09-02 23:08:07
+packages/functions/src/controllers/revertController.js	9	shop_scoping	Unauthenticated GET /proxy/get-jsonl-data/:id hands out a signed download URL for any shop's product backup export	2026-08-26 03:23:04
+packages/functions/src/controllers/revertController.js	11	shop_scoping	GET /proxy/get-jsonl-data/:id hands out a signed download URL for any shop's product backup	2026-08-24 01:57:15
+packages/functions/src/controllers/revertController.js	49	authn	POST /proxy/revert-product/:id reverts any shop's images with no authentication	2026-09-02 23:08:07
+packages/functions/src/controllers/revertController.js	51	authn	POST /proxy/revert-product/:id reverts any shop's product images and alt text unauthenticated	2026-08-24 01:57:15
+packages/functions/src/controllers/seoController.js	137	untrusted_input	GET /api/settings honors an ungated ?shopId= override from the query string	2026-09-09 23:00:05
+packages/functions/src/controllers/seoController.js	138	shop_scoping	GET /api/settings honours a ?shopId= query param in place of the session shop	2026-09-01 23:00:00
+packages/functions/src/controllers/seoController.js	140	shop_scoping	GET /settings and /settings/:field accept a caller-supplied `?shopId`	2026-09-13 23:00:00
+packages/functions/src/controllers/seoController.js	694	authn	GET /proxy/republish/:shopId has no authentication and writes another shop's theme	2026-09-02 23:08:07
+packages/functions/src/controllers/seoController.js	729	shop_scoping	triggerCron is an unrestricted Pub/Sub publish primitive for any authenticated merchant	2026-09-09 23:00:05
+packages/functions/src/controllers/seoController.js	736	shop_scoping	POST /api/triggerCron dispatches an attacker-chosen topic with an attacker-chosen payload	2026-09-13 23:00:00
+packages/functions/src/controllers/shopController.js	136	credential_exposure	getShopProxy returns unmasked settings — omitting ?settingField hands back raw instantIndexing secrets	2026-09-09 23:00:05
+packages/functions/src/controllers/shopController.js	138	credential_exposure	getShopProxy returns unmasked settings — decrypted Google service-account JSON and Bing IndexNow key	2026-09-13 23:00:00
+packages/functions/src/controllers/shopController.js	140	credential_exposure	GET /proxy/shop returns decrypted Instant Indexing secrets unmasked	2026-09-19 23:00:00
+packages/functions/src/controllers/shopController.js	260	untrusted_input	POST /api/shop writes the whole request body to the shop doc, including the AI credit balance	2026-08-29 23:00:00
+packages/functions/src/controllers/shopController.js	277	untrusted_input	/api/shop/reduce-credit accepts a negative `amount` and inflates AI credits	2026-09-15 23:00:05
+packages/functions/src/controllers/shopifyController.js	664	credential_exposure	setClient logs the full shop document (with accessToken) on every /proxy/shop/seo and /proxy/shop/blog call	2026-09-15 23:00:05
+packages/functions/src/controllers/subscriptionController.js	33	shop_scoping	GET /api/subscription?shopId= lets any authenticated merchant read another shop's plan, coupons and settings	2026-09-05 23:13:02
+packages/functions/src/controllers/subscriptionController.js	34	shop_scoping	GET /api/subscription honours `?shopId=` over the session shop	2026-09-13 23:00:00
+packages/functions/src/featureReq/featureReq.controller.js	211	shop_scoping	POST /api/block-user-req deletes the feature requests and comments of the shop named by body.blockId	2026-09-18 23:00:05
+packages/functions/src/handlers/internalTools.js	73	credential_exposure	/internal/redis-cache/dump returns raw cached values and key names, which carry per-shop Shopify tokens and raw integration keys	2026-08-31 23:00:00
+packages/functions/src/handlers/internalTools.js	76	credential_exposure	/internal/redis-cache/dump returns cached shop documents verbatim — Shopify tokens and Google service-account JSON	2026-08-30 23:00:00
+packages/functions/src/handlers/internalTools.js	84	credential_exposure	/internal/redis-cache/inspect and /dump return cached shop docs including accessToken to an external operator tool	2026-09-15 23:00:05
+packages/functions/src/handlers/lightHouseAuditHandler.js	14	authn	GET /lighthouse/auditNew is a public, unauthenticated headless-Chrome fetch of any attacker-supplied URL (SSRF)	2026-09-20 23:00:00
+packages/functions/src/handlers/proxy/controllers/imageController.js	16	shop_scoping	optimizeImage picks the target shop from an attacker-controlled header, not the authenticated integration	2026-09-13 23:00:00
+packages/functions/src/handlers/pubsub/subscribeBulkAuditFixApplyProduct.js	35	shop_scoping	Bulk-fix apply-product consumer checks job status but not job ownership	2026-09-09 23:00:05
+packages/functions/src/handlers/pubsub/subscribeExportBrokenUrls.js	25	shop_scoping	Broken-URL export reads the shop from the payload and mails the CSV to a payload-supplied address	2026-09-09 23:00:05
+packages/functions/src/handlers/reset.js	5	authn	resetGen2 is a fully public, unauthenticated destructive endpoint keyed only on a shop domain	2026-09-20 23:00:00
+packages/functions/src/handlers/reset.js	6	authn	/reset is an unauthenticated destructive endpoint keyed on the public myshopify domain	2026-09-09 23:00:05
+packages/functions/src/helpers/trello/addCardToTrello.js	5	secret	Live Trello API key and API token hardcoded in a git-tracked source file	2026-09-20 23:00:00
+packages/functions/src/helpers/trello/addCardToTrello.js	7	secret	Hardcoded Trello user API token and application key committed to master	2026-09-09 23:00:05
+packages/functions/src/middleware/creditCartActivation.js	5	authn	GET /api/credit-cart/activate runs before the auth middleware and grants credits without verifying the charge was paid	2026-08-30 23:00:00
+packages/functions/src/middleware/swaggerAuth.js	13	credential_exposure	Merchant integration key accepted as ?accessToken= query param on GET /proxy/swagger-token	2026-09-18 23:00:05
+packages/functions/src/middleware/swaggerAuth.js	32	authn	GET /proxy/swagger-token mints a full admin session JWT for an arbitrary ?shop= — the integration key is never bound to that shop	2026-08-26 03:23:04
+packages/functions/src/middleware/swaggerAuth.js	40	authn	GET /proxy/swagger-token mints a full admin session for ANY shop from an unauthenticated request	2026-08-24 01:57:15
+packages/functions/src/middleware/validateAccessToken.js	11	shop_scoping	Integration key is not bound to the shop in X-SEO-Shop-Domain — any valid key acts on any shop	2026-09-15 23:00:05
+packages/functions/src/middleware/validateAccessToken.js	31	shop_scoping	Integration key is validated but never bound to the X-SEO-Shop-Domain it is acting on	2026-08-28 23:00:05
+packages/functions/src/middleware/validateAccessToken.js	32	shop_scoping	Integration key is validated but never bound to the X-SEO-Shop-Domain it acts on	2026-08-29 23:00:00
+packages/functions/src/middleware/validateAccessToken.js	44	shop_scoping	Integration key is never bound to the shop named in X-SEO-Shop-Domain	2026-09-14 23:00:05
+packages/functions/src/repositories/bulkEditRepository.js	92	shop_scoping	saveBulkAnalysis writes analysis docs by raw id with no shopID argument at all	2026-09-09 23:00:05
+packages/functions/src/repositories/historyRepository.js	337	shop_scoping	revertByListImageLogId reverts and overwrites a history doc by caller-supplied id with no shopID check	2026-09-15 23:00:05
+packages/functions/src/repositories/integrationRepository.js	22	credential_exposure	Integration keys are cached in shared Redis with the raw token as the key name and inside the value	2026-09-01 23:00:00
+packages/functions/src/repositories/shopRepository.js	281	untrusted_input	POST /api/shop/reduce-credit accepts a negative amount, inflating the caller's own AI credit balance	2026-09-20 23:00:00
+packages/functions/src/repositories/shopRepository.js	312	credential_exposure	Full shop doc — Shopify accessToken, accessTokenHash and instantIndexing Google service-account JSON — is cached verbatim into the self-hosted cache Redis	2026-08-26 03:23:04
+packages/functions/src/repositories/shopRepository.js	441	untrusted_input	`isDevZone` in the request body disables the blocked-field filter, letting a merchant write their own plan	2026-08-31 23:00:00
+packages/functions/src/repositories/shopRepository.js	442	untrusted_input	`isDevZone` in the request body disables plan/noLimit/grantedFeatures write protection	2026-09-15 23:00:05
+packages/functions/src/repositories/shopRepository.js	496	credential_exposure	Client-supplied `reload` array echoes any shop field back in the response, including accessToken	2026-09-19 23:00:00
+packages/functions/src/repositories/sitemapRepository.js	372	shop_scoping	bulkUpdateSitemap updates sitemap docs by id with no shopId check	2026-09-14 23:00:05
+packages/functions/src/routes/api.js	373	credential_exposure	GET/POST /api/integration/keys (and /integration/blogApp/keys) expose and mint integration access tokens to any merchant session	2026-08-26 03:05:10
+packages/functions/src/routes/proxy.js	38	authn	GET /proxy/republish/:shopId and /proxy/updateObfucate/:shopId write to any shop's live theme with no authentication	2026-08-26 03:05:10
+packages/functions/src/routes/proxy.js	43	authn	GET /proxy/republish/:shopId is unauthenticated and writes theme assets to any shop's live storefront	2026-09-20 23:00:00
+packages/functions/src/routes/proxy.js	80	authn	GET /proxy/updateObfucate/:shopId is unauthenticated and calls the Shopify Admin API with any shop's access token	2026-09-20 23:00:00
+packages/functions/src/routes/proxy.js	94	authn	revertController routes on /proxy carry no auth middleware and act on any shop by enumerable numeric id	2026-08-26 03:05:10
+packages/functions/src/routes/proxy.js	99	authn	GET /proxy/get-jsonl-data/:id hands out a signed download URL for any shop's product/image backup	2026-09-20 23:00:00
+packages/functions/src/routes/proxy.js	101	authn	POST /proxy/revert-product/:id is unauthenticated and mutates any shop's products from an attacker-supplied URL	2026-09-20 23:00:00
+packages/functions/src/services/avadaService.js	102	credential_exposure	upgradePlan re-spreads `...params` after stripping shopData, shipping the whole shop doc to the external avada.io API	2026-09-13 23:00:00
+packages/functions/src/services/avadaService.js	125	credential_exposure	downgradePlan has the identical `...params` re-spread, leaking the shop doc to avada.io	2026-09-13 23:00:00
+packages/functions/src/services/bulkEditService.js	657	shop_scoping	PUT /analysis-bulk/:type writes arbitrary analysis docs by body-supplied id	2026-09-13 23:00:00
+packages/functions/src/services/lightHouseService.js	51	credential_exposure	Merchant storefront password sent in the lighthouse/auditNew URL query string and logged in full at :64	2026-09-18 23:00:05
+packages/functions/src/services/lightHouseService.js	64	credential_exposure	Merchant's storefront password placed in a URL query string and then logged with the full URL	2026-09-09 23:00:05

@@ -1,0 +1,68 @@
+.npmrc	1	secret	Same private registry _authToken committed in cleartext at repo root	2026-09-20 23:00:00
+.yarnrc.yml	9	secret	Private npm registry auth token committed as npmAuthToken	2026-09-20 23:00:00
+firestore.rules	5	shop_scoping	Seven collections are `read: if true` with no shopId scoping while the frontend reads Firestore directly	2026-09-06 23:13:57
+firestore.rules	7	shop_scoping	Nine collections re-opened world-readable with no shopId predicate; two are world-writable	2026-09-20 23:00:00
+firestore.rules	8	shop_scoping	Seven per-shop collections are `read: if true` with no shopId scoping in the rules	2026-09-19 23:00:00
+firestore.rules	25	authn	`featureReq` and `commentFeatureReq` are anonymously readable AND writable	2026-09-06 23:13:57
+firestore.rules	26	shop_scoping	featureReq and commentFeatureReq are `allow read, write: if true` — anonymous cross-shop writes	2026-09-11 23:06:11
+packages/assets/src/pages/PartnerKey/PartnerKey.js	53	credential_exposure	`GET /api/integration/keys?name=` returns any integration's access token to any authenticated merchant	2026-09-06 23:13:57
+packages/functions/.npmrc	1	secret	Private registry _authToken duplicated inside the functions package	2026-09-20 23:00:00
+packages/functions/src/commands/autoTranslateV2.js	7	secret	Google Cloud Translate API key hardcoded in the translation command	2026-09-20 23:00:00
+packages/functions/src/commands/getAT.js	4	credential_exposure	A production shop's Shopify access token ciphertext is committed, next to a decrypt-and-print utility	2026-09-20 23:00:00
+packages/functions/src/controllers/devController.js	86	authn	GET/POST /api/dev (testOnly) has no DevZone gate — only verifyEmbedRequest, so any installed merchant can run dev actions	2026-09-14 23:00:05
+packages/functions/src/controllers/devController.js	115	authn	/api/dev?x=batch_create_reviews wipes and reseeds the global `reviews` collection for any merchant	2026-09-15 23:00:05
+packages/functions/src/controllers/devController.js	436	shop_scoping	dev download_log/preview_log sign an arbitrary caller-supplied Storage path	2026-09-04 23:03:05
+packages/functions/src/controllers/devController.js	437	shop_scoping	download_log / preview_log take an arbitrary Storage path from the request body with no shop check	2026-09-03 23:08:07
+packages/functions/src/controllers/devController.js	439	shop_scoping	/api/dev?x=download_log (and preview_log, recalculate_from_jsonl) signs or reads any Storage path the caller supplies	2026-09-10 23:09:53
+packages/functions/src/controllers/devController.js	497	authn	/api/dev switchboard has no dev-only gate — toggle_plan lets any merchant grant themselves any tier	2026-09-04 23:03:05
+packages/functions/src/controllers/devController.js	498	untrusted_input	/api/dev?x=toggle_plan&plan= sets the shop plan from the query with no devzone gate	2026-09-15 23:00:05
+packages/functions/src/controllers/historyController.js	58	shop_scoping	POST /api/revert/all accepts another shop's historyId and copies its Storage paths into the caller's revert job	2026-09-11 23:06:11
+packages/functions/src/controllers/integrationKeyController.js	13	credential_exposure	GET /api/integration/keys returns any partner integration key by name to any authenticated merchant, and POST mints new ones	2026-09-01 23:00:00
+packages/functions/src/controllers/integrationKeyController.js	15	credential_exposure	GET /api/integration/keys?name= returns the integrationKeys doc incl. accessToken to any merchant	2026-09-15 23:00:05
+packages/functions/src/controllers/integrationKeyController.js	16	credential_exposure	GET /api/integration/keys returns a global partner credential looked up by an attacker-supplied name	2026-09-20 23:00:00
+packages/functions/src/controllers/optimizeStoreController.js	22	untrusted_input	freeRun accepted from the request body and forwarded into the speed-up job, bypassing every plan gate	2026-09-11 23:06:11
+packages/functions/src/controllers/optimizeStoreController.js	25	untrusted_input	POST /api/optimize-store takes the paid-feature action list from the body with no plan validation	2026-09-20 23:00:00
+packages/functions/src/controllers/optimizeStoreController.js	58	shop_scoping	`PUT /api/optimize-store/:id` writes an arbitrary body to any optimizeStore doc with no shop check	2026-09-06 23:13:57
+packages/functions/src/controllers/optimizeStoreController.js	59	shop_scoping	PUT /api/optimize-store/:id writes arbitrary body into any optimizeStore doc	2026-09-15 23:00:05
+packages/functions/src/controllers/optimizeStoreController.js	62	shop_scoping	PUT /api/optimize-store/:id updates any shop's speed-up progress doc	2026-09-20 23:00:00
+packages/functions/src/controllers/revertController.js	46	shop_scoping	`PUT /api/revert-process/:id` writes an arbitrary body to any revertProcess doc with no shop check	2026-09-06 23:13:57
+packages/functions/src/controllers/revertController.js	47	shop_scoping	PUT /api/revert-process/:id writes any shop's revertProcess doc from an unvalidated body	2026-09-20 23:00:00
+packages/functions/src/controllers/revertController.js	48	shop_scoping	PUT /api/revert-process/:id writes arbitrary fields into any shop's revertProcess doc	2026-09-19 23:00:00
+packages/functions/src/controllers/revertController.js	55	authn	POST /public/revert-product/:id is unauthenticated and force-reverts another shop's optimizations	2026-08-29 23:00:00
+packages/functions/src/controllers/revertController.js	63	authn	Unauthenticated POST /public/revert-product/:id reverts any shop's optimizations	2026-09-18 23:00:05
+packages/functions/src/controllers/revertController.js	64	credential_exposure	Full shop doc including accessToken published into a Pub/Sub payload from an unauthenticated route	2026-09-20 23:00:00
+packages/functions/src/controllers/revertController.js	66	credential_exposure	The whole shop doc, including accessTokenHash, goes into Pub/Sub job payloads, and this path can be triggered anonymously	2026-09-10 23:09:53
+packages/functions/src/controllers/revertController.js	77	shop_scoping	GET /public/get-jsonl-data/:id hands an anonymous caller a signed Storage URL for another shop's bulk product JSONL	2026-09-02 23:08:07
+packages/functions/src/controllers/revertController.js	87	authn	Unauthenticated GET /public/get-jsonl-data/:id returns a signed download URL of any shop's bulk product JSONL	2026-09-18 23:00:05
+packages/functions/src/controllers/revertController.js	126	shop_scoping	POST /api/revert/file-alt accepts another shop's historyOptimizeId and reads its alt-log manifest	2026-09-11 23:06:11
+packages/functions/src/controllers/revertController.js	345	shop_scoping	POST /api/revert/file-image/to-version accepts another shop's historyOptimizeId and replays its image manifest	2026-09-11 23:06:11
+packages/functions/src/controllers/seoController.js	286	credential_exposure	optimizeFileImages error path returns the raw shop doc (with accessTokenHash) which :190 puts in the HTTP response	2026-09-15 23:00:05
+packages/functions/src/controllers/seoController.js	681	shop_scoping	PUT /api/optimize/historyOptimize updates any historyOptimize doc by body.historyId	2026-09-15 23:00:05
+packages/functions/src/controllers/seoController.js	685	shop_scoping	PUT /api/optimize/historyOptimize updates any historyOptimize doc by body-supplied id	2026-09-20 23:00:00
+packages/functions/src/controllers/seoController.js	760	credential_exposure	Raw shop doc including accessToken published as the Pub/Sub message payload	2026-09-11 23:06:11
+packages/functions/src/controllers/shopController.js	191	untrusted_input	POST /api/shop passes the raw request body straight into the shop doc with no allow-list	2026-09-20 23:00:00
+packages/functions/src/featureReq/featureReq.controller.js	253	shop_scoping	POST /api/block-user-req deletes another shop's feature-request comments by client-supplied id	2026-09-11 23:06:11
+packages/functions/src/handlers/pubsub/handleManualOptimizeImage.js	80	shop_scoping	logId from the client-supplied dataLog reaches an unscoped history lookup and write-back	2026-09-11 23:06:11
+packages/functions/src/handlers/pubsub/subscribeOptimizeStore.js	71	untrusted_input	Client-supplied actionList drives paid speed features with the plan filter commented out	2026-09-11 23:06:11
+packages/functions/src/helpers/api.js	98	credential_exposure	makeGraphQlApi sends the decrypted offline token to whatever host is in shop.shopifyDomain, and the client can set that field	2026-09-10 23:09:53
+packages/functions/src/middleware/webhook/webhookMiddleware.js	19	authn	Shopify webhook HMAC uses a non-constant-time !== and is globally bypassable by an env var	2026-09-11 23:06:11
+packages/functions/src/repositories/historyRepository.js	214	shop_scoping	POST /api/revert reverts and rewrites a history doc chosen by client-supplied id	2026-09-20 23:00:00
+packages/functions/src/repositories/historyRepository.js	215	shop_scoping	POST /api/revert reads and destructively overwrites any shop's history doc	2026-09-19 23:00:00
+packages/functions/src/repositories/historyRepository.js	271	shop_scoping	revertByListImageLogId reads and overwrites any history doc by client-supplied id	2026-08-28 23:00:05
+packages/functions/src/repositories/shopRepository.js	177	untrusted_input	POST /api/shop trusts body.isDevZone to skip blockFields, letting any merchant set plan/quota/isDevZone	2026-09-15 23:00:05
+packages/functions/src/repositories/shopRepository.js	204	untrusted_input	A client-supplied isDevZone flag disables the entire blockFields deny-list	2026-09-20 23:00:00
+packages/functions/src/repositories/shopRepository.js	256	credential_exposure	Client-controlled `reload` array is used as the field projection and can select accessToken	2026-09-19 23:00:00
+packages/functions/src/routes/api.js	162	authn	`/api/dev` (devController.testOnly) has no DevZone guard — any merchant can self-grant a paid plan	2026-09-06 23:13:57
+packages/functions/src/routes/public.js	12	authn	`GET /public/get-jsonl-data/:id` hands out a signed download URL for any shop's bulk export, unauthenticated	2026-09-06 23:13:57
+packages/functions/src/routes/public.js	13	authn	`POST /public/revert-product/:id` reverts any shop's optimizations with no authentication	2026-09-06 23:13:57
+packages/functions/src/routes/public.js	18	authn	GET /public/get-jsonl-data/:id returns a signed Storage URL of any shop's latest bulk JSONL with no auth	2026-09-15 23:00:05
+packages/functions/src/routes/public.js	19	authn	POST /public/revert-product/:id triggers a full alt/image revert on any shop with no auth	2026-09-15 23:00:05
+packages/functions/src/routes/public.js	26	authn	GET /public/get-jsonl-data/:id hands out a signed Storage URL for any shop's bulk JSONL with no auth	2026-09-20 23:00:00
+packages/functions/src/routes/public.js	27	authn	POST /public/revert-product/:id is unauthenticated and force-reverts any shop's optimizations	2026-09-20 23:00:00
+packages/functions/src/services/config/crisp.js	5	secret	Crisp plugin identifier and key hardcoded in tracked source (lines 5-6)	2026-09-18 23:00:05
+packages/functions/src/services/config/crisp.js	6	secret	Crisp plugin API key and identifier hardcoded in tracked backend config	2026-09-20 23:00:00
+packages/functions/src/services/lightHouseService.js	117	credential_exposure	Merchant storefront password placed in a query string and then logged in full	2026-09-11 23:06:11
+packages/functions/src/services/shopifyService.js	39	secret_in_log	initShopify() prints every shop's decrypted Shopify Admin token to Cloud Logging	2026-09-20 23:00:00
+packages/functions/src/services/uninstallationService.js	14	secret_in_log	Uninstall webhook JSON.stringify's the whole shop document into logs	2026-09-11 23:06:11
+packages/functions/src/services/uninstallationService.js	15	secret_in_log	Whole shop doc JSON.stringify'd on every app/uninstall webhook	2026-09-20 23:00:00
+storage.rules	5	authn	Every Storage object is read/write for any Firebase-authenticated user	2026-09-10 23:09:53

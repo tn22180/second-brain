@@ -1,0 +1,45 @@
+.npmrc	1	secret	Private npm registry auth token committed in .npmrc and packages/functions/.npmrc	2026-09-20 23:00:00
+firestore.rules	7	shop_scoping	Six Firestore collections are open to any caller and none are scoped by shopId	2026-09-20 23:00:00
+firestore.rules	8	shop_scoping	Six collections are world-readable (three also world-writable) and are read directly by the browser Firebase SDK	2026-09-21 23:00:06
+firestore.rules	9	shop_scoping	bulkGenerateProcesses, resultGen and analytics are read AND write `if true`	2026-08-31 23:00:00
+firestore.rules	20	shop_scoping	credits, historySyncData and translateProcesses are read `if true` with no shopId scoping	2026-08-31 23:00:00
+packages/assets/src/components/AppBadgeBranch/AppBadgeBranch.jsx	9	credential_exposure	Deploy-queue release bearer token inlined into the client bundle via a VITE_ env var	2026-09-19 23:00:00
+packages/assets/src/components/AppBadgeBranch/AppBadgeBranch.jsx	22	credential_exposure	Deploy-board bearer token is baked into the staging frontend bundle	2026-09-02 23:08:07
+packages/assets/src/components/SeoLegacyPlanModal/SeoLegacyPlanModal.jsx	7	credential_exposure	Shared Avada SEO cross-app integration token is bundled into the React app and sent from every merchant's browser	2026-09-19 23:00:00
+packages/assets/src/components/SeoLegacyPlanModal/SeoLegacyPlanModal.jsx	56	credential_exposure	Shared Avada SEO Pro integration token is imported into the React bundle and sent from the merchant's browser	2026-09-02 23:08:07
+packages/functions/.npmrc	1	secret	Second copy of the private npm registry auth token	2026-09-04 23:03:05
+packages/functions/src/commands/autoTranslateV2.js	8	secret	Hardcoded Google Translate API key in the Translate client constructor	2026-09-19 23:00:00
+packages/functions/src/const/appIntegationKeys.js	1	secret	Cross-app SEO integration token hardcoded in tracked source	2026-09-21 23:00:06
+packages/functions/src/controllers/flowController.js	16	authn	Flow extension endpoints are unauthenticated and trust client-supplied shopify_domain	2026-09-15 23:00:05
+packages/functions/src/controllers/flowController.js	17	authn	Flow extension endpoints have no auth and take the target shop from `shopify_domain` in the body.	2026-09-18 23:00:05
+packages/functions/src/controllers/generatorController.js	91	shop_scoping	isRegenerate branch of POST /generate mutates and deletes another shop's process with no ownership check	2026-09-20 23:00:00
+packages/functions/src/controllers/generatorController.js	92	shop_scoping	POST /generate isRegenerate branch mutates a process by client-supplied id with no ownership check	2026-09-11 23:06:11
+packages/functions/src/controllers/generatorController.js	113	untrusted_input	Bulk refund basis is computed from the body's `model`, independent of what was actually charged — mints credits	2026-09-19 23:00:00
+packages/functions/src/controllers/settingsController.js	38	shop_scoping	PUT /settings spreads the request body unfiltered, so a body-supplied shopId re-parents the settings document	2026-09-09 23:00:05
+packages/functions/src/controllers/shopController.js	54	untrusted_input	`PUT /shop` lets the client set its own `noLimit`, `enablePro`, `enableGpt41`	2026-09-14 23:00:05
+packages/functions/src/controllers/shopController.js	55	untrusted_input	PUT /shop lets a shop set noLimit and enablePro on itself	2026-09-15 23:00:05
+packages/functions/src/controllers/shopController.js	59	untrusted_input	PUT /api/shop lets a merchant set its own noLimit, enablePro and enableGpt41 entitlement flags	2026-09-20 23:00:00
+packages/functions/src/controllers/shopController.js	61	untrusted_input	PUT /shop lets any merchant self-grant noLimit / enablePro / enableGpt41 from the request body	2026-09-19 23:00:00
+packages/functions/src/controllers/shopifyController.js	115	shop_scoping	`GET /syncData/:shopifyDomain` resolves the target shop from the URL parameter, not the session	2026-09-01 23:00:00
+packages/functions/src/controllers/shopifyController.js	117	shop_scoping	`GET /syncData/:shopifyDomain` acts on the shop named in the URL, never compared to the session shop	2026-09-21 23:00:06
+packages/functions/src/controllers/shopifyController.js	119	shop_scoping	GET /syncData/:shopifyDomain runs a full sync against whatever shop the URL names, not the session shop	2026-09-09 23:00:05
+packages/functions/src/graphql/codegen.js	7	secret	Shopify `shpua_` user access token committed as the `process.env.ACCESS_TOKEN` default	2026-09-21 23:00:06
+packages/functions/src/middleware/creditGuardMiddleware.js	28	untrusted_input	The credit gate reads `creditCost` and `model` from the request body and both gates and deducts on that number	2026-09-21 23:00:06
+packages/functions/src/middleware/creditGuardMiddleware.js	38	untrusted_input	creditCost is read from the request body and used as both the balance gate and the amount charged	2026-09-19 23:00:00
+packages/functions/src/middleware/creditGuardMiddleware.js	62	untrusted_input	creditCost is taken from the request body and only type-checked, never recomputed server-side	2026-08-31 23:00:00
+packages/functions/src/middleware/swaggerAuth.js	27	credential_exposure	Merchant integration key is accepted from the URL query string on an unauthenticated route	2026-09-20 23:00:00
+packages/functions/src/middleware/webhook/verifyWebhook.js	12	authn	Shopify webhook HMAC check is commented out. `webhookCreateProduct` and `webhookBulkOperation` accept any POST.	2026-09-18 23:00:05
+packages/functions/src/middleware/webhook/verifyWebhook.js	17	authn	Shopify webhook HMAC verification is commented out — every webhook is unauthenticated	2026-08-31 23:00:00
+packages/functions/src/middleware/webhook/verifyWebhook.js	23	authn	Webhook HMAC verification is commented out — `verifyWebhook` calls `next()` unconditionally	2026-09-21 23:00:06
+packages/functions/src/pubsub/subscribeSyncProducts.js	27	credential_exposure	syncProducts subscriber re-publishes the same raw shop doc once per pagination page	2026-09-19 23:00:00
+packages/functions/src/repositories/bulkGenerateProcessRepository.js	14	shop_scoping	createProcess spreads the client body after shopId, letting the caller overwrite the process owner	2026-09-20 23:00:00
+packages/functions/src/repositories/templateRepository.js	39	shop_scoping	POST /templates overwrites and reassigns another shop's template via a body-supplied id	2026-09-20 23:00:00
+packages/functions/src/repositories/templateRepository.js	40	shop_scoping	POST /templates overwrites and re-parents any shop's template when the body carries an `id`	2026-09-19 23:00:00
+packages/functions/src/routes/extension.js	6	authn	Shopify Flow extension endpoints run behind only `cors()` and take the target shop from the request body	2026-09-21 23:00:06
+packages/functions/src/services/config/crisp.js	4	secret	Crisp plugin credentials (identifier, key, website_id, session_id) hardcoded	2026-09-15 23:00:05
+packages/functions/src/services/config/crisp.js	5	secret	Crisp plugin-tier API credentials hardcoded in tracked source	2026-09-20 23:00:00
+packages/functions/src/services/config/crisp.js	6	secret	Crisp plugin API credential pair hardcoded in tracked source	2026-09-11 23:06:11
+packages/functions/src/services/errorService.js	13	secret_in_log	App-level Koa error sink logs the whole error object, including axios request headers carrying the merchant's Shopify access token	2026-09-09 23:00:05
+packages/functions/src/services/seoService.js	32	secret_in_log	Raw axios error logged, printing the X-SEO-Access-Token request header into Cloud Logging	2026-09-11 23:06:11
+packages/functions/src/services/shopifyService.js	697	credential_exposure	Full shop doc (incl. Shopify accessToken) published as Pub/Sub 'syncProducts' payload, re-broadcast per page	2026-09-15 23:00:05
+packages/functions/src/services/shopifyService.js	735	credential_exposure	Whole shop document — including its Shopify token material — is serialized into the `syncProducts` Pub/Sub payload	2026-09-21 23:00:06

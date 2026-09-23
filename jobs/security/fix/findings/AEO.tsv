@@ -1,0 +1,34 @@
+.npmrc	1	secret	Live auth token for the private registry.avada.io npm registry committed in tracked files	2026-09-20 23:00:00
+.yarnrc.yml	8	secret	The same private registry auth token committed a second time as npmScopes.avada.npmAuthToken	2026-09-11 23:06:11
+firebase.storage.rules	5	authn	Storage rules allow unauthenticated read and write on two bucket paths	2026-09-20 23:00:00
+packages/functions/src/commands/autoTranslateV2.js	8	secret	Google Cloud API key hardcoded in the Translate client with no env fallback	2026-08-26 09:27:52
+packages/functions/src/config/changelog.js	11	credential_exposure	shops collection mirrored to BigQuery changelog with no field mask (accessTokenHash, passwordStore included)	2026-09-14 23:00:05
+packages/functions/src/config/pickFields.js	45	credential_exposure	Storefront password (passwordStore) returned for any shop on GET /proxy/shop to any integration-key holder	2026-09-14 23:00:05
+packages/functions/src/config/pickFields.js	57	credential_exposure	PUT/POST /api/shop can rewrite shopifyDomain, hijacking the victim's next OAuth token write	2026-09-14 23:00:05
+packages/functions/src/const/appIntegationKeys.js	1	secret	Three integration access tokens for sister Avada apps (SEO ON staging, SEO ON prod, SEO Pro) committed as literals	2026-09-14 23:00:05
+packages/functions/src/controllers/competitorsController.js	52	shop_scoping	DELETE /api/competitors deletes any document by client-supplied id	2026-09-20 23:00:00
+packages/functions/src/controllers/linksController.js	24	credential_exposure	Whole shop record (incl. accessTokenHash / accessToken) published into the syncLinks Pub/Sub topic	2026-09-20 23:00:00
+packages/functions/src/controllers/linksController.js	63	shop_scoping	Proxy links sync/stop/status act on any shop named in the domain header	2026-09-13 23:00:00
+packages/functions/src/controllers/shopController.js	152	shop_scoping	Proxy shop endpoints resolve the target shop from a client header, and the integration token is not bound to a shop	2026-08-31 23:00:00
+packages/functions/src/controllers/shopController.js	153	shop_scoping	Proxy endpoints resolve the target shop from the client's X-SEO-Shop-Domain header, not from the token	2026-09-06 23:13:57
+packages/functions/src/controllers/shopController.js	158	shop_scoping	POST /proxy/shop/update writes the raw request body onto any shop's document, chosen by a client header	2026-09-18 23:00:05
+packages/functions/src/controllers/shopController.js	192	credential_exposure	GET /proxy/shop returns any shop's storefront password to any holder of the shared integration token	2026-08-30 23:00:00
+packages/functions/src/controllers/shopController.js	198	credential_exposure	GET /proxy/shop returns any shop's storefront password and Crisp session token	2026-09-20 23:00:00
+packages/functions/src/graphql/codegen.js	7	secret	Shopify user access token (shpua_) hardcoded as a process.env.ACCESS_TOKEN default	2026-08-26 09:27:52
+packages/functions/src/handlers/webhook/bulkOperationWebhook.js	43	shop_scoping	Unauthenticated webhook resolves the victim shop from a client-supplied header and runs destructive writes	2026-09-13 23:00:00
+packages/functions/src/middleware/swaggerAuth.js	14	credential_exposure	Shared integration access token accepted as a URL query param on the public /proxy/swagger-token route	2026-09-01 23:00:00
+packages/functions/src/middleware/swaggerAuth.js	44	shop_scoping	/proxy/swagger-token mints a full session JWT for ANY shop from the single shared integration key	2026-09-14 23:00:05
+packages/functions/src/middleware/swaggerAuth.js	52	shop_scoping	/proxy/swagger-token mints a full /api session for any shop from a global integration key	2026-09-15 23:00:05
+packages/functions/src/middleware/swaggerAuth.js	59	credential_exposure	/proxy/swagger-token mints a full /api/* session for any shop named in ?shop=	2026-09-20 23:00:00
+packages/functions/src/middleware/validateAccessToken.js	42	shop_scoping	Proxy token is validated for existence only; the target shop comes from the client's X-SEO-Shop-Domain header	2026-09-01 23:00:00
+packages/functions/src/middleware/validateAccessToken.js	46	shop_scoping	Proxy bot token is checked for existence only, never for ownership of the target shop	2026-09-20 23:00:00
+packages/functions/src/middleware/validateAccessToken.js	58	shop_scoping	Proxy bot token is global; target shop is taken from the client X-SEO-Shop-Domain header	2026-09-15 23:00:05
+packages/functions/src/middleware/webhook/webhookMiddleware.js	14	authn	Shopify webhook HMAC verification is commented out — verifyWebhook calls next() for any POST	2026-09-06 23:13:57
+packages/functions/src/middleware/webhook/webhookMiddleware.js	15	authn	Shopify webhook HMAC verification is commented out; webhookBulkOperation accepts any POST	2026-09-15 23:00:05
+packages/functions/src/middleware/webhook/webhookMiddleware.js	19	authn	Shopify webhook HMAC verification is commented out — verifyWebhook authenticates nothing	2026-09-02 23:08:07
+packages/functions/src/middleware/webhook/webhookMiddleware.js	20	authn	Shopify webhook HMAC verification is commented out — webhookBulkOperation is fully unauthenticated	2026-09-01 23:00:00
+packages/functions/src/middleware/webhook/webhookMiddleware.js	26	authn	Shopify webhook HMAC verification is commented out — /webhook/bulk-operation accepts any unauthenticated POST	2026-09-11 23:06:11
+packages/functions/src/repositories/competitorsRepository.js	33	shop_scoping	getCompetitors() reads the entire competitors collection with no shop filter	2026-09-20 23:00:00
+packages/functions/src/repositories/shopRepository.js	94	untrusted_input	blockFields strip is disabled whenever the body carries isDevZone, letting a shop set its own plan	2026-09-20 23:00:00
+packages/functions/src/routes/proxy.js	15	authn	Public GET /proxy/swagger-token mints a full /api session JWT for any shop named in the query string	2026-09-11 23:06:11
+packages/functions/src/services/config/crisp.js	6	secret	Crisp plugin identifier + key (+ session id) committed in source, duplicated in config/crisp.js:5-7	2026-09-14 23:00:05
