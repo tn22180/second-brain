@@ -99,7 +99,8 @@ def cmd_surface(cfg, args):
 
 def cmd_push(cfg, args):
     import gitutil
-    gitutil.commit_push(cfg, args.message or f"brain: sync {today_str(cfg)}")
+    if not gitutil.commit_push(cfg, args.message or f"brain: sync {today_str(cfg)}"):
+        raise SystemExit(1)
 
 
 def cmd_sync(cfg, args):
@@ -114,8 +115,12 @@ def cmd_sync(cfg, args):
         print("[2/5] resume");  resume.sync(cfg)
     print("[3/5] learn");     signal = learn.collect(cfg, date)
     print("[4/5] summarize"); summarize.run(cfg, date, signal)
-    print("[5/5] push");      gitutil.commit_push(cfg, f"brain: sync {date}")
+    print("[5/5] push");      pushed = gitutil.commit_push(cfg, f"brain: sync {date}")
     print("done")
+    if not pushed:
+        # Non-zero so launchd records a failure: a backup that stops leaving this
+        # machine is the one thing this job exists to prevent.
+        raise SystemExit(1)
 
 
 HANDLERS = {

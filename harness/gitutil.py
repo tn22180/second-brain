@@ -1,4 +1,4 @@
-"""git add / commit / push for the repo. Push failures warn, never crash sync."""
+"""git add / commit / push for the repo. A push failure is reported, not fatal."""
 import subprocess
 from pathlib import Path
 
@@ -17,7 +17,8 @@ def _ensure_identity(cfg):
         _git(cfg, "config", "user.name", AUTHOR_NAME)
 
 
-def commit_push(cfg, message: str):
+def commit_push(cfg, message: str) -> bool:
+    """False when the push did not land, so sync can exit loud instead of quiet."""
     repo = Path(cfg["_repo"])
     _ensure_identity(cfg)
     _git(cfg, "add", "-A")
@@ -28,7 +29,7 @@ def commit_push(cfg, message: str):
         c = _git(cfg, "commit", "-m", message)
         if c.returncode != 0:
             print(f"  WARN commit failed: {c.stderr.strip()[:200]}")
-            return
+            return False
         print(f"  committed: {message}")
 
     branch = cfg["git"]["branch"]
@@ -36,6 +37,10 @@ def commit_push(cfg, message: str):
     p = _git(cfg, "push", "-u", remote, branch)
     if p.returncode == 0:
         print(f"  pushed -> {remote}/{branch}")
-    else:
-        err = (p.stderr or p.stdout).strip()
-        print(f"  WARN push failed (commit is safe locally): {err.splitlines()[0] if err else '?'}")
+        return True
+    # The whole error, not its first line: GitHub's push-protection block names the
+    # offending file and commit further down, and a one-line WARN hid a dead backup
+    # for 23 nightly runs.
+    err = (p.stderr or p.stdout).strip()
+    print(f"  PUSH FAILED (commits are safe locally):\n{err}")
+    return False
