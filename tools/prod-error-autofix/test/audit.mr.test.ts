@@ -13,6 +13,7 @@ import {
 import type {RunResult, Runner} from '../src/gcloud/run';
 import {openMr} from '../src/git/openMr';
 import type {TriageFinding, TriageVerdict} from '../src/audit/triage';
+import {FAKE_SHOPIFY_TOKEN} from './fixtures/fakeSecrets';
 
 /**
  * Nothing in this file is allowed to reach git, a worktree, or a repo under
@@ -587,16 +588,16 @@ describe('the MR body', () => {
   test('a secret value never reaches the MR body or its title', () => {
     const leaky: TriageFinding = {
       ...LINT[0]!,
-      message: "'X' unused — token shpat_<fixture> is right above it"
+      message: `'X' unused — token ${FAKE_SHOPIFY_TOKEN} is right above it`
     };
     const body = buildAuditMrBody({
       appName: 'SEO',
       dateStr: '20260819',
       cleanup: [leaky],
-      agentSummary: 'moved shpat_<fixture> out of the tree',
+      agentSummary: `moved ${FAKE_SHOPIFY_TOKEN} out of the tree`,
       jestLine: 'x'
     });
-    expect(body).not.toContain('shpat_<fixture>');
+    expect(body).not.toContain(FAKE_SHOPIFY_TOKEN);
     expect(body).toContain('<redacted>');
     expect(auditMrTitle('SEO', 1)).not.toContain('shpat_');
   });

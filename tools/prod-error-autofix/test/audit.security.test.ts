@@ -4,6 +4,14 @@ import {redactSecret, validateSecurity} from '../src/audit/securitySchema';
 import {SECURITY_TOOLS, buildSecurityPrompt, runSecurityLane} from '../src/audit/securityLane';
 import type {SecurityLaneInput} from '../src/audit/securityLane';
 import type {ClaudeInvocation, ClaudeResult, ClaudeRunner} from '../src/agent/claudeCli';
+import {
+  FAKE_GITHUB_PAT,
+  FAKE_GITLAB_PAT,
+  FAKE_SHOPIFY_CUSTOM_TOKEN,
+  FAKE_SHOPIFY_TOKEN,
+  FAKE_SLACK_TOKEN,
+  FAKE_STRIPE_KEY
+} from './fixtures/fakeSecrets';
 
 const WORKTREE = '/wt/seo';
 
@@ -113,18 +121,18 @@ describe('redactSecret', () => {
   // The Telegram group is a wider audience than the repo. A secret finding says
   // where and what kind, never the value.
   test('a token-shaped string in a title is stripped', () => {
-    expect(redactSecret('key is sk_live_<fixture>')).toBe('key is <redacted>');
-    expect(redactSecret('shpat_<fixture>')).toBe('<redacted>');
-    expect(redactSecret('shpca_<fixture>')).toBe('<redacted>');
-    expect(redactSecret('ghp_<fixture>')).toBe('<redacted>');
-    expect(redactSecret('xoxb-<fixture>')).toBe('<redacted>');
+    expect(redactSecret(`key is ${FAKE_STRIPE_KEY}`)).toBe('key is <redacted>');
+    expect(redactSecret(FAKE_SHOPIFY_TOKEN)).toBe('<redacted>');
+    expect(redactSecret(FAKE_SHOPIFY_CUSTOM_TOKEN)).toBe('<redacted>');
+    expect(redactSecret(FAKE_GITHUB_PAT)).toBe('<redacted>');
+    expect(redactSecret(FAKE_SLACK_TOKEN)).toBe('<redacted>');
     expect(redactSecret('Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.abc.def')).toBe('Authorization: <redacted>');
   });
 
   // These two separate on `-`, not `_`. git.avada.net issues the first kind and this
   // very tool authenticates with the second.
   test('hyphen-separated vendor keys are stripped too', () => {
-    expect(redactSecret('glpat-<fixture>')).toBe('<redacted>');
+    expect(redactSecret(FAKE_GITLAB_PAT)).toBe('<redacted>');
     expect(redactSecret('sk-ant-api03-AbCdEfGhIjKl-mNoPqRs')).toBe('<redacted>');
   });
 
@@ -239,7 +247,7 @@ describe('runSecurityLane', () => {
   // audit_findings.title is written to state.db. Redacting on the way to Telegram
   // would already have put the value on disk, so it happens at construction.
   test('a token quoted by the agent cannot survive into the returned findings', async () => {
-    const token = 'shpat_<fixture>';
+    const token = FAKE_SHOPIFY_TOKEN;
     const claude: ClaudeRunner = async () =>
       ok(
         JSON.stringify([

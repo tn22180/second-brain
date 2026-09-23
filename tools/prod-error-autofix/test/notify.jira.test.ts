@@ -12,6 +12,7 @@ import {
   type IssueInput,
   type JiraConfig
 } from '../src/notify/jira';
+import {FAKE_GITLAB_PAT_SHORT} from './fixtures/fakeSecrets';
 
 const CFG: JiraConfig = {baseUrl: 'https://space.avada.net/', token: 'pat-not-a-real-token'};
 
@@ -64,7 +65,7 @@ describe('buildIssuePayload', () => {
   test('a secret quoted inside a finding is redacted before it can reach Jira', () => {
     const p = buildIssuePayload({
       ...INPUT,
-      description: 'const key = "glpat-<fixture>";'
+      description: `const key = "${FAKE_GITLAB_PAT_SHORT}";`
     });
     expect(p.fields.description).toBe('const key = "<redacted>";');
   });
@@ -129,7 +130,7 @@ describe('createIssue', () => {
 describe('addComment', () => {
   test('comments on the named issue and redacts the body', async () => {
     const {calls, fetchImpl} = recorder(201, '{"id":"1"}');
-    const res = await addComment(CFG, 'FAL-720', 'still open, token glpat-<fixture>', fetchImpl);
+    const res = await addComment(CFG, 'FAL-720', `still open, token ${FAKE_GITLAB_PAT_SHORT}`, fetchImpl);
 
     expect(res.ok).toBe(true);
     expect(calls[0]!.url).toBe('https://space.avada.net/rest/api/2/issue/FAL-720/comment');

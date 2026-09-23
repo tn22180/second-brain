@@ -9,6 +9,7 @@ import {
   scanDiff,
   securityGate
 } from '../src/verify/security';
+import {FAKE_GITHUB_PAT_ALT, FAKE_SLACK_TOKEN_ALT} from './fixtures/fakeSecrets';
 
 /** Shapes a unified diff the way `git diff` writes one. */
 function diff(file: string, hunk: {at?: number; lines: string[]}): string {
@@ -51,12 +52,12 @@ describe('parseDiff', () => {
 
 describe('scanDiff — secrets', () => {
   test('blocks a Slack token literal', () => {
-    const f = scanDiff(diff(SRC, {lines: ["+const t = 'xoxb-<fixture>';"]}));
+    const f = scanDiff(diff(SRC, {lines: [`+const t = '${FAKE_SLACK_TOKEN_ALT}';`]}));
     expect(f.map(x => x.rule)).toEqual(['slack-token']);
   });
 
   test('redacts the secret so it never reaches Slack or the incident file', () => {
-    const f = scanDiff(diff(SRC, {lines: ["+const t = 'xoxb-<fixture>';"]}));
+    const f = scanDiff(diff(SRC, {lines: [`+const t = '${FAKE_SLACK_TOKEN_ALT}';`]}));
     expect(f[0]!.excerpt).not.toContain('8891234567');
     expect(f[0]!.excerpt).toContain('redacted');
   });
@@ -230,7 +231,7 @@ describe('securityGate', () => {
   test('a pattern hit blocks without spending a model call', async () => {
     let called = false;
     const out = await securityGate(
-      {...input, diff: diff(SRC, {lines: ["+const t = 'ghp_<fixture>';"]})},
+      {...input, diff: diff(SRC, {lines: [`+const t = '${FAKE_GITHUB_PAT_ALT}';`]})},
       {
         claude: async () => {
           called = true;

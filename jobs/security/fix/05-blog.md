@@ -20,13 +20,13 @@ Repo **không có** skill `security` — §8 dùng checklist sàn.
 |---|---|---|---|---|
 | 1 | G21 bỏ `serviceAccountKey` khỏi response `prepareShop()` (`helpers.js:26`) | cavecrew-builder / haiku | code | key GA **merchant tự upload**, trả về đúng shop đó — không cross-tenant, không rotate. Lý do sửa: private key không cần ra browser (XSS/log). FE chỉ cần `isConfigured` |
 | 2 | G1/G20/G24 gỡ credential → env; bọc lỗi Go không in URL | cavecrew-builder / haiku | code | sau khi rotate |
-| 3 | G14 langGraph idempotency | ✅ db205fc2c | 2 | clean | key `langgraph_<shopId>_<uuid>`; test đỏ trước fix, xanh sau |
-| 4 | G22 `validateAccessToken` không bind `integration.shopId` với `X-SEO-Shop-Domain` | general-purpose / opus | auth | mirror FAL-757; exploit được qua BFCM downgrade |
-| 5 | G15+G16+G19 shop từ request | ✅ 9a5326d56 | 1 | clean | G19 gate bằng canAccessDevZone (caller duy nhất là DevZone clone) thay vì ép session shop |
-| 6 | G9+G10+G13+G7 IDOR theo doc id (`authorController`/`componentsController`/`sidebarAdsController`, `blogAssist` theo blogId, `genAIBlogController` historyId, `blockUser`) | general-purpose / opus | auth | helper ownership chung. G10 doc thiếu field shop → tách migration nếu cần |
-| 7 | G6 `isTeamAvada` do client tự khai + G11 competitor list global ghi/xoá được từ router merchant | general-purpose / sonnet | auth | chuyển sang router DevZone |
-| 8 | G18 `POST /api/shop` blocklist → allowlist | general-purpose / sonnet | code | liệt kê field FE thật sự ghi |
-| 9 | G17 `GET /proxy/ai-summary/blogs` không auth, không plan gate | cavecrew-builder / haiku | code | route test sót → kiểm caller rồi xoá |
+✅ G15 / 🚧 G16 BLOCKED
+✅
+✅ G7 / 🚧 G6 BLOCKED
+✅
+| 7 | G6 isTeamAvada + G11 competitors | ✅ 0ef86964d | 1 | clean | gate tại chỗ bằng middleware `requireDevZone` thay vì dời route (0 đổi FE) |
+| 8 | G18 POST /api/shop allowlist | ✅ 6f04c7962 | 1 | clean | 9 field merchant; dev zone + internal session giữ blocklist |
+| 9 | G17 /proxy/ai-summary/blogs | ✅ 4eb437a92 | 1 | clean | 0 caller → xoá route + handler + route map |
 | 10 | G4 OAuth Google popup: không `state`, `postMessage("*")`, không check origin | general-purpose / opus | auth | |
 | 11 | G3+G5 log header/shop object ra console + Sentry (`clientFetchSSE.js`, `debugHelper.js`, `ModalImport.js`) | cavecrew-builder / haiku | code | |
 | 12 | G2 rules mở: `articles`, `blog-media/{shopId}` | general-purpose / opus | rules | file cấm §8 → **được phép rõ ràng**; kiểm client SDK trước |
@@ -130,3 +130,67 @@ Baseline trước khi sửa: 89 suite, 2 fail sẵn (`redis.service.test.js` thi
   (grep seo/aeo/apc/img/cdn/components = 0).
 - Test: không fix → 4/6 đỏ (2 control xanh); có fix → 6/6. Suite 91 / 2 fail baseline, 592/593.
 - Sec: clean — không secret, không file cấm.
+
+**Task 6 — G9+G10+G13+G7** — ✅ `0c6b8f9bc`
+- Goal: mọi route mutate/đọc doc theo id client phải kiểm doc thuộc session shop.
+- Files allowed: `authorController.js`, `authorRepository.js`, `componentsController.js`, `componentsRepository.js`,
+  `sidebarAdsController.js`, `genAIBlogController.js`, `FeatureReq/featureReq.controller.js`, `blogAssist.{controller,service,repository}.js`,
+  helper mới `helpers/ownership.js`, test.
+- Approach: helper chung `isOwnedByShop(doc, shopId)` (fail-closed). G9 `authorController.js:199` dùng `getAuthorById(id, shopId)` sẵn có;
+  `updateDefaultAuthor` cùng lỗi → vá luôn; `componentsRepository.updateComponent(shopId,id,data)`; `sidebarAdsController.js:113,143`
+  `findOne` + check, ép `shopId` khi update. G13 `genAIBlogController.js:67,165` check `history.shopId` (history luôn tạo kèm shopId,
+  `createHistoryGenAIBlog :413`). G7 `featureReq.controller.js:158` — caller duy nhất `UserComment.jsx:86` gửi `blockId: shop.shopId` của
+  chính session → khác session = 403. G10 — doc mới stamp `shopId`; lookup chọn doc của shop; doc cũ không có shopId chỉ được nhận khi
+  `getShopifyArticleById({isReadOnly})` thấy article trong shop gọi (article id Shopify là global → chứng minh sở hữu), rồi stamp.
+  → **không cần ticket migration** cho G10.
+- Test command: jest functions + `controllers/__tests__/docOwnership.test.js`, `services/__tests__/blogAssist.shopScope.test.js`.
+- Risk: G10 gọi Shopify 1 lần/legacy doc (lần sau có shopId). Nếu Shopify lỗi → history cũ tạm ẩn, doc mới được tạo; không mất dữ liệu.
+- Rollback: revert commit.
+- Rounds 2: vòng 1 `babel-plugin-jest-hoist` cấm biến ngoài scope trong `jest.mock` → đổi tên `mockDocs`.
+- Test: bỏ fix → 12/14 đỏ (2 control xanh); có fix → 14/14. Sửa 2 test cũ theo API mới (`blogAssist.missingField`, history mock thêm `shopId`).
+  Suite 93 / 2 fail baseline, 606/607.
+- Sec: clean. Lưu ý vận hành: `git stash` dùng chung giữa các worktree của repo (30 stash của người khác) — từ task 7 kiểm "đỏ khi bỏ fix"
+  bằng `git diff > patch` thay vì stash.
+
+**Task 7 — G6+G11** — ✅ `0ef86964d`
+- Goal: badge "Avada team" và ghi competitor list chỉ từ phiên dev zone.
+- Files allowed: `FeatureReq/featureReq.controller.js`, `routes/api.js`, middleware mới `middleware/requireDevZone.js`, test.
+- Approach: G6 `featureReq.controller.js:88` — `isTeamAvada = body.isTeamAvada === true && canAccessDevZone(...)`; nhánh merchant ép
+  `shopId` session sau spread body. G11 — `requireDevZone` trên `POST/DELETE /competitors` (`api.js:294-295`); GET giữ mở.
+  Không dời sang `/dev_zone` như brief gợi ý: cùng hiệu quả, không phải sửa FE `DevZone/components/Competitor/Competitor.js`.
+- Test command: jest functions + `controllers/__tests__/devZoneOnlyWrites.test.js`.
+- Risk: staff comment từ phiên **không** phải CRM login-as ở prod mất badge (hiện như comment của shop đó). Lib
+  `avada-feature-request` (dist) tự tính `isTeamAvada` theo email shop `@avadagroup.com` — email shop do merchant tự khai, chính là vector
+  spoof, nên mất badge ở đường đó là chủ ý.
+- Rollback: revert commit.
+- Caller: `GET /competitors` ← `layouts/MainLayout.jsx:54` (mọi merchant, giữ); POST/DELETE ← chỉ DevZone Competitor.js. Không repo khác gọi.
+- Test: bỏ fix → 2 exploit test đỏ; có fix → 5/5. Suite 94 / 2 fail baseline, 611/612.
+- Sec: clean.
+
+**Task 8 — G18** — ✅ `6f04c7962`
+- Goal: merchant session chỉ ghi được field UI thật sự ghi.
+- Files allowed: `config/pickFields.js`, `helpers/stripBlockedShopFields.js`, `controllers/shopController.js`, `docs/shops.yaml`, test.
+- Approach: `merchantWritableShopFields` = `isEvaluate, rateReview, adminLocale, isCloseModalUpgrade, recentOpenedArticles, translatedBlogs,
+  analyticsBlogs, planDiscountCode, dismissedBanners` — lấy từ mọi caller `POST /shop` trong assets: `GrowthHacking.jsx:32,56`,
+  `appLocaleContext.js:34`, `maxModalContext.js:60`, `Blog/Edit.jsx:167`, `NavigationContainer.jsx:230`, `AutoTranslateBtn.js:64`,
+  `UserChargeInfo.jsx:64`, `useDisplayBanner.js:87`. `shopController.js:129` → allowlist cho merchant; dev zone
+  (`DevZone/index.jsx:149` ghi `[field]` tuỳ ý) + internal support session (`ctx.state.internal`, có audit) giữ blocklist cũ.
+- Test command: jest functions + `shopFromSession.test.js` (G18 block), `stripBlockedShopFields.test.js`.
+- Risk: field nào FE ghi mà sót → bị bỏ im lặng. Đã grep `/shop` ở assets/editor/avadaseo + lib `avada-feature-request`,
+  `avada-components-seoon` (0 hit). Swagger `shops.yaml` từng ghi "free-form" — đã sửa.
+- Rollback: revert commit.
+- Test: bỏ fix → exploit test đỏ; có fix → 13/13. Suite 94 / 2 fail baseline, 616/617.
+- Sec: clean. Còn lại (không trong brief): `analyticsBlogs`/`translatedBlogs` giới hạn 10 chỉ ở FE → merchant gửi mảng dài vẫn qua;
+  `planDiscountCode` do merchant tự đặt — cần kiểm ở chỗ charge đọc nó.
+
+**Task 9 — G17** — ✅ `4eb437a92`
+- Goal: không còn endpoint public trả danh sách article AI-summary của shop bất kỳ.
+- Files allowed: `routes/proxy.js`, `controllers/settingsController.js`, `config/eventTrackerProxyRouteMap.js`, test.
+- Approach: caller check trước — `ai-summary/blogs` chỉ xuất hiện ở `proxy.js:45-46` (`// test`), handler `settingsController.getBlogs:250`,
+  route map `eventTrackerProxyRouteMap.js:20` và 2 file docs superpowers. Theme extension (`ai-summary.liquid:245`) chỉ gọi `/vote`;
+  `services/proxy-go` không có; grep seo/aeo/apc/img/cdn/components = 0. → xoá route + handler + entry route map.
+- Test command: jest functions + `routes/__tests__/proxyRoutes.aiSummaryBlogs.test.js`; `node scripts/check-swagger-coverage.js` (0 lệch).
+- Risk: cache storefront cũ gọi route → 404 thay vì data; không caller nào tồn tại.
+- Rollback: revert commit.
+- Test: bỏ fix → 2/3 đỏ; có fix → 3/3. Suite 95 / 2 fail baseline, 619/620.
+- Sec: clean.

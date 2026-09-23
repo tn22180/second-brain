@@ -50,7 +50,7 @@ từ `origin/master` 709f11f6. Deps: `yarn install --immutable` (yarn 4.13.0 c�
 | 3 | G11 isDevZone / shop write | ✅ 7da77d6a | 1 | clean | allow-list đầy đủ KHÔNG làm (FE ghi ~25 field khác nhau) — giữ blockFields + strip identity; `aiController.js:1591` ghi `isDevZone:true` lên doc shop merchant qua AI API → follow-up |
 | 4 | G12 webhook HMAC | ✅ c87fe85b | 1 | clean |  |
 | 5 | G8 `/public` revert + jsonl | ✅ 19bbcdd4 | 1 | clean | xoá hẳn thay vì chuyển sang /api — 0 caller |
-| 6 | G7 IDOR | ⏳ | | | |
+| 6 | G7 IDOR | ✅ faed2cd1 | 1 | clean |  |
 | 7 | G5 integration key | ⏳ | | | |
 | 8 | G10 accessTokenHash trong response | ⏳ | | | |
 | 9 | G9 shop doc vào Pub/Sub | ⏳ | | | |
@@ -92,4 +92,13 @@ từ `origin/master` 709f11f6. Deps: `yarn install --immutable` (yarn 4.13.0 c�
 - Caller check: grep `revert-product`/`get-jsonl-data` toàn `projects/Falcon` (trừ node_modules/lib/build) + second-brain: chỉ route def IMG + route RIÊNG của seo (`seo/.../routes/proxy.js:99,101`, controller của seo, không gọi IMG). 0 caller trong assets/scripttag/extensions/static. Route thêm 2025-04-26 (cb69d83f) không có client.
 - Test: `__tests__/routes/publicRoutesNoShopActions.test.js` — pre-fix 2 fail, post-fix pass; route public hợp lệ (unsubscribe, speed-audit) vẫn mount. Full 11/24 = baseline. `yarn docs-gate` PASS; skill security cập nhật.
 - Risk: công cụ nội bộ ngoài repo (không thấy) gọi 2 URL này sẽ nhận 404.
+- Rollback: revert commit.
+
+#### Task 6 — G7 IDOR
+- Goal: id doc từ client phải thuộc shop của session trước khi đọc/ghi.
+- Files allowed: `helpers/isOwnedByShop.js` (mới), `controllers/{historyController,revertController,optimizeStoreController,seoController}.js`, `repositories/historyRepository.js`, `featureReq/featureReq.controller.js`, 2 test.
+- Approach: helper `isOwnedByShop(doc, shopId)` (pattern có sẵn ở `cancelRevert` `revertController.js:466-469`, `speedAuditMultiController.js:441-450`). Áp: `historyController.js:58`, `historyRepository.js:216` (revertList), `revertController.js:73,292` (file-alt / file-image version), `:44` updateRevert, `optimizeStoreController.js:58`, `seoController.js:683`, `historyRepository.js:529` getHistoryByLogId (logId lạ → history mới), `featureReq.controller.js:273` blockUser (bỏ `blockId`, dùng session shop). Body update bỏ `shopId`/`id`.
+- Caller check: FE gửi id của chính shop — `RevertProgressBar/index.js:45` (`revertId`), `ImageManager/.../ProgressBar/index.js:32` + `ImageSEO/ProgressBar/index.js:35` (`shop.historyId`), `SiteSpeedUp.js:411`, `UserComment.jsx:84` (`blockId: shop.id` = chính mình). Caller nội bộ (`cloudRunWorker`, pubsub, webhook) dùng id từ server, không đổi. Sweep thêm: `historyOptimizeController.update` cùng lỗi nhưng KHÔNG có route → bỏ qua; `featureReqExcludeEmail` đã check.
+- Test: `__tests__/controllers/crossShopDocIdGuard.test.js` + `__tests__/repositories/historyRepositoryOwnership.test.js` — pre-fix 7 fail, post-fix 16 pass. Full 11/24 = baseline.
+- Risk: doc cũ thiếu field `shopId` → giờ trả not-found. Mọi create path đọc được đều ghi `shopId` (`createRevertProcess`, `createHistoryOptimize`, `createProgress` qua `handleAutoOptimize.js:76`, history qua `getHistoryByLogId`).
 - Rollback: revert commit.

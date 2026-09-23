@@ -114,8 +114,8 @@ AutoPilot nên là **control plane gom module có sẵn**, không phải engine 
 4. Rủi ro "đổi tên ảnh phải re-upload" không đúng với code hiện tại.
 5. "Target keyword = tên sp" kém hơn cái đã có (focus_keyword + GSC) — bỏ.
 
-### Việc chưa verify
-- `products/create` có còn tới prod không (webhook declarative sống trong `shopify.app.toml` không commit). `gcloud logging read` fail: auth hết hạn → cần `gcloud auth login`.
+### Verify prod
+- 2026-09-23: `webhookcreateproductgen2` (avada-seo) **0 request trong 30 ngày**, chỉ log deploy/system. Alt + nén ảnh cho sp mới **chết ở prod**.
 
 ### Gói & tần suất auto (verify 2026-09-23)
 
@@ -124,7 +124,7 @@ Pro vs Enterprise (marketing `PlanFeatures.json`): Enterprise = Pro + Rocket spe
 | Auto | Tần suất | Gói | Thực tế |
 |---|---|---|---|
 | Meta template | realtime (render Liquid) | mọi gói; rules = Pro+ | chạy |
-| Alt + nén ảnh sp mới | realtime `products/create` | Free giới hạn `LIMIT_PRODUCT_IMAGES`, Pro+ unlimited | nghi chết (subscription gỡ 2025-03) |
+| Alt + nén ảnh sp mới | realtime `products/create` | Free giới hạn `LIMIT_PRODUCT_IMAGES`, Pro+ unlimited | **chết** — 0 request/30 ngày |
 | Re-optimize ảnh định kỳ `autoSchedule.autoOptimize` | week / month | — | **chết**: `handleAutoOptimize` default export không cron nào gọi; UI `SpeedUp/Settings/Settings.js:101` `return null` |
 | Redirect 404 | weekly T2 00:00 UTC / daily 00:00 UTC | weekly Pro+, daily Enterprise | **chỉ shop có `permanentlyRedirect.isDevZoneEnabled=true`** — bật từ DevZone nội bộ (`DevZone/containers/404Container.js:123`), default false → merchant không tự bật được |
 | Email báo 404 | weekly T2 00:00 UTC | opt-in | chạy |

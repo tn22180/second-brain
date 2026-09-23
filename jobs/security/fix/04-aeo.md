@@ -52,12 +52,12 @@ unset → baseline 30 suites / 300 tests pass).
 | # | Task | Status | Rounds | Sec | Notes |
 |---|---|---|---|---|---|
 | 1 | G9 credentials → env | ⏸ skipped | – | – | waits for rotate |
-| 2 | G3 webhook HMAC | ⏳ | | | |
-| 3 | G7 shopifyDomain / blockFields | ⏳ | | | |
-| 4 | G6 competitors scoping | ⏳ | | | |
-| 5 | G2 /proxy/shop field mask | ⏳ | | | |
-| 6 | G5 syncLinks payload | ⏳ | | | |
-| 7 | G8 storage rules | ⏳ | | | |
+| 2 | G3 webhook HMAC | ✅ `6221653` | 1 | clean | 401 on bad/missing HMAC, local bypass dropped |
+| 3 | G7 shopifyDomain / blockFields | ✅ `94ce2fa` | 2 | clean | + isDevZone bypass + dotted-path bypass closed |
+| 4 | G6 competitors scoping | 🛑 BLOCKED | 0 | – | global blocklist, no shopId; scoping = blocklist off. Needs Tuan: gate writes with canAccessDevZone instead |
+| 5 | G2 /proxy/shop field mask | ✅ `89b2fab` | 1 | clean | |
+| 6 | G5 syncLinks payload | ✅ `6bb069d` | 1 | clean | legacy `{shop}` msgs still handled |
+| 7 | G8 storage rules | ✅ `1926339` | 1 | clean | **not deployed: firebase.json has no storage key** |
 
 ### Log
 
@@ -107,3 +107,33 @@ call, changes the approved approach): gate `add`/`remove` with `canAccessDevZone
 - Test: suite.
 - Risk: the only documented proxy consumer is the CS bot reading toggles (`.claude/skills/avada-aeo-api/references/proxy.md:41`); no doc or code shows it reading either field. SEO's `seoOnService.js:22` calls `/proxy/shop/${app}`, a different route.
 - Rollback: revert the commit.
+
+**Task 5 — done** · commit `89b2fab` · 1 round · test 2 new (the proxy one fails on old code); suite 32/309 pass · Sec: clean. Note: `updateShopProxy` can still *write* both fields for any shop — that is G1 (token not shop-bound), separate ticket.
+
+**Task 6 — plan**
+- Goal: `syncLinks` messages carry `{shopId}` only; no `accessTokenHash`/`passwordStore` on the topic.
+- Files allowed: `controllers/linksController.js` (publish :24 `sync`, :75 `startSyncProxy` v1), `handlers/pubsub/subscribeSyncLinks.js` (parses `{shop}` :11), new test `src/__tests__/syncLinksPayload.test.js`.
+- Approach: publish `{shopId: shop.id}`; subscriber re-reads via `getShopById` from `@avada/core` (same pattern as `subscribeAeoAuditRescan.js:23`, `subscribeLlmsTxtSync.js:31`). Subscriber also accepts legacy `{shop}` messages by taking `shop.id` and re-reading — so messages in flight at deploy still run.
+- Test: suite.
+- Risk: only 2 publishers (grep `syncLinks` = the 2 controller lines + `index.js:59`); `cronJobType` has no publisher today, kept passthrough. Extra Firestore read per v1 sync (manual/bot trigger only).
+- Rollback: revert the commit.
+
+**Task 6 — done** · commit `6bb069d` · 1 round · test 5 new (4 fail on old code); suite 33/314 pass · Sec: clean. Docs (`docs/features/links-sync.md:18,33`, links-sync SKILL :42) don't state the payload shape → no doc change.
+
+**Task 7 — plan**
+- Goal: no unauthenticated write to `/blog-media/{shopId}/{image}` (`firebase.storage.rules:4-6` `allow read, write;`) or read/write to `/featureReq/{document}` (:7-9 `if true`).
+- Files allowed: `firebase.storage.rules` only (explicitly allowed for this task).
+- Approach: `blog-media` keeps public read (storefront images act as CDN), write only when `request.auth.token.shopID == shopId` (claim set by `@avada/core` `createCustomToken(uid, {shopID})`, `authService.js:257,319`); `featureReq` → deny all.
+- Test: no rules-test tooling in repo (`@firebase/rules-unit-testing` absent) → no automated regression test; suite run for sanity.
+- Risk / caller check: 0 uploaders. `packages/assets` defines `storage = getStorage(app)` (`helpers.js:87`) but nothing imports it; `blog-media`/`featureReq` appear nowhere in code; the feature-request widget (`featureRequestHelper.js:10`, lib `avada-feature-request`) uses no Firebase Storage. **But `firebase.json` has no top-level `storage` key** — neither `firebase.storage.rules` nor `storage.rules` is wired, so CI's `--only ...storage` deploys no rules from this repo. This edit cannot reach prod by itself; live bucket rules must be checked in console.
+- Rollback: revert the commit.
+
+**Task 7 — done** · commit `1926339` · 1 round · no rules-test tooling → no automated test, rules syntax not emulator-checked; suite 33/314 pass · Sec: clean (only the file named by the task).
+
+**Wrap-up** — 5 commits on `fix/security-high-2026-09`, not pushed. Final suite: 33 suites / 314 tests pass (baseline 30/300; +14 regression tests).
+docs-gate: `FAIL (3)` both before and after — all 3 are pre-existing on `origin/main` (`.claude/skills/links-sync/SKILL.md:54,79,92` cite `linksSyncService.js` lines past EOF); none added.
+Follow-ups for Tuan:
+1. Task 4 decision (see above).
+2. Task 7: wire `"storage": {"rules": "firebase.storage.rules"}` into `firebase.json` (forbidden file for this job) and check live bucket rules in console — until then the committed rules are dead text.
+3. `.claude/skills/security/SKILL.md:56-72` still describes the `isDevZone` bypass as open → refresh after merge.
+4. `updateShopProxy` can still write `passwordStore`/`crispSessionToken`/anything for any shop → G1 ticket.

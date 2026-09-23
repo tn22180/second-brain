@@ -769,9 +769,9 @@ Expected: PASS.
 // The Telegram group is a wider audience than the repo. A secret finding says
 // where and what kind, never the value.
 test('a token-shaped string in a title is stripped', () => {
-  expect(redactSecret('key is sk_live_<fixture>'))
+  expect(redactSecret('key is sk_live_a1b2…k1l2 (fixture)'))
     .toBe('key is <redacted>');
-  expect(redactSecret('shpat_<fixture>'))
+  expect(redactSecret('shpat_0011…eeff (fixture)'))
     .toBe('<redacted>');
 });
 
@@ -937,7 +937,7 @@ test('a failed lane is named, not swallowed', () => {
 
 test('secret values never reach the message', () => {
   const text = renderReport({date: '2026-08-19', apps: [WITH_TOKEN_IN_TITLE], digest: false});
-  expect(text).not.toContain('shpat_<fixture>');
+  expect(text).not.toContain('shpat_0011…eeff (fixture)');
   expect(text).toContain('<redacted>');
 });
 

@@ -7,6 +7,7 @@ import type {AuditFinding, LedgerDiff} from '../src/audit/ledger';
 import {renderReport, type AppReportInput, type ReportInput} from '../src/audit/report';
 import {runSupervisor} from '../src/audit/supervisor';
 import type {ClaudeResult, ClaudeRunner} from '../src/agent/claudeCli';
+import {FAKE_SHOPIFY_TOKEN} from './fixtures/fakeSecrets';
 
 const TELEGRAM_LIMIT = 4096;
 
@@ -97,7 +98,7 @@ describe('renderReport', () => {
   });
 
   test('secret values never reach the message even if upstream forgot to redact', () => {
-    const token = 'shpat_<fixture>';
+    const token = FAKE_SHOPIFY_TOKEN;
     const apps: AppReportInput[] = [
       app({
         appName: 'SEO',

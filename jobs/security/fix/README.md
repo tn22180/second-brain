@@ -83,3 +83,10 @@ gãy install của 4 app còn lại.
    Cloud Logging mỗi lần gọi API. Đã kiểm tay trên `origin/master`.
 2. SEO `proxy.js:43/80/99/101` + `handlers/reset.js` — ghi theme / gọi Admin API / xoá data của
    shop bất kỳ, không auth. Đã kiểm tay.
+3. **`avada-components-seoon` (public npm, maintainers tunglv/truongnn/lamln/tnam) export cứng
+   5 proxy token**: `SEO_/BLOG_/IMAGE_/AI_/AEO_PROXY_ACCESS_TOKEN` —
+   `avada-components/src/config/constants.ts:18-22`. Package public từ 2025-06-06, bản mới nhất
+   2.2.0 (2026-09-22). Được bundle vào assets của SEO/BLOG/APC/AEO/IMG-OPT → token còn nằm cả
+   trong JS mọi merchant tải. Mọi version cũ trên npm vĩnh viễn giữ token → **rotate cả 5 là bắt
+   buộc**; sửa lib (token → gọi qua backend của app) trước, rồi rotate, rồi bump lib ở 5 app.
+   Rotate G1 lẻ từng app trước khi lib sửa = vô nghĩa. Phát hiện bởi agent APC task 2.
