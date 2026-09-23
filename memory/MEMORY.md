@@ -1,4 +1,5 @@
 - [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
+- [Ask rule là prefix: git -C lọt](ask-rule-prefix-git-c.md) — `git -C … push`/for-loop không khớp `git push:*` → classifier deny câm; chạy lệnh trần từng repo để hiện prompt.
 - [Check master before building](check-master-before-building.md) — grep master cho feature TRƯỚC khi code; team chạy song song cùng 1 brief qua Claude, MR 2229 build xong mới biết master đã có.
 - [Verify the branch before diagnosing](verify-branch-before-diagnosing.md) — pin the tree before ANY code claim; the worktree you sit in feels like truth. Fired twice: SEO-260714, then a whole doc set written 207 commits behind master.
 - [Docs from code: shared layer first](docs-from-code.md) — Tony's rule; common layer before per-domain, else skills can't justify why-not-claude-md and you get two taxonomies.
@@ -45,17 +46,21 @@
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
-- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — colima (không Docker Desktop); watchdog launchd phải mirror ra ~/Library/Application Support vì TCC chặn ~/Documents; gitlab.token cần scope `api`.
+- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — NATIVE launchd từ 09-23 ở ~/Projects/falcon-fix-bot (MR !9); HOME riêng, session default-deny; docker cũ PAUSED; gitlab.token hết hạn 10-03.
 - [seo local clone is shallow](seo-local-clone-shallow.md) — merge-base rỗng / "unrelated histories" với origin/master là do shallow (68 graft), không phải lịch sử khác; đã `fetch --unshallow` 2026-09-07.
 - [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights trừ 5 credit action `gscInsights`.
 - [seo MCP prod OAuth: lỗi CSP form-action](seo-mcp-oauth-shopify-callback.md) — redirect_uri ĐÃ whitelist (16 callback 200); chết ở nhánh form vì form-action thiếu admin.shopify.com. Đếm POST /mcp-oauth/shop vs callback trước khi nghi whitelist.
 - [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy. 401 09-12→09-14 là baseUrl thiếu (bay sang api.openai.com), không phải key.
 - [seo fleet GCS egress](seo-fleet-gcs-egress.md) — box ngoài GCP → mọi read GCS = egress $0.12/GiB; legacy FILE_PAGE tải lại cả fileImageJsonl mỗi batch 20 ảnh; SKU `Network Data Transfer GAE/Firebase Storage` bị report gộp vào "Firestore / Storage".
 - [seo embed metafield bị wipe câm](seo-embed-metafield-silent-wipe.md) — storefront đọc app metafield `seo.meta2`, không đọc Firestore; 3 lỗi cộng dồn, FE vẫn báo "Saved". So updateTime doc vs updatedAt metafield trước khi nghi theme/cache.
-- [seo /chatbot cross-tenant settings](seo-chatbot-router-cross-tenant.md) — bot token dùng chung + shopId từ query → đọc google.tokens của shop bất kỳ; MR !2286 chỉ vá nhánh MCP.
+- [seo /chatbot cross-tenant settings](seo-chatbot-router-cross-tenant.md) — router đã xoá ở master (868ca4b90ff); `?shopId=` override ở /api/settings vẫn còn.
 - [MCP_OAUTH_SECRET yếu](seo-mcp-oauth-secret-weak.md) — prod ký token MCP bằng chuỗi 5 ký tự; brute-force được → forge token, cần rotate.
 - [errorAlerts đổi sang lastSeenMs](seo-erroralerts-lastseenms.md) — feed KHÔNG chết; `--order lastSeen` loại hết doc sau 2026-07-23. TTL 1 ngày. Reader đã vá ở diagnose.js + skill prod-logs.
 - [APC không có consumer prod-error](apc-prod-error-no-consumer.md) — sink có, subscription 0, `handleProdErrorAlertGen2` 404 → mọi lỗi prod APC bị vứt; code có sẵn, chưa deploy.
 - [SA image-optimizer của bot đã bị revoke](falcon-bot-img-sa-key-revoked.md) — key `f7b48da0` không còn trên GCP → fs-query app đó trả UNAUTHENTICATED, bot diagnose mù.
 - [Orca ăn TCC, ~/Documents chết](orca-tcc-documents-block.md) — terminal host là Orca.app (không phải iTerm); Orca auto-update → mất quyền Documents giữa session, `git` báo `Unable to read current working directory`. Quit hẳn + xoá entry rồi re-grant.
 - [Hermes = việc, OpenClaw = cá nhân](hermes-work-openclaw-personal.md) — 2 gateway launchd tách vai; hermes dùng unix socket không chiếm port; chung OLLAMA_API_KEY; `adopt_external_logins` phải false kẻo mượn login Claude Code; skill đọc chung từ ~/.claude/skills.
+- [Proxy token 5 app public trên npm](avada-components-proxy-tokens-public-npm.md) — `avada-components-seoon` hardcode `*_PROXY_ACCESS_TOKEN` từ 2025-06; sửa lib → rotate → bump 5 app.
+- [seo auto features chết ở prod](seo-auto-features-dead.md) — products/create 0 req/30d (gỡ 2025-03), autoSchedule cron không wire, 404 auto chỉ qua DevZone; label "Autopilot" ở Pro không có gì phía sau.
+- [second-brain push kẹt vì secret](second-brain-push-blocked-secrets.md) — GH013 chặn từ 07-30, brain.py chỉ WARN nên fail câm 23 đêm; đã filter-repo + force push 09-23.
+- [Log prod chứa credential](prod-logs-leak-credentials.md) — initShopify log token merchant, alert payload mang cả env service; autofix lưu vào brain → 75 secret vào git. Vá ở compact(), chưa rotate.

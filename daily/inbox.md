@@ -266,3 +266,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Hermes agent dùng cho công việc, OpenClaw cho cá nhân — 2 launchd gateway tách vai, chung `OLLAMA_API_KEY`, đọc skill chung từ `~/.claude/skills`
 - [ ] (×1) `second-brain/.env` giờ giữ key cho tooling second-brain — check file này trước khi nghi thiếu credential
 - [ ] (×1) FAL-872 là task gốc cho nhóm task Judge.me/product-option assign Tung + Giáp Thu Trang, tuannv reviewer
+
+### memory candidates 2026-09-23
+- [ ] (×1) Falcon Bot tạo card Jira fail `Field 'summary' cannot be set. It is not on the appropriate screen` = field chưa có trên create screen của issue type FAL; sửa screen config, không sửa bot
+- [ ] (×1) Hermes có thể dùng Claude Code làm backend qua skill `autonomous-ai-agents/claude-code`; setup xong mà bot im thì check log gateway trước
+- [ ] (×1) `hermes-jev-skills` (kerpopule) đã cài cho Hermes, JEV API key đọc từ `second-brain/.env`
+- [ ] (×1) seo AutoPilot v1 có design spec (`bc604182eb2`), đây là hướng làm lại label "Autopilot" gói Pro đang không có gì phía sau → liên quan `seo-auto-features-dead`

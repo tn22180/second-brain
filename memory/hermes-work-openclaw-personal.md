@@ -40,3 +40,20 @@ trạng. Skill Hermes tự sinh luôn ghi vào `~/.hermes/skills/`, không bao g
 `~/.hermes/config.yaml` (`provider`, `external_dirs`), `~/.hermes/.env` (`OLLAMA_API_KEY` phải là
 dòng KHÔNG comment — file mẫu có sẵn dòng `# OLLAMA_API_KEY=` dễ khớp nhầm khi sửa bằng script),
 và `hermes gateway status`.
+
+**Telegram (bot thứ hai, 2026-09-23):** `TELEGRAM_ALLOWED_USERS` và `TELEGRAM_HOME_CHANNEL` phải là
+**numeric ID** (`1178722633`), không phải username. Ghi `tony_lotus` thì gateway vẫn báo
+`telegram connected` nhưng tin nhắn đến bị lọc im lặng, còn home channel báo `Chat not found`.
+Nhìn log: `Sent home-channel startup notification to telegram:<id>` mới là dấu hiệu đúng.
+
+**hermes-jev-skills (kerpopule, 2026-09-23):** clone ghim `b34aea7` ở `~/.hermes/vendor/hermes-jev-skills`
+(lệnh `jev` là symlink về đó — đừng xoá thư mục). Cài bằng cách gọi thẳng `install_hermes` + `install_cli`;
+`install.py` mặc định còn thả 10 skill `jev-*` vào `~/.claude/skills` và `~/.codex/skills`, không có cờ tắt.
+Installer chèn `plugins.enabled` với thụt lề 2 space cạnh item 4 space → YAML dính `'hermes-jev - orca-status'`,
+tắt âm thầm cả hai. Sau mỗi lần cài/cập nhật: `hermes plugins list`. Key: `TYPESAFE_API_KEY` trong
+`~/.hermes/.env` (= `JEV_API_KEY` của second-brain/.env). Routing/skills để mặc định `off`.
+
+**Rule ủy quyền Claude Code nằm ở `~/.hermes/SOUL.md` (2026-09-23)**, không ở `memories/MEMORY.md`
+(agent tự ghi đè, giới hạn 2200 ký tự). Nội dung: `claude -p` đọc/chẩn đoán chỉ `--allowedTools "Read,Grep,Glob"`,
+`--max-turns` ≤15; cần Bash/Edit/Write phải hỏi Tony trước, yes chỉ cho 1 job; cấm deploy/tag/push master.
+Lý do: ngày 09-23 Hermes tự sinh `--allowedTools "Read,Bash"` chạy trên repo seo. Backup: `SOUL.md.bak-20260923`.

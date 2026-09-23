@@ -58,6 +58,8 @@ unset → baseline 30 suites / 300 tests pass).
 | 5 | G2 /proxy/shop field mask | ✅ `89b2fab` | 1 | clean | |
 | 6 | G5 syncLinks payload | ✅ `6bb069d` | 1 | clean | legacy `{shop}` msgs still handled |
 | 7 | G8 storage rules | ✅ `1926339` | 1 | clean | **not deployed: firebase.json has no storage key** |
+| 8 | Staff-only shop flags merchant-writable (added 2026-09-23 from blocklist audit) | ✅ `1525441` + `c9c8d47` | 2 | fixed | stripped in merchant handlers, not blockFields (DevZone + CS bot write them); round 2 closed `/markdown/settings` bypass |
+| 9 | shopInfos raw update via PUT /api/shop `domain` branch (added 2026-09-23 from raw-body hunt) | ✅ `7cb93b8` | 1 | clean | allow-list `['domain']` in `updateShopInfosData` |
 
 ### Log
 
@@ -137,3 +139,29 @@ Follow-ups for Tuan:
 2. Task 7: wire `"storage": {"rules": "firebase.storage.rules"}` into `firebase.json` (forbidden file for this job) and check live bucket rules in console — until then the committed rules are dead text.
 3. `.claude/skills/security/SKILL.md:56-72` still describes the `isDevZone` bypass as open → refresh after merge.
 4. `updateShopProxy` can still write `passwordStore`/`crispSessionToken`/anything for any shop → G1 ticket.
+
+**Task 8 — plan** (added 2026-09-23 from blocklist audit)
+- Goal: a merchant session can't use `PUT/POST /api/shop` to turn on CS-support toggles that backend gates/limits read (e.g. `isEnableCustomMarkdownPages` → 403 gate `customMarkdownController.js:25`).
+- Deviation from brief: **not** added to `blockFields`. That strip runs in `updateShopData` for every writer, and these toggles do have legit writers: DevZone (`DevZone.js:133-136` `PUT /shop {[field]: value}` for `listCSSupportTools`, `ts-tool.helper.js:34` = `isEnableCustomMarkdownPages`) and the CS bot (`POST /proxy/shop/update`, `routes/proxy.js:50-51` "update CS-support-tools toggles"). Blocking in the repository would kill both = CS tool outage. "No other writer" was wrong.
+- Approach: new `staffOnlyFields` in `config/pickFields.js`; `updateShop`/`setShop` (`shopController.js`) strip them (top-level + dotted first segment) unless `canAccessDevZone({user})` (CRM login-as session, same gate as `devController.js:61`). Proxy path left alone (bot is the intended writer; token scoping = G1).
+- Sweep result (backend reader + only DevZone/bot writes, 0 merchant-FE writers in `packages/assets`): `isEnableCustomMarkdownPages` (403 gate), `isEnableLimitedUrls` (URL cap, `shopifyController.js:65,548` → `handleLinks.js:15`), `isAdvancedUser` (`linksService.js:65,203`, `linksSyncService.js:72`), `isEnableChecklistBulk` (`aeoChecklist/runner.js:65`), `structuredDataScanUrls` (scan URL override `runner.js:61`, Puppeteer cost), `isFetchAllCollectionProducts` (`markdownService.js:93,103`), `isEnableMdFaq/Rating/Reviews` (`markdownService.js:38-40`), `isAdditionalFields` (`shopifyController.js:595`), `isEnableMdMultiLang` (CS toggle; system writer `markdownController.js:323` calls `updateShopData` directly so unaffected), `isEnableBetaFeature` (set by `installationService.js:19`, FE gate only). Not blocked: `isEnableSkipChecklist` (0 backend readers). `updateShopByFieldNumber` (increment arbitrary field) is not routed → dead, not touched.
+- Test: new `src/__tests__/staffOnlyShopFields.test.js` (merchant session → stripped; CRM session → kept), then suite.
+- Risk: merchant FE `/shop` writers (`AppLocaleContext.js:34`, `GrowthHacking.jsx:33,57`, `RevertBackup.js:100`, `UnlockSpeedUp.js:31`, `useGoPro.js:47`, `useExcludeKeywordsModal.js:47`, `useDisplayBanner.js`) send none of these fields.
+- Rollback: revert the commit.
+
+**Task 8 — done** · commit `1525441` · 1 round · test 6 new (4 fail on old code; the 2 CRM-session cases pass before and after, by design); suite 34/320 pass · Sec: clean (no secrets, no forbidden file, shop still from session, staff check = strict `isCrmLogin === true`). `.claude/skills/security/SKILL.md` should list `staffOnlyFields` after merge.
+
+**Task 8 round 2** (review 🔴 on `1525441`) · commit `c9c8d47`
+- Bypass: `markdownController.js` `saveSettings` (POST /markdown/settings, merchant session) wrote `isEnableMdMultiLang: multiLangEnabled ?? false` from the body to the shop doc + metaobject (Liquid reads the metaobject).
+- Decision: **staff-only**. Evidence: the merchant page `packages/assets/src/pages/MarkdownAlternate/index.js:102-124` GETs settings and POSTs `settingsData` back unchanged; it has no multi-lang control (0 `multiLang` hits in `MarkdownAlternate/` besides the default at :104). Only toggle is DevZone (`ts-tool.helper.js` field `isEnableMdMultiLang`, `markdownSettingsService.js:119-120` "Called from DevZone"). No plan gate in the backend (security SKILL: 0 plan middleware).
+- Fix: only `canAccessDevZone` + boolean body changes it (doc + metaobject). Otherwise the stored `shop.isEnableMdMultiLang === true` goes to the metaobject and the doc is untouched. Merchant saves no longer reset it to false, and the doc and metaobject stay in sync.
+- Test: `src/__tests__/markdownSettingsMultiLang.test.js`, 5 cases, 4 fail on `1525441`. Suite 35/325 pass. eslint clean. docs-gate unchanged (the 3 pre-existing findings). Sec: fixed.
+
+**Task 9 — plan** (added 2026-09-23 from raw-body hunt)
+- Goal: the `domain` branch of `PUT /api/shop` writes only `domain` to `shopInfos`.
+- Files allowed: `repositories/shopInfoRepository.js` (`updateShopInfosData` :33-38, raw `.update(formatDateFields(postData))`), new test `src/__tests__/shopInfosDomainUpdate.test.js`.
+- Approach: allow-list `['domain']` inside `updateShopInfosData` (its only caller is `shopController.js:118-119`). Only top-level keys, so dotted keys, `shopId` and `id` are dropped along with `plan`/`isDevZone`/`installedAt`/`shopifyDomain`.
+- Caller check: the only FE sender is DevZone `handleUpdateShop('domain', state.domain)` (`DevZone.js:334` → body `{domain}`). No other `/shop` writer sends `domain`, and nothing reads `shopInfos` fields except `domain`.
+- Test: suite. Risk: none beyond the DevZone domain edit, which still works. Rollback: revert.
+
+**Task 9 — done** · commit `7cb93b8` · 1 round · test 2 new (1 fails on `c9c8d47`: plan/isDevZone/shopId/dotted keys were written; the DevZone-edit case passes before and after). Suite 36/327 pass. eslint clean. docs-gate unchanged (3 pre-existing findings). Sec: clean. Found by reasoning, so 🟡: `shopId` is the lookup key for `getShopInfoByShopId`, so rewriting it would have detached the doc from the shop.

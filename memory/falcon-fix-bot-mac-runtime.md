@@ -1,39 +1,36 @@
 ---
 name: falcon-fix-bot-mac-runtime
-description: falcon-bug-fix-agent chạy trên máy Tuan qua colima; watchdog launchd phải mirror ra ~/Library/Application Support vì TCC chặn ~/Documents.
-metadata: 
+description: "falcon-fix-bot chạy NATIVE launchd từ 2026-09-23 ở ~/Projects/falcon-fix-bot (không còn docker/colima); HOME riêng, session default-deny; docker bản cũ bị PAUSED."
+metadata:
   node_type: memory
   type: project
-  originSessionId: 74fdfe65-e61e-475d-8430-e88d8468cc67
-  modified: 2026-09-03T03:45:07.729Z
+  originSessionId: abf45b73-ffd6-4c00-82d4-77b85d4fae88
+  modified: 2026-09-23T02:32:00.342Z
 ---
 
-`falcon-bug-fix-agent` (falcon-fix-bot) được setup chạy trên máy Tuan ngày 2026-09-03,
-live từ 10:43 (+07): `DRY_RUN=0 TEST_MODE=0 AUTO_MERGE=0 AUTO_DEPLOY=0 COMMANDS_ENABLED=1`,
-`RUN_INTERVAL_MIN=60`, ops+test channel đều là `C0BHX62MN2Z`.
+Từ **2026-09-23 09:11 (+07)** bot chạy native: launchd `com.falcon-fix-bot.daemon` +
+`com.falcon-fix-bot.watchdog`, runtime = clone ở **`~/Projects/falcon-fix-bot`** (ngoài
+~/Documents vì TCC chặn launchd). Code dev vẫn ở second-brain; update runtime = `git pull`
++ `launchctl kickstart -k gui/$(id -u)/com.falcon-fix-bot.daemon`. MR !9
+(`feat/native-launchd-runtime`) — runtime đang chạy từ branch đó tới khi merge.
+Flags live giữ nguyên: `DRY_RUN=0 TEST_MODE=0 AUTO_MERGE=0 AUTO_DEPLOY=0 COMMANDS_ENABLED=1`.
 
-Runtime **không phải Docker Desktop** — Docker Desktop đã gỡ nhưng để lại
-`~/.docker/cli-plugins/*` symlink chết (làm `docker compose` báo "unknown command")
-và `credsStore: desktop` trong `~/.docker/config.json` (làm mọi `docker pull` chết với
-`docker-credential-desktop not found`). Đã xoá cả hai. Engine hiện tại là **colima**
-(`colima start --cpu 4 --memory 6 --disk 40 --vm-type vz --mount-type virtiofs`),
-compose plugin link tay từ `/opt/homebrew/bin/docker-compose`. Không có buildx →
-compose dùng classic builder, vẫn build được.
+Bẫy đã dính khi chuyển, đều đã vá trong MR:
+- Không gì trong code đọc `.env` — compose `env_file:` làm hộ. Native thiếu → DRY_RUN default true, OPS_CHANNEL rỗng. Giờ `main.js#loadDotEnv` (env đã set thắng file).
+- HOME thật → hook SessionStart + memory của Tuan rò vào mọi session bot (probe INJECTED vs NONE). Daemon dùng `HOME=<runtime>/home`.
+- `/opt/homebrew/etc/gitconfig` set osxkeychain → `failed to store: -60006` mỗi fetch. Reset chain per repo.
+- Plist nằm trong LaunchAgents + RunAtLoad = tự chạy lúc login dù chưa bootstrap; watchdog load trước daemon → alert giả OPS (2026-09-22 18:03). Installer giờ stage plist tới khi `--start`.
+- `bootout` rồi `bootstrap` ngay → `Bootstrap failed: 5`. Phải chờ label biến mất.
 
-**Watchdog không chạy được từ trong repo.** Repo nằm dưới `~/Documents/second-brain/...`,
-và process do launchd spawn bị TCC chặn đọc `~/Documents` → `scripts/install.sh` cài plist
-xong nhưng job exit **126** `/bin/bash: .../watchdog.sh: Operation not permitted`, tức
-watchdog mù hoàn toàn mà vẫn "loaded". Fix đang dùng: mirror ra
-`~/Library/Application Support/falcon-fix-bot/` (`scripts/watchdog.sh`, `.env` chỉ có
-`OPS_CHANNEL=`, `secrets/slack-bot.token` 600, `data/state/` cho marker+log); plist trỏ
-vào đó nên `DIR=$(dirname $0)/..` tự đúng. Hệ quả: watchdog.sh là bản copy — sửa upstream
-phải sync tay; slack bot token tồn tại thêm 1 bản ngoài repo.
+Session không còn `--dangerously-skip-permissions`: profile `investigate`/`edit` trong
+`src/permissions.js`. Deny prefix **thủng** (`/bin/rm` lọt `Bash(rm:*)`), allowlist mới là rào.
+Fix path (edit profile) CHƯA được thử trên bug thật lúc cutover — EMPTY_DIFF = allowlist chặt quá.
 
-`secrets/` giờ nằm trong repo (gitignored), không còn ở `~/Downloads/secrets`.
-`gitlab.token` phải là PAT của account có Developer+ trên 5 app + `falcon/team-ops` +
-`falcon/product/*` với scope `api` (không phải `read_api` — MR create cần `api`);
-token của user `ci` chỉ thấy được các repo `*-artifacts`. Bản đang dùng hết hạn **2026-10-03**.
-Claude auth: `secrets/claude-oauth.token` (`claude setup-token`) — không mượn được login
-sẵn trên máy vì macOS giữ credential trong Keychain, container Linux không đọc được.
+Docker/colima cũ: container `restart: unless-stopped`, colima chết sáng 09-23. Đã ghi
+`PAUSED` vào `second-brain/.../falcon-bug-fix-agent/data/state/` để nếu colima sống lại thì
+container không chạy song song. Dọn hẳn: khi colima up → `docker compose stop`.
+Bản mirror watchdog cũ ở `~/Library/Application Support/falcon-fix-bot/` (có 1 copy slack
+bot token) đã lỗi thời.
 
+`gitlab.token` scope `api`, hết hạn **2026-10-03**. Claude auth: `secrets/claude-oauth.token`.
 Xem thêm [[avada-gitlab-selfhost]].

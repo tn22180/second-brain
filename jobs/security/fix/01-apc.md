@@ -52,7 +52,7 @@ không liên quan). Baseline: 25 suite / 431 test, **5 fail có sẵn** ở `dev
 | 1 | G1 credential → env | ⏸ skip | – | – | chờ Tuan rotate |
 | 2 | G2 secret trong bundle assets | ✅ code / BLOCKED 0-hit | 2 | clean | `53a7a81` + `1606623` (swagger, docs-gate route-coverage). Bundle vẫn chứa key qua `avada-components-seoon` (public npm) — xem log |
 | 3 | G11 webhook HMAC | ✅ | 1 | clean | `11f7a76` |
-| 4 | G6 creditCost từ body | ✅ | 1 | clean | `4e13a4f` |
+| 4 | G6 creditCost từ body | ✅ | 4 | fixed | `4e13a4f` + `8d708c8` + `a8f2b4b` + `94c31ad` (round 4: 1 refund/charge, đảo usage mọi đường refund) |
 | 5 | G8 `PUT /shop` self-grant | ✅ | 1 | clean | `cb01971`. Không bỏ hẳn: DevZone cần → gate `canAccessDevZone` |
 | 6 | G7 body spread `shopId`/`id` | ✅ | 1 | clean | `3a2381a` |
 | 7 | G5 `updateRegenerateProcess` | ✅ | 1 | clean | `8c71d4e` |
@@ -217,3 +217,37 @@ Follow-up ngoài branch:
 2. Scope read `firestore.rules` theo shop cần Firebase Auth ở embed (ticket riêng).
 3. `.claude/skills/security/SKILL.md` + `packages/functions/CLAUDE.md` còn mô tả guard đọc body, Flow mở, rules mở — cập nhật khi merge.
 4. Chốt 1 kiểu truyền integration key cho cả fleet (APC header, Blog body).
+
+#### Task 4 — round 2 (review FAIL → sửa)
+Review độc lập bắt 7 điểm, sửa hết trong `8d708c8`:
+1. selectAll trừ `deselectedIds` không kiểm → 10k id rác/trùng = giá 0, worker vẫn chạy cả catalog. Giờ tính giá trên **toàn bộ tập lọc**, `handleDoneProcess` refund phần không generate; `deselectedIds` chỉ còn dùng cho mẫu số progress (`totalCount`, đã dedupe).
+2. Đếm fail-open: `productCount.js`/`collectionCount.js:16-18` nuốt lỗi trả 0. Quote tự đếm, lỗi → **503**, count 0 → **400**.
+3. `productsCount`/`collectionsCount` mặc định `limit: 10000` (API `2026-07`, schema có `limit: Int = 10000`, `null` = không giới hạn) → truyền `limit: null`.
+4. Worker đọc `settings.model` mỗi batch (`subscribeHandleBulkGenerate.js:324`) → giờ `processDetail.model || settings.model`. Regenerate định giá theo `process.model` + owner check ngay ở guard. Re-optimize: controller đã ghi model mới lên process trước khi publish → nhất quán.
+5. `creditGuardMiddleware` catch → `e.status || 500` (403/400 của controller không còn thành 500).
+6. Test mới (fail trên code cũ trước khi sửa: 10 test): deselected rác / trùng, count ném lỗi, count 0, `limit: null`, status 403 xuyên guard, regenerate theo model process + từ chối process shop khác, worker dùng model process, redact lồng.
+7. `logger.redact` đệ quy 2 tầng vào object thường/array.
+
+Test: 39 suite / 474 test, 469 pass, 5 fail = baseline devZone. docs-gate như cũ (1 finding có sẵn).
+Rủi ro mới: shop có credit nằm giữa (tổng − bỏ chọn) và tổng sẽ bị 402 khi selectAll có bỏ chọn — FE (`BulkSelection.js:124`) vẫn check theo `generateCount` sau bỏ chọn. Chấp nhận vì refund trả lại phần dư.
+
+Follow-up KHÔNG làm ở branch này (ticket riêng):
+- Gate + trừ credit không atomic (đọc số dư → `next()` → `reduceCredits` `void`): race có sẵn từ trước, cần transaction.
+- `firestore.rules` `bulkGenerateProcesses` vẫn list chéo shop — đã BLOCKED ở task 13.
+
+#### Task 4 — round 3 (re-review FAIL → sửa, `a8f2b4b`)
+- 🔴 Chuỗi miễn phí: selectAll + `deselectedIds` rác → `totalCount` 0 → `handleDoneProcess` không sửa (`totalCount && …`) → re-optimize coi là "complete", giá `totalCount || 0` = 0, regenerate mọi result doc, lặp vô hạn. Sửa: `totalCount = creditQuote.count` (không trừ id chưa kiểm); `quoteReOptimize` tính theo đúng nhánh controller sẽ chạy (`isReoptimizeComplete` dùng chung): xong → `countResults(processId)`, chưa xong → cả selection (selectAll đếm lại / `selectedIds.length`); 0 → 400.
+- `reduceCredits` giờ trả `{charged}` (số thực sự bị trừ; noLimit = 0). Guard **await trừ trước `next()`**, trả lại nếu controller throw hoặc `isSkipDown`; trừ lỗi → dừng request (500). Process lưu `creditCharged`; `finalizeProcess` refund ≤ `min(creditCost, creditCharged)` (doc cũ không có field → giữ `creditCost`).
+- Worker give-up sau `MAX_RESUME_RETRIES` gọi `handleDoneProcess` → refund phần chưa generate.
+- 402 bất ngờ: chọn cách nhỏ hơn — **FE gate theo số server sẽ trừ** (`BulkSelection.js` `chargedCount = selectAll ? resourceCount : generateCount`, 2 chỗ `isOutOfCredits`). Con số hiển thị trong modal xác nhận giữ nguyên (chi phí cuối sau refund). Không làm hold-not-deduct phía server (đụng nhiều hơn).
+- Test mới fail trên code cũ trước khi sửa: chuỗi selectAll+rác → `totalCount` 10; re-optimize totalCount 0 → giá theo result docs, 0 result → 400, process dở → giá cả selection; trừ trước `next()` + `charged` lộ ra; controller throw / `isSkipDown` → trả lại; trừ lỗi → 500 (code cũ: unhandled rejection làm sập jest); cap refund 0 / 30 / legacy 90; worker give-up → `finalizeProcess`.
+- Kết quả: 41 suite / 486 test, 481 pass, 5 fail = baseline devZone. Assets build OK. docs-gate như cũ.
+- Còn lại (ticket riêng, không làm ở đây): gate + trừ vẫn là 2 bước (đọc snapshot số dư rồi decrement) → 2 request song song cùng qua gate có thể đẩy số dư âm; cần transaction.
+
+#### Task 4 — round 4 (re-review: 2 🟡 do trừ trước, `94c31ad`)
+- **Refund kép:** controller đã arm process (`createProcess` / reOptimize đặt `refunded:false`) rồi `publishTopic` ném lỗi → guard trả lại toàn bộ `charged`, process vẫn refund được → cancel trả thêm lần nữa. Sửa: controller ghi `ctx.state.armedProcessId` ngay sau khi arm; guard trả lại cho process đã arm **qua `finalizeProcess(id, {creditUsed: 0})`** (transaction đặt `refunded:true`) → đúng 1 lần refund.
+- **Lệch usage:** `reduceCredits` ghi `upsertCreditUsage(+cost)` trước, không đường refund nào đảo lại → báo cáo AI-credit thổi phồng. Sửa: helper `refundCredits({shopId, amount, action})` (`helpers/reduceCredits.js`) cộng lại credit, trừ `creditsUsed`, ghi `upsertCreditUsage({[action]: -amount})`. Guard, `cancelProcess`, `handleDoneProcess` đều đi qua nó. Action lấy từ `process.creditAction` (mới lưu) hoặc `aiCreditAction` (doc cũ, vốn đã được spread từ body).
+- Refund rơi sang ngày UTC khác thì ghi âm vào doc ngày đó → tổng theo kỳ đúng, số từng ngày có thể lệch. Ghi nhận, không sửa.
+- Test mới (fail trên code cũ): `isSkipDown` → net credit 0, net usage 0; lỗi sau khi arm → `finalizeProcess(id,{creditUsed:0})`, đúng 1 lần refund, net 0; cancel sau khi làm dở → usage `-refund` (usage ròng = phần đã dùng); `finalizeProcess` lần 2 sau refund của guard → 0.
+- Kết quả: 43 suite / 490 test, 485 pass, 5 fail = baseline devZone. docs-gate như cũ. Không có secret trong diff.
+- Vẫn là follow-up (ticket riêng): gate + trừ không atomic.

@@ -20,14 +20,14 @@ Repo **không có** skill `security` — §8 dùng checklist sàn.
 |---|---|---|---|---|
 | 1 | G21 bỏ `serviceAccountKey` khỏi response `prepareShop()` (`helpers.js:26`) | cavecrew-builder / haiku | code | key GA **merchant tự upload**, trả về đúng shop đó — không cross-tenant, không rotate. Lý do sửa: private key không cần ra browser (XSS/log). FE chỉ cần `isConfigured` |
 | 2 | G1/G20/G24 gỡ credential → env; bọc lỗi Go không in URL | cavecrew-builder / haiku | code | sau khi rotate |
-✅ G15 / 🚧 G16 BLOCKED
-✅
-✅ G7 / 🚧 G6 BLOCKED
-✅
-✅
-| 8 | G18 POST /api/shop allowlist | ✅ 6f04c7962 | 1 | clean | 9 field merchant; dev zone + internal session giữ blocklist |
-| 9 | G17 /proxy/ai-summary/blogs | ✅ 4eb437a92 | 1 | clean | 0 caller → xoá route + handler + route map |
-| 10 | G4 OAuth Google popup | ✅ 2fbff2606 | 2 | fixed | + XSS inline script qua `state` (tự phát hiện, vá cùng); FE+BE phải cùng tag |
+| 3 | G14 idempotency key langGraph do client quyết → gen AI miễn phí vô hạn | general-purpose / opus | billing | key sinh server-side |
+| 4 | G22 `validateAccessToken` không bind `integration.shopId` với `X-SEO-Shop-Domain` | general-purpose / opus | auth | mirror FAL-757; exploit được qua BFCM downgrade |
+| 5 | G15+G16+G19 shop lấy từ request: `?domain=` ở `/api/settings`, body `shopId` spread vào settings, `getBlogCustomer` shopId từ body | general-purpose / opus | auth | 1 luật: shopId chỉ từ session |
+| 6 | G9+G10+G13+G7 IDOR theo doc id (`authorController`/`componentsController`/`sidebarAdsController`, `blogAssist` theo blogId, `genAIBlogController` historyId, `blockUser`) | general-purpose / opus | auth | helper ownership chung. G10 doc thiếu field shop → tách migration nếu cần |
+| 7 | G6 `isTeamAvada` do client tự khai + G11 competitor list global ghi/xoá được từ router merchant | general-purpose / sonnet | auth | chuyển sang router DevZone |
+| 8 | G18 `POST /api/shop` blocklist → allowlist | general-purpose / sonnet | code | liệt kê field FE thật sự ghi |
+| 9 | G17 `GET /proxy/ai-summary/blogs` không auth, không plan gate | cavecrew-builder / haiku | code | route test sót → kiểm caller rồi xoá |
+| 10 | G4 OAuth Google popup: không `state`, `postMessage("*")`, không check origin | general-purpose / opus | auth | |
 | 11 | G3+G5 log header/shop object ra console + Sentry (`clientFetchSSE.js`, `debugHelper.js`, `ModalImport.js`) | cavecrew-builder / haiku | code | |
 | 12 | G2 rules mở: `articles`, `blog-media/{shopId}` | general-purpose / opus | rules | file cấm §8 → **được phép rõ ràng**; kiểm client SDK trước |
 
@@ -55,16 +55,18 @@ Baseline trước khi sửa: 89 suite, 2 fail sẵn (`redis.service.test.js` thi
 |---|---|---|---|---|---|
 | 1 | G21 serviceAccountKey khỏi prepareShop | ⛔ BLOCKED | 0 | — | FE đọc chính key (Analytics/index.jsx:220-224) |
 | 2 | G1/G20/G24 credential | ⏭ SKIP | — | — | chờ Tuan rotate |
-| 3 | G14 langGraph idempotency | … | | | |
+| 3 | G14 langGraph idempotency | ✅ db205fc2c + 8426db561 + 459f51871 + 31a7297f2 | 5 | fixed | r4: replay trước check balance; run chết (quá 10 phút) được chiếm lại; add-on APC: checked, n/a |
 | 4 | G22 validateAccessToken bind shop | ⛔ BLOCKED | 0 | — | SEO gọi bằng 1 key dùng chung mọi shop |
-| 5 | G15+G16+G19 shop từ request | … | | | |
-| 6 | G9+G10+G13+G7 IDOR doc id | … | | | |
-| 7 | G6 isTeamAvada + G11 competitors | … | | | |
-| 8 | G18 POST /api/shop allowlist | … | | | |
-| 9 | G17 /proxy/ai-summary/blogs | … | | | |
-| 10 | G4 OAuth Google popup | … | | | |
-| 11 | G3+G5 log header/shop | … | | | |
-| 12 | G2 rules articles, blog-media | … | | | |
+| 5 | G15+G16+G19 shop từ request | ✅ 9a5326d56 | 1 | clean | G19 gate bằng canAccessDevZone (caller duy nhất là DevZone clone) |
+| 6 | G9+G10+G13+G7 IDOR doc id | ✅ 0c6b8f9bc | 2 | clean | helper `isOwnedByShop`; G10 không cần migration |
+| 7 | G6 isTeamAvada + G11 competitors | ✅ 0ef86964d + c4f75c690 | 2 | fixed | review: `shopOwner` body giả "Avada team" → resolve server-side |
+| 8 | G18 POST /api/shop allowlist | ✅ 6f04c7962 + 50dd3e788 | 2 | fixed | review r2: `/shop/field-number` increment field tuỳ ý → chỉ `isYoutubeSlotActive`; internal key cần `devZone` |
+| 9 | G17 /proxy/ai-summary/blogs | ✅ 4eb437a92 | 1 | clean | 0 caller → xoá route + handler + route map |
+| 10 | G4 OAuth Google popup | ✅ 2fbff2606 + c4f75c690 | 3 | fixed | review: receiver check tách helper + test mutation 3 điều kiện |
+| 11 | G3+G5 log header/shop | ✅ 076a0a1ad + c4f75c690 | 3 | fixed | review: depth>6 từng trả raw → `[truncated]` |
+| 12 | G2 rules articles, blog-media | ◐ 4779e18de (blog-media) · ⛔ articles | 1 | clean | Storage đóng write; Firestore `articles` BLOCKED — embed app đọc/sửa/xoá qua client SDK không có Firebase Auth |
+| 13 | langGraph regenerate featured-image/metadata không check/trừ credit — **added 2026-09-23 from review** | ✅ b8c2eb715 + 241bf849a | 2 | fixed | r2: metadata body ≤60k/title ≤500 → 413; rate limit như featured-image; MCP để nguyên (cố ý free) |
+| 14 | `POST /api/shopInfos` ghi raw body (đổi `shopId` → trỏ sang shop khác) — **added 2026-09-23 from raw-body hunt** | ✅ 393c5f07c | 1 | fixed | allowlist `[planName]` (caller duy nhất DevZone); repo luôn bỏ `shopId/idShopInfo/id` + key có dấu chấm |
 
 ### Log
 
@@ -112,6 +114,14 @@ Baseline trước khi sửa: 89 suite, 2 fail sẵn (`redis.service.test.js` thi
 - Caller: FE duy nhất `GenerateBlogPost.jsx:438` gửi `generationId` — không đổi hành vi FE.
 - Rounds 2: vòng 1 test lỗi `AbortController is not defined` (jest 24 env) → stub trong test.
 - Test: fix gỡ ra → 2/2 đỏ; có fix → 2/2 xanh. Suite: 90 suite / 2 fail baseline, 586/587.
+- Add-on (coordinator, pattern APC fail review) — **checked, n/a**, không commit thêm:
+  (a) không route nào tính giá theo count trừ id client: `selectAll/deselectedIds` chỉ có ở export CSV (`articleController.js:1546`,
+  `subscribeExportAllArticles.js`) — không trừ credit. Mọi 14 call site `reduceTokens` tính sau khi chạy, theo `usage`/output thật.
+  (b) không có count helper nuốt lỗi trả 0; `textTokenCost` (`helpers/tokenCost.js`) chỉ ra 0 khi provider không trả usage **và** output rỗng.
+  Lưu ý (không phải pattern (b), để Tuan quyết): mọi caller bọc `reduceTokens(...).catch(() => null)` → Firestore lỗi lúc trừ = việc đã giao,
+  không trừ (fail-open có chủ ý kiểu charge-after, đã có pre-check `hasEnoughTokens`/`isOutOfTokens`).
+  (c) worker không đọc model: `subscribeHandleBatchArticleSummary`/`SummaryNewPublished`/`processLocaleSummary` dùng model mặc định
+  `GPT_4_1_MINI`, không re-read theo batch.
 - Sec: không secret, không file cấm, shop từ session. Ghi chú còn lại: claim doc `blogGenerationClaims/{generationId}`
   vẫn global theo id client (shop A replay id của B → nhận `articleId` của B, chỉ là id) — low, để ngoài.
 
@@ -212,3 +222,106 @@ Baseline trước khi sửa: 89 suite, 2 fail sẵn (`redis.service.test.js` thi
 - Rounds 2: build vòng 1 fail do chạy `vite` ngoài `packages/assets` (config dùng path tương đối) → chạy qua node với cwd assets.
   `yarn workspace @avada/assets run production:embed` chết `cross-env: command not found` (bin chỉ khai ở root) — lỗi môi trường, không do code.
 - Test: bỏ fix → 5/5 đỏ; có fix → 5/5. Suite 96 / 2 fail baseline, 624/625.
+
+**Task 11 — G3+G5** — ✅ `076a0a1ad`
+- Goal: không token session / secret shop nào ra console hay Sentry.
+- Files allowed: `assets/src/helpers/clientFetchSSE.js`, `assets/src/helpers/utils/debugHelper.js`, `ModalImport.js`, test mới.
+- Approach: `clientFetchSSE.js:42` `requestInfo.headers` → chỉ `Object.keys(...)`; `debugHelper.js` thêm `redactSensitive` (key khớp
+  authorization|cookie|token|secret|password|api-key|service-account → `[redacted]`, deep, không mutate) áp cho cả console lẫn
+  `Sentry.captureException`; xoá `console.log('shop', shop)` `ModalImport.js:189`.
+- Test command: `jest --ci packages/assets/src/helpers/utils/__tests__` (chạy từ root repo, docblock `@jest-environment jsdom`) + jest functions;
+  build `vite build` embed prod `✓ built in 13.13s`.
+- Risk: log debug SSE mất giá trị header — chủ ý.
+- Rollback: revert commit.
+- Rounds 2: vòng 1 chạy jest bằng config `packages/assets` → `Cannot use import statement` (babel config ở root) rồi treo; chạy từ root thì xanh.
+- Test: bỏ fix → 2/2 đỏ; có fix → 2/2. Suite 97 / 2 fail baseline, 626/627.
+- Sec: clean.
+
+
+**Task 12 — G2** — ◐ một phần: `4779e18de` (Storage) · ⛔ BLOCKED (Firestore `articles`)
+- Goal: đóng rule mở `articles` (Firestore) và `blog-media/{shopId}` (Storage).
+- Files allowed: `firestore.rules`, `firebase.storage.rules` (brief cho phép rõ).
+- Approach: kiểm client SDK trước. Storage — `storage` export ở `assets/src/helpers.js:51` nhưng **0** chỗ dùng (`uploadBytes`/`ref(storage` = 0),
+  `blog-media` chỉ xuất hiện trong rules; backend ghi qua Admin SDK (bỏ qua rules) → `allow write: if false`, giữ `allow read`
+  (URL media có thể đã nằm trong article đã publish; không kiểm được bucket prod vì cấm đọc GCP).
+- **BLOCKED `articles`:** `assets/src/helpers/firestore/articles.js:28-106` query/`updateDoc`/`deleteDoc` thẳng collection `articles` từ client
+  (version history: `VersionOptionsByDate/index.js:22`, `GenAIBlog/LeftBar/History/HistoryOption.jsx:20`, `GenAIBlog/index.jsx:19`,
+  `useArticleVersions.js:2`). App embed **không** có Firebase Auth (`getAuth` chỉ dùng ở `standalone.js:51`) → `request.auth == null`;
+  mọi rule dựa auth/claim làm chết version history ở embed. Hướng gỡ: chuyển 4 thao tác đó sang `/api` (đã có `articleRepository`
+  `getLastVersion`/`deleteOtherVersions`) rồi đặt `allow read, write: if false`. Là task riêng (FE+BE).
+- Test command: không có harness rules-unit-testing trong repo; diff 1 block. Suite functions không đổi (97 / 2 fail baseline).
+- Risk: nếu tool ngoài repo upload vào `blog-media` bằng client SDK sẽ 403 — grep seo/aeo/apc/img/cdn/components = 0.
+- Rollback: revert commit (rules chỉ có hiệu lực khi deploy tay).
+- Sec: clean. Ngoài brief, cùng lớp: Storage `featureReq/{document}` `read, write: if true`; Firestore `TokenUser`, `historyOptimize`,
+  `historyImport`, `support`, `aiSummary` `read: if true` (đọc chéo shop qua client SDK) — đề xuất ticket riêng.
+
+### Ghi chú quy ước key (theo yêu cầu coordinator)
+Không task nào chuyển key vào POST body. Hiện trạng BLOG: `POST /proxy/swagger-token` (`middleware/swaggerAuth.js:11`) nhận
+`accessToken` trong **body**; `validateAccessToken` nhận `X-SEO-Access-Token` **header**. APC đã chuẩn hoá `Authorization: Bearer`.
+→ 3 kiểu khác nhau trong fleet; Tuan chọn 1 quy ước, chưa đổi gì ở đây.
+
+**Review độc lập — FAIL, round 2 (tasks 3, 8 + 4 risk)** — ✅ `50dd3e788`, `8426db561`, `c4f75c690`
+- Bug 1 (task 8): `POST /api/shop/field-number` (`shopController.js:184`) `FieldValue.increment` field tuỳ ý → `isLegacyPlan`=1 →
+  `isLegacyMiniUnlimited` (`checkTimeShopInstall.js:29`) → langGraph bỏ check token (`langGraphController.js:68`). Fix: allowlist
+  `['isYoutubeSlotActive']` (caller duy nhất `SettingGenAiYouTube.jsx:180`). Test 4 field bị từ chối + 1 control. → `50dd3e788`
+- Risk 3 (task 8): internal key không có capability dev-zone từng được blocklist path → giờ cần `ctx.state.internal?.devZone === true`. → `50dd3e788`
+- Bug 2 (task 3): client đóng kết nối sau `blog_complete` → `return` trước `reduceTokens` → không trừ credit. Fix: abort chỉ bỏ
+  `saveGeneratedArticle` + event cuối; luôn trừ khi có `result`. Test mô phỏng `close` trong pipeline. → `8426db561`
+- Risk 4 (task 7): `shopOwner` từ body không bị ghi đè ở nhánh merchant (comment **và** feature request `create`) → resolve từ
+  `shopInfo.shopOwner` (fallback name/domain), ép `isTeamAvada:false`. → `c4f75c690`
+- Risk 5 (task 11): `redactSensitive` depth>6 trả raw → `'[truncated]'`. → `c4f75c690`
+- Risk 6 (task 10): check receiver tách `assets/src/helpers/oauth/isTrustedOauthMessage.js`; mutation test: gỡ từng check
+  (source / origin / nonce) → đúng 1 test đỏ mỗi lần. → `c4f75c690`
+- Red check: gỡ fix nguồn, giữ test → 8/27 đỏ; có fix → xanh. Test cũ "internal session giữ blocklist" bỏ vì hành vi đổi có chủ ý.
+- Suite: 98 suite, 640/641 (2 suite fail baseline). Assets build embed prod xanh. Sec: không secret, không file cấm.
+
+**Re-review — round 3** — ✅ `459f51871` (task 3), `b8c2eb715` (task 13)
+- Task 3 r3 (hồi quy từ `8426db561`): rớt mạng → bị trừ mà không có article; `ClientFetchSSE` retry cùng generationId → chạy lại + trừ lần 2.
+  Fix: sau khi có `result` luôn `saveGeneratedArticle` + trừ, abort chỉ bỏ writeEvent. Run record `blogGenerationClaims/run_<generationId>`
+  (cùng TTL `expireAt`) tạo trước pipeline; request trùng id → replay `result` đã lưu (đợi nếu còn chạy, tối đa 8'), không chạy, không trừ;
+  run của shop khác → lỗi; run fail → xoá để lần sau chạy bình thường. `generationId` phải khớp `[A-Za-z0-9_-]{8,128}` (FE gửi UUID).
+  Vá luôn ghi chú cũ "claim global theo id client". Test: bỏ fix → 4/7 đỏ; có fix 7/7 + 2 test repo.
+  Test cũ "replay cùng id → key mới, trừ lần 2" thay bằng "replay không chạy pipeline, mỗi lần chạy thật 1 key riêng" (hành vi đổi có chủ ý).
+- **Task 13 (mới, ngoài brief gốc)**: `regenerateFeaturedImage` (`langGraphController.js:209`, FE `RightBar.jsx:113`) và `regenerateMetadata`
+  (`:239`, FE `RightBar.jsx:233`) gọi Recraft/LLM không check, không trừ. Fix: featured-image cần balance ≥ `TOKENS_PER_IMAGE` rồi trừ
+  `images:1`; metadata `isOutOfTokens` rồi trừ theo output (node không trả usage); key `langgraph_{featured|metadata}_<shop>_<uuid>`;
+  trừ lỗi → 500, không trả kết quả. Feature label `LANGGRAPH_FEATURED_IMAGE`/`LANGGRAPH_METADATA` đã có sẵn trong `featureApi.js` mà
+  chưa từng dùng. Test: bỏ fix 6/6 đỏ, có fix 6/6.
+  `langgraph/index.js`: chỉ 3 entry được gọi — 2 ở trên + `streamBlogWithLangGraph` (task 3). `mcp/tools/generateMetadata.js` và
+  `mcp.writeArticle.service.js` **không trừ credit — cố ý**: `src/mcp` token-free + gate plan Pro, khoá bằng
+  `mcp/tools/__tests__/mcpFreeTokens.test.js` ("has no token-deducting code left anywhere under src/mcp") → không đổi, **câu hỏi cho Tuan**.
+- Ghi nhận, không sửa (theo lệnh):
+  - Pipeline throw giữa chừng sau khi đã tốn model → không trừ (`langGraphController.js` catch của `generate`) → follow-up.
+  - Internal key không có `devZone` gửi field ngoài allowlist `POST /api/shop` → 200 im lặng, field bị bỏ (`shopController.js:141`) → hỏi Tuan (nên 400?).
+- Suite: 100 suite (functions + 2 assets), 652/653; 2 suite fail = baseline. Sec: không secret, không `.catch(() => null)` mới, không file cấm.
+
+**Round 4 (risk rẻ)** — ✅ `31a7297f2` (task 3), `241bf849a` (task 13)
+- Task 3 r4: (1) check balance chạy trước lookup run → merchant tiêu credit cuối cho article, rớt mạng, retry cùng id → 400. Giờ `getRun`
+  trước; run cùng shop còn sống/đã xong → bỏ check, replay; run mới vẫn bị check. (2) `failRun` chỉ ở catch → function bị kill ở timeout
+  540s để record `running` cả TTL 24h. Giờ lưu `startedAt`; `running` quá `RUN_STALE_MS` = 10 phút là chết: `startRun` chiếm lại (update
+  precondition `updateTime`, retry tranh nhau chỉ 1 thắng), `waitForRun` thôi đợi; shop khác không chiếm được. Test: bỏ fix 3/15 đỏ.
+- Task 13 r2: `/langgraph/metadata` body không giới hạn (`blogPostSchema` chỉ `min(1)`) + không có trong `config/rateLimit.js`. Giờ title >500
+  hoặc body >60.000 ký tự → 413 trước LLM/trừ credit (bài dài nhất app sinh là 1500–2000 từ ≈14k ký tự, `assets/src/const/genAIBlog.js:49`);
+  rate limit giống featured-image (3/300s). Không sửa `blogPostSchema` vì `formatResponseNode` của generator dùng chung. Test: bỏ fix 2/9 đỏ.
+- Suite: 100 suite, 661/662 (2 suite fail baseline). Sec: không secret, không file cấm.
+- **Ghi nhận cho ticket credit toàn fleet (không sửa):** check-rồi-trừ, số dư kẹp về 0, không atomic (featured image / blog generate) → cần giữ
+  chỗ (reserve) trong transaction; throw muộn sau khi đã stream body → bỏ qua trừ; request trùng id đang đợi chiếm slot concurrency của `api`.
+- **Câu hỏi cho Tuan:** shop legacy GPT-4.1-mini (`isLegacyMiniUnlimited`) được metadata free (chỉ text) — có chủ ý không?
+
+**Task 14 — raw body `POST /api/shopInfos`** — ✅ `393c5f07c` (added 2026-09-23 from raw-body hunt)
+- Goal: session không ghi được field tuỳ ý (nhất là `shopId`) lên doc shopInfo.
+- Files: `controllers/shopInfosController.js`, `repositories/shopInfoRepository.js`, `docs/shops.yaml`, test mới.
+- Approach: `shopInfosController.js:12` ghi nguyên `ctx.req.body` → `WRITABLE_SHOP_INFO_FIELDS = ['planName']` (caller duy nhất
+  `assets/src/pages/DevZone/index.jsx:189` → toggle "Open test store read"; grep seo/aeo/apc/img/components không repo nào gọi `/shopInfos` của blog);
+  body không có field hợp lệ → 400. `updateShopInfosData` (`shopInfoRepository.js:32`) bỏ `shopId/idShopInfo/id` và key có dấu chấm cho **mọi**
+  caller (caller nội bộ `shop.service.js:117` ghi `domain/passwordEnabled`, không bị ảnh hưởng). `shops.yaml` bỏ "no field whitelist".
+- Exploit đã chặn: body `shopId` của shop khác → `getShopInfoByShopId/ByShopName` trỏ sai → `handleReviewUpdates.js:208-226`
+  `updateShopData(shopInfo.shopId, {hasReview:true})` lên shop không sở hữu.
+- Test: bỏ fix 3/4 đỏ (control planName xanh); có fix 4/4. Suite 101 suite, 665/666 (2 fail baseline). Swagger coverage 0 lệch, yaml parse ok.
+- Sec: clean. Ghi chú: `planName` vẫn ghi được từ phiên merchant (route không gate dev zone); server không dùng `shopInfo.planName` cho quyền
+  (chỉ `isShopifyPlanTest` ở FE) → để nguyên, nếu muốn chặt thì gate `requireDevZone`.
+
+### Tổng kết
+Tổng 17 commit = 9 lần đầu + 3 review r2 (50dd3e788, 8426db561, c4f75c690) + 2 r3 (459f51871, b8c2eb715) + 2 r4 (31a7297f2, 241bf849a) + task 14 (393c5f07c). Lần đầu, trên `fix/security-high-2026-09`: db205fc2c (3), 9a5326d56 (5), 0c6b8f9bc (6), 0ef86964d (7), 6f04c7962 (8), 4eb437a92 (9),
+2fbff2606 (10), 076a0a1ad (11), 4779e18de (12 phần Storage). BLOCKED: 1, 4, 12-articles. SKIP: 2. Suite cuối: 101 suite, 665/666 test
+xanh; 2 suite fail = baseline có sẵn trên master. Assets build embed prod xanh.
