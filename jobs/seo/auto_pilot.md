@@ -128,3 +128,142 @@ Pro vs Enterprise (marketing `PlanFeatures.json`): Enterprise = Pro + Rocket spe
 | Re-optimize ảnh định kỳ `autoSchedule.autoOptimize` | week / month | — | **chết**: `handleAutoOptimize` default export không cron nào gọi; UI `SpeedUp/Settings/Settings.js:101` `return null` |
 | Redirect 404 | weekly T2 00:00 UTC / daily 00:00 UTC | weekly Pro+, daily Enterprise | **chỉ shop có `permanentlyRedirect.isDevZoneEnabled=true`** — bật từ DevZone nội bộ (`DevZone/containers/404Container.js:123`), default false → merchant không tự bật được |
 | Email báo 404 | weekly T2 00:00 UTC | opt-in | chạy |
+
+---
+
+## Progress
+
+Started: 2026-09-24 · Worktree `projects/Falcon/seo-wt-autopilot` (node_modules symlink từ `seo`) · Branch `feat/autopilot` · Spec `docs/superpowers/specs/2026-09-23-autopilot-design.md` · Plan `docs/superpowers/plans/2026-09-24-autopilot.md` (commit `e32d05e4b12`; `ff1a10f7703` rơi nhầm local master, đã gỡ)
+
+| # | Task | Agent / Model | Status | Rounds | Sec | Notes |
+|---|------|---------------|--------|--------|-----|-------|
+| 1 | `createProductCreateWebhook` + bỏ xoá `products/create` ở imageHook | general-purpose / sonnet | ✅ | 1/5 | fixed | `391c9f1149b` + `ca16d29a8cd` |
+| 2 | Mapper thuần: allow-list + plan gate + `autopilot` grant key | general-purpose / opus | ✅ | 0/5 | clean | `1d58123dd83` |
+| 3 | Gate realtime `products/create` + dedup webhook | general-purpose / sonnet | ✅ | 0/5 | clean | `48628160064` |
+| 4 | `GET/PUT /autopilot` controller + route | general-purpose / opus | ✅ | 0/5 | clean | `e69cc66e265` |
+| 5 | Command `registerProductCreateWebhook` (dry-run default) | general-purpose / sonnet | ✅ | 0/5 | clean | `a34e6c690b5` |
+| 6 | FE page + route + menu + tracking + i18n + tooltip | general-purpose / sonnet | ✅ | 1/5 | clean | `5e2efbf60c0` + `8bbd8744ce2` |
+| 7 | Sidekick allow-list + `docs/features/autopilot.md` | cavecrew-builder / haiku | ✅ | 0/5 | clean | `9c5a1e74df4` |
+
+Thứ tự: 1 → 2 → 3 → 4 → 5 → 6 → 7 (4 cần 1+2; 3 cần 2; 5 cần 1).
+
+### Log
+
+#### ✅ Task 1: createProductCreateWebhook + imageHook
+- Agent: general-purpose (sonnet)
+- Plan:
+  - Goal: `createProductCreateWebhook(shopify)` idempotent đăng ký PRODUCTS_CREATE → `${hookUrl}/webhook/create-product`, không throw; imageHook không xoá `products/create` nữa
+  - Files allowed: `services/shopifyService.js` (thêm sau `ensureAppSubscriptionWebhook`), `handlers/webhook/imageHook.js:8`, 2 test mới (plan Task 1)
+  - Approach: copy shape `createBulkOperationWebhook` (`shopifyService.js:118`), list theo topic filter; bỏ: toml declarative (không có toml chung)
+  - Test command: `npx jest packages/functions/src/services/__tests__/shopifyService.productCreateWebhook.test.js packages/functions/src/handlers/webhook/__tests__/imageHook.test.js` → PASS
+  - Risk: xoá nhầm subscription — chỉ xoá PRODUCTS_CREATE của chính app với callback khác; imageHook là endpoint legacy
+  - Rollback: revert commit
+- Rounds used: 1/5 (round 1 = security fix)
+- Security check: **fixed** — `logger.error(..., e.message, e)` log nguyên error object → got HTTPError mang request options có `X-Shopify-Access-Token`; đổi chỉ log `e.message`. Diff 4 file, +221/-1; không secret literal, không đụng .env/lock/CI/rules, không dep mới. Ngoài scope (báo, không sửa): `createBulkOperationWebhook` `shopifyService.js:198` có cùng pattern.
+- Tests: 7/7 pass (tự chạy lại), eslint pass
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 2: AutoPilot settings mapper (pure)
+- Agent: general-purpose (opus)
+- Plan:
+  - Goal: `buildAutopilotUpdate({card,values,shop})` trả dotted update + `registerWebhook`, ném `AutopilotError` 400 (field lạ/kiểu sai/path ngoài store) / 403 (gói); `presentAutopilot` đọc flag `autopilot.*`; grant key `autopilot`
+  - Files allowed: create `const/autopilot.js`, `services/autopilot/autopilotSettings.js`, 2 test; modify `config/subscription/grantedFeatures.js` (+ test của nó)
+  - Approach: hàm thuần, allow-list theo card, dotted path vì `saveSettings` dùng update(); bỏ: dùng lại `image.alt_enabled` làm switch (default true)
+  - Test command: `npx jest packages/functions/src/services/autopilot/__tests__/autopilotSettings.test.js packages/functions/src/config/subscription/__tests__/grantedFeatures.test.js` → PASS
+  - Risk: gate sai → Free bật được auto tốn tài nguyên / Enterprise bị khoá; `proPlans` gồm Enterprise (`plans.js:131-139`) nên weekly đúng
+  - Rollback: additive, revert commit
+- Rounds used: 0/5
+- Security check: **clean** — 5 file +373/-1; không secret/console, không đụng file cấm, plan lấy từ `shop` server-side, card `__proto__`/`constructor` → 400, `redirectTo` chặn `//host`/`javascript:`/absolute URL
+- Tests: 67/67 (autopilot + config/subscription, tự chạy lại); impl khớp plan từng dòng
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 3: Gate realtime products/create + dedup
+- Agent: general-purpose (sonnet)
+- Plan:
+  - Goal: `products/create` chỉ chạy khi `autopilot.*` bật + gói hợp lệ; chạy alt (/alt_filename/filename) rồi compression với `optimizingType` lấy từ settings; bỏ compression khi hết quota free, bỏ AI alt khi hết credit; webhook redelivery không dispatch lần 2
+  - Files allowed: create `services/autopilot/productCreateService.js` + test, modify `handlers/webhook/bulkOperationHook.js` (import + nhánh products/create), `handlers/webhook/createProductHook.js` + test mới
+  - Approach: service gate trước `processOneProduct`, truyền `settings.image` như bulk path (`subscribeRecursive.js:452`); dedup `createWebhookLogIfNotExist` (`webhookLogRepository.js:52`) → `{created}`
+  - Test command: `npx jest packages/functions/src/services/autopilot packages/functions/src/handlers/webhook` → PASS (cả suite cũ)
+  - Risk: prod path — nhánh này hiện chết (0 req/30d) nên đổi không ảnh hưởng merchant tới khi đăng ký webhook; sai gate → tốn credit/quota
+  - Rollback: revert commit
+- Rounds used: 0/5
+- Security check: **clean** — 5 file +223/-8; shop từ header đã verify HMAC, không log error object, không file cấm/dep mới
+- Review note: dedup ghi log trước `dispatchWork` → dispatch throw thì redelivery bị bỏ (mất 1 sp). Chấp nhận: dispatchWork fallback Pub/Sub, cùng thứ tự `bulkOperationHook.js:102`
+- Tests: 52/52 (autopilot + handlers/webhook, tự chạy lại)
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 4: GET/PUT /autopilot
+- Agent: general-purpose (opus)
+- Plan:
+  - Goal: `GET /api/autopilot` trả view; `PUT /api/autopilot {card, values}` lưu qua mapper, bật alt/nén → đăng ký webhook, fail → `warning: webhook_failed` mà vẫn lưu; `AutopilotError` → đúng HTTP status; shop chỉ từ session
+  - Files allowed: create `services/autopilot/autopilotService.js`, `controllers/autopilotController.js` + 2 test; modify `routes/api.js` (import + 2 route)
+  - Approach: theo plan; lệch plan có chủ đích: controller chỉ log `e.message` (không log error object — bài học Task 1)
+  - Test command: `npx jest packages/functions/src/services/autopilot packages/functions/src/controllers/__tests__/autopilotController.test.js` → PASS
+  - Risk: IDOR nếu lấy shop từ body; ghi dotted key thành field literal nếu doc `seo` chưa có (chặn 409)
+  - Rollback: additive, revert commit
+- Rounds used: 0/5
+- Security check: **clean** — 5 file +206; shop chỉ từ `getCurrentShop`; auth: `/api` qua `createAuthMiddleware` (`handlers/api.js:64` → `middleware/auth.js:25-35`), `/apiV2` `verifyEmbedRequest`, `/apiSa(V2)` `verifyRequest`; chỉ log `e.message`; không file cấm/dep mới
+- Tests: 101/101 (autopilot + controller + webhook + subscription, tự chạy lại)
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 5: command registerProductCreateWebhook
+- Agent: general-purpose (sonnet)
+- Plan:
+  - Goal: command gom shop có `autopilot.altOnCreate|optimizeOnCreate == true`, bỏ shop gỡ app / hết gói, mặc định chỉ log; `--apply` mới đăng ký, throttle 500ms
+  - Files allowed: create `commands/registerProductCreateWebhook.js` + test
+  - Approach: theo plan; lệch có chủ đích: (a) catch cuối chỉ log `e.message`; (b) in project id ngay khi start (luật confirm project id); (c) verify tên field gỡ app + collection `seo`/`shops`
+  - Test command: `npx jest packages/functions/src/commands/__tests__/registerProductCreateWebhook.test.js` → PASS
+  - Risk: chạy nhầm prod với `--apply` → bật realtime cho shop đã opt-in (đúng ý) nhưng dồn tải; dry-run default + in project id giảm rủi ro
+  - Rollback: additive; command không tự chạy
+- Rounds used: 0/5
+- Security check: **clean** — 2 file +181; không credential (chỉ placeholder `<sa.json>` trong usage), chỉ log `e.message`, in project id + mode trước khi chạy; collection `seo`/`shops` + field `uninstalled` verify (`seoRepository.js:29`, `shopRepository.js:38,178`)
+- Tests: 2/2 (tự chạy lại)
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 6: FE page + route + menu + tracking + i18n
+- Agent: general-purpose (sonnet)
+- Plan:
+  - Goal: trang `/autopilot` 4 card gọi `GET/PUT /autopilot`, menu cấp 1 sau Home, `MENU_AUTOPILOT` + `resolveScreen`, `feature_applied` khi lưu, 14 locale sinh bằng `yarn update-label`, tooltip PlanFeatures
+  - Files allowed: theo plan Task 6 (pages/AutoPilot/*, loadables/AutoPilot.js, routes.js, config/appMenu.js, config/AppMenu.json, const/productAnalytics.js, helpers/screenTracker.js + test, PlanFeatures.json, locale/translations/* sinh ra)
+  - Approach: theo plan; chỉnh: verify `DETAILS_URL` với route thật, menu sau Home (spec), key dịch nạp từ `seo/.env` trong 1 lệnh không echo, không commit build output
+  - Test command: `npx jest packages/assets/src/helpers/__tests__/screenTracker.test.js` + eslint + `yarn workspace @avada/assets run production` (build embed + standalone)
+  - Risk: FE-only; gate FE chỉ là UX, server gate ở Task 2/4; link sai → 404 trong app
+  - Rollback: revert commit
+- Rounds used: 1/5 — round 1: build fail `react-hook-form` (dep thêm ở `7b7ba8f9d16`, node_modules checkout chính chưa cài) → bỏ symlink, `yarn install --immutable` trong worktree; i18n: không có `GOOGLE_TRANSLATE_API_KEY` → dùng script có sẵn `update-label-claude-cli` (`autoTranslateClaude.js`), 14 locale × 37 key, placeholder giữ nguyên
+- Security check: **clean** — 11 file +369/-3 + 14 locale +714/-14; trackEvent chỉ gửi `enabled` (không log text merchant gõ); gate FE chỉ UX, server gate Task 2/4; không secret; build output `static/` gitignored
+- Tests: screenTracker 2/2, eslint pass, build embed + standalone pass (19.8s / 18.9s)
+- Menu: đầu list trước `/mcp` (nav không có entry Home)
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+#### ✅ Task 7: Sidekick allow-list + feature doc
+- Agent: cavecrew-builder (haiku)
+- Plan:
+  - Goal: label trang AutoPilot trong allow-list `extensions/seo-tools/instructions.md` (≤ 8 KB), feature doc `docs/features/autopilot.md` ghi nghĩa mới của `isDevZoneEnabled`
+  - Files allowed: 2 file đó
+  - Approach: nội dung nguyên văn từ plan Task 7
+  - Test command: `node scripts/checkExtensionFileSize.js` exit 0 + `yarn docs-gate` không lỗi cho doc mới
+  - Risk: Sidekick bịa label nếu thiếu; file > 8 KB thì extension fail
+  - Rollback: revert commit
+- Rounds used: 0/5
+- Security check: **clean** — 2 file docs; không secret/URL nội bộ
+- Tests: `checkExtensionFileSize` exit 0; `yarn docs-gate` PASS (558 anchored citation, feature-doc gate xanh sau commit)
+- Started: 2026-09-24 · Completed: 2026-09-24
+
+### ✅ COMPLETE — 2026-09-24
+
+- Branch `feat/autopilot` (worktree `seo-wt-autopilot`), 11 commit `bc604182eb2..9c5a1e74df4`, 50 file +4686/-27. **Chưa push, chưa deploy.**
+- Rounds: 2/35 tổng (Task 1: security fix log error object; Task 6: env build + i18n).
+- Security toàn branch (diff vs `0547925a9cb`): **clean** — không file cấm, không secret literal, không `console`/log error object, host lạ chỉ trong test fixture.
+- Verify:
+  - Test autopilot/webhook/controller/subscription/command: 101 + 2 + 2 pass.
+  - Full `npx jest packages/functions packages/assets`: 3651/3656 pass; 73 suite fail = 64 ở `packages/functions/lib/` (build output babel, gitignored, jest quét lẫn) + 9 ở src. Chạy lại 9 suite trên base `0547925a9cb`: 4 fail sẵn (onPageListQuery, overviewCardScore, shopify2026Client, workListStore). Khác biệt duy nhất `detect-changed-functions` → `git merge-base HEAD origin/feat/autopilot` fail vì branch chưa push (env, không phải code).
+  - Build `@avada/assets production` embed + standalone pass; `yarn docs-gate` PASS; `checkExtensionFileSize` pass.
+- Findings ngoài scope (chưa sửa):
+  - `shopifyService.js:198` `createBulkOperationWebhook` log nguyên error object → có thể lộ access token (cùng lớp `prod-logs-leak-credentials`).
+  - `node_modules` checkout chính `seo` thiếu `react-hook-form` (dep thêm `7b7ba8f9d16`) → build master local fail tới khi `yarn install`.
+  - Jest root quét cả `packages/functions/lib/` → 64 suite fail ảo.
+- Việc tay còn lại (theo spec Rollout): push + MR, deploy staging, E2E tạo sp có ảnh → `webhookcreateproductgen2` nhận POST + alt được ghi, regression trang ImageSEO/Redirect404, rồi `registerProductCreateWebhook` dry-run → `--apply` (confirm project id).
+- 2026-09-24: push `origin/feat/autopilot` (git.avada.net) · MR !2312 Draft → master: https://git.avada.net/avada/seo/-/merge_requests/2312
+- Staging chưa deploy: staging 1–4 đang bị branch khác chiếm (deploy trong 10 ngày), `staging_6` CI hỏng (`SA key CI variable for env 'staging_6' is EMPTY`, job 356310), staging 5/7/8 chưa từng deploy thành công → chờ Tuan chọn.
+- 2026-09-24 11:17 UTC: **deploy staging (1) `avad-seo-staging` OK** — pipeline 221675, job 370364 `deploy_staging` (pin `51fb98d297f`): 117 functions "Successful update", 0 failed, hosting release complete, "Deploy complete!". Traffic = latest revision (`apigen2-00087-dit` 11:15Z, `webhookcreateproductgen2-00087-nup` 11:12Z) → không silent-freeze. `/api/autopilot` không auth → 401 (auth chặn trước router, chưa chứng minh route — cần test trong app).
+- Còn lại (tay): E2E trong app staging (bật card → tạo sp có ảnh → alt được ghi), regression ImageSEO/Redirect404, revert pin CI trước merge.

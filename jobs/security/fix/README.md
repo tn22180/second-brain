@@ -90,3 +90,62 @@ gãy install của 4 app còn lại.
    trong JS mọi merchant tải. Mọi version cũ trên npm vĩnh viễn giữ token → **rotate cả 5 là bắt
    buộc**; sửa lib (token → gọi qua backend của app) trước, rồi rotate, rồi bump lib ở 5 app.
    Rotate G1 lẻ từng app trước khi lib sửa = vô nghĩa. Phát hiện bởi agent APC task 2.
+
+## Kết quả fix — 2026-09-24
+
+Mỗi app: worktree `projects/Falcon/<repo>-wt-security-high`, branch `fix/security-high-2026-09`,
+commit local, **chưa push**. Mỗi branch qua reviewer opus độc lập tới khi 0 🔴; test so với baseline
+master (fail còn lại = fail có sẵn trên master).
+
+| App | Commit | Test cuối | Còn BLOCKED |
+|---|---|---|---|
+| APC | 18 (`215c37a`) | 485/490, 5 fail `devZone` có sẵn | rules read-scope (cần Firebase Auth embed); `VITE_RELEASE_API_TOKEN` cần sửa CI |
+| SEO | 24 (`9f5115c88fd`) | 2037/2040, 2 fail có sẵn + flaky | `/proxy` jsonl/revert-product (extension ngoài repo, hỏi Lâm); ingress internalGen2; G6 FAL-720; `?accessToken=` fallback |
+| IMG-OPT | 14 (`87b03289`) | 2236/2260, 24 fail = baseline | rules (Firebase Auth embed + `storage` thiếu trong `firebase.json`); 2 race speed-audit |
+| AEO | 8 (`7cb93b8`) | 327/327 | competitors (chờ Tuan); storage rules chưa deploy (`firebase.json`) |
+| BLOG | 17 (`393c5f07c`) | 657/658, 2 suite fail có sẵn | task 1 GA key (FE đọc key); task 4 bind key (SEO gọi bằng key chung); `articles` rules |
+
+Hotfix riêng IMG-OPT: `hotfix/stop-logging-access-token` @ `1ecbd824` — phải vào cùng tag.
+
+## Việc tay — Tuan
+
+1. **Rotate:** npm registry token (1 lần, cập nhật CI 5 repo); 5 `*_PROXY_ACCESS_TOKEN` **sau khi**
+   sửa `avada-components`; Google OAuth secret + Trello (SEO); `shpua_`/Translate/Crisp (APC, AEO,
+   IMG); `getAT.js` + script giải mã (IMG); `SHOPIFY_ACCESS_TOKEN_KEY` (fixProBackToFree.js),
+   `MCP_OAUTH_SECRET`. Rotate xong → chạy task gỡ credential khỏi code.
+2. **Dọn dữ liệu prod trước deploy** (xác nhận project id):
+   - IMG `app-plaza-image-optimizer`: shop có `isDevZone`, `isLimitImage==false`, founder code không
+     có charge, `isTestDiscount`, `bypassSpeedAuditUrl`, `speedAuditQuotaLimit` lạ, `historyId`
+     trỏ shop khác; đếm doc history/revert/optimizeStore thiếu `shopId`.
+   - Cloud Logging IMG: log cũ chứa token merchant (retention/xoá + ai đọc được).
+   - BigQuery: AEO `changelog.js`, SEO `firestore-bigquery-export`, BLOG `avada-crm` đang giữ token.
+3. **Deploy order:**
+   - SEO: mint internal key `devZone:true` trước (republish/updateObfucate/reset 403 nếu thiếu);
+     `lighthouseauditrunnerGen2` trước `[deploy-worker]`; `firestore.rules` deploy riêng; audit 3
+     store thật so PSI trước khi cắt tag (interception có thể đội TTFB/LCP).
+   - BLOG: task OAuth popup — functions + hosting cùng tag.
+   - IMG: hotfix `1ecbd824` cùng tag.
+4. **Quyết:** AEO competitors (gate `canAccessDevZone`); thêm `storage` vào `firebase.json`
+   (AEO, IMG); chuẩn key giữa app = `Authorization: Bearer`; BLOG MCP free cho Pro; legacy
+   GPT-4.1-mini metadata free; TS AI có ghi shop qua `POST /api/shop`; `@avada.io` email có
+   verify không (test charge SEO); `validateDiscount` có bind founder code với shop không (IMG).
+5. `/init` trong `tools/prod-error-autofix` → mở brief 00.
+
+## Ticket fleet-wide đề xuất
+
+1. **`avada-components` lib:** bỏ 5 proxy token khỏi bundle → rotate → bump 5 app. (Khẩn #3)
+2. **FAL-720 mở rộng:** key tích hợp theo shop + key service-to-service riêng (SEO↔BLOG BFCM,
+   CS bot `/proxy/shop/update`, TS AI). Chặn BLOG task 4, SEO G6, AEO G1, IMG G5.
+3. **Credit atomic:** reserve-in-transaction cho mọi check-then-deduct (APC guard race, BLOG
+   featured-image/generate, IMG speed-audit ×2, IMG bulk 1-job-per-shop), charge phần đã tiêu khi
+   pipeline throw muộn, activate plan idempotent theo `chargeId` (SEO), SCAN cache → cacheDel đúng key;
+   IMG: release chunk ≤400/transaction, validate `page` trước reserve, TTL `quotaReleases`.
+   Founder code IMG: `validateDiscount` chỉ bind shop nếu rule doc bật `isLimitShop`/`usageLimit` —
+   đọc rule của mã `founderOffer.js:23` trên prod.
+4. **Firebase Auth cho embed:** custom token có claim `shopId` → siết rules theo shop (APC
+   `bulkGenerateProcesses`, BLOG `articles`, IMG, rules mở ngoài brief ở BLOG), thêm `storage` vào
+   `firebase.json`.
+5. **`POST /shop` → allowlist** ở SEO/AEO/IMG (APC/BLOG đã allowlist); 3/5 app từng lọt field
+   quota/plan/feature qua blocklist.
+6. **Egress firewall** cho runtime lighthouse (SEO) — DNS rebinding/WebSocket/worker không đóng được bằng code.
+7. **Migration dữ liệu lộ:** BigQuery mirror chứa token (AEO/SEO/BLOG); integration key plaintext (BLOG G23).

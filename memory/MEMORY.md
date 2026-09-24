@@ -64,3 +64,5 @@
 - [seo auto features chết ở prod](seo-auto-features-dead.md) — products/create 0 req/30d (gỡ 2025-03), autoSchedule cron không wire, 404 auto chỉ qua DevZone; label "Autopilot" ở Pro không có gì phía sau.
 - [second-brain push kẹt vì secret](second-brain-push-blocked-secrets.md) — GH013 chặn từ 07-30, brain.py chỉ WARN nên fail câm 23 đêm; đã filter-repo + force push 09-23.
 - [Log prod chứa credential](prod-logs-leak-credentials.md) — initShopify log token merchant, alert payload mang cả env service; autofix lưu vào brain → 75 secret vào git. Vá ở compact(), chưa rotate.
+- [seo checkout chung bị đổi branch](seo-shared-checkout-branch-swap.md) — session khác switch `seo` về master giữa chừng → commit rơi vào master; feature nhiều commit phải dùng worktree riêng, check HEAD trước mỗi commit.
+- [seo follower deploy rò đĩa](seo-follower-deploy-disk-leak.md) — deploy-followers.yml không xoá tarball/prune image → box1 đầy 09-22, deploy_worker fail câm 4 tag; check `df -h` box trước.

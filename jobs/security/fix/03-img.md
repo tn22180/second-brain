@@ -47,14 +47,15 @@ từ `origin/master` 709f11f6. Deps: `yarn install --immutable` (yarn 4.13.0 c�
 |---|---|---|---|---|---|
 | 1 | G13 log leak | ✅ 7c3416f5 | 1 | clean | `shopifyService.js:39` KHÔNG sửa ở đây — đã xoá trên hotfix `hotfix/stop-logging-access-token` (1ecbd824); để nguyên tránh conflict; test `logRedaction.test.js` fail trước fix, pass sau |
 | 2 | G1–G3 credential | ⏭ skip | — | — | chờ Tuan rotate |
-| 3 | G11 isDevZone / shop write | ✅ 7da77d6a + c2e02550 | 2 | fixed (review 🔴1 🔴2) | allow-list đầy đủ KHÔNG làm (FE ghi ~25 field khác nhau) — giữ blockFields + strip identity; aiController:1591 bỏ isDevZone ở round 2 |
+| 3 | G11 isDevZone / shop write | ✅ 7da77d6a + c2e02550 + 694f3d8a | 3 | fixed (review 🔴1 🔴2 + billing) | allow-list đầy đủ KHÔNG làm (FE ghi ~25 field khác nhau) — giữ blockFields + strip identity; aiController:1591 bỏ isDevZone ở round 2 |
 | 4 | G12 webhook HMAC | ✅ c87fe85b | 1 | clean |  |
 | 5 | G8 `/public` revert + jsonl | ✅ 19bbcdd4 | 1 | clean | xoá hẳn thay vì chuyển sang /api — 0 caller |
-| 6 | G7 IDOR | ✅ faed2cd1 + 15cc6138 | 2 | fixed (review 🔴3) |  |
+| 6 | G7 IDOR | ✅ faed2cd1 + 15cc6138 + 2e76ff82 | 3 | fixed (review 🔴3 + progress regression) |  |
 | 7 | G5 integration key | ✅ 235c57c5 | 1 | clean | bind-shop (FAL-720) tách ticket — migration; key đã lộ cần rotate |
 | 8 | G10 accessTokenHash trong response | ✅ 37055c80 | 1 | clean |  |
 | 9 | G9 shop doc vào Pub/Sub | ✅ 182a64b0 | 1 | clean | chỉ topic `scanSpeedScoreV2`; còn ~13 publishTopic mang `{shop}` (recursive, createPreviewImages, OPTIMIZER_PUB_SUB_V2…) → follow-up theo từng consumer |
 | 10 | G4 firestore/storage rules | 🚫 BLOCKED | 0 | — | Firestore: embed không đăng nhập Firebase Auth → scope theo claim làm gãy progress bar/vote; storage.rules không được deploy (firebase.json không có key `storage`) → cần migration + sửa firebase.json, tách ticket |
+| 11 | Quota check-then-deduct race (added 2026-09-23 from billing review) | ✅ eece3ba4 + 87b03289 (image path) | 2 | clean (re-review hardening) | speedAudit/multi chưa sửa — cần transaction/lock, follow-up |
 
 ### Log
 
@@ -149,3 +150,35 @@ từ `origin/master` 709f11f6. Deps: `yarn install --immutable` (yarn 4.13.0 c�
 - **Doc cũ thiếu `shopId`:** `history`, `historyOptimize`, `revertProcess`, `optimizeStore` không có `shopId` giờ trả not-found ở các route task 6. Đếm trước khi deploy.
 - **Hotfix 1ecbd824** (`initShopify` log token) phải lên cùng tag.
 - Integration key đã lộ: rotate. Task 10 cần ticket migration riêng (xem trên).
+
+#### Round 3 — billing review + re-review (2026-09-24)
+- **Task 3 → 694f3d8a.** List mới `merchantProtectedFields` (`config/pickFields.js`): quota (`imageQuotaUsage`, `altQuotaUsage`, `isLimitImage`, `noLimitAt`, `latestNoLimitAt`, `quotaCycleStartedAt`, `imageQuotaHitAt`, `altQuotaHitAt`), discount/plan (`planDiscountCode`, `planDiscountCycle`, `subscriptionDate`, `promoType`, `isTestDiscount`), speed audit (`speedAuditQuotaLimit`, `speedAuditQuotaResetAt`, `bypassSpeedAuditUrl`), `historyId`. Chỉ áp ở `shopController.set`: session không phải staff → strip; key có dấu chấm → 400. KHÔNG cho vào `blockFields` vì `updateShopData` áp nó cho mọi caller, trong khi code server ghi hợp lệ các field này (reset quota `shopRepository.js:563`, `subscriptionController.js:81,105`, `aiController.shopNoLimit`) → `shopNoLimit` không cần setter riêng.
+  - Caller check: FE merchant chỉ ghi `planDiscountCode` qua `/shop` ở `UserChargeInfo.jsx:65-79` (nhánh Free), và chỉ gọi SAU `GET /subscription/discount/:code` — endpoint đó đã `validateDiscount` + lưu code (`subscriptionController.js:73-82`) → strip ở `/shop` không làm gãy gì. `promoType` FE gửi qua `subscribeShopify` (endpoint subscription), không qua `/shop`. Quota/speed-audit/isLimitImage: chỉ DevZone (session CRM, vẫn được ghi).
+  - `historyId` guard defense-in-depth: `handleManualOptimizeImage.js` (tăng completion), `bulkOperationHook.hookOptimizeImage` (return sớm), `subscribeRecursive` RECURSIVE_OPTIMIZE_IMAGES_BY_PRODUCT (bỏ ghi `lastProduct`). Các reader khác của `shop.historyId` (`doneOptimize.js:19`, `cloudRunWorker`, `fileImageService.js:446`) dựa vào việc chặn ghi ở gốc + cleanup pointer đã bị sửa (xem deploy notes).
+  - Test: `shopControllerSetBillingFields.test.js` (5 nhóm × strip/dotted/CRM) + `handleManualOptimizeImageHistoryGuard.test.js` — 11 fail trước fix, 17 pass sau.
+- **Task 6 → 2e76ff82.** Regression từ 15cc6138: logId bị từ chối → throw → bỏ qua tăng `completedTasks` → run kẹt. Giờ `resolveOwnedLogId` chỉ throw (code `HISTORY_NOT_OWNED`) khi doc TỒN TẠI và thuộc shop khác; doc thiếu hoặc legacy không có `shopId` → trả null, `optimizeFileImage` tạo history mới. `handleManualOptimizeImage` bắt lỗi từng item nên completion luôn được đếm. Test: logId missing/legacy chạy xong, logId lạ bị chặn nhưng progress vẫn done — 4 fail trước fix, 10 pass sau.
+- **Task 11 → eece3ba4** (added 2026-09-23 from billing review).
+  - Plan: Goal = check + reserve quota trong 1 transaction. Files = `repositories/shopRepository.js` (`reserveQuota`, `releaseQuota`), `controllers/seoController.js` (`startOptimizeImages`), `handlers/pubsub/handleManualOptimizeImage.js`, `repositories/historyRepository.js`, 1 test. Test = `__tests__/quota/manualOptimizeQuotaRace.test.js` (Firestore in-memory, transaction tuần tự, read có yield). Risk = release làm usage âm nếu cycle reset xen giữa → clamp tại 0. Rollback = revert commit.
+  - Exploit tái hiện: 10 request song song, Free 100 → **1000 ảnh publish trước fix, 100 sau**. Publish lỗi → reservation của log chưa publish được trả lại (test: usage về 0). Item bị từ chối vì logId lạ → trả reservation (`quotaReserved` đi trong payload Pub/Sub).
+  - Chưa sửa (không nhỏ): `speedAuditController.js:79` (đếm rồi create — cần query count trong transaction hoặc lock per-shop) và `speedAuditMultiController.js:262` (claim slot run-active trước khi mint runId). Mỗi burst song song = N lần PSI/vCPU. Follow-up.
+  - `startOptimize` bulk (`seoController.js:161-164`) cũng đọc quota ngoài transaction — chưa rà, follow-up.
+- Suite sau round 3: 24 fail / 11 suite, đúng tập baseline (so từng test theo tên), 2231 pass.
+
+### Ghi nhận cho ticket credit fleet / câu hỏi (chưa sửa)
+- Rò chỉ khi infra lỗi: `consumeBonus.js:95` nuốt lỗi → run miễn phí; `fileImageService.js:777`, `persistImageResult.js:49`, `buildImageDiff.js:220` làm xong việc mà không increment quota.
+- Câu hỏi: `oldPlanId` trong avada-core `shopifyCharge` lấy từ đâu — replay callback có reset quota không (`subscriptionService.js:171`)? Giá charge có đi qua `getDiscountRule` với `isTestDiscount` (giờ đã chặn ghi từ merchant, nhưng giá trị cũ còn trên doc) không (`subscriptionService.js:292`)? Cần lock 1-job-per-shop cho `cloudRunWorker.js:403` / `processFileImagesV3.js:237`.
+- Deploy notes bổ sung: đếm shop có `isLimitImage == false`, `planDiscountCode` = mã founder mà không có charge tương ứng, `isTestDiscount == true`, `bypassSpeedAuditUrl == true`, `speedAuditQuotaLimit` bất thường, và shop có `historyId` trỏ tới doc `historyOptimize` của shop khác — giá trị merchant đã tự ghi trước branch này vẫn còn hiệu lực tới khi cleanup.
+
+#### Task 11 round 2 — hardening reservation (87b03289)
+- Plan: Goal = release trả đúng bucket, idempotent, không giữ quota khi lỗi sau reserve, pendingTasks khớp số đã publish. Files = `repositories/shopRepository.js`, `controllers/seoController.js`, `handlers/pubsub/handleManualOptimizeImage.js`, 2 test. Test = `manualOptimizeQuotaRace.test.js` + `handleManualOptimizeImageHistoryGuard.test.js`. Risk = collection mới `quotaReleases` (1 doc/log bị release; server-only, rules default-deny) — cân nhắc TTL. Rollback = revert commit.
+- (1) `reserveQuota` trả `{fromMonthly, fromAdditional}` + `cycle` (quotaCycleStartedAt ms). Controller chia phần reservation theo từng log (monthly trước), gửi `quotaReservation {id, action, monthly, additional, cycle}` trong payload. `releaseQuota(shopId, portions[])` trả monthly về usage CHỈ khi cycle không đổi, additional về ví additional.
+- (2) Idempotent: marker `quotaReleases/{shopId}_{historyId:action:index}` đọc + ghi trong cùng transaction → release lần 2 (redelivery) là no-op.
+- (3) Mọi việc sau reserve (`markQuotaHit`, `updateHistoryOptimize`, publish) nằm trong try; lỗi → release phần của mọi log chưa publish.
+- (4) Publish lỗi một phần → `pendingTasks = số log đã publish`, rồi chạy lại completion check (log đã publish có thể đã xong trước khi hạ pendingTasks). `handleDoneOptimize` require lazy vì chain import của nó gọi `firebase.storage()` lúc load (import top-level làm vỡ 2 suite có sẵn).
+- Test: reset cycle giữa reserve/release (usage giữ 5, additional về 50), release trùng (usage giữ 60, không phải 20), throw sau reserve (usage về 0, không publish), publish lỗi một phần (pendingTasks=1, usage=50), partial + đã xong → done. 6 fail trước fix, 12 pass sau. Full: 24 fail / 11 suite = baseline (so theo tên), 2236 pass.
+- Ghi nhận (chưa sửa):
+  - Item lỗi SAU khi đã làm việc (Shopify/sharp lỗi giữa chừng) không refund — có từ trước, chủ ý: không biết phần nào đã tốn.
+  - Bulk `startOptimize` (`seoController.js:161`) chưa có lock 1-job-per-shop và đọc quota ngoài transaction.
+  - Race speed audit (`speedAuditController.js:79`, `speedAuditMultiController.js:262`) vẫn mở.
+  - Edge: publish trả lỗi nhưng message thực ra đã được giao → quota đã release mà việc vẫn chạy (miễn phí 1 lần). Pub/Sub client không phân biệt được; chấp nhận.
+- **Câu hỏi cho Tuan:** avada-core `validateDiscount` có bind mã founder cố định (`founderOffer.js:23`) vào shop cụ thể không, hay shop Basic nào cũng áp được qua `GET /subscription/discount/:code` rồi hưởng unlimited image+alt (`isFounderUnlimitedActive`)?

@@ -272,3 +272,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Hermes có thể dùng Claude Code làm backend qua skill `autonomous-ai-agents/claude-code`; setup xong mà bot im thì check log gateway trước
 - [ ] (×1) `hermes-jev-skills` (kerpopule) đã cài cho Hermes, JEV API key đọc từ `second-brain/.env`
 - [ ] (×1) seo AutoPilot v1 có design spec (`bc604182eb2`), đây là hướng làm lại label "Autopilot" gói Pro đang không có gì phía sau → liên quan `seo-auto-features-dead`
+
+### memory candidates 2026-09-24
+- [ ] (×1) Bundle 3 app có gói $14.90 — `bundleCoversPlan` phải nhận gói này; thiếu thì shop SEO đã về free không sub lại được bundle
+- [ ] (×1) `multistoreSeatService` tính sai `circleYears` (billing high trong review 2026-09-24) — check lại seat tính theo năm khi sửa billing multistore
+- [ ] (×1) blogs page subscription 404 `ReferenceError: PRO is not defined` = hằng plan chưa import/khai báo, không phải route thiếu
+- [ ] (×1) Deploy worker prod chết → check `df -h` box1 qua Tailscale trước; playbook `deploy-followers` đã dọn tarball/image từ seo `b6e6e03b3ab` (update `seo-follower-deploy-disk-leak`: fix đã có MR, còn chờ lên prod)

@@ -7,6 +7,11 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `c4nmxq` · 2026-09-24 · AEO · onCreateUser · no verified cause · — · inconclusive
+- `p5q2dt` · 2026-09-24 · BLOG · apisa · no verified cause · — · inconclusive
+- `1ovt4b8` · 2026-09-23 · SEO · apigen2 · The external Falcon Nexus feed service (https://falcon.avada.net/api/public/whats-new?appId=seoSuite&limit=50) · — · fix_disabled
+- `1n39wzn` · 2026-09-23 · BLOG · api · Duplicate of recorded fingerprint 136b48l (same app, service, endpoint and the same three requests, no fix on  · — · fix_disabled
+- `136b48l` · 2026-09-23 · BLOG · api · Falcon Nexus answered HTTP 500 to GET https://falcon.avada.net/api/public/whats-new?appId=blog&limit=50 three  · — · fix_disabled
 - `1pphxpv` · 2026-09-23 · BLOG · api · getProductsGraphQL splices the merchant's raw `search` text into a double-quoted GraphQL string literal, so th · — · fix_disabled
 - `19358w6` · 2026-09-23 · SEO · apigen2 · Not an app defect: a credential-scanner sweep probing /api/.env variants hit the public apigen2 Cloud Run URL, · — · infra
 - `15bgeed` · 2026-09-22 · BLOG · apisa · Duplicate of recorded fingerprints 1ukaxj0 / ta670i / 1cbcx5r (same app, service, endpoint, shop and article,  · — · fix_disabled
