@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1c8g9s5` · 2026-09-25 · BLOG · api · no verified cause · — · inconclusive
+- `q51h03` · 2026-09-24 · BLOG · apiv2 · Duplicate of recorded fingerprint 52brc3 (same app, service, shop, LangGraph run g26pz75apihl and 6-second win · — · fix_disabled
+- `52brc3` · 2026-09-24 · BLOG · apiv2 · OpenRouter answered every /api/v1/images call from apiv2 instance 0010dd86072a4026 with a bare-body HTTP 401 d · — · fix_disabled
 - `c4nmxq` · 2026-09-24 · AEO · onCreateUser · no verified cause · — · inconclusive
 - `p5q2dt` · 2026-09-24 · BLOG · apisa · no verified cause · — · inconclusive
 - `1ovt4b8` · 2026-09-23 · SEO · apigen2 · The external Falcon Nexus feed service (https://falcon.avada.net/api/public/whats-new?appId=seoSuite&limit=50) · — · fix_disabled

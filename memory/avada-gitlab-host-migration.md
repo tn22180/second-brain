@@ -43,3 +43,5 @@ cả API write (`POST repository/branches` → pre-receive hook 403), không ch�
 tự chạy dòng đó. npm publish `@avada-falcon/worker-sdk` vẫn manual, tách khỏi MR.
 
 Liên quan: [[gen2-deploy-silent-freeze]]
+
+**glab mr create chết với git.avada.net** (2026-09-25): `-R git.avada.net/avada/seo` và `GITLAB_HOST=git.avada.net` đều báo "Configured remotes: github.com." rồi không tạo gì. Dùng API: `glab api --hostname git.avada.net -X POST "projects/avada%2Fseo/merge_requests" -f source_branch=… -f target_branch=master -f title=… -f description=…` → tạo được (MR !2315).

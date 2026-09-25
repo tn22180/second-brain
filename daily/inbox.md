@@ -278,3 +278,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) `multistoreSeatService` tính sai `circleYears` (billing high trong review 2026-09-24) — check lại seat tính theo năm khi sửa billing multistore
 - [ ] (×1) blogs page subscription 404 `ReferenceError: PRO is not defined` = hằng plan chưa import/khai báo, không phải route thiếu
 - [ ] (×1) Deploy worker prod chết → check `df -h` box1 qua Tailscale trước; playbook `deploy-followers` đã dọn tarball/image từ seo `b6e6e03b3ab` (update `seo-follower-deploy-disk-leak`: fix đã có MR, còn chờ lên prod)
+
+### memory candidates 2026-09-25
+- [ ] (×1) seo đã gắn GDPR compliance webhook callbacks (`5a9ce1688eb`). Update `gdpr-webhooks-core-no-callback`: seo đã vá, còn 4 app chưa, chưa lên prod tới khi cắt tag
+- [ ] (×1) seo `storage.rules` trước 2026-09-25 không được deploy, client đọc/ghi Storage tự do. Fix `0f689850c10` giờ deny client. Check các app khác có cùng lỗ không
+- [ ] (×1) Staff gate ở seo = `canAccessDevZone` (dev-zone/CRM session), KHÔNG dùng `shop.email`. Merchant tự đổi được email nên gate theo email là bypass được (`f5b05e94cd6`, `541d68a530a`)
+- [ ] (×1) Free plan image quota seo giờ chỉ cấp 1 lần, không renew hằng tháng (`2e6fed41942`). CS trả lời khách Free theo hướng này
+- [ ] (×1) Fix xoá ảnh do source rỗng đã commit `cacab12f71d`. Update `seo-empty-source-file-wipe`: fix đã có, chờ tag để lên prod
