@@ -7,6 +7,10 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `i8r3d9` · 2026-09-25 · AEO · proxy · no verified cause · — · inconclusive
+- `in5xkn` · 2026-09-25 · BLOG · api · One Shopify Admin GraphQL POST for a files(first:250) page in fetchAllImagesFromShopify hung past shopify-api- · — · fix_disabled
+- `ixv4cv` · 2026-09-25 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 6 instead of  · — · fix_disabled
+- `10o9p7p` · 2026-09-25 · IMG-OPT · api · Not an app defect: nine requests to the gen1 `api` function in a 2.75-second burst carried a malformed JSON bo · — · fix_disabled
 - `1c8g9s5` · 2026-09-25 · BLOG · api · no verified cause · — · inconclusive
 - `q51h03` · 2026-09-24 · BLOG · apiv2 · Duplicate of recorded fingerprint 52brc3 (same app, service, shop, LangGraph run g26pz75apihl and 6-second win · — · fix_disabled
 - `52brc3` · 2026-09-24 · BLOG · apiv2 · OpenRouter answered every /api/v1/images call from apiv2 instance 0010dd86072a4026 with a bare-body HTTP 401 d · — · fix_disabled
