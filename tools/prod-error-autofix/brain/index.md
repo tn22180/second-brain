@@ -7,6 +7,11 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1tyfxwg` · 2026-09-27 · BLOG · proxy · Duplicate of recorded fingerprint zfa04j (same app, service, shop, window and the same two requests — fingerpr · — · fix_disabled
+- `1xb20gb` · 2026-09-27 · BLOG · proxy · no verified cause · — · inconclusive
+- `zfa04j` · 2026-09-27 · BLOG · proxy · GET /proxy/seoOn-preview was called twice with an `id` that is neither a bare numeric id nor an Article gid, s · — · fix_disabled
+- `1rv4tdz` · 2026-09-27 · BLOG · apiv2 · Not a request failure: OpenRouter's meta/muse-image provider rejected this shop's image prompts with HTTP 400  · — · fix_disabled
+- `4kle0f` · 2026-09-26 · SEO · mcpgen2 · audit_resource runs its whole 10-resource batch inline on the MCP HTTP request with no deadline on an in-fligh · — · fix_disabled
 - `i8r3d9` · 2026-09-25 · AEO · proxy · no verified cause · — · inconclusive
 - `in5xkn` · 2026-09-25 · BLOG · api · One Shopify Admin GraphQL POST for a files(first:250) page in fetchAllImagesFromShopify hung past shopify-api- · — · fix_disabled
 - `ixv4cv` · 2026-09-25 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number 6 instead of  · — · fix_disabled
