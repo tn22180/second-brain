@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `2v8nol` · 2026-09-28 · SEO · apigen2 · no verified cause · — · inconclusive
+- `1syz298` · 2026-09-28 · BLOG · api · The single staged-upload POST in handleUploadFile to Shopify's staged target (Google Cloud Storage) answered n · — · fix_disabled
+- `1e7h4we` · 2026-09-28 · BLOG · api · The single staged-upload POST from handleUploadFile to Shopify's staged target (Google Cloud Storage) came bac · — · fix_disabled
 - `1tyfxwg` · 2026-09-27 · BLOG · proxy · Duplicate of recorded fingerprint zfa04j (same app, service, shop, window and the same two requests — fingerpr · — · fix_disabled
 - `1xb20gb` · 2026-09-27 · BLOG · proxy · no verified cause · — · inconclusive
 - `zfa04j` · 2026-09-27 · BLOG · proxy · GET /proxy/seoOn-preview was called twice with an `id` that is neither a bare numeric id nor an Article gid, s · — · fix_disabled
