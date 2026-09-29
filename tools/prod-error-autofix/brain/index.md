@@ -7,6 +7,8 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `7nba8f` · 2026-09-29 · BLOG · apisa · Duplicate of recorded fingerprint 4mbx6l, now on the standalone service and a third store: the blog→APC leg of · — · fix_disabled
+- `4mbx6l` · 2026-09-29 · BLOG · api · The blog→APC leg of the all-in-one bundle contract is broken in one direction: AI Product Copy answers HTTP 40 · — · fix_disabled
 - `2v8nol` · 2026-09-28 · SEO · apigen2 · no verified cause · — · inconclusive
 - `1syz298` · 2026-09-28 · BLOG · api · The single staged-upload POST in handleUploadFile to Shopify's staged target (Google Cloud Storage) answered n · — · fix_disabled
 - `1e7h4we` · 2026-09-28 · BLOG · api · The single staged-upload POST from handleUploadFile to Shopify's staged target (Google Cloud Storage) came bac · — · fix_disabled
@@ -580,7 +582,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `93pjx6` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs hourly with no minInstances, so every one of its 24 in · — · infra
 - `wzu2y1` · 2026-08-12 · SEO · updateshopswithaiusagesubscriptionexpiredtodaygen2 · updateShopsWithAIUsageSubscriptionExpiredTodayGen2 runs on a 1×/hour cron with no minInstances, so every invoc · — · infra
 - `1h0gjn4` · 2026-08-30 · SEO · apigen2 · Shopify REST answered HTTP 429 to getAllMetafields' `shopify.metafield.list` for shop sl3ZiH1q5RIjyZcXsLaa; pr · — · fix_disabled
-- `1mv41mw` · 2026-09-10 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
+- `1mv41mw` · 2026-09-29 · BLOG · subscriberenewsubscribertokenshandler · no verified cause · — · inconclusive
 - `1u41gal` · 2026-08-04 · SEO · apigen2 · The POST /api/historyAudit 500 is collateral from an OOM kill: apigen2 instance 001548f72906707e3195 exceeded  · — · infra
 - `1mxf1fg` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) exceeded its declared 2GiB limit — 'Memory limit of 2048 · — · infra
 - `19yp12q` · 2026-08-04 · SEO · apigen2 · One apigen2 container (instance 001548f72906707e3195) was OOM-killed at 2026-08-04T10:33:21.448Z (2060 MiB use · — · infra

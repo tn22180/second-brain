@@ -68,3 +68,9 @@
 - [seo follower deploy rò đĩa](seo-follower-deploy-disk-leak.md) — deploy-followers.yml không xoá tarball/prune image → box1 đầy 09-22, deploy_worker fail câm 4 tag; check `df -h` box trước.
 - [seo source rỗng xoá ảnh merchant](seo-empty-source-file-wipe.md) — optimizeImg tải 404 vẫn fileUpdate với object GCS 0 byte → file mất image, preview FAILED ("too large 20mb" sai); 20 shop dính 09-16→24; fix ở worktree seo-wt-empty-upload.
 - [GDPR webhook có mà rỗng](gdpr-webhooks-core-no-callback.md) — @avada/core tự mount /auth/webhook/* nhưng 5 app không gắn callback → shop/redact ack 200, không xoá gì; audit grep src báo "thiếu" là sai.
+- [GCF Gen1 push sub không restore tay](gcf-gen1-push-sub-no-manual-restore.md) — tách sang pull là tắt tới lần deploy; Firestore flag thua race chain tự publish. AEO rescan 09-25, fix MR !140.
+- [seo checklist read cho TS AI có sẵn](seo-checklist-read-for-ts-ai.md) — `/api/seo-score` + internal key từ v1.86.2; `/api/seo-issues` GET-ghi lọt audit, doc sửa !2327.
+- [Render trong JSON-LD = JSON hỏng](theme-extension-render-in-jsonld.md) — Shopify bọc mọi app-snippet render bằng comment HTML; FAL-920 làm vỡ Product JSON-LD mọi shop seo, fix !2329 dùng capture.
+- [gcloud config `sa` né reauth](gcloud-sa-config-no-reauth.md) — Workspace avadagroup.com ép reauth; config `sa`=tony-cli ACTIVE từ 09-29, đọc bq/logging/Firestore 5 prod; ghi/deploy → `--configuration=default`.
+- [seo onpage score: browser vs ES](seo-onpage-score-client-vs-es.md) — table tính điểm live trên browser; Report + modal score range đọc ES, chỉ có sau store scan → check `jobDataMigrate` trước.
+- [Shopify `| json` escape `/`](shopify-json-filter-escapes-slash.md) — `</script>` ra `<\/script>` nên `| json` an toàn trong JSON-LD; liquidjs không escape nên test local báo thiếu; `escape_once` thì không an toàn.

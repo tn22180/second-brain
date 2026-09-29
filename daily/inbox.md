@@ -285,3 +285,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Staff gate ở seo = `canAccessDevZone` (dev-zone/CRM session), KHÔNG dùng `shop.email`. Merchant tự đổi được email nên gate theo email là bypass được (`f5b05e94cd6`, `541d68a530a`)
 - [ ] (×1) Free plan image quota seo giờ chỉ cấp 1 lần, không renew hằng tháng (`2e6fed41942`). CS trả lời khách Free theo hướng này
 - [ ] (×1) Fix xoá ảnh do source rỗng đã commit `cacab12f71d`. Update `seo-empty-source-file-wipe`: fix đã có, chờ tag để lên prod
+
+### memory candidates 2026-09-29
+- [ ] (×1) Dev-zone support key (TS AI) ở blogs giờ mở mọi dev zone type (`29b2da68a`) — cần check seo/APC có cùng phạm vi không, và key này giờ quyền rộng hơn → audit write
+- [ ] (×1) seo có toggle GTIN barcode thật trong structured data (`f4684b85619`, deploy qua `[deploy-extensions]`) — shop báo GTIN sai thì check toggle trước
+- [ ] (×1) Test nhánh fix trên staging = đổi branch trigger trong `.gitlab-ci.yml` (vd `fix/mcp`) rồi push; nhớ revert trước khi merge
+- [ ] (×1) Theme extension icon/img phải ghim kích thước tường minh — CSS `img` của theme đè (blogs tag-page `a8227b984`)
