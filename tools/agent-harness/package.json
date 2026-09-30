@@ -1,0 +1,16 @@
+{
+  "name": "agent-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Contract + independent verifier + diff-bound gate + ledger for agent runs.",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "harness": "bun run bin/harness.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}
