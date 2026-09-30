@@ -1,3 +1,4 @@
+import {redact} from './redact';
 import {randomUUID} from 'node:crypto';
 import {spawnClaude, type ClaudeRunner} from '../../prod-error-autofix/src/agent/claudeCli';
 import {spawnRunner, type Runner} from '../../prod-error-autofix/src/gcloud/run';
@@ -54,7 +55,8 @@ export async function verify(contract: Contract, deps: VerifyDeps = {}): Promise
     pass: checks.length > 0 && checks.every(c => c.ok),
     diffSha,
     changed,
-    checks,
+    // One choke point: every detail is a command's output or an error message.
+    checks: checks.map(c => (c.detail ? {...c, detail: redact(c.detail)} : c)),
     costUsd
   });
 

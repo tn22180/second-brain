@@ -16,6 +16,21 @@ export interface Stats {
   passed: number;
   approved: number;
   rejected: number;
+  /** Distinct contracts with a claimed-done run. A run-level rate counts one stubborn task N times. */
+  tasks: number;
+  tasksFalseDone: number;
+  taskFalseDoneRate: number | null;
+}
+
+export interface RunRow {
+  run_id: string;
+  contract_id: string;
+  pass: number;
+  claimed_done: number;
+  agent: string | null;
+  model: string | null;
+  round: number | null;
+  decision: string | null;
 }
 
 export const defaultLedgerPath = () =>
@@ -38,15 +53,20 @@ export class Ledger {
       decision TEXT,
       decided_ms INTEGER
     )`);
+    const cols = new Set((db.query(`PRAGMA table_info(runs)`).all() as {name: string}[]).map(r => r.name));
+    for (const [name, type] of [['agent', 'TEXT'], ['model', 'TEXT'], ['round', 'INTEGER']]) {
+      if (!cols.has(name!)) db.run(`ALTER TABLE runs ADD COLUMN ${name} ${type}`);
+    }
   }
 
   recordVerdict(v: Verdict, c: Contract, claimedDone: boolean): void {
     // PRIMARY KEY makes a replayed verdict throw instead of silently rewriting history.
     this.db.run(
-      `INSERT INTO runs (run_id, contract_id, source, goal, at_ms, claimed_done, pass, diff_sha, changed_json, checks_json, cost_usd)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO runs (run_id, contract_id, source, goal, at_ms, claimed_done, pass, diff_sha, changed_json, checks_json, cost_usd, agent, model, round)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [v.runId, c.id, c.source, c.goal, v.at, claimedDone ? 1 : 0, v.pass ? 1 : 0, v.diffSha,
-        JSON.stringify(v.changed), JSON.stringify(v.checks), v.costUsd]
+        JSON.stringify(v.changed), JSON.stringify(v.checks), v.costUsd,
+        c.meta?.agent ?? null, c.meta?.model ?? null, c.meta?.round ?? null]
     );
   }
 
@@ -54,6 +74,12 @@ export class Ledger {
   passed(runId: string, diffSha: string): boolean {
     const row = this.db.query(`SELECT 1 FROM runs WHERE run_id = ? AND diff_sha = ? AND pass = 1`).get(runId, diffSha);
     return row != null;
+  }
+
+  run(runId: string): RunRow | null {
+    return (this.db
+      .query(`SELECT run_id, contract_id, pass, claimed_done, agent, model, round, decision FROM runs WHERE run_id = ?`)
+      .get(runId) as RunRow | null) ?? null;
   }
 
   recordDecision(runId: string, d: Decision, at = Date.now()): boolean {
@@ -73,6 +99,13 @@ export class Ledger {
          FROM runs WHERE at_ms >= ?`
       )
       .get(sinceMs) as {runs: number; claimed: number; falseDone: number; passed: number; approved: number; rejected: number};
+    const t = this.db
+      .query(
+        `SELECT COUNT(*) tasks, COALESCE(SUM(bad), 0) bad FROM (
+           SELECT contract_id, MAX(pass = 0) bad FROM runs
+           WHERE at_ms >= ? AND claimed_done = 1 GROUP BY contract_id)`
+      )
+      .get(sinceMs) as {tasks: number; bad: number};
     return {
       runs: row.runs,
       claimedDone: row.claimed,
@@ -80,7 +113,10 @@ export class Ledger {
       falseDoneRate: row.claimed ? row.falseDone / row.claimed : null,
       passed: row.passed,
       approved: row.approved,
-      rejected: row.rejected
+      rejected: row.rejected,
+      tasks: t.tasks,
+      tasksFalseDone: t.bad,
+      taskFalseDoneRate: t.tasks ? t.bad / t.tasks : null
     };
   }
 

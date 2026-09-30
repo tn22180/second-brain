@@ -47,6 +47,15 @@ describe('verify', () => {
     expect(v.checks.map(c => [c.name, c.ok])).toEqual([['base', true], ['scope', true], ['no', false], ['yes', true], ['stable', true]]);
   });
 
+  test('secrets in a failing command output never reach the verdict', async () => {
+    const tok = ['glpat', '-', 'AbCdEf0123456789xYz_'].join('');
+    const v = await verify(contractFor(changedRepo(), {verify: [{name: 'leak', cmd: ['sh', '-c', `echo "auth ${tok}" >&2; exit 1`]}]}));
+    const leak = v.checks.find(c => c.name === 'leak')!;
+    expect(leak.ok).toBe(false);
+    expect(leak.detail).toContain('[REDACTED]');
+    expect(JSON.stringify(v)).not.toContain(tok);
+  });
+
   test('timed-out command fails the check', async () => {
     const v = await verify(contractFor(changedRepo(), {verify: [{name: 'hang', cmd: ['sleep', '5'], timeoutMs: 200}]}));
     expect(v.checks[2]).toMatchObject({name: 'hang', ok: false});

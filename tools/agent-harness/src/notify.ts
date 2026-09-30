@@ -7,10 +7,21 @@ import type {Verdict} from './verify';
 const DEFAULT_ENV_FILE = join(homedir(), '.hermes', '.env');
 const DEFAULT_CHAT_ID = '1178722633';
 
-export function formatVerdict(v: Verdict, goal: string): string {
-  const head = `${v.pass ? '✅' : '❌'} ${v.contractId} — ${goal}`;
-  const lines = v.checks.map(c => `${c.ok ? '✓' : '✗'} ${c.name}${c.detail ? `: ${c.detail}` : ''}`);
-  return [head, ...lines, `files: ${v.changed.length} · run ${v.runId}`].join('\n');
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/**
+ * Telegram HTML. First line is the bold run title — the contract id minus its `-t1`/`-g2` task
+ * suffix — so every task of one tony-wf run groups under the same header in the DM.
+ */
+export function formatVerdict(v: Verdict, _goal: string): string {
+  const m = v.contractId.match(/^(.+)-([a-z]*\d+)$/);
+  const [title, task] = m ? [m[1], `${m[2]} `] : [v.contractId, ''];
+  const ok = v.checks.filter(c => c.ok).length;
+  const body = v.pass
+    ? `✅ ${task}pass · ${ok}/${v.checks.length} check · ${v.changed.length} file`
+    : `❌ ${task}FAIL — ${v.checks.filter(c => !c.ok).map(c => (c.detail ? `${c.name}: ${cut(c.detail, 80)}` : c.name)).join('; ')}`;
+  return `<b>${escapeHtml(title)}</b>\n${escapeHtml(cut(body, 300))}`;
 }
 
 function readVar(envFile: string, name: string): string | undefined {
@@ -32,7 +43,7 @@ export async function notifyTelegram(
     const res = await (opts.fetchImpl ?? fetch)(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: {'content-type': 'application/json'},
-      body: JSON.stringify({chat_id: opts.chatId ?? DEFAULT_CHAT_ID, text}),
+      body: JSON.stringify({chat_id: opts.chatId ?? DEFAULT_CHAT_ID, text, parse_mode: 'HTML'}),
       signal: AbortSignal.timeout(15_000)
     });
     return res.ok;

@@ -69,25 +69,41 @@ describe('harness CLI', () => {
 });
 
 describe('notify', () => {
-  test('format marks a failed verdict loudly', () => {
+  test('format: bold run title, one short line, failures only', () => {
     const text = formatVerdict({
-      contractId: 'FAL-1-g1', runId: 'r', at: 0, pass: false, diffSha: 'x', changed: ['a'],
-      checks: [{name: 'scope', ok: true}, {name: 'jest', ok: false, detail: '2 failed'}], costUsd: 0
+      contractId: 'seo-quota-t1', runId: 'r', at: 0, pass: false, diffSha: 'x', changed: ['a'],
+      checks: [{name: 'scope', ok: true}, {name: 'jest', ok: false, detail: '2 failed <x>'}], costUsd: 0
     }, 'goal');
-    expect(text).toContain('❌ FAL-1-g1');
-    expect(text).toContain('jest: 2 failed');
+    expect(text).toBe('<b>seo-quota</b>\n❌ t1 FAIL — jest: 2 failed &lt;x&gt;');
+  });
+  test('format: pass is one line with counts', () => {
+    const text = formatVerdict({
+      contractId: 'seo-quota-t2', runId: 'r', at: 0, pass: true, diffSha: 'x', changed: ['a', 'b'],
+      checks: [{name: 'scope', ok: true}, {name: 'stable', ok: true}], costUsd: 0
+    }, 'goal');
+    expect(text).toBe('<b>seo-quota</b>\n✅ t2 pass · 2/2 check · 2 file');
+  });
+  test('format: long detail is cut', () => {
+    const text = formatVerdict({
+      contractId: 'solo', runId: 'r', at: 0, pass: false, diffSha: 'x', changed: [],
+      checks: [{name: 'jest', ok: false, detail: 'y'.repeat(500)}], costUsd: 0
+    }, 'g');
+    expect(text.startsWith('<b>solo</b>\n❌ FAIL — jest: ')).toBe(true);
+    expect(text.length).toBeLessThan(160);
   });
   test('reads token from env file, false on HTTP error', async () => {
     const t = tmp();
     const envFile = join(t, '.env');
     writeFileSync(envFile, 'OTHER=1\nTELEGRAM_BOT_TOKEN="abc:def"\n');
     let url = '';
+    let body = '';
     const ok = await notifyTelegram('hi', {
       envFile, chatId: '1',
-      fetchImpl: (async (u: string) => { url = u; return new Response('{}', {status: 200}); }) as unknown as typeof fetch
+      fetchImpl: (async (u: string, init: RequestInit) => { url = u; body = String(init.body); return new Response('{}', {status: 200}); }) as unknown as typeof fetch
     });
     expect(ok).toBe(true);
     expect(url).toBe('https://api.telegram.org/botabc:def/sendMessage');
+    expect(JSON.parse(body).parse_mode).toBe('HTML');
     const bad = await notifyTelegram('hi', {envFile, chatId: '1', fetchImpl: (async () => new Response('', {status: 403})) as unknown as typeof fetch});
     expect(bad).toBe(false);
   });

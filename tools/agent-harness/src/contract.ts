@@ -21,6 +21,8 @@ export interface Contract {
   /** When set, the new tests must FAIL with the source changes reverted (jest only). */
   reproduce?: {testCmd: string[]};
   security?: {appName: string; model?: string};
+  /** Who is doing the task, for self-improve to compare. Optional; not checked by the verifier. */
+  meta?: {agent?: string; model?: string; round?: number};
 }
 
 type Parsed = {ok: true; contract: Contract} | {ok: false; error: string};
@@ -67,6 +69,14 @@ export function parseContract(raw: unknown): Parsed {
   }
   if (c.security !== undefined && (typeof c.security?.appName !== 'string' || !c.security.appName)) {
     return {ok: false, error: 'security.appName: required'};
+  }
+  if (c.meta !== undefined) {
+    const m = c.meta as Record<string, unknown> | null;
+    if (!m || typeof m !== 'object') return {ok: false, error: 'meta: object required'};
+    for (const k of ['agent', 'model'] as const) {
+      if (m[k] !== undefined && typeof m[k] !== 'string') return {ok: false, error: `meta.${k}: string required`};
+    }
+    if (m.round !== undefined && !Number.isInteger(m.round)) return {ok: false, error: 'meta.round: integer required'};
   }
   return {ok: true, contract: c as Contract};
 }
