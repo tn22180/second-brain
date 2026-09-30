@@ -58,6 +58,30 @@ describe('runGraph', () => {
     expect(ledger.graphNodes('g1').c).toMatchObject({state: 'done', rounds: 1});
     expect(dms.at(-1)).toContain('<b>g1</b>');
     expect(dms.at(-1)).toContain('ready to push');
+    // The push gate asks the ledger about the branch tip's tree; the merge commit's tree must
+    // itself have been verified, with every node's checks run on the combined code.
+    const tipTree = sh(integ, 'git', 'rev-parse', 'HEAD^{tree}').trim();
+    expect(res.integrationRunId).toBeTruthy();
+    expect(ledger.passed(res.integrationRunId!, tipTree)).toBe(true);
+  });
+
+  test('combined code failing a node check (each node passed alone) is not ready to push', async () => {
+    const {g, ledger, dms} = setup([
+      n('a', [], 'src/a.js', ['sh', '-c', '! grep -q conflict src/b.js']),
+      n('b', [], 'src/b.js', ['true'])
+    ]);
+    const res = await runGraph(g, {
+      ledger, notify: async t => { dms.push(t); },
+      start: (argv, cwd) => {
+        const id = cwd.split('-').at(-1)!;
+        write(cwd, `src/${id}.js`, id === 'b' ? 'conflict\n' : 'fine\n');
+        return done();
+      },
+      supervise: async () => ({action: 'keep_waiting'}), sleep: async () => {}
+    });
+    expect(res.outcomes).toEqual({a: 'done', b: 'done'});
+    expect(res.integrationRunId).toBeUndefined();
+    expect(dms.at(-1)).toContain('integration verify FAILED');
   });
 
   test('a node that never satisfies its contract blocks itself and its dependents, not its sibling', async () => {

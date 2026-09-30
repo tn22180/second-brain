@@ -9,7 +9,8 @@ import {runNode, type NodeDeps} from './node';
 import {redact} from './redact';
 import {schedule, type NodeState} from './scheduler';
 import {verify} from './verify';
-import {commitVerified, ensureIntegration, mergeNode, nodeWorktree} from './worktree';
+import type {Contract} from './contract';
+import {combinedWorktree, commitVerified, ensureIntegration, mergeNode, nodeWorktree, removeWorktree} from './worktree';
 
 export interface RunGraphOpts {
   ledger: Ledger;
@@ -36,7 +37,34 @@ function mutex() {
  * Run every node of the graph to a verified, merged commit on `graph.branch`, or block it.
  * Ends at a local integration branch: pushing stays in a Claude session, where git_guard is.
  */
-export async function runGraph(graph: Graph, opts: RunGraphOpts): Promise<{outcomes: Record<string, NodeState>; integration: string}> {
+/** Every node's checks, run once more on the merged code: two nodes can each pass alone and still break each other. */
+async function verifyCombined(graph: Graph, ledger: Ledger): Promise<{runId?: string; failed?: string}> {
+  const wt = await combinedWorktree(graph);
+  try {
+    const security = graph.nodes.find(n => n.contract.security)?.contract.security;
+    const c: Contract = {
+      id: `${graph.id}-integration`,
+      source: graph.source,
+      goal: `integration of ${graph.order.join(', ')}`,
+      repoPath: wt.path,
+      baseSha: wt.baseSha,
+      allow: [...new Set(graph.nodes.flatMap(n => n.contract.allow))],
+      verify: graph.order.flatMap(id => graph.nodes.find(n => n.id === id)!.contract.verify.map(v => ({...v, name: `${id}: ${v.name}`}))),
+      ...(security ? {security} : {}),
+      meta: {agent: 'graph-integration'}
+    };
+    const v = await verify(c);
+    ledger.recordVerdict(v, c, false);
+    return v.pass ? {runId: v.runId} : {failed: v.checks.filter(x => !x.ok).map(x => `${x.name}: ${x.detail ?? 'failed'}`).join('; ')};
+  } finally {
+    await removeWorktree(graph, wt.path).catch(() => {});
+  }
+}
+
+export async function runGraph(
+  graph: Graph,
+  opts: RunGraphOpts
+): Promise<{outcomes: Record<string, NodeState>; integration: string; integrationRunId?: string}> {
   const {ledger} = opts;
   const title = `<b>${esc(graph.id)}</b>`;
   const dm = (line: string) => opts.notify(`${title}\n${esc(redact(line))}`).catch(() => {});
@@ -75,6 +103,15 @@ export async function runGraph(graph: Graph, opts: RunGraphOpts): Promise<{outco
   const icon: Record<NodeState, string> = {done: '✅', blocked: '⛔', skipped: '⏭'};
   const allDone = Object.values(outcomes).every(s => s === 'done');
   const lines = graph.order.map(id => `${icon[outcomes[id]!]} ${id}`).join(' · ');
-  await dm(`${allDone ? `ready to push ${graph.branch}` : 'BLOCKED'} — ${lines}`);
-  return {outcomes, integration};
+  if (!allDone) {
+    await dm(`BLOCKED — ${lines}`);
+    return {outcomes, integration};
+  }
+  const combined = await verifyCombined(graph, ledger).catch(e => ({failed: e instanceof Error ? e.message : String(e)}) as {runId?: string; failed?: string});
+  if (!combined.runId) {
+    await dm(`integration verify FAILED — ${lines}\n${(combined.failed ?? '').slice(0, 300)}`);
+    return {outcomes, integration};
+  }
+  await dm(`ready to push ${graph.branch} — ${lines}`);
+  return {outcomes, integration, integrationRunId: combined.runId};
 }

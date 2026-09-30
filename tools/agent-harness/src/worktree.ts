@@ -40,15 +40,37 @@ export async function ensureIntegration(g: GraphRef): Promise<string> {
   if (g.branch === g.base) throw new Error(`branch ${g.branch} is the base`);
   const {integration} = paths(g, '_');
   if (existsSync(integration)) return integration;
-  let baseRef = g.baseRef;
-  if (!baseRef) {
-    if (await ok(g.repoPath, ['remote', 'get-url', 'origin'])) await git(g.repoPath, ['fetch', '-q', 'origin', g.base]);
-    baseRef = (await ok(g.repoPath, ['rev-parse', '--verify', '-q', `origin/${g.base}`])) ? `origin/${g.base}` : g.base;
-  }
+  const baseRef = await resolveBaseRef(g, true);
   const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${g.branch}`]);
   await git(g.repoPath, exists ? ['worktree', 'add', '-q', integration, g.branch] : ['worktree', 'add', '-q', '-b', g.branch, integration, baseRef]);
   linkDeps(g.repoPath, integration);
   return integration;
+}
+
+async function resolveBaseRef(g: GraphRef, fetch: boolean): Promise<string> {
+  if (g.baseRef) return g.baseRef;
+  if (fetch && (await ok(g.repoPath, ['remote', 'get-url', 'origin']))) await git(g.repoPath, ['fetch', '-q', 'origin', g.base]);
+  return (await ok(g.repoPath, ['rev-parse', '--verify', '-q', `origin/${g.base}`])) ? `origin/${g.base}` : g.base;
+}
+
+/**
+ * A detached scratch worktree at the integration branch's base with the branch's whole tree
+ * staged and checked out — so `harness verify` sees the combined change as one diff and records
+ * the branch tip's own tree, which is what the push gate asks the ledger about.
+ */
+export async function combinedWorktree(g: GraphRef): Promise<{path: string; baseSha: string}> {
+  const scratch = `${g.repoPath}-wt-${g.id}-_combined`;
+  if (existsSync(scratch)) await git(g.repoPath, ['worktree', 'remove', '--force', scratch]);
+  const baseSha = await git(g.repoPath, ['merge-base', g.branch, await resolveBaseRef(g, false)]);
+  await git(g.repoPath, ['worktree', 'add', '-q', '--detach', scratch, baseSha]);
+  await git(scratch, ['read-tree', '-m', '-u', g.branch]);
+  await git(scratch, ['reset', '-q']);
+  linkDeps(g.repoPath, scratch);
+  return {path: scratch, baseSha};
+}
+
+export async function removeWorktree(g: GraphRef, path: string): Promise<void> {
+  await git(g.repoPath, ['worktree', 'remove', '--force', path]);
 }
 
 /** A node's own worktree, cut from the integration tip so it builds on its deps' merged work. */
