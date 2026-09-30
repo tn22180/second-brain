@@ -252,6 +252,34 @@ describe('runSecurityLane', () => {
     expect(r.errors.length).toBeGreaterThan(0);
   });
 
+  test('an invalid_answer detail carries the reply length and a head/tail excerpt', async () => {
+    const reply = `HEAD-MARK ${'x '.repeat(400)}\n\n  TAIL-MARK`;
+    const r = await runSecurityLane(INPUT, async () => ok(reply));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).toContain(`${reply.length} chars`);
+    expect(r.detail).toContain('HEAD-MARK');
+    expect(r.detail).toContain('TAIL-MARK');
+    expect(r.detail).not.toContain('\n');
+    expect(r.detail.length).toBeLessThan(500);
+  });
+
+  test('a token in the reply excerpt is redacted out of the detail', async () => {
+    const reply = `Found ${FAKE_SHOPIFY_TOKEN} in the tree. ${'y '.repeat(300)} rotate ${FAKE_SHOPIFY_TOKEN}`;
+    const r = await runSecurityLane(INPUT, async () => ok(reply));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).not.toContain(FAKE_SHOPIFY_TOKEN);
+    expect(r.detail).toContain('<redacted>');
+  });
+
+  test('an empty reply says so', async () => {
+    const r = await runSecurityLane(INPUT, async () => ok(''));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).toContain('empty reply');
+  });
+
   // audit_findings.title is written to state.db. Redacting on the way to Telegram
   // would already have put the value on disk, so it happens at construction.
   test('a token quoted by the agent cannot survive into the returned findings', async () => {
