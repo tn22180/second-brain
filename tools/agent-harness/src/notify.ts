@@ -25,9 +25,12 @@ export function formatVerdict(v: Verdict, _goal: string): string {
 }
 
 function readVar(envFile: string, name: string): string | undefined {
-  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
-    const eq = line.indexOf('=');
-    if (eq > 0 && line.slice(0, eq).trim() === name) return line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+  for (const raw of readFileSync(envFile, 'utf8').split('\n')) {
+    const line = raw.trim();
+    if (line.startsWith('#')) continue;
+    // Files sourced by a shell are often written `export KEY=v`; the prefix must not hide the key.
+    const m = line.match(/^(?:export\s+)?([^\s=]+)\s*=(.*)$/);
+    if (m && m[1] === name) return m[2].trim().replace(/^["']|["']$/g, '');
   }
   return undefined;
 }

@@ -70,7 +70,9 @@ if (cmd === 'check') {
 }
 
 if (cmd === 'stats') {
-  const days = Number(opt('days') ?? 30);
+  const rawDays = opt('days') ?? '30';
+  if (!/^[1-9]\d*$/.test(rawDays)) usage(`--days must be a positive integer, got: ${rawDays}`);
+  const days = Number(rawDays);
   const ledger = openLedger();
   console.log(JSON.stringify(ledger.stats(Date.now() - days * 86_400_000), null, 2));
   ledger.close();
