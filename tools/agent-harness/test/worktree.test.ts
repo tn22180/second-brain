@@ -68,4 +68,14 @@ describe('worktree', () => {
     const {g} = setup();
     await expect(ensureIntegration({...g, branch: 'master'})).rejects.toThrow('base');
   });
+
+  test('baseRef overrides origin/base (local commits not yet pushed)', async () => {
+    const {repo, g} = setup();
+    write(repo, 'src/local.js', 'x\n');
+    sh(repo, 'git', 'add', '-A');
+    sh(repo, 'git', 'commit', '-qm', 'local only');
+    sh(repo, 'git', 'branch', 'side', 'HEAD~1');
+    const integ = await ensureIntegration({...g, baseRef: 'side'});
+    expect(sh(integ, 'git', 'rev-parse', 'HEAD').trim()).toBe(sh(repo, 'git', 'rev-parse', 'side').trim());
+  });
 });

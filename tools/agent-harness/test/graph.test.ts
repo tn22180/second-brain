@@ -51,4 +51,9 @@ describe('parseGraph', () => {
   });
   test('node ids are safe path segments', () => expect(err(graph([node('../x')]))).toContain('id'));
   test('maxParallel bounds', () => expect(err(graph([node('a')], {maxParallel: 0}))).toContain('maxParallel'));
+  test('baseRef must be a plain ref', () => {
+    expect(parseGraph(graph([node('a')], {baseRef: 'main'})).ok).toBe(true);
+    expect(err(graph([node('a')], {baseRef: '--upload-pack=x'}))).toContain('baseRef');
+    expect(err(graph([node('a')], {baseRef: 'a b'}))).toContain('baseRef');
+  });
 });

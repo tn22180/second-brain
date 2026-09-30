@@ -8,6 +8,7 @@ export interface GraphRef {
   id: string;
   repoPath: string;
   base: string;
+  baseRef?: string;
   branch: string;
 }
 
@@ -39,8 +40,11 @@ export async function ensureIntegration(g: GraphRef): Promise<string> {
   if (g.branch === g.base) throw new Error(`branch ${g.branch} is the base`);
   const {integration} = paths(g, '_');
   if (existsSync(integration)) return integration;
-  if (await ok(g.repoPath, ['remote', 'get-url', 'origin'])) await git(g.repoPath, ['fetch', '-q', 'origin', g.base]);
-  const baseRef = (await ok(g.repoPath, ['rev-parse', '--verify', '-q', `origin/${g.base}`])) ? `origin/${g.base}` : g.base;
+  let baseRef = g.baseRef;
+  if (!baseRef) {
+    if (await ok(g.repoPath, ['remote', 'get-url', 'origin'])) await git(g.repoPath, ['fetch', '-q', 'origin', g.base]);
+    baseRef = (await ok(g.repoPath, ['rev-parse', '--verify', '-q', `origin/${g.base}`])) ? `origin/${g.base}` : g.base;
+  }
   const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${g.branch}`]);
   await git(g.repoPath, exists ? ['worktree', 'add', '-q', integration, g.branch] : ['worktree', 'add', '-q', '-b', g.branch, integration, baseRef]);
   linkDeps(g.repoPath, integration);

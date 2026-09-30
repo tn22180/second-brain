@@ -18,6 +18,8 @@ export interface Graph {
   /** Main checkout; worktrees are cut beside it. */
   repoPath: string;
   base: string;
+  /** Ref to cut the integration branch from; default fresh `origin/<base>`. For unpushed local work. */
+  baseRef?: string;
   /** Integration branch the runner builds. Never pushed by the runner. */
   branch: string;
   maxParallel: number;
@@ -51,6 +53,10 @@ export function parseGraph(raw: unknown): Parsed {
   if (typeof g.base !== 'string' || !g.base) return {ok: false, error: 'base: required'};
   if (typeof g.branch !== 'string' || !g.branch || g.branch === g.base || BASE_BRANCHES.has(g.branch)) {
     return {ok: false, error: 'branch: a feature branch, never the base'};
+  }
+  // Passed to git as an argument: no leading dash (option injection), no whitespace.
+  if (g.baseRef !== undefined && (typeof g.baseRef !== 'string' || !/^[A-Za-z0-9._/-]+$/.test(g.baseRef) || g.baseRef.startsWith('-'))) {
+    return {ok: false, error: 'baseRef: a plain ref name'};
   }
   const maxParallel = g.maxParallel ?? 3;
   if (!Number.isInteger(maxParallel) || maxParallel < 1 || maxParallel > 8) return {ok: false, error: 'maxParallel: 1..8'};
