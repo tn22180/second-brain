@@ -89,10 +89,11 @@ const FETCH_BACKOFF_MS = [2000, 5000];
 // git.avada.net blips (DNS, HTTP2 framing, 530 from the Cloudflare edge) cost a whole
 // app's audit in one run. Auth and unknown-ref failures never match, so they fail at once.
 const TRANSIENT_FETCH =
-  /could not resolve host|temporary failure in name resolution|http2 framing|returned error: 5\d\d|connection (reset|timed out|refused)|operation timed out|early eof|unexpected disconnect|remote end hung up/i;
+  /could not resolve host|temporary failure in name resolution|http2 framing|returned error: 5\d\d|connection (reset|timed out|refused)|operation timed out|early eof|unexpected disconnect|remote end hung up|not closed cleanly|curl 92|ssl_error_syscall|gnutls_handshake|gnutls_record_recv|tls connection was non-properly terminated/i;
 
-export function isTransientFetchError(output: string): boolean {
-  return TRANSIENT_FETCH.test(output);
+export function isTransientFetchError(output: string, timedOut = false): boolean {
+  // A hung fetch killed by the runner leaves little or no output to match on.
+  return timedOut || TRANSIENT_FETCH.test(output);
 }
 
 const defaultSleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -116,7 +117,7 @@ export async function createWorktree(
     const fetched = await git(['fetch', '--quiet', 'origin', input.baseBranch]);
     if (fetched.code === 0) break;
     const output = (fetched.stderr || fetched.stdout).trim();
-    if (attempt >= maxAttempts || !isTransientFetchError(output)) {
+    if (attempt >= maxAttempts || !isTransientFetchError(output, fetched.timedOut)) {
       return {
         ok: false,
         detail: `fetch failed after ${attempt} attempt${attempt === 1 ? '' : 's'}: ${output.slice(0, 300)}`

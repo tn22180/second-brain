@@ -64,6 +64,37 @@ describe('createWorktree fetch retry', () => {
     expect(sleeps).toEqual([]);
   });
 
+  test('timed-out fetch (killed by runner) is retried', async () => {
+    const hung: RunResult = {code: 143, stdout: '', stderr: 'killed after 1000ms', timedOut: true};
+    const git = fakeGit([hung, ok()]);
+    const sleeps: number[] = [];
+    const res = await createWorktree(input, git.runner, async ms => void sleeps.push(ms));
+    expect(res.ok).toBe(true);
+    expect(git.fetchCount()).toBe(2);
+    expect(sleeps).toEqual([2000]);
+  });
+
+  test('timed-out fetch with empty output is retried, and gives up after 3 attempts', async () => {
+    const hung: RunResult = {code: 143, stdout: '', stderr: '', timedOut: true};
+    const git = fakeGit([hung]);
+    const res = await createWorktree(input, git.runner, async () => {});
+    expect(res.ok).toBe(false);
+    expect(git.fetchCount()).toBe(3);
+  });
+
+  test('HTTP/2 stream cancel and TLS resets are retried', async () => {
+    for (const msg of [
+      'error: RPC failed; curl 92 HTTP/2 stream 5 was not closed cleanly: CANCEL (err 8)',
+      'fatal: unable to access: OpenSSL SSL_read: SSL_ERROR_SYSCALL, errno 54',
+      'fatal: unable to access: gnutls_handshake() failed: The TLS connection was non-properly terminated.'
+    ]) {
+      const git = fakeGit([fail(msg), ok()]);
+      const res = await createWorktree(input, git.runner, async () => {});
+      expect(res.ok).toBe(true);
+      expect(git.fetchCount()).toBe(2);
+    }
+  });
+
   test('403 and unknown ref are not retried', async () => {
     for (const msg of [
       'fatal: unable to access: The requested URL returned error: 403',
