@@ -4,6 +4,8 @@ import {readFileSync, writeFileSync} from 'node:fs';
 import {parseContract} from '../src/contract';
 import {openLedger, type Decision} from '../src/ledger';
 import {formatVerdict, notifyTelegram} from '../src/notify';
+import {parseGraph} from '../src/graph';
+import {runGraph} from '../src/run-graph';
 import {verify} from '../src/verify';
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -74,4 +76,29 @@ if (cmd === 'stats') {
   process.exit(0);
 }
 
-usage('usage: harness verify|check|decide|stats');
+if (cmd === 'graph') {
+  const [sub, arg] = rest;
+  if (sub === 'status' && arg) {
+    const ledger = openLedger();
+    console.log(JSON.stringify(ledger.graphNodes(arg), null, 2));
+    ledger.close();
+    process.exit(0);
+  }
+  if (sub !== 'run' || !arg) usage('usage: harness graph run <graph.json> | graph status <graphId>');
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(arg!, 'utf8'));
+  } catch (e) {
+    usage(`graph unreadable: ${(e as Error).message}`);
+  }
+  const parsed = parseGraph(raw);
+  if (!parsed.ok) usage(`graph invalid: ${parsed.error}`);
+  const graph = (parsed as Extract<typeof parsed, {ok: true}>).graph;
+  const ledger = openLedger();
+  const res = await runGraph(graph, {ledger, notify: async t => void (flag('no-notify') || (await notifyTelegram(t)))});
+  ledger.close();
+  console.log(JSON.stringify({...res.outcomes, integration: res.integration}, null, 2));
+  process.exit(Object.values(res.outcomes).every(s => s === 'done') ? 0 : 1);
+}
+
+usage('usage: harness verify|check|decide|stats|graph');

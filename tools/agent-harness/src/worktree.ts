@@ -1,0 +1,86 @@
+import {existsSync, symlinkSync} from 'node:fs';
+import {join} from 'node:path';
+import {spawnRunner, type Runner} from '../../prod-error-autofix/src/gcloud/run';
+
+const GIT_TIMEOUT = 120_000;
+
+export interface GraphRef {
+  id: string;
+  repoPath: string;
+  base: string;
+  branch: string;
+}
+
+/** Sibling dirs, the `<repo>-wt-<x>` convention the rest of the workspace already uses. */
+export function paths(g: GraphRef, nodeId: string) {
+  return {
+    integration: `${g.repoPath}-wt-${g.id}`,
+    node: `${g.repoPath}-wt-${g.id}-${nodeId}`,
+    nodeBranch: `${g.branch}--${nodeId}`
+  };
+}
+
+async function git(cwd: string, args: string[], runner: Runner = spawnRunner): Promise<string> {
+  const r = await runner(['git', ...args], GIT_TIMEOUT, {cwd});
+  if (r.code !== 0 || r.timedOut) throw new Error(`git ${args[0]} failed: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+  return r.stdout.trim();
+}
+
+const ok = async (cwd: string, args: string[]) => (await spawnRunner(['git', ...args], GIT_TIMEOUT, {cwd})).code === 0;
+
+// Worktrees don't carry node_modules; the repos here hoist to the root (yarn 4), so one link does.
+function linkDeps(repoPath: string, wt: string) {
+  const src = join(repoPath, 'node_modules');
+  if (existsSync(src) && !existsSync(join(wt, 'node_modules'))) symlinkSync(src, join(wt, 'node_modules'));
+}
+
+/** The integration worktree on `g.branch`, cut from fresh `origin/<base>` (or local base with no remote). */
+export async function ensureIntegration(g: GraphRef): Promise<string> {
+  if (g.branch === g.base) throw new Error(`branch ${g.branch} is the base`);
+  const {integration} = paths(g, '_');
+  if (existsSync(integration)) return integration;
+  if (await ok(g.repoPath, ['remote', 'get-url', 'origin'])) await git(g.repoPath, ['fetch', '-q', 'origin', g.base]);
+  const baseRef = (await ok(g.repoPath, ['rev-parse', '--verify', '-q', `origin/${g.base}`])) ? `origin/${g.base}` : g.base;
+  const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${g.branch}`]);
+  await git(g.repoPath, exists ? ['worktree', 'add', '-q', integration, g.branch] : ['worktree', 'add', '-q', '-b', g.branch, integration, baseRef]);
+  linkDeps(g.repoPath, integration);
+  return integration;
+}
+
+/** A node's own worktree, cut from the integration tip so it builds on its deps' merged work. */
+export async function nodeWorktree(g: GraphRef, nodeId: string): Promise<{path: string; baseSha: string}> {
+  const p = paths(g, nodeId);
+  if (!existsSync(p.node)) {
+    const tip = await git(p.integration, ['rev-parse', 'HEAD']);
+    const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${p.nodeBranch}`]);
+    await git(g.repoPath, exists ? ['worktree', 'add', '-q', p.node, p.nodeBranch] : ['worktree', 'add', '-q', '-b', p.nodeBranch, p.node, tip]);
+    linkDeps(g.repoPath, p.node);
+  }
+  return {path: p.node, baseSha: await git(p.node, ['rev-parse', 'HEAD'])};
+}
+
+/**
+ * Commit exactly the tree the verifier passed. Re-stage the allowed paths and compare the
+ * write-tree with the verdict's sha: an agent (or a formatter) touching files after verify
+ * would otherwise land unverified code on the branch.
+ */
+export async function commitVerified(wt: string, allow: string[], diffSha: string, message: string): Promise<string> {
+  const present: string[] = [];
+  for (const a of allow) if (existsSync(join(wt, a)) || (await ok(wt, ['ls-files', '--error-unmatch', '--', a]))) present.push(a);
+  if (present.length) await git(wt, ['add', '-A', '--', ...present]);
+  const tree = await git(wt, ['write-tree']);
+  if (tree !== diffSha) {
+    await git(wt, ['reset', '-q']);
+    throw new Error(`tree drifted after verify: ${tree.slice(0, 8)} != ${diffSha.slice(0, 8)}`);
+  }
+  await git(wt, ['commit', '-q', '-m', message]);
+  return git(wt, ['rev-parse', 'HEAD']);
+}
+
+/** Merge a finished node into the integration branch and drop its worktree + local branch. */
+export async function mergeNode(g: GraphRef, nodeId: string, message: string): Promise<void> {
+  const p = paths(g, nodeId);
+  await git(p.integration, ['merge', '-q', '--no-ff', '-m', message, p.nodeBranch]);
+  await git(g.repoPath, ['worktree', 'remove', '--force', p.node]);
+  await git(g.repoPath, ['branch', '-q', '-D', p.nodeBranch]);
+}

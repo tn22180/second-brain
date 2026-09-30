@@ -78,4 +78,16 @@ describe('ledger', () => {
     l.recordVerdict(v('x', true), {...c, meta: {model: 'opus'}}, true);
     expect(l.run('x')).toMatchObject({model: 'opus'});
   });
+
+  test('graph node state is upserted and readable for resume', () => {
+    const l = db();
+    l.setNode('gq', 't1', {state: 'running', rounds: 1});
+    l.setNode('gq', 't1', {state: 'done', rounds: 2, runIds: ['r1', 'r2']});
+    l.setNode('gq', 't2', {state: 'blocked', rounds: 5, reason: 'verify failing'});
+    expect(l.graphNodes('gq')).toEqual({
+      t1: {state: 'done', rounds: 2, runIds: ['r1', 'r2'], reason: null},
+      t2: {state: 'blocked', rounds: 5, runIds: [], reason: 'verify failing'}
+    });
+    expect(l.graphNodes('other')).toEqual({});
+  });
 });

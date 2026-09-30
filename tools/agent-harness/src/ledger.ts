@@ -54,6 +54,16 @@ export class Ledger {
       decided_ms INTEGER
     )`);
     const cols = new Set((db.query(`PRAGMA table_info(runs)`).all() as {name: string}[]).map(r => r.name));
+    db.run(`CREATE TABLE IF NOT EXISTS graph_nodes (
+      graph_id TEXT NOT NULL,
+      node_id TEXT NOT NULL,
+      state TEXT NOT NULL,
+      rounds INTEGER NOT NULL,
+      run_ids_json TEXT NOT NULL,
+      reason TEXT,
+      updated_ms INTEGER NOT NULL,
+      PRIMARY KEY (graph_id, node_id)
+    )`);
     for (const [name, type] of [['agent', 'TEXT'], ['model', 'TEXT'], ['round', 'INTEGER']]) {
       if (!cols.has(name!)) db.run(`ALTER TABLE runs ADD COLUMN ${name} ${type}`);
     }
@@ -80,6 +90,22 @@ export class Ledger {
     return (this.db
       .query(`SELECT run_id, contract_id, pass, claimed_done, agent, model, round, decision FROM runs WHERE run_id = ?`)
       .get(runId) as RunRow | null) ?? null;
+  }
+
+  setNode(graphId: string, nodeId: string, s: {state: string; rounds: number; runIds?: string[]; reason?: string}): void {
+    this.db.run(
+      `INSERT INTO graph_nodes (graph_id, node_id, state, rounds, run_ids_json, reason, updated_ms) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (graph_id, node_id) DO UPDATE SET state = excluded.state, rounds = excluded.rounds,
+         run_ids_json = excluded.run_ids_json, reason = excluded.reason, updated_ms = excluded.updated_ms`,
+      [graphId, nodeId, s.state, s.rounds, JSON.stringify(s.runIds ?? []), s.reason ?? null, Date.now()]
+    );
+  }
+
+  graphNodes(graphId: string): Record<string, {state: string; rounds: number; runIds: string[]; reason: string | null}> {
+    const rows = this.db
+      .query(`SELECT node_id, state, rounds, run_ids_json, reason FROM graph_nodes WHERE graph_id = ? ORDER BY node_id`)
+      .all(graphId) as {node_id: string; state: string; rounds: number; run_ids_json: string; reason: string | null}[];
+    return Object.fromEntries(rows.map(r => [r.node_id, {state: r.state, rounds: r.rounds, runIds: JSON.parse(r.run_ids_json), reason: r.reason}]));
   }
 
   recordDecision(runId: string, d: Decision, at = Date.now()): boolean {
