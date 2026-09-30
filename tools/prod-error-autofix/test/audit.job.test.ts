@@ -351,6 +351,77 @@ describe('runAuditJob', () => {
     expect(called).toBe(0);
   });
 
+  describe('a failed lane resolves nothing of its kind', () => {
+    const SEC = {
+      file: 'packages/functions/src/handlers/api.js',
+      line: 64,
+      severity: 'high' as const,
+      category: 'authn' as const,
+      title: 'session gate mounted after the swagger gate',
+      why: 'w',
+      fix: 'f'
+    };
+    const LINT = {file: 'packages/functions/src/a.js', line: 5, rule: 'no-unused-vars', message: "'A' unused"};
+
+    async function seed(store: Store): Promise<void> {
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          securityLane: async () => ({ok: true, findings: [SEC], dropped: 0, hasSecuritySkill: true, costUsd: 0.1}),
+          runEslintLane: async () => ({ok: true, filesScanned: 1, findings: [LINT]})
+        })
+      );
+      expect(store.openAuditFindings('SEO')).toHaveLength(2);
+    }
+
+    test('a security timeout keeps open security findings open; hygiene still resolves', async () => {
+      const store = new Store(':memory:');
+      await seed(store);
+      const result = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          securityLane: async () => ({ok: false, failure: 'timeout', detail: 'killed', errors: [], hasSecuritySkill: true, costUsd: undefined}),
+          runEslintLane: async () => ({ok: true, filesScanned: 0, findings: []})
+        })
+      );
+      expect(result.report.ledger.resolvedRows.map(r => r.kind)).toEqual(['hygiene']);
+      expect(store.openAuditFindings('SEO').map(r => r.kind)).toEqual(['security']);
+    });
+
+    test('a thrown security lane keeps open security findings open', async () => {
+      const store = new Store(':memory:');
+      await seed(store);
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          securityLane: async () => {
+            throw new Error('boom');
+          },
+          runEslintLane: async () => ({ok: true, filesScanned: 1, findings: [LINT]})
+        })
+      );
+      expect(store.openAuditFindings('SEO')).toHaveLength(2);
+    });
+
+    test('a hygiene failure keeps open hygiene findings open', async () => {
+      const store = new Store(':memory:');
+      await seed(store);
+      const result = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          securityLane: async () => ({ok: true, findings: [], dropped: 0, hasSecuritySkill: true, costUsd: 0.1}),
+          runEslintLane: async () => ({ok: false, failure: 'config', detail: 'babel-eslint missing'})
+        })
+      );
+      expect(result.report.ledger.resolvedRows.map(r => r.kind)).toEqual(['security']);
+      expect(store.openAuditFindings('SEO').map(r => r.kind)).toEqual(['hygiene']);
+    });
+  });
+
   test('auditJobWorktreeDir never collides with the fix lane\'s own worktree naming', () => {
     const dir = auditJobWorktreeDir('/cache/wt', 'seo', '2026-08-19');
     expect(dir).toContain('audit-seo-20260819');

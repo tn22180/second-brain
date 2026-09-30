@@ -3,7 +3,7 @@ import type {App} from '../registry';
 import type {Store} from '../state/store';
 import type {WorktreeInput, WorktreeResult} from '../git/worktree';
 import {findingFp} from './findingFp';
-import {classify, type AuditFinding, type LedgerDiff} from './ledger';
+import {classify, type AuditFinding, type FindingKind, type LedgerDiff} from './ledger';
 import type {LaneFailure} from './report';
 import type {AppReportInput} from './report';
 import type {LintResult, RunEslintInput} from './eslint';
@@ -317,6 +317,8 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
     ]);
 
     const laneFailures: LaneFailure[] = [];
+    // Only a lane that finished may resolve what it no longer sees; see ResolveScope.
+    const resolvable: FindingKind[] = [];
     let hasSecuritySkill = false;
     let securityCost: number | undefined;
     let securityFindings: SecurityFinding[] = [];
@@ -325,8 +327,10 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       const res = secSettled.value;
       hasSecuritySkill = res.hasSecuritySkill;
       securityCost = res.costUsd;
-      if (res.ok) securityFindings = res.findings;
-      else laneFailures.push({lane: 'security', detail: `${res.failure}: ${res.detail}`});
+      if (res.ok) {
+        securityFindings = res.findings;
+        resolvable.push('security');
+      } else laneFailures.push({lane: 'security', detail: `${res.failure}: ${res.detail}`});
     } else {
       laneFailures.push({lane: 'security', detail: (secSettled.reason as Error)?.message ?? 'threw'});
     }
@@ -341,6 +345,7 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       verdicts = res.verdicts;
       hygieneCost = res.costUsd;
       laneFailures.push(...res.laneFailures);
+      if (!res.laneFailures.length) resolvable.push('hygiene');
     } else {
       laneFailures.push({lane: 'hygiene', detail: (hygSettled.reason as Error)?.message ?? 'threw'});
     }
@@ -351,7 +356,7 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       ...lintFindings.map(f => lintToFinding(app, f, verdictByFp.get(f.fp)))
     ];
 
-    const ledger = classify(deps.store, app.appName, found, deps.cfg.nowMs);
+    const ledger = classify(deps.store, app.appName, found, deps.cfg.nowMs, {kinds: resolvable});
     // Read once, for up to two consumers. Only read at all on a digest day or with the
     // Jira lane on: the whole point of the daily message is NOT repeating the backlog
     // every morning, so there is no reason to pay for the read the other six days.
@@ -360,8 +365,8 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
 
     let jira: JiraLaneResult | undefined;
     if (deps.cfg.jira) {
-      // After `classify`, an open row is either fresh or carried — anything not seen
-      // this run has already been flipped to resolved above.
+      // After `classify`, an open row is fresh, carried, or — when its lane failed —
+      // simply not looked at today; none of those has been resolved.
       const freshFps = new Set(ledger.fresh.map(f => f.fp));
       const security = openRows.filter(r => r.kind === 'security');
       jira = await deps.runJiraLane(
