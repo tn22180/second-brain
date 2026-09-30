@@ -111,3 +111,17 @@ describe('notify', () => {
     expect(await notifyTelegram('hi', {envFile: '/nonexistent/.env'})).toBe(false);
   });
 });
+
+describe('harness stats --days', () => {
+  const stats = (days: string) => run(['stats', '--days', days], {AGENT_HARNESS_DB: join(tmp(), 'l.db')});
+  for (const bad of ['abc', '0', '-3']) {
+    test(`--days ${bad} is a usage error`, () => {
+      const r = stats(bad);
+      expect(r.code).toBe(2);
+      expect(r.err).toContain('--days');
+    });
+  }
+  test('--days 7 works', () => {
+    expect(stats('7').code).toBe(0);
+  });
+});
