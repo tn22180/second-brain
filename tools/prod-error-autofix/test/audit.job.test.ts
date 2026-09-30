@@ -561,6 +561,7 @@ describe('runAuditJob', () => {
       // The sha moves; the full-sweep clock does not.
       expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - 2 * DAY, lastFullAttemptMs: NOW - 2 * DAY, updatedMs: NOW});
       expect(result.securitySweep).toEqual({mode: 'incremental', files: kept.length});
+      expect(result.report.securitySweep).toEqual({mode: 'incremental', files: kept.length});
     });
 
     test('the diff lists a rename as its old and new path', async () => {
@@ -709,7 +710,8 @@ describe('runAuditJob', () => {
       expect(result.report.ledger.fresh).toEqual([]);
       expect(result.report.ledger.resolvedRows).toEqual([]);
       expect(store.openAuditFindings('SEO').map(r => r.file)).toEqual([SEC_A.file]);
-      expect(result.securitySweep).toEqual({mode: 'skipped'});
+      expect(result.securitySweep).toEqual({mode: 'skipped', since: 'old1111'});
+      expect(result.report.securitySweep).toEqual({mode: 'skipped', since: 'old1111'});
       // Skipping is not "swept without a skill": the report must not claim it is.
       expect(result.report.hasSecuritySkill).toBe(true);
       // Nothing to sweep up to HEAD is the same as having swept up to HEAD.

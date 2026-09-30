@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {findingFp} from '../src/audit/findingFp';
 import type {AuditFinding, LedgerDiff} from '../src/audit/ledger';
 import {renderReport, type AppReportInput, type ReportInput} from '../src/audit/report';
-import {runSupervisor} from '../src/audit/supervisor';
+import {buildSupervisorPrompt, runSupervisor} from '../src/audit/supervisor';
 import type {ClaudeResult, ClaudeRunner} from '../src/agent/claudeCli';
 import {FAKE_SHOPIFY_TOKEN} from './fixtures/fakeSecrets';
 
@@ -361,5 +361,49 @@ describe('the Jira ticket line', () => {
     });
     expect(out).toContain('FAL-901');
     expect(out).not.toContain('APC: không có gì mới');
+  });
+});
+
+describe('the security sweep line', () => {
+  const withFinding = (name: string, securitySweep: AppReportInput['securitySweep']) =>
+    app({
+      appName: name,
+      securitySweep,
+      ledger: ledger({fresh: [finding({app: name, file: 'src/a.js', rule: 'auth', title: 'no shop check'})]})
+    });
+
+  test('an app with findings carries one security line naming its mode', () => {
+    const out = renderReport({...BASE, apps: [withFinding('SEO', {mode: 'full'})]});
+    expect(out).toContain('security: full');
+  });
+
+  test('incremental states the file count', () => {
+    const out = renderReport({...BASE, apps: [withFinding('SEO', {mode: 'incremental', files: 12})]});
+    expect(out).toContain('security: incremental (12 files)');
+  });
+
+  test('skipped states the sha nothing changed since', () => {
+    const out = renderReport({...BASE, apps: [withFinding('SEO', {mode: 'skipped', since: 'abc1234'})]});
+    expect(out).toContain('security: skipped — no change since abc1234');
+  });
+
+  test('quiet apps share one line, so a skipped day is not read as a clean full sweep', () => {
+    const out = renderReport({
+      ...BASE,
+      apps: [app({appName: 'BLOG', securitySweep: {mode: 'skipped', since: 'abc1234'}}), app({appName: 'AEO', securitySweep: {mode: 'full'}})]
+    });
+    expect(out).toContain('BLOG skipped — no change since abc1234');
+    expect(out).toContain('AEO full');
+    expect(out.split('\n').filter(l => l.includes('security:'))).toHaveLength(1);
+  });
+
+  test('an app with no sweep info (failed before planning) prints no security line', () => {
+    expect(renderReport(BASE)).not.toContain('security:');
+  });
+});
+
+describe('the supervisor prompt', () => {
+  test('tells the agent to keep the security lines', () => {
+    expect(buildSupervisorPrompt(BASE, 'draft')).toContain('`security:`');
   });
 });
