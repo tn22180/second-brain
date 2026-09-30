@@ -105,6 +105,43 @@ describe('alerts', () => {
   });
 });
 
+describe('security sweep record', () => {
+  test('an app never swept has no record', () => {
+    expect(store.getSecuritySweep('SEO')).toBeUndefined();
+  });
+
+  test('a full sweep records the sha and the full-sweep time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    expect(store.getSecuritySweep('SEO')).toEqual({sha: 'aaa111', lastFullMs: NOW, updatedMs: NOW});
+  });
+
+  test('an incremental sweep moves the sha and keeps the last full-sweep time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    store.setSecuritySweep('SEO', {sha: 'bbb222', fullAtMs: undefined, nowMs: NOW + HOUR});
+    expect(store.getSecuritySweep('SEO')).toEqual({sha: 'bbb222', lastFullMs: NOW, updatedMs: NOW + HOUR});
+  });
+
+  test('records are per app', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    expect(store.getSecuritySweep('APC')).toBeUndefined();
+  });
+
+  test('an incremental record with no full sweep before it has no full-sweep time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: undefined, nowMs: NOW});
+    expect(store.getSecuritySweep('SEO')?.lastFullMs).toBeUndefined();
+  });
+
+  test('reopening an existing database keeps the record and migrates cleanly', () => {
+    const path = `/tmp/autofix-sweep-test-${NOW}-${Math.round(performance.now())}.db`;
+    const first = new Store(path);
+    first.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    first.close();
+    const second = new Store(path);
+    expect(second.getSecuritySweep('SEO')?.sha).toBe('aaa111');
+    second.close();
+  });
+});
+
 describe('MR rate ledger', () => {
   test('counts by window and by repo', () => {
     store.recordMrEvent('blogs', NOW - 30 * 60_000);

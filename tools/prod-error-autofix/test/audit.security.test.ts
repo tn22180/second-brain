@@ -184,6 +184,37 @@ describe('runSecurityLane', () => {
     expect(prompt).toContain('[]');
   });
 
+  test('without a file list the prompt is the whole-repo sweep, unchanged', () => {
+    expect(buildSecurityPrompt({...INPUT, files: undefined})).toBe(buildSecurityPrompt(INPUT));
+    expect(buildSecurityPrompt(INPUT)).not.toContain('Files to sweep');
+  });
+
+  test('a file list narrows the sweep to those files and their direct callers/callees', () => {
+    const files = ['packages/functions/src/handlers/a.js', 'packages/functions/src/services/b.ts'];
+    const prompt = buildSecurityPrompt({...INPUT, files});
+    expect(prompt).toContain('Files to sweep');
+    for (const f of files) expect(prompt).toContain(`- ${f}`);
+    expect(prompt).toContain('directly call');
+    expect(prompt).toContain('called by');
+    // The citation rule still binds: a narrowed sweep is no licence to invent lines.
+    expect(prompt).toContain('file:line');
+    // Every surface and the answer shape survive the narrowing.
+    for (const surface of ['credential_exposure', 'shop_scoping', 'untrusted_input', 'secret_in_log', 'authn']) {
+      expect(prompt).toContain(surface);
+    }
+    expect(prompt).toContain('JSON array');
+  });
+
+  test('the file list reaches the agent', async () => {
+    let seen: ClaudeInvocation | undefined;
+    const claude: ClaudeRunner = async inv => {
+      seen = inv;
+      return ok('[]');
+    };
+    await runSecurityLane({...INPUT, files: ['packages/functions/src/handlers/a.js']}, claude);
+    expect(seen!.prompt).toContain('- packages/functions/src/handlers/a.js');
+  });
+
   test('the agent runs in the worktree so the repo skills load', async () => {
     let seen: ClaudeInvocation | undefined;
     const claude: ClaudeRunner = async inv => {

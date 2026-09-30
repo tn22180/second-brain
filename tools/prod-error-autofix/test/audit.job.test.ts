@@ -5,9 +5,11 @@ import {Store} from '../src/state/store';
 import {findingFp} from '../src/audit/findingFp';
 import {auditJobWorktreeDir, runAuditJob, type AppAuditResult, type AuditJobDeps, type AuditJobSettings} from '../src/audit/job';
 import {renderReport, type ReportInput} from '../src/audit/report';
-import {runAudit, type AuditRunConfig, type AuditRunDeps} from '../src/audit/run';
+import {buildAuditRunConfig, runAudit, type AuditRunConfig, type AuditRunDeps} from '../src/audit/run';
 import type {MrLaneResult} from '../src/audit/mr';
 import type {JiraLaneInput} from '../src/audit/jiraLane';
+import type {SecurityLaneInput} from '../src/audit/securityLane';
+import type {Runner} from '../src/gcloud/run';
 
 /**
  * Nothing here spawns a real `claude`, runs real eslint, creates a real worktree,
@@ -30,7 +32,7 @@ function settings(over: Partial<AuditJobSettings> = {}): AuditJobSettings {
     digest: false,
     nowMs: NOW,
     gitTimeoutMs: 1000,
-    security: {model: 'claude-opus-5', timeoutMs: 2000},
+    security: {model: 'claude-opus-5', timeoutMs: 2000, fullEveryDays: 7},
     triage: {model: 'claude-sonnet-5', timeoutMs: 2000},
     eslintTimeoutMs: 2000,
     mr: {model: 'claude-sonnet-5', agentTimeoutMs: 2000, jestTimeoutMs: 2000},
@@ -67,7 +69,36 @@ function jobDeps(over: Partial<AuditJobDeps> = {}): AuditJobDeps {
       throw new Error('runJiraLane should not be called in this test');
     },
     store: new Store(':memory:'),
+    // Git answers nothing by default, so every sweep is a full one and nothing is
+    // recorded — the tests above the incremental block predate it and assume that.
+    runner: async () => ({code: 1, stdout: '', stderr: 'fatal: not a git repository', timedOut: false}),
+    fileExists: () => true,
     ...over
+  };
+}
+
+const HEAD = 'head9999';
+const DAY = 86_400_000;
+
+interface FakeGit {
+  head?: string | undefined;
+  ancestor?: 'yes' | 'no' | 'unknown';
+  diff?: string[];
+  diffFails?: boolean;
+}
+
+/** Answers the three git calls the security-sweep planner makes; records every call. */
+function fakeGit(o: FakeGit, calls: string[][] = []): Runner {
+  return async args => {
+    calls.push(args);
+    const res = (code: number, stdout = '', stderr = '') => ({code, stdout, stderr, timedOut: false});
+    if (args.includes('rev-parse')) return o.head === undefined ? res(128, '', 'fatal: bad HEAD') : res(0, `${o.head}\n`);
+    if (args.includes('merge-base')) {
+      const a = o.ancestor ?? 'yes';
+      return a === 'yes' ? res(0) : a === 'no' ? res(1) : res(128, '', 'fatal: Not a valid commit name');
+    }
+    if (args.includes('diff')) return o.diffFails ? res(128, '', 'fatal: bad revision') : res(0, (o.diff ?? []).map(f => `${f}\n`).join(''));
+    return res(1, '', `unexpected git call: ${args.join(' ')}`);
   };
 }
 
@@ -422,6 +453,272 @@ describe('runAuditJob', () => {
     });
   });
 
+  describe('incremental security sweep', () => {
+    const SEC_A = {
+      file: 'packages/functions/src/handlers/a.js',
+      line: 10,
+      severity: 'high' as const,
+      category: 'shop_scoping' as const,
+      title: 'a: missing shopId filter',
+      why: 'w',
+      fix: 'f'
+    };
+    const SEC_Z = {...SEC_A, file: 'packages/functions/src/handlers/z.js', title: 'z: missing shopId filter'};
+
+    function recordingLane(seen: SecurityLaneInput[], findings = [] as (typeof SEC_A)[]): AuditJobDeps['securityLane'] {
+      return async input => {
+        seen.push(input);
+        return {ok: true, findings, dropped: 0, hasSecuritySkill: true, costUsd: 0.1};
+      };
+    }
+
+    test('no record means a full sweep, and success records the sha and the full-sweep time', async () => {
+      const store = new Store(':memory:');
+      const seen: SecurityLaneInput[] = [];
+      const calls: string[][] = [];
+      const result = await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD}, calls), securityLane: recordingLane(seen)})
+      );
+      expect(seen).toHaveLength(1);
+      expect(seen[0]!.files).toBeUndefined();
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, updatedMs: NOW});
+      expect(result.securitySweep).toEqual({mode: 'full'});
+      // Every git call runs against the audit worktree, through the injected runner.
+      const dir = auditJobWorktreeDir('/cache/wt', APP.repo, '2026-08-19');
+      expect(calls.length).toBeGreaterThan(0);
+      for (const c of calls) expect(c.slice(0, 3)).toEqual(['git', '-C', dir]);
+    });
+
+    test('a recent record sweeps only the changed source files', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - 2 * DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      const calls: string[][] = [];
+      const diff = [
+        'packages/functions/src/handlers/a.js',
+        'packages/assets/src/pages/B.tsx',
+        'packages/functions/src/lib/c.mjs',
+        'packages/functions/src/lib/d.cjs',
+        'packages/functions/src/lib/e.ts',
+        'packages/assets/src/f.jsx',
+        'extensions/theme/blocks/seo.liquid',
+        'packages/functions/package.json',
+        'yarn.lock',
+        'package-lock.json',
+        'packages/functions/package-lock.json',
+        'pnpm-lock.yaml',
+        'npm-shrinkwrap.json',
+        'docs/features/x.js',
+        'packages/functions/docs/api.json',
+        'README.md',
+        'packages/functions/CHANGELOG.md',
+        'packages/functions/src/__tests__/__snapshots__/a.test.js.snap',
+        'packages/assets/src/__snapshots__/view.json',
+        'packages/assets/src/logo.png',
+        'packages/assets/src/styles.scss'
+      ];
+      const result = await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff}, calls), securityLane: recordingLane(seen)})
+      );
+      expect(seen[0]!.files).toEqual([
+        'packages/functions/src/handlers/a.js',
+        'packages/assets/src/pages/B.tsx',
+        'packages/functions/src/lib/c.mjs',
+        'packages/functions/src/lib/d.cjs',
+        'packages/functions/src/lib/e.ts',
+        'packages/assets/src/f.jsx',
+        'extensions/theme/blocks/seo.liquid',
+        'packages/functions/package.json'
+      ]);
+      expect(calls.some(c => c.includes('diff') && c.includes('--name-only') && c.includes('old1111') && c.includes('HEAD'))).toBe(true);
+      // The sha moves; the full-sweep clock does not.
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - 2 * DAY, updatedMs: NOW});
+      expect(result.securitySweep).toEqual({mode: 'incremental', files: 8});
+    });
+
+    test('a full sweep older than the configured days forces a full sweep again', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - 7 * DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['packages/functions/src/handlers/a.js']}),
+          securityLane: recordingLane(seen)
+        })
+      );
+      expect(seen[0]!.files).toBeUndefined();
+      expect(store.getSecuritySweep('SEO')?.lastFullMs).toBe(NOW);
+    });
+
+    test('the full-sweep interval comes from settings', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - 2 * DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          cfg: settings({security: {model: 'claude-opus-5', timeoutMs: 2000, fullEveryDays: 2}}),
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['packages/functions/src/handlers/a.js']}),
+          securityLane: recordingLane(seen)
+        })
+      );
+      expect(seen[0]!.files).toBeUndefined();
+    });
+
+    test('a record that has never had a full sweep is due for one', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: undefined, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['packages/functions/src/handlers/a.js']}),
+          securityLane: recordingLane(seen)
+        })
+      );
+      expect(seen[0]!.files).toBeUndefined();
+    });
+
+    for (const ancestor of ['no', 'unknown'] as const) {
+      test(`a recorded sha that is ${ancestor === 'no' ? 'not an ancestor' : 'unknown to git'} means a full sweep`, async () => {
+        const store = new Store(':memory:');
+        store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+        const seen: SecurityLaneInput[] = [];
+        await runAuditJob(
+          APP,
+          jobDeps({
+            store,
+            runner: fakeGit({head: HEAD, ancestor, diff: ['packages/functions/src/handlers/a.js']}),
+            securityLane: recordingLane(seen)
+          })
+        );
+        expect(seen[0]!.files).toBeUndefined();
+        expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, updatedMs: NOW});
+      });
+    }
+
+    test('a failed diff falls back to a full sweep rather than skipping', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diffFails: true}), securityLane: recordingLane(seen)})
+      );
+      expect(seen).toHaveLength(1);
+      expect(seen[0]!.files).toBeUndefined();
+    });
+
+    test('an unreadable HEAD means a full sweep that records nothing', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      await runAuditJob(APP, jobDeps({store, runner: fakeGit({head: undefined}), securityLane: recordingLane(seen)}));
+      expect(seen[0]!.files).toBeUndefined();
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, updatedMs: NOW - DAY});
+    });
+
+    test('no changed source file skips the lane: no failure, no finding, nothing of its kind resolved', async () => {
+      const store = new Store(':memory:');
+      // An open security finding from an earlier sweep.
+      await runAuditJob(
+        APP,
+        jobDeps({store, securityLane: async () => ({ok: true, findings: [SEC_A], dropped: 0, hasSecuritySkill: true, costUsd: 0.1})})
+      );
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+
+      let called = 0;
+      const result = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['README.md', 'yarn.lock', 'docs/x.js']}),
+          securityLane: async () => {
+            called++;
+            throw new Error('the lane must not run when nothing changed');
+          }
+        })
+      );
+      expect(called).toBe(0);
+      expect(result.report.laneFailures).toEqual([]);
+      expect(result.report.ledger.fresh).toEqual([]);
+      expect(result.report.ledger.resolvedRows).toEqual([]);
+      expect(store.openAuditFindings('SEO').map(r => r.file)).toEqual([SEC_A.file]);
+      expect(result.securitySweep).toEqual({mode: 'skipped'});
+      // Skipping is not "swept without a skill": the report must not claim it is.
+      expect(result.report.hasSecuritySkill).toBe(true);
+      // Nothing to sweep up to HEAD is the same as having swept up to HEAD.
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - DAY, updatedMs: NOW});
+    });
+
+    test('a skipped lane still reports a repo with no security skill as such', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const result = await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff: []}), fileExists: () => false})
+      );
+      expect(result.report.hasSecuritySkill).toBe(false);
+    });
+
+    test('an incremental run resolves only findings in the files it swept', async () => {
+      const store = new Store(':memory:');
+      await runAuditJob(
+        APP,
+        jobDeps({store, securityLane: async () => ({ok: true, findings: [SEC_A, SEC_Z], dropped: 0, hasSecuritySkill: true, costUsd: 0.1})})
+      );
+      expect(store.openAuditFindings('SEO')).toHaveLength(2);
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+
+      const result = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [SEC_A.file]}),
+          securityLane: async () => ({ok: true, findings: [], dropped: 0, hasSecuritySkill: true, costUsd: 0.1})
+        })
+      );
+      expect(result.report.ledger.resolvedRows.map(r => r.file)).toEqual([SEC_A.file]);
+      expect(store.openAuditFindings('SEO').map(r => r.file)).toEqual([SEC_Z.file]);
+    });
+
+    test('a failed full sweep records nothing', async () => {
+      const store = new Store(':memory:');
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD}),
+          securityLane: async () => ({ok: false, failure: 'timeout', detail: 'killed', errors: [], hasSecuritySkill: true, costUsd: undefined})
+        })
+      );
+      expect(store.getSecuritySweep('SEO')).toBeUndefined();
+    });
+
+    test('a failed or thrown incremental sweep leaves the record where it was', async () => {
+      for (const securityLane of [
+        async () => ({ok: false as const, failure: 'timeout' as const, detail: 'killed', errors: [], hasSecuritySkill: true, costUsd: undefined}),
+        async () => {
+          throw new Error('boom');
+        }
+      ]) {
+        const store = new Store(':memory:');
+        store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+        await runAuditJob(
+          APP,
+          jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [SEC_A.file]}), securityLane})
+        );
+        expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, updatedMs: NOW - DAY});
+      }
+    });
+  });
+
   test('auditJobWorktreeDir never collides with the fix lane\'s own worktree naming', () => {
     const dir = auditJobWorktreeDir('/cache/wt', 'seo', '2026-08-19');
     expect(dir).toContain('audit-seo-20260819');
@@ -468,6 +765,7 @@ function runDeps(over: Partial<AuditRunDeps> = {}): AuditRunDeps {
       throw new Error('runJiraLane should not be called unless cfg.jira is set');
     },
     store,
+    runner: async () => ({code: 1, stdout: '', stderr: 'fatal: not a git repository', timedOut: false}),
     supervisor: async (input: ReportInput) => renderReport(input),
     sendTelegram: async () => ({ok: true, detail: undefined}),
     now: () => NOW,
@@ -576,6 +874,16 @@ describe('runAudit', () => {
     expect(called).toBe(0);
     expect(r.telegram).toBeUndefined();
     expect(r.apps.length).toBe(APPS.length);
+  });
+
+  test('the full-sweep interval reaches the job settings from config', () => {
+    expect(buildAuditRunConfig(REGISTRY_CFG, NOW).security.fullEveryDays).toBe(7);
+  });
+
+  test('the runner reaches the job, so its git calls are the injected ones', async () => {
+    const calls: string[][] = [];
+    await runAudit(runConfig({apps: [APP]}), {...runDeps(), runner: fakeGit({head: HEAD}, calls)});
+    expect(calls.some(c => c.includes('rev-parse'))).toBe(true);
   });
 
   test('a supervisor throw falls back to the plain render, not a lost message', async () => {

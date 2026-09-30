@@ -8,9 +8,10 @@ import {redactSecret, validateSecurity, type SecurityFinding} from './securitySc
  * surfaces that matter in a Shopify app on Firestore. They are listed worst-first,
  * and the worst is a merchant's own credential leaving its shop.
  *
- * Scope is the repo, not a diff — this is a sweep, not a review of one change.
- * The prompt names the surfaces to keep that bounded; without them the agent
- * wanders and reports style.
+ * Scope is the repo, or — between weekly full sweeps — the files changed since the
+ * last successful one (`files`, chosen in job.ts). Either way it is a sweep, not a
+ * review of one change. The prompt names the surfaces to keep that bounded; without
+ * them the agent wanders and reports style.
  */
 
 /** `ANALYZE_TOOLS` minus gcloud: the audit reads code, it does not query prod. */
@@ -31,6 +32,11 @@ export interface SecurityLaneInput {
    * absolute path.
    */
   fileExists?: (absPath: string) => boolean;
+  /**
+   * Repo-relative. Set for an incremental sweep: only these files (and what they
+   * directly touch) are read. Absent is the whole-repo sweep.
+   */
+  files?: string[];
 }
 
 export type SecurityLaneFailure = ClaudeFailure | 'invalid_answer';
@@ -55,6 +61,25 @@ export type SecurityLaneResult =
       errors: string[];
     });
 
+function fileScope(files: string[] | undefined): string[] {
+  if (!files) return [];
+  return [
+    '## Files to sweep',
+    '',
+    'This is an incremental sweep: only these files changed since the last one. Sweep',
+    'them, and the code they directly call or are called by — a changed handler can open',
+    'a hole in a service it calls, and a changed service can open one in every handler',
+    'that calls it. Do not sweep the rest of the repo. A file listed here that no longer',
+    'exists was deleted; skip it.',
+    '',
+    ...files.map(f => `- ${f}`),
+    '',
+    'Every finding must still cite a real `file:line` in this worktree, whichever file it',
+    'lands in.',
+    ''
+  ];
+}
+
 export function buildSecurityPrompt(input: SecurityLaneInput): string {
   return [
     `# Security sweep — ${input.appName}`,
@@ -63,6 +88,7 @@ export function buildSecurityPrompt(input: SecurityLaneInput): string {
     "Read this repo's own CLAUDE.md and .claude/skills/security first — they are the",
     'authority on how this app is built; anything below is the shape of the answer.',
     '',
+    ...fileScope(input.files),
     '## Surfaces to sweep, in this order',
     '',
     "1. `credential_exposure` — a MERCHANT'S OWN credential leaving the boundary of the",

@@ -126,6 +126,12 @@ export interface AuditSettings {
   /** `Date#getDay()` value — 1 = Monday. Full digest of every open finding, so a
    * backlog nobody has been reading gets put back in front of a human once a week. */
   digestWeekday: number;
+  /**
+   * Between full sweeps the security lane reads only files changed since its last
+   * success. The full sweep still has to happen: a finding in an untouched file that
+   * calls into a changed one is only caught by reading the whole repo.
+   */
+  securityFullEveryDays: number;
 }
 
 export interface Paths {
@@ -312,7 +318,8 @@ export function buildConfig(env: Record<string, string> = loadEnv()): Config {
         // Measured 2026-08-23: with no per-app bound at all, SEO alone ran ~48 hours.
         appMs: num(env, 'AUDIT_APP_TIMEOUT_MS', 25 * MINUTE)
       },
-      digestWeekday: num(env, 'AUDIT_DIGEST_WEEKDAY', 1)
+      digestWeekday: num(env, 'AUDIT_DIGEST_WEEKDAY', 1),
+      securityFullEveryDays: num(env, 'AUDIT_SECURITY_FULL_EVERY_DAYS', 7)
     }
   };
 }
