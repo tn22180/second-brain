@@ -3,7 +3,7 @@ import {mkdtempSync, readFileSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {formatVerdict, notifyTelegram} from '../src/notify';
-import {makeRepo, write} from './helpers';
+import {makeRepo, sh, write} from './helpers';
 
 const BIN = resolve(import.meta.dir, '../bin/harness.ts');
 const run = (args: string[], env: Record<string, string>) => {
@@ -19,7 +19,7 @@ describe('harness CLI', () => {
     const repo = makeRepo();
     write(repo, 'src/a.js', 'module.exports = 3;\n');
     const cfile = join(t, 'c.json');
-    writeFileSync(cfile, JSON.stringify({id: 'T-1', source: 'test', goal: 'g', repoPath: repo, allow: ['src/a.js'], verify: [{name: 'ok', cmd: ['true']}]}));
+    writeFileSync(cfile, JSON.stringify({id: 'T-1', source: 'test', goal: 'g', repoPath: repo, baseSha: sh(repo, 'git', 'rev-parse', 'HEAD').trim(), allow: ['src/a.js'], verify: [{name: 'ok', cmd: ['true']}]}));
     const out = join(t, 'v.json');
 
     const v = run(['verify', cfile, '--out', out, '--claimed-done', '--no-notify'], env);
@@ -31,6 +31,23 @@ describe('harness CLI', () => {
     expect(run(['decide', 'nope', 'approved'], env).code).toBe(1);
     const s = JSON.parse(run(['stats'], env).out);
     expect(s).toMatchObject({runs: 1, claimedDone: 1, falseDone: 0, approved: 1});
+
+    // C3: open-mr asks the ledger, not the JSON file the agent could have written.
+    expect(run(['check', verdict.runId, verdict.diffSha], env).code).toBe(0);
+    expect(run(['check', verdict.runId, 'b'.repeat(40)], env).code).toBe(1);
+    expect(run(['check', 'forged-run', verdict.diffSha], env).code).toBe(1);
+  });
+
+  test('check refuses a failed run even with the right sha', () => {
+    const t = tmp();
+    const env = {AGENT_HARNESS_DB: join(t, 'l.db')};
+    const repo = makeRepo();
+    const cfile = join(t, 'c.json');
+    writeFileSync(cfile, JSON.stringify({id: 'T-3', source: 'test', goal: 'g', repoPath: repo, baseSha: sh(repo, 'git', 'rev-parse', 'HEAD').trim(), allow: ['src/a.js'], verify: [{name: 'ok', cmd: ['true']}]}));
+    const out = join(t, 'v.json');
+    expect(run(['verify', cfile, '--out', out, '--no-notify'], env).code).toBe(1);
+    const v = JSON.parse(readFileSync(out, 'utf8'));
+    expect(run(['check', v.runId, v.diffSha], env).code).toBe(1);
   });
 
   test('bad contract exits 2 and records nothing', () => {
@@ -46,7 +63,7 @@ describe('harness CLI', () => {
     const t = tmp();
     const repo = makeRepo();
     const cfile = join(t, 'c.json');
-    writeFileSync(cfile, JSON.stringify({id: 'T-2', source: 'test', goal: 'g', repoPath: repo, allow: ['src/a.js'], verify: [{name: 'ok', cmd: ['true']}]}));
+    writeFileSync(cfile, JSON.stringify({id: 'T-2', source: 'test', goal: 'g', repoPath: repo, baseSha: sh(repo, 'git', 'rev-parse', 'HEAD').trim(), allow: ['src/a.js'], verify: [{name: 'ok', cmd: ['true']}]}));
     expect(run(['verify', cfile, '--out', join(t, 'v.json'), '--no-notify'], {AGENT_HARNESS_DB: join(t, 'l.db')}).code).toBe(1);
   });
 });

@@ -31,10 +31,11 @@ if (cmd === 'verify') {
   if (!parsed.ok) usage(`contract invalid: ${parsed.error}`);
   const contract = (parsed as Extract<typeof parsed, {ok: true}>).contract;
   const v = await verify(contract);
-  writeFileSync(out!, JSON.stringify(v, null, 2));
+  // Ledger first: it is what open-mr trusts. A verdict file with no ledger row is refused anyway.
   const ledger = openLedger();
   ledger.recordVerdict(v, contract, flag('claimed-done'));
   ledger.close();
+  writeFileSync(out!, JSON.stringify(v, null, 2));
   const text = formatVerdict(v, contract.goal);
   console.log(text);
   if (!flag('no-notify')) await notifyTelegram(text);
@@ -54,6 +55,17 @@ if (cmd === 'decide') {
   process.exit(0);
 }
 
+// open-mr.mjs asks this instead of trusting verdict.json, which the agent can write itself.
+if (cmd === 'check') {
+  const [runId, sha] = rest;
+  if (!runId || !sha) usage('usage: harness check <runId> <treeSha>');
+  const ledger = openLedger();
+  const ok = ledger.passed(runId!, sha!);
+  ledger.close();
+  if (!ok) console.error(`no passing run ${runId} for tree ${sha}`);
+  process.exit(ok ? 0 : 1);
+}
+
 if (cmd === 'stats') {
   const days = Number(opt('days') ?? 30);
   const ledger = openLedger();
@@ -62,4 +74,4 @@ if (cmd === 'stats') {
   process.exit(0);
 }
 
-usage('usage: harness verify|decide|stats');
+usage('usage: harness verify|check|decide|stats');

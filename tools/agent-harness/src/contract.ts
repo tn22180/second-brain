@@ -12,11 +12,13 @@ export interface Contract {
   goal: string;
   /** Absolute worktree path. */
   repoPath: string;
+  /** Commit the worktree was cut from. HEAD must still be here: the agent never commits, open-mr does. */
+  baseSha: string;
   /** Repo-relative files, or dirs ending with '/', the diff may touch. */
   allow: string[];
   /** Postconditions; each must exit 0. */
   verify: VerifyCommand[];
-  /** When set, the new tests must FAIL with the source changes stashed. */
+  /** When set, the new tests must FAIL with the source changes reverted (jest only). */
   reproduce?: {testCmd: string[]};
   security?: {appName: string; model?: string};
 }
@@ -43,6 +45,9 @@ export function parseContract(raw: unknown): Parsed {
   }
   if (typeof c.repoPath !== 'string' || !isAbsolute(c.repoPath)) {
     return {ok: false, error: 'repoPath: absolute path required'};
+  }
+  if (typeof c.baseSha !== 'string' || !/^[0-9a-f]{40}$/.test(c.baseSha)) {
+    return {ok: false, error: 'baseSha: full 40-hex commit sha required'};
   }
   if (!isStrArray(c.allow)) return {ok: false, error: 'allow: at least one path required'};
   if (c.allow.some(p => isAbsolute(p) || p.split('/').includes('..'))) {

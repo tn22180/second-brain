@@ -6,7 +6,7 @@ import type {Contract} from '../src/contract';
 import {openLedger} from '../src/ledger';
 import type {Verdict} from '../src/verify';
 
-const c: Contract = {id: 'T-1', source: 'jira-fix', goal: 'g', repoPath: '/x', allow: ['a'], verify: [{name: 'n', cmd: ['true']}]};
+const c: Contract = {id: 'T-1', source: 'jira-fix', goal: 'g', repoPath: '/x', baseSha: 'a'.repeat(40), allow: ['a'], verify: [{name: 'n', cmd: ['true']}]};
 const v = (runId: string, pass: boolean, at = 1000): Verdict => ({
   contractId: 'T-1', runId, at, pass, diffSha: 'ab', changed: ['a'], checks: [{name: 'scope', ok: pass}], costUsd: 0.5
 });
@@ -32,6 +32,15 @@ describe('ledger', () => {
     l.recordVerdict(v('new', true, 5000), c, true);
     expect(l.recordDecision('new', 'approved', 5001)).toBe(true);
     expect(l.stats(1000)).toMatchObject({runs: 1, approved: 1, rejected: 0});
+  });
+  test('passed() needs a passing row with the same sha', () => {
+    const l = db();
+    l.recordVerdict(v('ok', true), c, true);
+    l.recordVerdict(v('bad', false), c, true);
+    expect(l.passed('ok', 'ab')).toBe(true);
+    expect(l.passed('ok', 'cd')).toBe(false);
+    expect(l.passed('bad', 'ab')).toBe(false);
+    expect(l.passed('missing', 'ab')).toBe(false);
   });
   test('re-recording the same runId is refused', () => {
     const l = db();

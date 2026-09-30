@@ -51,3 +51,47 @@ export async function stagedDiff(repoPath: string, allow: string[], runner: Runn
     await git(['reset', '-q']);
   }
 }
+
+export interface WorktreeState {
+  /** Modified or untracked paths outside allow — the checks would see them, the push would not. */
+  outside: string[];
+  /** Gitignored paths inside allow — same problem the other way round. */
+  ignoredInAllow: string[];
+}
+
+// jira-fix symlinks node_modules into the worktree and some repos don't ignore it at the root.
+const exempt = (p: string) => p.split('/').includes('node_modules');
+
+/**
+ * Everything on disk that differs from HEAD, classified against allow. Postconditions run on
+ * the working tree, but only the allowed paths get committed, so any other difference means
+ * the verdict describes a tree that will never be pushed.
+ */
+export async function worktreeState(repoPath: string, allow: string[], runner: Runner = spawnRunner): Promise<WorktreeState> {
+  const r = await runner(['git', 'status', '--porcelain=v1', '-z', '--untracked-files=all', '--ignored'], GIT_TIMEOUT, {cwd: repoPath});
+  if (r.code !== 0 || r.timedOut) throw new Error(`git status failed: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+  const parts = r.stdout.split('\0');
+  const outside: string[] = [];
+  const ignoredInAllow: string[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const entry = parts[i];
+    if (entry.length < 4) continue;
+    const xy = entry.slice(0, 2);
+    const path = entry.slice(3);
+    if (xy[0] === 'R' || xy[0] === 'C') i++; // -z puts the rename source in the next field
+    if (exempt(path)) continue;
+    const touchesAllow = inScope(path, allow) || (path.endsWith('/') && allow.some(a => a.startsWith(path)));
+    if (xy === '!!') {
+      if (touchesAllow) ignoredInAllow.push(path);
+    } else if (!inScope(path, allow)) {
+      outside.push(path);
+    }
+  }
+  return {outside, ignoredInAllow};
+}
+
+export async function headSha(repoPath: string, runner: Runner = spawnRunner): Promise<string> {
+  const r = await runner(['git', 'rev-parse', 'HEAD'], GIT_TIMEOUT, {cwd: repoPath});
+  if (r.code !== 0 || r.timedOut) throw new Error(`git rev-parse failed: ${(r.stderr || r.stdout).trim().slice(0, 300)}`);
+  return r.stdout.trim();
+}

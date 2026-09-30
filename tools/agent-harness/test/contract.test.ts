@@ -3,7 +3,7 @@ import {parseContract} from '../src/contract';
 
 const base = {
   id: 'FAL-720-g1', source: 'jira-fix', goal: 'bind integration key to shop',
-  repoPath: '/tmp/wt/apc-FAL-720', allow: ['packages/functions/src/a.js'],
+  repoPath: '/tmp/wt/apc-FAL-720', baseSha: 'a'.repeat(40), allow: ['packages/functions/src/a.js'],
   verify: [{name: 'jest', cmd: ['npx', 'jest', '--ci', 'a.test.js']}]
 };
 
@@ -27,6 +27,10 @@ describe('parseContract', () => {
   });
   test('rejects a command given as a shell string', () => {
     expect(parseContract({...base, verify: [{name: 'x', cmd: 'npx jest'}]}).ok).toBe(false);
+  });
+  test('rejects a missing or malformed baseSha', () => {
+    expect(parseContract({...base, baseSha: undefined}).ok).toBe(false);
+    expect(parseContract({...base, baseSha: 'master'}).ok).toBe(false);
   });
   test('rejects allow entries escaping the repo', () => {
     expect(parseContract({...base, allow: ['../secrets.env']}).ok).toBe(false);

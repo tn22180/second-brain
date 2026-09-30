@@ -50,6 +50,12 @@ export class Ledger {
     );
   }
 
+  /** The push gate's question: did this run pass, on exactly this tree? */
+  passed(runId: string, diffSha: string): boolean {
+    const row = this.db.query(`SELECT 1 FROM runs WHERE run_id = ? AND diff_sha = ? AND pass = 1`).get(runId, diffSha);
+    return row != null;
+  }
+
   recordDecision(runId: string, d: Decision, at = Date.now()): boolean {
     const r = this.db.run(`UPDATE runs SET decision = ?, decided_ms = ? WHERE run_id = ?`, [d, at, runId]);
     return r.changes === 1;
