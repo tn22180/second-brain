@@ -9,7 +9,7 @@ import {runNode, type NodeDeps} from './node';
 import {redact} from './redact';
 import {schedule, type NodeState} from './scheduler';
 import {verify} from './verify';
-import type {Contract} from './contract';
+import type {Contract, VerifyCommand} from './contract';
 import {combinedWorktree, commitVerified, ensureIntegration, mergeNode, nodeWorktree, removeWorktree} from './worktree';
 
 export interface RunGraphOpts {
@@ -38,6 +38,25 @@ function mutex() {
  * Run every node of the graph to a verified, merged commit on `graph.branch`, or block it.
  * Ends at a local integration branch: pushing stays in a Claude session, where git_guard is.
  */
+/**
+ * Every node's checks, each distinct argv once: a whole-suite check shared by four nodes ran four
+ * times back to back on the first real graph and one run timed out under the load of the others.
+ */
+function combinedChecks(graph: Graph): VerifyCommand[] {
+  const byArgv = new Map<string, {ids: string[]; v: VerifyCommand}>();
+  for (const id of graph.order) {
+    for (const v of graph.nodes.find(n => n.id === id)!.contract.verify) {
+      const key = JSON.stringify(v.cmd);
+      const hit = byArgv.get(key);
+      if (hit) {
+        hit.ids.push(id);
+        hit.v = {...hit.v, timeoutMs: Math.max(hit.v.timeoutMs ?? 0, v.timeoutMs ?? 0) || undefined};
+      } else byArgv.set(key, {ids: [id], v});
+    }
+  }
+  return [...byArgv.values()].map(({ids, v}) => ({...v, name: `${ids.join('+')}: ${v.name}`}));
+}
+
 /** Every node's checks, run once more on the merged code: two nodes can each pass alone and still break each other. */
 async function verifyCombined(graph: Graph, ledger: Ledger): Promise<{runId?: string; failed?: string}> {
   const wt = await combinedWorktree(graph);
@@ -50,7 +69,7 @@ async function verifyCombined(graph: Graph, ledger: Ledger): Promise<{runId?: st
       repoPath: wt.path,
       baseSha: wt.baseSha,
       allow: [...new Set(graph.nodes.flatMap(n => n.contract.allow))],
-      verify: graph.order.flatMap(id => graph.nodes.find(n => n.id === id)!.contract.verify.map(v => ({...v, name: `${id}: ${v.name}`}))),
+      verify: combinedChecks(graph),
       ...(security ? {security} : {}),
       meta: {agent: 'graph-integration'}
     };

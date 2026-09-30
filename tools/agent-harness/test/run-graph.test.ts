@@ -122,4 +122,22 @@ describe('runGraph', () => {
     });
     expect(started).toEqual(['b']);
   });
+
+  test('identical checks from several nodes run once in the integration verify', async () => {
+    const {g, ledger} = setup([
+      n('a', [], 'src/a.js', ['sh', '-c', 'echo x >> ../runs.log']),
+      n('b', [], 'src/b.js', ['sh', '-c', 'echo x >> ../runs.log'])
+    ]);
+    const res = await runGraph(g, {
+      ledger, notify: async () => {},
+      start: (argv, cwd) => {
+        write(cwd, `src/${cwd.split('-').at(-1)}.js`, 'y\n');
+        return done();
+      },
+      supervise: async () => ({action: 'keep_waiting'}), sleep: async () => {}
+    });
+    const checks = ledger.run(res.integrationRunId!)!.checks;
+    const shared = checks.filter(c => c.name.includes('check'));
+    expect(shared.map(c => c.name)).toEqual(['a+b: check']);
+  });
 });

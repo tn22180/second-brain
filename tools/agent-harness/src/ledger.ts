@@ -32,6 +32,7 @@ export interface RunRow {
   model: string | null;
   round: number | null;
   decision: string | null;
+  checks: {name: string; ok: boolean; detail?: string}[];
 }
 
 export const defaultLedgerPath = () =>
@@ -88,9 +89,12 @@ export class Ledger {
   }
 
   run(runId: string): RunRow | null {
-    return (this.db
-      .query(`SELECT run_id, contract_id, pass, claimed_done, agent, model, round, decision FROM runs WHERE run_id = ?`)
-      .get(runId) as RunRow | null) ?? null;
+    const r = this.db
+      .query(`SELECT run_id, contract_id, pass, claimed_done, agent, model, round, decision, checks_json FROM runs WHERE run_id = ?`)
+      .get(runId) as (Omit<RunRow, 'checks'> & {checks_json: string}) | null;
+    if (!r) return null;
+    const {checks_json, ...rest} = r;
+    return {...rest, checks: JSON.parse(checks_json)};
   }
 
   setNode(graphId: string, nodeId: string, s: {state: string; rounds: number; runIds?: string[]; reason?: string}): void {
