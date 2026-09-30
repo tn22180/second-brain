@@ -1,0 +1,20 @@
+{
+  "id": "seo-extend-image-quota-t2",
+  "source": "tony-wf",
+  "goal": "internal-support-key.md states the allow-list as it now is (6 actions, one bounded write) and how TS AI calls extend_image_quota; every citation resolves",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-extend-image-quota",
+  "baseSha": "76b3194ae487b17d2805c2486e750bda06fa436f",
+  "allow": [
+    "docs/features/internal-support-key.md"
+  ],
+  "verify": [
+    {
+      "name": "docs-gate citations",
+      "cmd": [
+        "node",
+        "-e",
+        "process.exit(require('./scripts/docs-gate/citations').main() === 0 ? 0 : 1)"
+      ]
+    }
+  ]
+}

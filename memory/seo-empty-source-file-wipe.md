@@ -14,5 +14,9 @@ Case gốc: kunstundspiel (SEO-260923-YhMfLQ), 1.836/22.896 file hỏng; 404 vì
 
 Fix: worktree `seo-wt-empty-upload`, branch `fix/SEO-260923-empty-source-file-update` → commit `cacab12f71d`, MR !2314 (2026-09-25, chưa merge).
 
+Quét 2026-09-30 (read-only): 27 shop có object 0 byte trong `tempV2/` (bucket chỉ giữ ~7 ngày) → ~600 file hỏng mang dấu `INVALID_IMAGE_FILE_SIZE` ngoài kunstundspiel; nặng: razvangarage 264 (hỏng từ 2026-04), 6d0f50 244 (09-29). GCF có fix từ tag v1.86.41 (09-25) nhưng Cloud Run job chỉ có fix từ `[deploy-cloud-run-production]` 09-30 08:56Z — object 0 byte cuối cùng 07:36Z cùng ngày. Hỏng trước cửa sổ 7 ngày không truy được qua bucket.
+
+Phòng ngừa rộng: MR !2347 (2026-09-30) — guard ở uploadImageFromBuffer (buffer rỗng + expiry signed URL từng cắt về nửa đêm), isImageUrlExisting chỉ loại 404 → nay đòi 2xx + có body, alt revert thôi gửi url, revert-all lọc URL chết. Deploy worker là `allow_failure` — v1.86.48 bị cancel, check riêng job đó.
+
 **Why:** file "READY nhưng không có image" trông như lỗi Shopify, dễ đổ cho merchant/Shopify; thật ra do app.
 **How to apply:** ticket "ảnh biến mất / Files báo lỗi 20mb" ở app seo → nghĩ tới bug này trước; check `mediaErrors` + `image==null` + history log `unoptimized` 404. Bytes gốc còn nguyên → khôi phục được bằng re-upload. Liên quan [[seo-prod-deploy-by-tag]].

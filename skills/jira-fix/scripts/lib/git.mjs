@@ -174,6 +174,21 @@ export function buildCreateMrUrl(webUrl, branch, baseBranch, title) {
  * cái người đọc và gật đầu, và cú push bị chặn thay vì được giải thích trong MR.
  */
 export function outOfScope(changed, allow) {
-  const set = new Set(allow);
-  return changed.filter(f => !set.has(f));
+  // Entry kết thúc bằng '/' là thư mục — cùng quy ước với agent-harness (src/git.ts#inScope).
+  return changed.filter(f => !allow.some(a => (a.endsWith('/') ? f.startsWith(a) : f === a)));
+}
+
+/**
+ * Những entry của allow có thể đem `git add`: đang có trên đĩa, hoặc tracked (xoá file cũng là
+ * thay đổi). File được duyệt mà agent không tạo thì bỏ qua — `git add` gặp pathspec không khớp
+ * là chết cả lệnh. agent-harness lọc y hệt, nên hai bên stage ra cùng một index.
+ */
+export async function presentPaths(dir, allow, gitFn = git) {
+  const out = [];
+  for (const a of allow) {
+    if (existsSync(join(dir, a)) || (await gitFn(dir, ['ls-files', '--error-unmatch', '--', a], {timeoutMs: 60_000})).code === 0) {
+      out.push(a);
+    }
+  }
+  return out;
 }

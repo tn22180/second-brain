@@ -1,0 +1,57 @@
+{
+  "id": "seo-extend-image-quota-t3",
+  "source": "tony-wf",
+  "goal": "internal devZone key may call exactly the 60 classified-safe /dev actions; 63 denied by category; unclassified refused (fail-closed) (cross-tenant, global infra, billing, destructive, external mail, arbitrary exec, privileged field, secret exposure); non-string ?x= is refused; CI fails when a testOnly case label is in neither INTERNAL_DEV_ZONE_ALLOWED nor INTERNAL_DEV_ZONE_DENIED",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-extend-image-quota",
+  "baseSha": "fe37f78b6577274526e8f14f3530d94d1047c4d9",
+  "allow": [
+    "packages/functions/src/helpers/devZoneAccess.js",
+    "packages/functions/src/helpers/devZoneAccess.test.js",
+    "docs/features/internal-support-key.md"
+  ],
+  "verify": [
+    {
+      "name": "jest (devZoneAccess)",
+      "cmd": [
+        "npx",
+        "jest",
+        "--ci",
+        "packages/functions/src/helpers/devZoneAccess.test.js"
+      ]
+    },
+    {
+      "name": "eslint",
+      "cmd": [
+        "env",
+        "DISABLE_V8_COMPILE_CACHE=1",
+        "npx",
+        "eslint",
+        "packages/functions/src/helpers/devZoneAccess.js",
+        "packages/functions/src/helpers/devZoneAccess.test.js"
+      ]
+    },
+    {
+      "name": "docs-gate citations",
+      "cmd": [
+        "node",
+        "-e",
+        "process.exit(require('./scripts/docs-gate/citations').main() === 0 ? 0 : 1)"
+      ]
+    }
+  ],
+  "reproduce": {
+    "testCmd": [
+      "npx",
+      "jest",
+      "--ci"
+    ]
+  },
+  "security": {
+    "appName": "SEO"
+  },
+  "meta": {
+    "agent": "inline",
+    "model": "opus",
+    "round": 2
+  }
+}

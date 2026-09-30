@@ -7,6 +7,8 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `rf3q6k` · 2026-09-30 · BLOG · api · no verified cause · — · inconclusive
+- `1vbwf7r` · 2026-09-29 · BLOG · api · no verified cause · — · inconclusive
 - `7nba8f` · 2026-09-29 · BLOG · apisa · Duplicate of recorded fingerprint 4mbx6l, now on the standalone service and a third store: the blog→APC leg of · — · fix_disabled
 - `4mbx6l` · 2026-09-29 · BLOG · api · The blog→APC leg of the all-in-one bundle contract is broken in one direction: AI Product Copy answers HTTP 40 · — · fix_disabled
 - `2v8nol` · 2026-09-28 · SEO · apigen2 · no verified cause · — · inconclusive
@@ -89,7 +91,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `itv3ay` · 2026-09-10 · BLOG · api · GET /api/shopify/productByCollections was called with the literal query string collectionId=undefined, and get · — · fix_disabled
 - `17l4t5k` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
 - `mqf2jh` · 2026-09-10 · BLOG · api · no verified cause · — · inconclusive
-- `1pqydjx` · 2026-09-10 · SEO · mcpgen2 · no verified cause · — · inconclusive
+- `1pqydjx` · 2026-09-29 · SEO · mcpgen2 · analysisRepository.updateByType dereferences `faqs.isFAQsSet` on an analysis doc whose stored `faqs` is null,  · — · fix_disabled
 - `mne0rk` · 2026-09-10 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields a primitive number instead of an o · — · fix_disabled
 - `c7rec9` · 2026-09-09 · SEO · handleoptimizeimagegen2 · no verified cause · — · inconclusive
 - `1y50rr7` · 2026-09-09 · SEO · ollamaquotaalertgen2 · no verified cause · — · inconclusive

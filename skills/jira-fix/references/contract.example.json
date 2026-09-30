@@ -1,0 +1,39 @@
+{
+  "id": "FAL-720-g1",
+  "source": "jira-fix",
+  "goal": "integrationKeys: bind swagger token to the requesting shop",
+  "repoPath": "/Users/nguyentuan/.cache/jira-fix/wt/ai-product-copy-FAL-720-bind-shop",
+  "baseSha": "<baseSha in ra bởi worktree.mjs — 40 hex>",
+  "allow": [
+    "packages/functions/src/handlers/proxy.js",
+    "packages/functions/src/handlers/__tests__/proxy.test.js"
+  ],
+  "verify": [
+    {
+      "name": "jest (touched tests)",
+      "cmd": [
+        "npx",
+        "jest",
+        "--ci",
+        "packages/functions/src/handlers/__tests__/proxy.test.js"
+      ]
+    },
+    {
+      "name": "docs-gate",
+      "cmd": [
+        "node",
+        "scripts/docs-gate/index.js"
+      ]
+    }
+  ],
+  "reproduce": {
+    "testCmd": [
+      "npx",
+      "jest",
+      "--ci"
+    ]
+  },
+  "security": {
+    "appName": "APC"
+  }
+}

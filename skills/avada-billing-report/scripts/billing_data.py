@@ -105,7 +105,11 @@ def run_bq(sql, params):
     for k, v in params.items():
         cmd.append(f"--parameter={k}:DATE:{v}")
     cmd.append(sql)
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        sys.stderr.write("bq query timed out after 120s\n")
+        sys.exit(1)
     if proc.returncode != 0:
         sys.stderr.write("bq query failed:\n" + (proc.stdout or "") + (proc.stderr or "") + "\n")
         sys.exit(1)

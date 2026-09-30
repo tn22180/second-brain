@@ -1,12 +1,14 @@
 ---
 name: falcon-fix-bot-mac-runtime
-description: "falcon-fix-bot chạy NATIVE launchd từ 2026-09-23 ở ~/Projects/falcon-fix-bot (không còn docker/colima); HOME riêng, session default-deny; docker bản cũ bị PAUSED."
+description: "TẮT HẲN 2026-09-30 (launchctl disable+bootout). Trước đó: falcon-fix-bot chạy NATIVE launchd từ 2026-09-23 ở ~/Projects/falcon-fix-bot (không còn docker/colima); HOME riêng, session default-deny; docker bản cũ bị PAUSED."
 metadata:
   node_type: memory
   type: project
   originSessionId: abf45b73-ffd6-4c00-82d4-77b85d4fae88
   modified: 2026-09-23T02:32:00.342Z
 ---
+
+**TẮT HẲN 2026-09-30** theo lệnh Tuan: `launchctl disable` + `bootout` cả daemon lẫn watchdog (watchdog trước để khỏi alert giả OPS); daemon thoát sạch sau SIGTERM, không LOCK dở. Code + state để nguyên. Bật lại: `launchctl enable gui/$(id -u)/<label>` rồi `bootstrap` plist trong LaunchAgents (daemon trước watchdog). Đã gỡ khỏi `harness/loops.yml` ([[personal-loop-health]]).
 
 Từ **2026-09-23 09:11 (+07)** bot chạy native: launchd `com.falcon-fix-bot.daemon` +
 `com.falcon-fix-bot.watchdog`, runtime = clone ở **`~/Projects/falcon-fix-bot`** (ngoài

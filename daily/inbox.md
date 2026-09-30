@@ -291,3 +291,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo có toggle GTIN barcode thật trong structured data (`f4684b85619`, deploy qua `[deploy-extensions]`) — shop báo GTIN sai thì check toggle trước
 - [ ] (×1) Test nhánh fix trên staging = đổi branch trigger trong `.gitlab-ci.yml` (vd `fix/mcp`) rồi push; nhớ revert trước khi merge
 - [ ] (×1) Theme extension icon/img phải ghim kích thước tường minh — CSS `img` của theme đè (blogs tag-page `a8227b984`)
+
+### memory candidates 2026-09-30
+- [ ] (×1) seo structured data: mỗi variant phải có `@id` riêng và emit đủ variant, không giới hạn 10 (`91a411a8a7a`, FAL-1029). Shop báo trùng `#product` thì check đã lên tag chưa
+- [ ] (×1) seo optimize ảnh chạy vượt số ảnh = chuỗi recursive rẽ nhánh (nghi fleet dup). Fix `1ed8908e177` giới hạn còn 1 nhánh, chờ tag để lên prod
+- [ ] (×1) seo shipping rate trong structured data tính theo tier riêng của từng variant, key theo price, chỉ tính variant được in ra (FAL-920, `f143e6385b9`/`84b669dea75`)
+- [ ] (×1) Email notification report broken link (seo) sẽ bị bỏ, task giao MinhPt kèm !2338. Đừng coi việc mất email là bug
+- [ ] (×1) Task point tháng 2026-09 đã tới hạn 09-29/30 mà open loop vẫn còn. Cần tạo ngay kẻo trượt sang tháng sau

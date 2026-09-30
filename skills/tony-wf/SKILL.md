@@ -1,6 +1,6 @@
 ---
 name: tony-wf
-description: Use when user invokes /tony-wf with a path to a markdown brief file - grounds itself in the repo's own CLAUDE.md without eagerly loading skill bodies, brainstorms via superpowers, creates a plan, sets up TaskCreate checklist and appends progress to the brief file, then plans each task before dispatch and executes it via specialist subagents with a capped test-fix loop, a review, and a security check on the diff after each task
+description: Use when user invokes /tony-wf with a path to a markdown brief file - grounds itself in the repo's own CLAUDE.md without eagerly loading skill bodies, brainstorms via superpowers, creates a plan, sets up TaskCreate checklist and appends progress to the brief file, then plans each task before dispatch and executes it via specialist subagents with a capped test-fix loop, a review, and a security check on the diff after each task. Decides on its own (logs choices in the brief) and ends at an open, unmerged MR from a feature branch - never merges, never pushes the base branch, never tags or deploys
 ---
 
 # Tony Workflow
@@ -8,6 +8,45 @@ description: Use when user invokes /tony-wf with a path to a markdown brief file
 ## Overview
 
 Read a markdown brief file → ground yourself in the repo (minimum read, no eager skill loading) → brainstorm via `superpowers:brainstorming` → break into tasks → dual tracking (TaskCreate + `## Progress` in the brief) → **plan each task before dispatching it** → execute through the right specialist subagent → test-fix loop capped at 5 rounds → review → **security check on the diff** → next task.
+
+## Authority — decide, don't ask
+
+The user runs this to hand work off, not to be interviewed. Every question is a stall he has
+to come back for. Default is to decide, write the decision down, and keep going.
+
+| Decide yourself — no question | Never — not even if a step seems to need it |
+|---|---|
+| Design choices inside the brief's intent | Merge any MR/PR (`glab mr merge`, `gh pr merge`, merge button, `merge_when_pipeline_succeeds` push option, auto-merge) |
+| Task split, order, agent + model routing | Push to the base branch (`master`/`main`/`develop`), directly or via `HEAD:master` |
+| Approving your own per-task plan (§6) | `git push --force` / `-f` / `--force-with-lease` |
+| Commits on the feature branch | Create or push a tag — on `seo` and `blogs` a tag **is** a prod deploy |
+| Push the feature branch, open the MR (Draft if it touches auth, billing, credits or a prod data path) | Deploy anything (`firebase deploy`, `gcloud … deploy`, `yarn deploy`) |
+| Fix-loop rounds, test choice, refactors inside the allowed files | Write to prod Firestore/GCP |
+
+**Ask only for these**, batched into one message, then keep working on whatever does not
+depend on the answer:
+- The brief contradicts itself or the code in a way that changes *what* gets built.
+- A security finding you want to keep (§8 `accepted`) or a secret found (needs rotation).
+- The 5-round cap is hit (§7) — that is a stop, not a question.
+- A task can only be done by something in the "Never" column.
+
+Anything else ambiguous: pick the option that is cheapest to reverse, record it under
+`## Decisions` in the brief (`- <question> → <choice> — <why>`), and continue. The user reads
+that list with the MR, and a wrong call there costs one review comment, not a stalled run.
+
+**Delivery = an open MR from a feature branch**, target = the repo's base branch, never
+merged. Branch `feat/<slug>` or `fix/<slug>` off fresh `origin/<base>`. Push with
+`git push -u origin <branch>` plus GitLab push options `-o merge_request.create
+-o merge_request.target=<base> -o merge_request.title=<title>` (Avada repos push over HTTPS;
+`glab` is unauthenticated for several of them). Never pass
+`merge_request.merge_when_pipeline_succeeds`. Before pushing, `git rev-parse --abbrev-ref HEAD`
+must not be the base branch — check it every time, other sessions switch shared checkouts.
+
+Enforced, not just written: `~/.claude/hooks/git_guard.py` denies base-branch/tag/force/delete
+pushes, auto-merge push options and `glab mr merge`/`gh pr merge`, and lets a feature-branch
+push through without a prompt **only when the push is its own Bash call** and the branch tip's
+tree has a passing `harness verify` run (§7 step 8) — otherwise it prompts, and under `claude -p`
+that means denied. Commit exactly the verified index (`git add -A -- <allow>`), nothing else. `mr_notify.py` DMs Tuan the MR link via Hermes.
 
 ## Flow
 
@@ -21,9 +60,9 @@ digraph tony_wf {
     "Assign agent + model per task" -> "Create TaskCreate checklist";
     "Create TaskCreate checklist" -> "Append Progress to brief";
     "Append Progress to brief" -> "Plan task N";
-    "Plan task N" -> "Plan approved?" [shape=diamond];
-    "Plan approved?" -> "Plan task N" [label="no, revise"];
-    "Plan approved?" -> "Dispatch task N to subagent" [label="yes"];
+    "Plan task N" -> "Plan self-check passes?" [shape=diamond];
+    "Plan self-check passes?" -> "Plan task N" [label="no, revise"];
+    "Plan self-check passes?" -> "Dispatch task N to subagent" [label="yes"];
     "Dispatch task N to subagent" -> "Run tests";
     "Run tests" -> "Tests pass?" [shape=diamond];
     "Tests pass?" -> "Review task N output" [label="yes"];
@@ -40,7 +79,8 @@ digraph tony_wf {
     "Update TaskCreate + brief" -> "More tasks?" [shape=diamond];
     "More tasks?" -> "Plan task N" [label="yes, N++"];
     "More tasks?" -> "Final verification" [label="no"];
-    "Final verification" -> "Update brief as COMPLETE";
+    "Final verification" -> "Push feature branch + open MR (never merge)";
+    "Push feature branch + open MR (never merge)" -> "Update brief as COMPLETE";
 }
 ```
 
@@ -79,6 +119,14 @@ Repo skills and docs are per-repo. Never import another app's skill as fact.
 ### 3. Brainstorm (REQUIRED)
 
 Invoke the `superpowers:brainstorming` skill. Explores intent, requirements, and design before implementation. Do NOT skip.
+
+Run it **non-interactively** — this section overrides the skill's one-question-at-a-time
+dialogue and its "wait for design approval" step. For each question it would ask, answer it
+from the brief and the code you read in §2, and log it under `## Decisions` in the brief.
+Only questions matching the "Ask only for these" list above go to the user, all in one
+message. The design is approved when it is written into the brief — not when the user replies.
+Same for `superpowers:writing-plans`' execution-handoff question: the execution method is this
+skill (§6–§7), don't ask.
 
 ### 4. Analyze and plan
 
@@ -176,6 +224,9 @@ Write a short plan into the task's Log entry in the brief. Six lines, no prose:
 ```
 
 Rules:
+- **You approve the plan, not the user.** Self-check before dispatch: every file in "Files
+  allowed" was opened, the test command is runnable as written, nothing in the plan is in the
+  "Never" column. Pass → dispatch. Do not wait for a reply.
 - **No plan → no dispatch.** The plan is what goes into the subagent prompt verbatim; if you
   cannot write it, you do not understand the task well enough to hand it off.
 - **Read before planning.** Open the files you intend to change first. A plan written from
@@ -201,8 +252,37 @@ For each task:
    - Diagnose via `superpowers:systematic-debugging`, fix, rerun the test command.
 6. Tests pass → **review the output** (quality, correctness, no regressions). Review fails → counts as a failed round, back to step 5 under the same 5-round cap.
 7. Review passes → **run the security check on the diff** (§8). Not clean → counts as a failed round, back to step 5 under the same cap.
-8. Security clean → set ✅ `completed` in both trackers, write the round count, the security-check verdict, and notes.
-9. Next task.
+8. Security clean → **independent verify** before the task's commit. Write
+   `<brief-dir>/contracts/<task-id>.json` from the §6 plan (`allow` = Files allowed, `verify` =
+   Test command as argv, `baseSha` = `git rev-parse HEAD` taken *before* dispatch, `security` on
+   for anything touching auth/billing/credits/prod data; schema:
+   `~/Documents/second-brain/tools/agent-harness/src/contract.ts`), then
+   `bun run ~/Documents/second-brain/tools/agent-harness/bin/harness.ts verify <contract> --out <verdict> --claimed-done`.
+   Exit 1 counts as a failed round — the subagent said done, the verifier said no. Exit 0 → commit.
+   Write the contract *before* dispatch so the subagent can't move its own goalposts.
+9. Verify passes → set ✅ `completed` in both trackers, write the round count, the security-check verdict, and notes.
+10. Next task.
+
+Also pass `"meta": {"agent", "model", "round"}` in the contract — the ledger keeps it per run so
+`harness stats` / a later learn step can tell which executor false-dones on which task shape.
+
+#### Graph mode (pilot) — 3+ tasks, or tasks that can run in parallel
+
+Instead of §6–§8 per task in this session, write `<brief-dir>/graphs/<slug>.json` (schema:
+`~/Documents/second-brain/tools/agent-harness/src/graph.ts`): one node per task with `deps`,
+`prompt` (the §6 plan + task text), `contract` (goal/allow/verify/reproduce/security — no
+id/repoPath/baseSha, the runner sets them) and `meta.model`. Concurrent nodes must not share
+files; add a dep or split files. Then run it in the background:
+
+`bun run ~/Documents/second-brain/tools/agent-harness/bin/harness.ts graph run <graph.json>`
+
+Each node: own worktree off the integration branch → `cc -p` → `jev supervise` every 60 s →
+harness verify → resume same session with the failure (5-round cap) → commit verified tree →
+merge into `branch`. Progress DMs arrive on Telegram; `graph status <id>` reads the ledger.
+Rerunning the same file resumes (done nodes are skipped). The runner **never pushes**: when
+it reports "ready to push", do §9 here — review the integration worktree
+(`<repo>-wt-<graph-id>`), whole-branch security check, push as its own Bash call, open the MR.
+Use `baseRef` only for unpushed local work (second-brain); product repos cut from `origin/<base>`.
 
 #### On hitting the 5-round cap
 
@@ -262,9 +342,13 @@ After all tasks complete:
 - Run the §8 security check once more over the **whole** branch diff, not just the last task — a
   combination of two individually clean diffs can still be wrong (a secret added in task 2 and
   a new log line added in task 5 that prints it).
-- Update the brief's Progress section to COMPLETE with a summary, total rounds used, and the
-  final security verdict
-- Report final status to user
+- Push the feature branch and open the MR as in **Authority** above. MR body: brief link,
+  the task table, the `## Decisions` list, test output, security verdict. Draft if it touches
+  auth, billing, credits or a prod data path. **Do not merge, do not tag, do not deploy** — the
+  run ends at an open MR.
+- Update the brief's Progress section to COMPLETE with a summary, total rounds used, the
+  final security verdict and the MR URL
+- Report final status to user: MR URL first, then the Decisions he should check
 
 ## Red Flags
 
@@ -276,7 +360,11 @@ After all tasks complete:
 | "Skip review, it's simple" | Every task gets reviewed. No exceptions. |
 | "Update the brief later" | Update both trackers immediately after each task. |
 | "Skip to next task" | Current task must pass tests AND review first. |
-| "Brief is unclear, just guess" | Ask the user for clarification. |
+| "Brief is unclear, better ask" | Only if it changes *what* gets built. Otherwise pick the cheapest-to-reverse option and log it in `## Decisions`. |
+| "Let me confirm the plan with the user first" | You approve task plans. The user reviews the MR. |
+| "Tests green, I'll merge it" | Never merge. The run ends at an open MR. |
+| "Just push this small fix straight to master" | Never push the base branch. Feature branch + MR, every time. |
+| "Tag it so it deploys" | A tag is a prod deploy on `seo`/`blogs`. Never. |
 | "Round 6 will fix it" | 5 is a hard stop. Report and hand back. |
 | "Different model, fresh 5 rounds" | The cap is per task, not per model. Still stopped. |
 | "Opus for everything, it's smarter" | Wrong model wastes budget. Follow the routing table. |

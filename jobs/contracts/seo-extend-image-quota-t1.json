@@ -1,0 +1,20 @@
+{
+  "id": "seo-extend-image-quota-t1",
+  "source": "tony-wf",
+  "goal": "internal devZone session can raise imageOptimizeExtendLimit to max(current, images) capped at 1000 via POST /api/dev?x=extend_image_quota; nothing else becomes writable",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-extend-image-quota",
+  "baseSha": "d25efe1aa1c3f61bab15f602d06379ca8f7cd47f",
+  "allow": [
+    "packages/functions/src/helpers/devZoneAccess.js",
+    "packages/functions/src/helpers/devZoneAccess.test.js",
+    "packages/functions/src/controllers/devController.js",
+    "packages/functions/src/services/imageQuotaService.js",
+    "packages/functions/src/services/__tests__/imageQuotaService.test.js"
+  ],
+  "verify": [
+    {"name": "jest (task tests)", "cmd": ["npx", "jest", "--ci", "packages/functions/src/helpers/devZoneAccess.test.js", "packages/functions/src/services/__tests__/imageQuotaService.test.js"]},
+    {"name": "eslint (touched files)", "cmd": ["env", "DISABLE_V8_COMPILE_CACHE=1", "npx", "eslint", "packages/functions/src/helpers/devZoneAccess.js", "packages/functions/src/controllers/devController.js", "packages/functions/src/services/imageQuotaService.js"]}
+  ],
+  "reproduce": {"testCmd": ["npx", "jest", "--ci"]},
+  "security": {"appName": "SEO"}
+}

@@ -4,7 +4,9 @@ import {main} from './lib/jira.mjs';
  * Pha 6: commit trong worktree rồi mở MR bằng **git push options**.
  *
  *   node open-mr.mjs --dir <worktree> --base master \
- *     --title "fix(apc): ..." --body-file body.md --allow-file allow.txt [--draft] [--dry-run]
+ *     --title "fix(apc): ..." --body-file body.md --allow-file allow.txt --verdict verdict.json [--draft] [--dry-run]
+ *
+ * `--verdict` bắt buộc trừ --dry-run: file do `harness verify` ghi ra (workflow.md, Pha 6).
  *
  * Không dùng GitLab API: 5 repo đẩy qua HTTPS và `glab auth status` trên máy này trả 401 với
  * không token nào trong config/keyring/env. Push option chỉ cần đúng thứ credential mà `git push`
@@ -13,7 +15,8 @@ import {main} from './lib/jira.mjs';
  */
 import {readFileSync} from 'node:fs';
 import {basename} from 'node:path';
-import {git, branchAllowed, singleLine, parseMrUrl, parseCreateLink, remoteToWebUrl, buildCreateMrUrl, outOfScope} from './lib/git.mjs';
+import {git, branchAllowed, singleLine, parseMrUrl, parseCreateLink, remoteToWebUrl, buildCreateMrUrl, outOfScope, presentPaths} from './lib/git.mjs';
+import {checkVerdict, ledgerCheck, stagedTreeSha} from './lib/verdict.mjs';
 
 await main(async () => {
 
@@ -35,6 +38,8 @@ await main(async () => {
   const allow = readFileSync(arg('allow-file'), 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
   const dryRun = has('dry-run');
   const draft = has('draft');
+  // Đọc ngay từ đầu: thiếu --verdict phải dừng trước khi stage gì, không để index bẩn lại.
+  const verdictPath = dryRun ? undefined : arg('verdict');
   const TIMEOUT = 180_000;
   const MAX_TITLE = 300;
 
@@ -52,10 +57,13 @@ await main(async () => {
   if (!branchAllowed(branch)) fail('refused', `branch ${branch} không nằm trong allowlist fix/FAL-`);
   if (branch === baseBranch) fail('refused', 'từ chối push thẳng lên base branch');
 
-  // Stage đúng những gì đã duyệt, thay vì `git add -A` rồi kiểm tra sau: worktree còn chứa
+  // Stage đúng những gì đã duyệt, thay vì `git add -A` cả cây rồi kiểm tra sau: worktree còn chứa
   // `node_modules` symlink (repo không gitignore nó ở gốc) và mọi rác của lần chạy trước.
   // Bơm cả cây vào index rồi lọc ra là cho phép một cú trượt tay có cơ hội đi vào commit.
-  const added = await git(dir, ['add', '--', ...allow], {timeoutMs: TIMEOUT});
+  // Cùng cách stage với agent-harness (present + `add -A`), nếu không tree sha hai bên sẽ lệch.
+  const present = await presentPaths(dir, allow, git);
+  if (!present.length) fail('nothing_to_commit', 'không file nào trong allow-list tồn tại hoặc được track');
+  const added = await git(dir, ['add', '-A', '--', ...present], {timeoutMs: TIMEOUT});
   if (added.code !== 0) fail('commit_failed', (added.stderr || added.stdout).trim().slice(0, 300));
 
   const staged = await git(dir, ['diff', '--cached', '--name-only'], {timeoutMs: TIMEOUT});
@@ -67,6 +75,29 @@ await main(async () => {
   if (stray.length) {
     await git(dir, ['reset'], {timeoutMs: TIMEOUT});
     fail('out_of_scope', `file ngoài phạm vi đã duyệt: ${stray.join(', ')}`, {changed, allow});
+  }
+
+  // Chỉ bỏ qua ở --dry-run: dry-run không đẩy gì, và là bước xem diff trước khi verify.
+  if (!dryRun) {
+    let verdict;
+    try {
+      verdict = JSON.parse(readFileSync(verdictPath, 'utf8'));
+    } catch {
+      verdict = undefined;
+    }
+    let gate;
+    try {
+      const sha = await stagedTreeSha(dir, git);
+      gate = checkVerdict(verdict, sha);
+      // File verdict chỉ cho runId; quyết định là của ledger (agent tự ghi được verdict.json).
+      if (gate.ok) gate = await ledgerCheck(verdict.runId, sha);
+    } catch (e) {
+      gate = {ok: false, failure: 'unverified', detail: String(e?.message ?? e).slice(0, 300)};
+    }
+    if (!gate.ok) {
+      await git(dir, ['reset'], {timeoutMs: TIMEOUT});
+      fail(gate.failure, gate.detail);
+    }
   }
 
   // Thay đổi nằm ngoài allow-list không chặn commit, nhưng người duyệt cần biết chúng tồn tại.

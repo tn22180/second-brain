@@ -96,6 +96,18 @@ Cắt nhóm theo **cái reviewer cần duyệt cùng nhau**, không theo file:
 
 Chờ user gật rõ ràng ("ok", "làm đi", "nhóm 1 thôi"). Im lặng không phải là gật.
 
+Gật nhóm nào thì ghi `contract.json` cho nhóm đó **trước khi sửa code** (mẫu:
+`references/contract.example.json`, schema: `second-brain/tools/agent-harness/src/contract.ts`):
+- `baseSha` = `baseSha` mà `worktree.mjs` in ra. Harness đòi HEAD vẫn đúng ở đó: **agent không tự
+  commit** — `open-mr.mjs` là chỗ duy nhất commit.
+- `allow` = đúng `allow.txt` vừa duyệt (thư mục thì kết thúc bằng `/`, cả hai bên hiểu giống nhau).
+- `verify` = lệnh chạy các test sẽ viết, + `node scripts/docs-gate/index.js` nếu repo có `scripts/docs-gate/`.
+- `reproduce: {"testCmd": ["npx","jest","--ci"]}` — luôn bật; harness tự stash source, test mới phải fail.
+- `security: {"appName": "<SEO|BLOG|APC|AEO|IMG-OPT>"}` — luôn bật; review không chạy được = chặn.
+
+Viết trước để agent không tự dời cột mốc sau khi sửa. Không có contract thì không có verdict,
+không có verdict thì `open-mr.mjs` không push.
+
 ---
 
 ## Pha 5 — Fix
@@ -149,6 +161,10 @@ node $ENGINE_DIR/scripts/worktree.mjs --key FAL-720 --repo <repo> --slug <slug> 
 Không có cờ đó, script cắt branch mới bằng `-B <branch> <baseSha>` và ném đi mọi commit đã push.
 Lần cập nhật này không đi qua `open-mr.mjs` (MR đã tồn tại): commit rồi
 `git push origin HEAD:refs/heads/<branch>` là đủ, GitLab tự cập nhật MR.
+Đường này không qua `open-mr.mjs`, nhưng `~/.claude/hooks/git_guard.py` chặn thay: push nhánh phụ chỉ
+đi thẳng khi tree của commit đầu nhánh có run pass trong ledger. Nên: sửa → `harness verify` (contract
+mới, `baseSha` = HEAD hiện tại) → commit đúng các file trong `allow` → push. Chưa verify thì bị hỏi
+(interactive) hoặc bị từ chối (`claude -p`).
 
 Dọn: `node $ENGINE_DIR/scripts/worktree.mjs --key ... --repo ... --slug ... --remove` sau khi MR đã mở.
 
@@ -169,13 +185,31 @@ node $ENGINE_DIR/scripts/open-mr.mjs --dir <dir> --base master \
   --title "fix(apc): ..." --body-file body.md --allow-file allow.txt --dry-run
 ```
 
+Verify độc lập — agent báo xong chỉ là lời khai, cái này mới là bằng chứng:
+```
+bun run ~/Documents/second-brain/tools/agent-harness/bin/harness.ts verify contract.json \
+  --out verdict.json --claimed-done
+```
+Harness kiểm cả working tree: file sửa/tạo ngoài `allow` (kể cả `jest.config.js`, `__mocks__/`)
+hoặc file bị gitignore nằm trong `allow` đều làm fail — test chạy trên cây nào thì push đúng cây đó.
+Exit 1 = verifier bác: **không** mở MR. Báo Tuan từng check `✗`, sửa, verify lại. Kết quả cũng
+DM Tuan qua Hermes. Exit 2 = contract sai, sửa contract (không nới phạm vi một mình).
+
 Thật (thêm `--draft` nếu ticket Highest hoặc chạm auth/credit/billing):
 ```
 node $ENGINE_DIR/scripts/open-mr.mjs --dir <dir> --base master \
-  --title "..." --body-file body.md --allow-file allow.txt --draft
+  --title "..." --body-file body.md --allow-file allow.txt --verdict verdict.json --draft
 ```
+Script tự tính lại tree sha của index rồi hỏi ledger (`harness check <runId> <sha>`) — `verdict.json`
+chỉ để lấy `runId`, sửa tay file đó không qua được. Sửa bất cứ gì sau bước verify → `diff_changed`
+hoặc `unverified` → verify lại.
+
+Tuan duyệt hay bác MR (trong session hoặc qua tin nhắn): ghi lại để đo agent —
+`bun run …/harness.ts decide <runId> approved|rejected` (`runId` nằm trong `verdict.json`).
 
 `failure` có thể gặp:
+- `unverified` / `verify_failed` / `diff_changed` — thiếu verdict, verdict fail, hoặc index đổi sau
+  verify. Chạy lại `harness verify`; không bao giờ sửa tay `verdict.json`.
 - `out_of_scope` — diff chạm file ngoài `allow.txt`. Sửa diff, hoặc quay lại xin duyệt phạm vi mới.
   Không nới `allow.txt` một mình.
 - `no_mr_url` — branch đã lên remote nhưng push option không ăn; dùng `createMrUrl` trả về, một click.

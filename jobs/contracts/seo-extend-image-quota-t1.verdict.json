@@ -1,0 +1,46 @@
+{
+  "contractId": "seo-extend-image-quota-t1",
+  "runId": "seo-extend-image-quota-t1-61358b88",
+  "at": 1790760408473,
+  "pass": true,
+  "diffSha": "ab6635912aaf0ff757a3f265acc2379eaa809a20",
+  "changed": [
+    "packages/functions/src/controllers/devController.js",
+    "packages/functions/src/helpers/devZoneAccess.js",
+    "packages/functions/src/helpers/devZoneAccess.test.js",
+    "packages/functions/src/services/__tests__/imageQuotaService.test.js",
+    "packages/functions/src/services/imageQuotaService.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "5 file(s)"
+    },
+    {
+      "name": "jest (task tests)",
+      "ok": true
+    },
+    {
+      "name": "eslint (touched files)",
+      "ok": true
+    },
+    {
+      "name": "reproduce",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.46067040000000004
+}

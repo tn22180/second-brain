@@ -1,0 +1,66 @@
+# Unattended loops on this Mac and the artifact each must leave behind.
+# Read by harness/loop_health.py (launchd com.tn22180.loop-health, hourly).
+#
+# A check proves OUTPUT, not liveness: every silent failure so far (brain push
+# 23 nights, billing 09-23..27, autofix audit after 09-27) had a green launchd
+# exit code or a live pid. Add a loop here the day it is loaded into launchd.
+#
+# Kinds:
+#   launchd     label, running (true = KeepAlive daemon must have a pid)
+#   file_fresh  path (glob or list of globs, ~ ok), max_age (e.g. 90m, 26h, 3d)
+#   dated_file  path (glob), max_lag_days — newest YYYY-MM-DD in the file names
+#   git_ref     repo, ref, max_age — commit time of ref (a push moves origin/*)
+#   expires     date, warn_days — a credential with a known expiry
+
+notify:
+  macos: true
+  # Personal DM only, never a group: sent by the Hermes (work) bot, which
+  # already DMs this user id (its TELEGRAM_ALLOWED_USERS).
+  telegram:
+    enabled: true
+    env_file: ~/.hermes/.env
+    token_var: TELEGRAM_BOT_TOKEN
+    chat_id: 1178722633
+  # A loop still failing is re-alerted after this long, so it can't be forgotten.
+  realert: 24h
+
+loops:
+  - name: second-brain sync
+    checks:
+      - {kind: launchd, label: com.tn22180.secondbrain}
+      # Runs 20:00; 26h tolerates one late wake without flapping.
+      - {kind: git_ref, repo: ~/Documents/second-brain, ref: origin/main, max_age: 26h}
+
+
+  - name: prod-error-autofix
+    checks:
+      - {kind: launchd, label: com.tn22180.prod-error-autofix, running: true}
+      - {kind: file_fresh, path: ~/.cache/prod-autofix/daemon.log, max_age: 12h}
+
+  - name: prod-error-autofix audit
+    checks:
+      - {kind: launchd, label: com.tn22180.prod-error-autofix-audit}
+      # audit.log is touched even when every lane fails; the report is the output.
+      - {kind: dated_file, path: ~/.cache/prod-autofix/audit-*.md, max_lag_days: 2}
+
+  - name: billing report
+    checks:
+      - {kind: launchd, label: com.avada.billing-report}
+      # Report day is yesterday; the BigQuery export lags ~1 day, so 2 is normal.
+      - {kind: dated_file, path: ~/.claude/skills/avada-billing-report/reports/gcp-cost-*.md, max_lag_days: 2}
+
+  - name: harness learn
+    checks:
+      - {kind: launchd, label: com.tn22180.harness-learn}
+      # Weekly (Mon 09:00); 8 days tolerates one late run.
+      - {kind: dated_file, path: ~/Documents/second-brain/jobs/learn/*.md, max_lag_days: 8}
+
+  - name: hermes gateway
+    checks:
+      - {kind: launchd, label: ai.hermes.gateway, running: true}
+      - {kind: file_fresh, path: ~/.hermes/logs/gateway.log, max_age: 24h}
+
+  - name: openclaw gateway
+    checks:
+      - {kind: launchd, label: ai.openclaw.gateway, running: true}
+      - {kind: file_fresh, path: ~/Library/Logs/openclaw/gateway.log, max_age: 24h}

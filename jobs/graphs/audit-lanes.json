@@ -1,0 +1,220 @@
+{
+  "id": "audit-lanes",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain",
+  "base": "main",
+  "baseRef": "main",
+  "branch": "fix/audit-lanes",
+  "maxParallel": 3,
+  "linkPaths": [
+    "tools/prod-error-autofix/node_modules",
+    "projects/Falcon"
+  ],
+  "nodes": [
+    {
+      "id": "ledger-scope",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "opus"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). Daily repo audit, see src/audit/job.ts runAuditJob and src/audit/ledger.ts classify().\n\nBUG: classify(store, app, found, nowMs) marks EVERY open audit finding of the app as `resolved` when it is not in `found` (ledger.ts ~lines 64-69). When a lane FAILS (security lane times out most days for SEO/APC/IMG-OPT; hygiene can fail too), job.ts passes an empty list for that lane, so every open finding of that kind is flipped to resolved, then re-reported as fresh the next day it succeeds. The daily Tồn/Đã hết numbers are noise because of this.\n\nFIX: give classify a scope argument: `scope: {kinds: Array<'security' | 'hygiene'>; files?: {kind: 'security' | 'hygiene'; paths: string[]}[]}` (or a simpler equivalent you justify). Only open rows whose `kind` is in `scope.kinds` may be resolved; if a per-kind `files` list is given, only rows whose `file` is in that list may be resolved for that kind (this is for an upcoming incremental security sweep that only scans changed files — design for it, don't build the sweep). In job.ts build the scope from the lanes that actually succeeded: security lane fulfilled && res.ok → 'security'; hygiene lane fulfilled with no laneFailures → 'hygiene'. A failed worktree means nothing is resolved. Keep classify's existing behaviour for accepted/false_positive untouched.\n\nTDD: add failing tests first in test/audit.ledger.test.ts (failed lane keeps open findings open; succeeded lane still resolves; files-scoped resolution) and test/audit.job.test.ts (security lane failure does not resolve open security findings; hygiene findings still resolve normally). Watch them fail, then fix. Keep comments sparse and about WHY.",
+      "contract": {
+        "goal": "a failed audit lane never resolves open findings of its kind; classify accepts a kinds/files scope; job.ts passes the lanes that succeeded",
+        "allow": [
+          "tools/prod-error-autofix/src/audit/ledger.ts",
+          "tools/prod-error-autofix/src/audit/job.ts",
+          "tools/prod-error-autofix/test/audit.ledger.test.ts",
+          "tools/prod-error-autofix/test/audit.job.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "ledger+job tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/audit.ledger.test.ts",
+              "test/audit.job.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ],
+            "timeoutMs": 600000,
+            "preflight": true
+          },
+          {
+            "name": "typecheck",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ],
+            "timeoutMs": 300000
+          }
+        ]
+      }
+    },
+    {
+      "id": "fetch-retry",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). src/git/worktree.ts createWorktree runs `git fetch --quiet origin <baseBranch>` once (~line 100) and fails the whole app's audit on any error. The git host git.avada.net has transient failures: 'Could not resolve host', 'Error in the HTTP2 framing layer', 'The requested URL returned error: 530'. Several days an app (AEO) lost its whole audit to one blip.\n\nFIX: retry the fetch up to 3 attempts total with a short backoff (e.g. 2s then 5s), only when the failure looks transient (DNS/resolve, HTTP2 framing, 5xx like 502/503/504/530, connection reset/timeout, 'early EOF'); an auth error (401/403, 'Authentication failed') or unknown ref must fail immediately. Make the sleep injectable so tests don't wait. The final failure detail should say how many attempts were made.\n\nTDD: write the tests in a NEW file test/git.fetchRetry.test.ts first (transient then success → ok with 2 attempts; 3 transient → fail naming 3 attempts; auth error → fail after 1 attempt), watch them fail, then implement. Read src/git/worktree.ts and how its git runner is injected before designing the test seam.",
+      "contract": {
+        "goal": "worktree fetch retries transient git-host failures up to 3 attempts with backoff; auth/unknown-ref errors fail at once",
+        "allow": [
+          "tools/prod-error-autofix/src/git/worktree.ts",
+          "tools/prod-error-autofix/test/git.fetchRetry.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "fetch retry tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/git.fetchRetry.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ],
+            "timeoutMs": 600000,
+            "preflight": true
+          },
+          {
+            "name": "typecheck",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ],
+            "timeoutMs": 300000
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-answer-detail",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). src/audit/securityLane.ts runSecurityLane: when the agent's reply has no parsable JSON array, the lane fails with `invalid_answer` and detail 'no JSON array found in the reply' — BLOG hits this most days and we cannot tell why, because the reply itself is thrown away.\n\nFIX: on invalid_answer, include a short, secret-redacted excerpt of the reply in `detail`: reply length, the first ~160 and last ~160 characters, whitespace collapsed. Redact with the project's existing secret redaction helper (search src/ for redactSecret or similar and reuse it; do not write a new one). An empty reply should say 'empty reply'. Keep detail under ~500 chars.\n\nTDD: add failing tests to test/audit.security.test.ts first (prose reply → detail contains the excerpt and length; a reply containing a fake Shopify token from test/fixtures/fakeSecrets.ts → token not in detail; empty reply → 'empty reply'), watch them fail, then implement.",
+      "contract": {
+        "goal": "security lane invalid_answer detail carries a redacted head/tail excerpt of the reply so the failure is diagnosable",
+        "allow": [
+          "tools/prod-error-autofix/src/audit/securityLane.ts",
+          "tools/prod-error-autofix/test/audit.security.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "security lane tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/audit.security.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ],
+            "timeoutMs": 600000,
+            "preflight": true
+          },
+          {
+            "name": "typecheck",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ],
+            "timeoutMs": 300000
+          }
+        ]
+      }
+    },
+    {
+      "id": "incremental-security",
+      "deps": [
+        "ledger-scope",
+        "invalid-answer-detail"
+      ],
+      "meta": {
+        "agent": "cc-p",
+        "model": "opus"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). The daily audit's security lane (src/audit/securityLane.ts, called from src/audit/job.ts runAuditJob) sweeps the WHOLE repo with Opus every day; for SEO, APC and IMG-OPT it hits the 30-minute timeout most days, so security coverage is effectively zero. classify() in src/audit/ledger.ts already accepts a scope with per-kind file lists (done in an earlier step — read it).\n\nBUILD an incremental sweep:\n1. Store (src/state/store.ts): a small table recording per app the last successfully swept commit sha and the time of the last FULL sweep. Getter/setter, migration-safe (CREATE TABLE IF NOT EXISTS).\n2. Config (src/config.ts): AUDIT_SECURITY_FULL_EVERY_DAYS, default 7.\n3. job.ts: get the worktree HEAD sha. Full sweep if there is no record, the recorded sha is not an ancestor/unknown, or the last full sweep is older than the configured days. Otherwise incremental: `git diff --name-only <lastSha> HEAD` in the worktree, keep source files only (js/jsx/ts/tsx/mjs/cjs/json/liquid under the repo, excluding lockfiles, docs/, *.md, test snapshots). No changed files → skip the lane: not a failure, not a finding, and security is NOT in the classify scope that day (nothing resolved). On success record the sha (and the full-sweep time when it was full). On failure record nothing.\n4. securityLane.ts: optional `files?: string[]` input; when set, the prompt says to sweep those files and what they directly call/are called by, and that findings must still cite real file:line. When absent, prompt unchanged.\n5. For an incremental run pass `files: [{kind:'security', paths: <changed files>}]` in the classify scope so only findings in those files can be resolved.\n6. The daily Telegram report should show whether the security sweep was full or incremental (N files) or skipped (no changes) — find where lane info reaches src/audit/report.ts and add one short word; if that needs report.ts, you may NOT touch it: put the info into the existing laneFailures-free path only if it fits, otherwise skip this point and say so.\n\nTDD throughout: failing tests first in test/audit.job.test.ts, test/audit.security.test.ts, test/store.test.ts, test/config.test.ts; watch them fail; implement. Git calls in job.ts must go through the injected runner so tests use fakes.",
+      "contract": {
+        "goal": "security lane sweeps only files changed since the last successful sweep, full sweep weekly or when no record; skip when nothing changed; incremental runs resolve only findings in swept files",
+        "allow": [
+          "tools/prod-error-autofix/src/audit/securityLane.ts",
+          "tools/prod-error-autofix/src/audit/job.ts",
+          "tools/prod-error-autofix/src/state/store.ts",
+          "tools/prod-error-autofix/src/config.ts",
+          "tools/prod-error-autofix/src/audit/run.ts",
+          "tools/prod-error-autofix/test/audit.security.test.ts",
+          "tools/prod-error-autofix/test/audit.job.test.ts",
+          "tools/prod-error-autofix/test/store.test.ts",
+          "tools/prod-error-autofix/test/config.test.ts",
+          "tools/prod-error-autofix/.env.example"
+        ],
+        "verify": [
+          {
+            "name": "audit job/security/store/config tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/audit.job.test.ts",
+              "test/audit.security.test.ts",
+              "test/store.test.ts",
+              "test/config.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ],
+            "timeoutMs": 600000,
+            "preflight": true
+          },
+          {
+            "name": "typecheck",
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ],
+            "timeoutMs": 300000
+          }
+        ]
+      }
+    }
+  ]
+}

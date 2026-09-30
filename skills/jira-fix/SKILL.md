@@ -38,7 +38,7 @@ tuyệt đối khi chạy script. Token đọc từ `$ENGINE_DIR/.env`, fallback
    Citation chết = ticket đã trôi → refute, báo, không fix mù.
 4. **GATE** — in bảng `nhóm │ finding │ file:line │ fix │ rủi ro │ branch`. **Dừng.**
 5. **Fix** — mỗi nhóm: `worktree.mjs` → sửa → test đi kèm (phải fail khi revert source) → chạy test.
-6. **MR** — `open-mr.mjs --dry-run` xem trước, rồi thật. Rồi **luôn** `comment-issue.mjs --confirm`
+6. **MR** — `open-mr.mjs --dry-run` xem trước → `harness verify contract.json` (contract viết ở pha 4) → `open-mr.mjs … --verdict verdict.json`. Không verdict pass khớp index thì không push (workflow.md). Rồi **luôn** `comment-issue.mjs --confirm`
    comment ngược link MR lên ticket — **ngắn**: link MR + một dòng mỗi MR + cái chưa làm + cái đã
    refute. Chi tiết ở MR body, không chép lại vào ticket.
 

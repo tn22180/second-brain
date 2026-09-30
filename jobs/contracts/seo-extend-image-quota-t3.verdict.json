@@ -1,0 +1,48 @@
+{
+  "contractId": "seo-extend-image-quota-t3",
+  "runId": "seo-extend-image-quota-t3-ada4986f",
+  "at": 1790764231063,
+  "pass": true,
+  "diffSha": "79fe7011a602ebd54908cb6d786379a6527c72e5",
+  "changed": [
+    "docs/features/internal-support-key.md",
+    "packages/functions/src/helpers/devZoneAccess.js",
+    "packages/functions/src/helpers/devZoneAccess.test.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "3 file(s)"
+    },
+    {
+      "name": "jest (devZoneAccess)",
+      "ok": true
+    },
+    {
+      "name": "eslint",
+      "ok": true
+    },
+    {
+      "name": "docs-gate citations",
+      "ok": true
+    },
+    {
+      "name": "reproduce",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.8993943999999998
+}

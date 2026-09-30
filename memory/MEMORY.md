@@ -1,5 +1,5 @@
 - [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
-- [Ask rule là prefix: git -C lọt](ask-rule-prefix-git-c.md) — `git -C … push`/for-loop không khớp `git push:*` → classifier deny câm; chạy lệnh trần từng repo để hiện prompt.
+- [Ask rule là prefix: git -C lọt](ask-rule-prefix-git-c.md) — (push đã chuyển sang git_guard hook 2026-09-30, không còn ask rule git push) rule prefix không khớp `git -C … push`/for-loop.
 - [Check master before building](check-master-before-building.md) — grep master cho feature TRƯỚC khi code; team chạy song song cùng 1 brief qua Claude, MR 2229 build xong mới biết master đã có.
 - [Verify the branch before diagnosing](verify-branch-before-diagnosing.md) — pin the tree before ANY code claim; the worktree you sit in feels like truth. Fired twice: SEO-260714, then a whole doc set written 207 commits behind master.
 - [Docs from code: shared layer first](docs-from-code.md) — Tony's rule; common layer before per-domain, else skills can't justify why-not-claude-md and you get two taxonomies.
@@ -46,7 +46,7 @@
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
-- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — NATIVE launchd từ 09-23 ở ~/Projects/falcon-fix-bot (MR !9); HOME riêng, session default-deny; docker cũ PAUSED; gitlab.token hết hạn 10-03.
+- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — TẮT HẲN 2026-09-30 (disable+bootout, code/state giữ); trước đó native launchd ở ~/Projects/falcon-fix-bot.
 - [seo local clone is shallow](seo-local-clone-shallow.md) — merge-base rỗng / "unrelated histories" với origin/master là do shallow (68 graft), không phải lịch sử khác; đã `fetch --unshallow` 2026-09-07.
 - [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights trừ 5 credit action `gscInsights`.
 - [seo MCP prod OAuth: lỗi CSP form-action](seo-mcp-oauth-shopify-callback.md) — redirect_uri ĐÃ whitelist (16 callback 200); chết ở nhánh form vì form-action thiếu admin.shopify.com. Đếm POST /mcp-oauth/shop vs callback trước khi nghi whitelist.
@@ -74,3 +74,9 @@
 - [gcloud config `sa` né reauth](gcloud-sa-config-no-reauth.md) — Workspace avadagroup.com ép reauth; config `sa`=tony-cli ACTIVE từ 09-29, đọc bq/logging/Firestore 5 prod; ghi/deploy → `--configuration=default`.
 - [seo onpage score: browser vs ES](seo-onpage-score-client-vs-es.md) — table tính điểm live trên browser; Report + modal score range đọc ES, chỉ có sau store scan → check `jobDataMigrate` trước.
 - [Shopify `| json` escape `/`](shopify-json-filter-escapes-slash.md) — `</script>` ra `<\/script>` nên `| json` an toàn trong JSON-LD; liquidjs không escape nên test local báo thiếu; `escape_once` thì không an toàn.
+- [Loop-health cá nhân](personal-loop-health.md) — harness/loops.yml kiểm output 6 loop launchd mỗi giờ → Telegram DM riêng (bot Hermes), không vào nhóm; loop mới phải thêm vào đây.
+- [Agent tự quyết, MR không merge](agent-autonomy-mr-not-merge.md) — tony-wf/harness: tự quyết + mở MR feature branch; cấm merge, push master, tag, deploy; hỏi gộp 1 tin chỉ khi đổi thứ được build.
+- [Tooling cá nhân không cần Jira](no-jira-for-own-tooling.md) — harness/hook/skill/loop không tạo FAL; pilot harness qua tony-wf, không chờ ticket.
+- [Telegram DM format](telegram-dm-format.md) — ngắn, dòng đầu <b>title session</b> (HTML parse_mode); mr_notify/harness/loop-health đã theo.
+- [Telegram chỉ báo](telegram-notify-only.md) — không xử lý reply; Tuan dùng Orca trên điện thoại để lái session.
+- [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.

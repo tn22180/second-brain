@@ -1,0 +1,30 @@
+{
+  "contractId": "seo-extend-image-quota-t2",
+  "runId": "seo-extend-image-quota-t2-82a67e89",
+  "at": 1790760495427,
+  "pass": true,
+  "diffSha": "7b323fad29d21182b0c5e7f0a9aba106ba2b3338",
+  "changed": [
+    "docs/features/internal-support-key.md"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "1 file(s)"
+    },
+    {
+      "name": "docs-gate citations",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0
+}
