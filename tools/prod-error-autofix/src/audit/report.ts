@@ -151,20 +151,22 @@ function assemble(input: ReportInput, included: Set<string> | undefined, dropped
   return lines.join('\n').trim();
 }
 
+// Best effort: the Telegram message is the report; a disk error must not lose it.
 function writeFullReport(path: string, text: string): void {
-  mkdirSync(dirname(path), {recursive: true});
-  writeFileSync(path, text, 'utf8');
+  try {
+    mkdirSync(dirname(path), {recursive: true});
+    writeFileSync(path, text, 'utf8');
+  } catch (e) {
+    process.stderr.write(`WARN audit full report not written (${path}): ${e instanceof Error ? e.message : String(e)}\n`);
+  }
 }
 
 export function renderReport(input: ReportInput): string {
   const full = assemble(input, undefined, 0);
-  if (full.length <= TELEGRAM_MESSAGE_LIMIT) return full;
-
-  // Save the unabridged report before capping anything — the operator's only
-  // way to see what was cut. Written unconditionally (not only once we know
-  // the final cap) so a caller that supplied a path always gets a copy that
-  // matches what triggered the cap.
+  // Written every run, before any cap: it is the unabridged copy when the message gets cut, and
+  // the dated artefact loop-health checks — writing it only on overflow made short days look dead.
   if (input.fullReportPath) writeFullReport(input.fullReportPath, full);
+  if (full.length <= TELEGRAM_MESSAGE_LIMIT) return full;
 
   // Rank every findable line globally, across apps, so 851 low-severity
   // hygiene hits in one app can never crowd out a high-severity security

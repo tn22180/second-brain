@@ -266,6 +266,20 @@ describe('renderReport', () => {
     }
   });
 
+  test('the full report file is written on a quiet day too — it is the run\'s dated artefact', () => {
+    // loop-health watches audit-<date>.md; writing it only when the message overflowed made
+    // every short day look like the audit had stopped (09-28..09-30).
+    const dir = mkdtempSync(join(tmpdir(), 'audit-report-'));
+    const fullReportPath = join(dir, 'audit-2026-09-29.md');
+    try {
+      const text = renderReport({...BASE, fullReportPath});
+      expect(readFileSync(fullReportPath, 'utf8')).toBe(text);
+      expect(text).not.toContain(fullReportPath);
+    } finally {
+      rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
   test('a small report has no cap artefacts on a quiet day', () => {
     const text = renderReport(BASE);
     expect(text).not.toMatch(/phát hiện không hiện/);
