@@ -114,5 +114,7 @@ export async function runEslint(input: RunEslintInput, runner: Runner = spawnRun
   } finally {
     // Never allowed to reach a branch. `finally` so a thrown parse still cleans up.
     await unlink(rcPath).catch(() => {});
+    // Only this run reads it; kept, it grew to 136 files / 473M by 2026-09-30.
+    await unlink(input.outFile).catch(() => {});
   }
 }
