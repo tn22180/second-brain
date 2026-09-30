@@ -437,6 +437,26 @@ describe('runAuditJob', () => {
       expect(store.openAuditFindings('SEO')).toHaveLength(2);
     });
 
+    test('a triage failure alone does not stop hygiene resolving: the eslint list is complete', async () => {
+      const store = new Store(':memory:');
+      await seed(store);
+      const result = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          securityLane: async () => ({ok: false, failure: 'timeout', detail: 'killed', errors: [], hasSecuritySkill: true, costUsd: undefined}),
+          runEslintLane: async () => ({
+            ok: true,
+            filesScanned: 1,
+            findings: [{file: 'packages/functions/src/b.js', line: 2, rule: 'no-undef', message: "'B' undefined"}]
+          }),
+          triageLane: async () => ({ok: false, failure: 'timeout', detail: 'killed', costUsd: undefined})
+        })
+      );
+      expect(result.report.laneFailures.some(f => f.lane === 'triage')).toBe(true);
+      expect(result.report.ledger.resolvedRows.map(r => r.file)).toEqual([LINT.file]);
+    });
+
     test('a hygiene failure keeps open hygiene findings open', async () => {
       const store = new Store(':memory:');
       await seed(store);
@@ -482,7 +502,7 @@ describe('runAuditJob', () => {
       );
       expect(seen).toHaveLength(1);
       expect(seen[0]!.files).toBeUndefined();
-      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, updatedMs: NOW});
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, lastFullAttemptMs: NOW, updatedMs: NOW});
       expect(result.securitySweep).toEqual({mode: 'full'});
       // Every git call runs against the audit worktree, through the injected runner.
       const dir = auditJobWorktreeDir('/cache/wt', APP.repo, '2026-08-19');
@@ -490,52 +510,91 @@ describe('runAuditJob', () => {
       for (const c of calls) expect(c.slice(0, 3)).toEqual(['git', '-C', dir]);
     });
 
-    test('a recent record sweeps only the changed source files', async () => {
+    test('a recent record sweeps every changed file but binaries, lockfiles and snapshots', async () => {
       const store = new Store(':memory:');
       store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - 2 * DAY, nowMs: NOW - DAY});
       const seen: SecurityLaneInput[] = [];
       const calls: string[][] = [];
-      const diff = [
+      // The `secret` surface covers config, CI, fixtures and docs, not just code.
+      const kept = [
         'packages/functions/src/handlers/a.js',
         'packages/assets/src/pages/B.tsx',
-        'packages/functions/src/lib/c.mjs',
-        'packages/functions/src/lib/d.cjs',
-        'packages/functions/src/lib/e.ts',
-        'packages/assets/src/f.jsx',
         'extensions/theme/blocks/seo.liquid',
         'packages/functions/package.json',
+        '.env',
+        'packages/functions/.env.production',
+        'certs/server.pem',
+        '.gitlab-ci.yml',
+        '.github/workflows/deploy.yml',
+        'shopify.app.staging.toml',
+        'firestore.rules',
+        'docs/setup.md',
+        'packages/functions/docs/api.json',
+        'README.md',
+        'packages/assets/src/styles.scss',
+        'packages/assets/src/icon.svg'
+      ];
+      const dropped = [
         'yarn.lock',
         'package-lock.json',
         'packages/functions/package-lock.json',
         'pnpm-lock.yaml',
-        'npm-shrinkwrap.json',
-        'docs/features/x.js',
-        'packages/functions/docs/api.json',
-        'README.md',
-        'packages/functions/CHANGELOG.md',
+        'bun.lockb',
         'packages/functions/src/__tests__/__snapshots__/a.test.js.snap',
         'packages/assets/src/__snapshots__/view.json',
         'packages/assets/src/logo.png',
-        'packages/assets/src/styles.scss'
+        'packages/assets/src/photo.JPG',
+        'packages/assets/fonts/inter.woff2',
+        'vendor/release.tar.gz',
+        'packages/assets/files/guide.pdf'
       ];
       const result = await runAuditJob(
         APP,
-        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff}, calls), securityLane: recordingLane(seen)})
+        jobDeps({
+          store,
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [...kept, ...dropped]}, calls),
+          securityLane: recordingLane(seen)
+        })
       );
-      expect(seen[0]!.files).toEqual([
-        'packages/functions/src/handlers/a.js',
-        'packages/assets/src/pages/B.tsx',
-        'packages/functions/src/lib/c.mjs',
-        'packages/functions/src/lib/d.cjs',
-        'packages/functions/src/lib/e.ts',
-        'packages/assets/src/f.jsx',
-        'extensions/theme/blocks/seo.liquid',
-        'packages/functions/package.json'
-      ]);
+      expect(seen[0]!.files).toEqual(kept);
       expect(calls.some(c => c.includes('diff') && c.includes('--name-only') && c.includes('old1111') && c.includes('HEAD'))).toBe(true);
       // The sha moves; the full-sweep clock does not.
-      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - 2 * DAY, updatedMs: NOW});
-      expect(result.securitySweep).toEqual({mode: 'incremental', files: 8});
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - 2 * DAY, lastFullAttemptMs: NOW - 2 * DAY, updatedMs: NOW});
+      expect(result.securitySweep).toEqual({mode: 'incremental', files: kept.length});
+    });
+
+    test('the diff lists a rename as its old and new path', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const calls: string[][] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['a.js']}, calls), securityLane: recordingLane([])})
+      );
+      expect(calls.some(c => c.includes('diff') && c.includes('--no-renames'))).toBe(true);
+    });
+
+    test('more than 200 changed files is swept as a full day', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      const diff = Array.from({length: 201}, (_, i) => `packages/functions/src/f${i}.js`);
+      const result = await runAuditJob(
+        APP,
+        jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff}), securityLane: recordingLane(seen)})
+      );
+      expect(seen[0]!.files).toBeUndefined();
+      expect(result.securitySweep).toEqual({mode: 'full'});
+      expect(store.getSecuritySweep('SEO')?.lastFullMs).toBe(NOW);
+    });
+
+    test('exactly 200 changed files is still incremental', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - DAY, nowMs: NOW - DAY});
+      const seen: SecurityLaneInput[] = [];
+      const diff = Array.from({length: 200}, (_, i) => `packages/functions/src/f${i}.js`);
+      await runAuditJob(APP, jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff}), securityLane: recordingLane(seen)}));
+      expect(seen[0]!.files).toHaveLength(200);
     });
 
     test('a full sweep older than the configured days forces a full sweep again', async () => {
@@ -599,7 +658,7 @@ describe('runAuditJob', () => {
           })
         );
         expect(seen[0]!.files).toBeUndefined();
-        expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, updatedMs: NOW});
+        expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW, lastFullAttemptMs: NOW, updatedMs: NOW});
       });
     }
 
@@ -621,7 +680,7 @@ describe('runAuditJob', () => {
       const seen: SecurityLaneInput[] = [];
       await runAuditJob(APP, jobDeps({store, runner: fakeGit({head: undefined}), securityLane: recordingLane(seen)}));
       expect(seen[0]!.files).toBeUndefined();
-      expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, updatedMs: NOW - DAY});
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, lastFullAttemptMs: NOW - DAY, updatedMs: NOW - DAY});
     });
 
     test('no changed source file skips the lane: no failure, no finding, nothing of its kind resolved', async () => {
@@ -638,7 +697,7 @@ describe('runAuditJob', () => {
         APP,
         jobDeps({
           store,
-          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['README.md', 'yarn.lock', 'docs/x.js']}),
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: ['yarn.lock', 'packages/assets/src/logo.png']}),
           securityLane: async () => {
             called++;
             throw new Error('the lane must not run when nothing changed');
@@ -654,7 +713,7 @@ describe('runAuditJob', () => {
       // Skipping is not "swept without a skill": the report must not claim it is.
       expect(result.report.hasSecuritySkill).toBe(true);
       // Nothing to sweep up to HEAD is the same as having swept up to HEAD.
-      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - DAY, updatedMs: NOW});
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - DAY, lastFullAttemptMs: NOW - DAY, updatedMs: NOW});
     });
 
     test('a skipped lane still reports a repo with no security skill as such', async () => {
@@ -688,17 +747,92 @@ describe('runAuditJob', () => {
       expect(store.openAuditFindings('SEO').map(r => r.file)).toEqual([SEC_Z.file]);
     });
 
-    test('a failed full sweep records nothing', async () => {
+    const TIMEOUT: AuditJobDeps['securityLane'] = async () => ({
+      ok: false,
+      failure: 'timeout',
+      detail: 'killed',
+      errors: [],
+      hasSecuritySkill: true,
+      costUsd: undefined
+    });
+
+    test('a failed first-ever full sweep seeds HEAD as the baseline, resolves nothing, and tomorrow goes incremental', async () => {
       const store = new Store(':memory:');
+      const day1 = await runAuditJob(APP, jobDeps({store, runner: fakeGit({head: HEAD}), securityLane: TIMEOUT}));
+      expect(day1.report.ledger.resolvedRows).toEqual([]);
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: undefined, lastFullAttemptMs: NOW, updatedMs: NOW});
+
+      const seen: SecurityLaneInput[] = [];
+      const calls: string[][] = [];
+      const day2 = await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          cfg: settings({nowMs: NOW + DAY}),
+          runner: fakeGit({head: 'next2222', ancestor: 'yes', diff: [SEC_A.file]}, calls),
+          securityLane: recordingLane(seen)
+        })
+      );
+      expect(seen[0]!.files).toEqual([SEC_A.file]);
+      expect(day2.securitySweep).toEqual({mode: 'incremental', files: 1});
+      expect(calls.some(c => c.includes('diff') && c.includes(HEAD))).toBe(true);
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: 'next2222', lastFullMs: undefined, lastFullAttemptMs: NOW, updatedMs: NOW + DAY});
+    });
+
+    test('a failed first-ever full sweep resolves no open security finding', async () => {
+      const store = new Store(':memory:');
+      await runAuditJob(
+        APP,
+        jobDeps({store, securityLane: async () => ({ok: true, findings: [SEC_A], dropped: 0, hasSecuritySkill: true, costUsd: 0.1})})
+      );
+      await runAuditJob(APP, jobDeps({store, runner: fakeGit({head: HEAD}), securityLane: TIMEOUT}));
+      expect(store.openAuditFindings('SEO').map(r => r.file)).toEqual([SEC_A.file]);
+    });
+
+    test('a failed due full sweep keeps the sha, and the next days go incremental until the interval passes again', async () => {
+      const store = new Store(':memory:');
+      store.setSecuritySweep('SEO', {sha: 'old1111', fullAtMs: NOW - 8 * DAY, nowMs: NOW - DAY});
+
+      const seen0: SecurityLaneInput[] = [];
       await runAuditJob(
         APP,
         jobDeps({
           store,
-          runner: fakeGit({head: HEAD}),
-          securityLane: async () => ({ok: false, failure: 'timeout', detail: 'killed', errors: [], hasSecuritySkill: true, costUsd: undefined})
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [SEC_A.file]}),
+          securityLane: async input => {
+            seen0.push(input);
+            return TIMEOUT(input);
+          }
         })
       );
-      expect(store.getSecuritySweep('SEO')).toBeUndefined();
+      expect(seen0[0]!.files).toBeUndefined();
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - 8 * DAY, lastFullAttemptMs: NOW, updatedMs: NOW});
+
+      const seen1: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          cfg: settings({nowMs: NOW + DAY}),
+          runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [SEC_A.file]}),
+          securityLane: recordingLane(seen1)
+        })
+      );
+      expect(seen1[0]!.files).toEqual([SEC_A.file]);
+      expect(store.getSecuritySweep('SEO')).toEqual({sha: HEAD, lastFullMs: NOW - 8 * DAY, lastFullAttemptMs: NOW, updatedMs: NOW + DAY});
+
+      const seen7: SecurityLaneInput[] = [];
+      await runAuditJob(
+        APP,
+        jobDeps({
+          store,
+          cfg: settings({nowMs: NOW + 7 * DAY}),
+          runner: fakeGit({head: 'next2222', ancestor: 'yes', diff: [SEC_A.file]}),
+          securityLane: recordingLane(seen7)
+        })
+      );
+      expect(seen7[0]!.files).toBeUndefined();
+      expect(store.getSecuritySweep('SEO')?.lastFullMs).toBe(NOW + 7 * DAY);
     });
 
     test('a failed or thrown incremental sweep leaves the record where it was', async () => {
@@ -714,7 +848,7 @@ describe('runAuditJob', () => {
           APP,
           jobDeps({store, runner: fakeGit({head: HEAD, ancestor: 'yes', diff: [SEC_A.file]}), securityLane})
         );
-        expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, updatedMs: NOW - DAY});
+        expect(store.getSecuritySweep('SEO')).toEqual({sha: 'old1111', lastFullMs: NOW - DAY, lastFullAttemptMs: NOW - DAY, updatedMs: NOW - DAY});
       }
     });
   });

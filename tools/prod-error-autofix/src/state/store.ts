@@ -132,6 +132,8 @@ export interface SecuritySweepRecord {
   sha: string;
   /** Undefined until a full sweep has succeeded at least once. */
   lastFullMs: number | undefined;
+  /** Last full sweep started, successful or not: the full-sweep interval counts from here. */
+  lastFullAttemptMs: number | undefined;
   updatedMs: number;
 }
 
@@ -271,6 +273,7 @@ export class Store {
         last_full_ms INTEGER,
         updated_ms   INTEGER NOT NULL
       )`);
+    this.addColumns('audit_security_sweeps', {last_full_attempt_ms: 'INTEGER'});
   }
 
   /** `ADD COLUMN` is the only in-place schema change sqlite allows, and it is not idempotent. */
@@ -607,21 +610,46 @@ export class Store {
 
   getSecuritySweep(app: string): SecuritySweepRecord | undefined {
     const row = this.db
-      .query('SELECT last_sha, last_full_ms, updated_ms FROM audit_security_sweeps WHERE app = ?')
-      .get(app) as {last_sha: string; last_full_ms: number | null; updated_ms: number} | null;
-    return row ? {sha: row.last_sha, lastFullMs: opt(row.last_full_ms), updatedMs: row.updated_ms} : undefined;
+      .query('SELECT last_sha, last_full_ms, last_full_attempt_ms, updated_ms FROM audit_security_sweeps WHERE app = ?')
+      .get(app) as {last_sha: string; last_full_ms: number | null; last_full_attempt_ms: number | null; updated_ms: number} | null;
+    return row
+      ? {
+          sha: row.last_sha,
+          lastFullMs: opt(row.last_full_ms),
+          lastFullAttemptMs: opt(row.last_full_attempt_ms),
+          updatedMs: row.updated_ms
+        }
+      : undefined;
   }
 
   /** `fullAtMs` undefined is an incremental sweep: the sha moves, the last full-sweep time stays. */
   setSecuritySweep(app: string, input: {sha: string; fullAtMs: number | undefined; nowMs: number}): void {
     this.db
       .query(
-        `INSERT INTO audit_security_sweeps (app, last_sha, last_full_ms, updated_ms) VALUES (?, ?, ?, ?)
+        `INSERT INTO audit_security_sweeps (app, last_sha, last_full_ms, last_full_attempt_ms, updated_ms)
+         VALUES (?1, ?2, ?3, ?3, ?4)
          ON CONFLICT(app) DO UPDATE SET
            last_sha = excluded.last_sha,
            last_full_ms = COALESCE(excluded.last_full_ms, last_full_ms),
+           last_full_attempt_ms = COALESCE(excluded.last_full_attempt_ms, last_full_attempt_ms),
            updated_ms = excluded.updated_ms`
       )
       .run(app, input.sha, input.fullAtMs ?? null, input.nowMs);
+  }
+
+  /**
+   * A full sweep that did not finish. An existing record keeps its sha and full-sweep
+   * time; with no record yet, `baselineSha` becomes the sha to diff from, unswept.
+   */
+  recordFullSweepAttempt(app: string, input: {baselineSha: string; atMs: number}): void {
+    this.db
+      .query(
+        `INSERT INTO audit_security_sweeps (app, last_sha, last_full_ms, last_full_attempt_ms, updated_ms)
+         VALUES (?1, ?2, NULL, ?3, ?3)
+         ON CONFLICT(app) DO UPDATE SET
+           last_full_attempt_ms = excluded.last_full_attempt_ms,
+           updated_ms = excluded.updated_ms`
+      )
+      .run(app, input.baselineSha, input.atMs);
   }
 }

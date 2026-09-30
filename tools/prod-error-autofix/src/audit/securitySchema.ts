@@ -161,7 +161,11 @@ export function validateSecurityFindings(raw: unknown): SecurityValidation {
       return v.trim();
     };
 
-    const file = str('file', 'must be a repo-relative path');
+    // `./` stripped: an incremental sweep resolves by exact match against `git diff`
+    // paths, which never carry it, so `./a.js` would stay open forever.
+    const rawFile = str('file', 'must be a repo-relative path');
+    const file = rawFile.replace(/^(\.\/)+/, '');
+    if (rawFile && !file) errors.push(`findings[${i}].file must be a repo-relative path`);
     const title = str('title', 'must be a one-line statement of the problem');
     const why = str('why', 'must say what an attacker gets');
     const fix = str('fix', 'must say what to change');
