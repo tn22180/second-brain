@@ -149,4 +149,22 @@ describe('runNode', () => {
     expect((await runNode(graph, n, deps)).outcome).toBe('done');
     expect(ran).toBe(false);
   });
+
+  test('headless runs stream events so the log (and jev) sees progress', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(true)]});
+    await runNode(graph, node, deps);
+    const argv = calls.starts[0]!.join(' ');
+    expect(argv).toContain('--output-format stream-json');
+    expect(argv).toContain('--verbose');
+  });
+
+  test('wallMinutes on the node overrides the per-round wall clock', async () => {
+    const {deps} = fakes({verdicts: [], actions: [{action: 'keep_waiting'}, {action: 'keep_waiting'}]});
+    let t = 0;
+    deps.now = () => t;
+    deps.sleep = async () => { t += 50 * 60_000; };
+    const r = await runNode(graph, {...node, wallMinutes: 120}, deps);
+    // 50 min passed: default (45) would have blocked; 120 lets it keep going until jev's queue runs out
+    expect(r.reason ?? '').not.toContain('exceeded 45');
+  });
 });

@@ -10,6 +10,8 @@ export interface GraphNode {
   prompt: string;
   contract: NodeContract;
   meta?: Contract['meta'];
+  /** Per-round wall clock; default 45. A 7-part change on opus needs more. */
+  wallMinutes?: number;
 }
 
 export interface Graph {
@@ -73,6 +75,9 @@ export function parseGraph(raw: unknown): Parsed {
     if (byId.has(n.id)) return {ok: false, error: `duplicate node ${n.id}`};
     if (!Array.isArray(n.deps) || n.deps.some(d => typeof d !== 'string')) return {ok: false, error: `node ${n.id}: deps must be string[]`};
     if (typeof n.prompt !== 'string' || !n.prompt) return {ok: false, error: `node ${n.id}: prompt required`};
+    if (n.wallMinutes !== undefined && (!Number.isInteger(n.wallMinutes) || n.wallMinutes < 5 || n.wallMinutes > 180)) {
+      return {ok: false, error: `node ${n.id}: wallMinutes 5..180`};
+    }
     const c = n.contract as Record<string, unknown> | undefined;
     if (!c || typeof c !== 'object') return {ok: false, error: `node ${n.id}: contract required`};
     for (const k of RUNNER_OWNED) {

@@ -61,4 +61,9 @@ describe('parseGraph', () => {
     expect(err(graph([node('a')], {linkPaths: ['/abs']}))).toContain('linkPaths');
     expect(err(graph([node('a')], {linkPaths: ['../up']}))).toContain('linkPaths');
   });
+  test('wallMinutes bounds', () => {
+    expect(parseGraph(graph([{...node('a'), wallMinutes: 90}])).ok).toBe(true);
+    expect(err(graph([{...node('a'), wallMinutes: 1}]))).toContain('wallMinutes');
+    expect(err(graph([{...node('a'), wallMinutes: 999}]))).toContain('wallMinutes');
+  });
 });

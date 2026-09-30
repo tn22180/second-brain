@@ -8,7 +8,7 @@ export const MAX_ROUNDS = 5;
 // A nudge restarts the process; past this many in one round the agent is not converging.
 const MAX_NUDGES = 3;
 const POLL_MS = 60_000;
-const ROUND_WALL_MS = 45 * 60_000;
+const DEFAULT_WALL_MIN = 45;
 
 export interface Proc {
   exited(): boolean;
@@ -90,9 +90,12 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
   const model = node.meta?.model;
   const argvFor = (text: string, resume: boolean) => [
     'cc', '-p', '--permission-mode', 'acceptEdits', ...(resume ? ['--resume', sid] : ['--session-id', sid]),
-    ...(model ? ['--model', model] : []), '--output-format', 'text', text
+    // stream-json: the log fills as the agent works, so the supervisor judges real progress
+    // instead of an empty tail (text mode prints only at exit).
+    ...(model ? ['--model', model] : []), '--output-format', 'stream-json', '--verbose', text
   ];
   const runIds: string[] = [];
+  const wallMs = (node.wallMinutes ?? DEFAULT_WALL_MIN) * 60_000;
   const blocked = async (rounds: number, reason: string): Promise<NodeResult> => {
     await deps.notify(`⛔ ${node.id} blocked (round ${rounds}): ${redact(reason).slice(0, 200)}`);
     return {outcome: 'blocked', rounds, reason, runIds};
@@ -145,9 +148,9 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
       const tail = proc.tail();
       const now = deps.now();
       if (tail !== lastTail) quietSince = now;
-      if (now - started > ROUND_WALL_MS) {
+      if (now - started > wallMs) {
         proc.kill();
-        return blocked(round, `round exceeded ${ROUND_WALL_MS / 60_000} min`);
+        return blocked(round, `round exceeded ${wallMs / 60_000} min`);
       }
       const a = await deps.supervise({goal: node.contract.goal, tail, elapsed_s: (now - started) / 1000,
         quiet_s: (now - quietSince) / 1000, new_output: tail !== lastTail, looping: false, exited: false});
