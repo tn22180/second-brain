@@ -1,7 +1,7 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {ANALYZE_TOOLS, spawnClaude, type ClaudeFailure, type ClaudeRunner} from '../agent/claudeCli';
-import {validateSecurity, type SecurityFinding} from './securitySchema';
+import {redactSecret, validateSecurity, type SecurityFinding} from './securitySchema';
 
 /**
  * Lane A of the daily audit: one read-only sweep of a whole repo for the six
@@ -117,6 +117,19 @@ export function buildSecurityPrompt(input: SecurityLaneInput): string {
   ].join('\n');
 }
 
+const EXCERPT_EDGE = 160;
+
+/**
+ * Redacted before it is cut: slicing first could halve a token so the redaction
+ * pattern no longer matches, and the half would reach the report.
+ */
+function replyExcerpt(text: string): string {
+  const flat = redactSecret(text).replace(/\s+/g, ' ').trim();
+  if (flat === '') return 'empty reply';
+  if (flat.length <= EXCERPT_EDGE * 2) return `reply ${text.length} chars: ${flat}`;
+  return `reply ${text.length} chars: ${flat.slice(0, EXCERPT_EDGE)} … ${flat.slice(-EXCERPT_EDGE)}`;
+}
+
 export async function runSecurityLane(
   input: SecurityLaneInput,
   claude: ClaudeRunner = spawnClaude
@@ -153,7 +166,7 @@ export async function runSecurityLane(
     return {
       ok: false,
       failure: 'invalid_answer',
-      detail: parsed.errors.slice(0, 5).join('; '),
+      detail: `${parsed.errors.slice(0, 5).join('; ').slice(0, 120)} — ${replyExcerpt(res.text)}`,
       errors: parsed.errors,
       hasSecuritySkill,
       costUsd: res.costUsd
