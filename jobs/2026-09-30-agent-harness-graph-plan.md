@@ -37,17 +37,17 @@ Bash calls. Anything the runner could push is outside the one enforcement point 
 5. Every 60 s: `jev supervise` on the log tail → `keep_waiting` | `nudge`/`answer_question` (kill, `--resume` with jev's text) | `escalate` (kill, node 🛑, DM) | `collect` (wait for exit).
 6. On exit: `harness verify` (claimedDone=true, meta.round). Fail → round++; ≤5 → `cc -p --resume <sid> "<failed checks, redacted>"`. Round 5 fail → node 🛑, dependents never start, graph BLOCKED, DM.
 7. Pass → commit exactly the verified index on the node worktree, merge `--no-ff` into integration branch, remove node worktree.
-8. All ✅ → DM `<b>graph id</b>` + one line per node + "ready to push". State in ledger table `graph_nodes`.
+8. All ✅ → combined verify: every node's checks on the merged tree in a scratch worktree at base; pass records the tip tree in the ledger (git_guard's push gate). Then DM `<b>graph id</b>` + one line per node + "ready to push". State in ledger table `graph_nodes`.
 
 ## Tasks
 
-- [ ] G1 `src/graph.ts` parse/validate (ids, deps, cycle, disjoint allow, branch≠base) — pure, TDD
-- [ ] G2 `src/scheduler.ts` ready-set + parallel cap + blocked propagation, executor injected — pure, TDD
-- [ ] G3 `src/worktree.ts` integration/node worktrees, commit verified index, merge — TDD on temp repos
-- [ ] G4 `src/node.ts` dispatch + supervise + resume loop, `cc`/`jev` injected — TDD with fakes
-- [ ] G5 CLI `graph run|status`, ledger `graph_nodes`, DM summary
-- [ ] G6 tony-wf: step 4 writes graph.json; §6–§8 become `harness graph run`; push/MR stays in the session
-- [ ] G7 pilot on one real brief
+- [x] G1 `src/graph.ts` parse/validate (ids, deps, cycle, disjoint allow, branch≠base) — pure, TDD
+- [x] G2 `src/scheduler.ts` ready-set + parallel cap + blocked propagation, executor injected — pure, TDD
+- [x] G3 `src/worktree.ts` integration/node worktrees, commit verified index, merge — TDD on temp repos
+- [x] G4 `src/node.ts` dispatch + supervise + resume loop, `cc`/`jev` injected — TDD with fakes
+- [x] G5 CLI `graph run|status`, ledger `graph_nodes`, DM summary
+- [x] G6 tony-wf: step 4 writes graph.json; §6–§8 become `harness graph run`; push/MR stays in the session
+- [x] G7 pilot: `jobs/graphs/harness-minors.json` — 2 parallel nodes (sonnet, cc -p), both pass round 1, integration verify pass (`harness-minors-integration-0459dc05`), branch `feat/harness-minors` ready. Agent self-reported BLOCKED on one node (sandbox refused `$(mktemp)`); verifier ran the check and passed — verdict, not self-report, decides.
 
 Known issue to report upstream: `jev supervise` answered `collect` with reason "the run exited with
 status False" for `exited:false`.

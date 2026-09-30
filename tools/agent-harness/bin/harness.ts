@@ -5,6 +5,7 @@ import {parseContract} from '../src/contract';
 import {openLedger, type Decision} from '../src/ledger';
 import {formatVerdict, notifyTelegram} from '../src/notify';
 import {parseGraph} from '../src/graph';
+import {learn, learnReport} from '../src/learn';
 import {runGraph} from '../src/run-graph';
 import {verify} from '../src/verify';
 
@@ -76,6 +77,23 @@ if (cmd === 'stats') {
   process.exit(0);
 }
 
+// Advice only: writes a report and DMs a count. Nothing here edits a skill.
+if (cmd === 'learn') {
+  const rawDays = opt('days') ?? '14';
+  if (!/^[1-9]\d*$/.test(rawDays)) usage(`--days must be a positive integer, got: ${rawDays}`);
+  const out = opt('out');
+  if (!out) usage('usage: harness learn --out <report.md> [--days N] [--no-notify]');
+  const days = Number(rawDays);
+  const ledger = openLedger();
+  const l = learn(ledger.learnRows(Date.now() - days * 86_400_000));
+  ledger.close();
+  writeFileSync(out!, learnReport(l, days));
+  const summary = l.note ?? `${l.proposals.length} proposal(s)`;
+  console.log(`${summary} → ${out}`);
+  if (!flag('no-notify')) await notifyTelegram(`<b>harness learn</b>\n${summary.replace(/&/g, '&amp;').replace(/</g, '&lt;')} · ${out}`);
+  process.exit(0);
+}
+
 if (cmd === 'graph') {
   const [sub, arg] = rest;
   if (sub === 'status' && arg) {
@@ -101,4 +119,4 @@ if (cmd === 'graph') {
   process.exit(Object.values(res.outcomes).every(s => s === 'done') ? 0 : 1);
 }
 
-usage('usage: harness verify|check|decide|stats|graph');
+usage('usage: harness verify|check|decide|stats|graph|learn');

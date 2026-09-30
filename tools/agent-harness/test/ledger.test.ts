@@ -90,4 +90,12 @@ describe('ledger', () => {
     });
     expect(l.graphNodes('other')).toEqual({});
   });
+
+  test('learnRows returns parsed checks and meta inside the window', () => {
+    const l = db();
+    l.recordVerdict(v('old', true, 10), c, true);
+    l.recordVerdict(v('new', false, 5000), {...c, meta: {agent: 'a', model: 'm', round: 3}}, true);
+    expect(l.learnRows(1000)).toEqual([{contractId: 'T-1', pass: false, claimedDone: true, agent: 'a', model: 'm', round: 3,
+      checks: [{name: 'scope', ok: false}]}]);
+  });
 });

@@ -1,0 +1,39 @@
+{
+  "id": "harness-minors",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain",
+  "base": "main",
+  "baseRef": "main",
+  "branch": "feat/harness-minors",
+  "maxParallel": 2,
+  "nodes": [
+    {
+      "id": "stats-days",
+      "deps": [],
+      "meta": {"agent": "cc-p", "model": "sonnet"},
+      "prompt": "In tools/agent-harness, `harness stats --days <n>` does `Number(opt('days') ?? 30)` in bin/harness.ts, so `--days abc` or `--days -3` silently produces a NaN/negative window and prints garbage stats. Make it reject anything that is not a positive integer via the existing usage() helper (exit code 2, message naming --days). Add tests to test/cli.test.ts that run the CLI (follow the existing `run([...])` helper there) for --days abc, --days 0, --days -3 (exit 2) and --days 7 (exit 0). Write the failing tests first, watch them fail, then fix. Keep the change minimal.",
+      "contract": {
+        "goal": "harness stats rejects a non-positive-integer --days with exit 2; valid --days still works",
+        "allow": ["tools/agent-harness/bin/harness.ts", "tools/agent-harness/test/cli.test.ts"],
+        "verify": [
+          {"name": "cli tests", "cmd": ["bun", "--cwd", "tools/agent-harness", "test", "test/cli.test.ts"]},
+          {"name": "stats rejects NaN", "cmd": ["sh", "-c", "cd tools/agent-harness && AGENT_HARNESS_DB=$(mktemp -d)/l.db bun run bin/harness.ts stats --days abc; test $? -eq 2"]}
+        ]
+      }
+    },
+    {
+      "id": "env-export",
+      "deps": [],
+      "meta": {"agent": "cc-p", "model": "sonnet"},
+      "prompt": "In tools/agent-harness/src/notify.ts, readVar() parses the Telegram token out of an env file but ignores lines written as `export TELEGRAM_BOT_TOKEN=...`, so a user who writes the file that way silently gets no notifications. Make readVar accept an optional leading `export ` (and surrounding whitespace), keep quote stripping, and ignore comment lines. Put the tests in a NEW file test/notify.test.ts (do not edit test/cli.test.ts — another agent owns it right now): export form, plain form, quoted, commented-out line not used. Write the failing tests first, watch them fail, then fix. Export readVar if you need to test it directly.",
+      "contract": {
+        "goal": "notify.ts reads TELEGRAM_BOT_TOKEN from `export KEY=v` lines as well as `KEY=v`, ignoring comments",
+        "allow": ["tools/agent-harness/src/notify.ts", "tools/agent-harness/test/notify.test.ts"],
+        "verify": [
+          {"name": "notify tests", "cmd": ["bun", "--cwd", "tools/agent-harness", "test", "test/notify.test.ts"]},
+          {"name": "cli notify tests still pass", "cmd": ["bun", "--cwd", "tools/agent-harness", "test", "test/cli.test.ts"]}
+        ]
+      }
+    }
+  ]
+}

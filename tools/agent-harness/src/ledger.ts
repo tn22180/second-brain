@@ -3,6 +3,7 @@ import {mkdirSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {dirname, join} from 'node:path';
 import type {Contract} from './contract';
+import type {LearnRow} from './learn';
 import type {Verdict} from './verify';
 
 export type Decision = 'approved' | 'rejected';
@@ -106,6 +107,14 @@ export class Ledger {
       .query(`SELECT node_id, state, rounds, run_ids_json, reason FROM graph_nodes WHERE graph_id = ? ORDER BY node_id`)
       .all(graphId) as {node_id: string; state: string; rounds: number; run_ids_json: string; reason: string | null}[];
     return Object.fromEntries(rows.map(r => [r.node_id, {state: r.state, rounds: r.rounds, runIds: JSON.parse(r.run_ids_json), reason: r.reason}]));
+  }
+
+  learnRows(sinceMs: number): LearnRow[] {
+    const rows = this.db
+      .query(`SELECT contract_id, pass, claimed_done, agent, model, round, checks_json FROM runs WHERE at_ms >= ? ORDER BY at_ms`)
+      .all(sinceMs) as {contract_id: string; pass: number; claimed_done: number; agent: string | null; model: string | null; round: number | null; checks_json: string}[];
+    return rows.map(r => ({contractId: r.contract_id, pass: r.pass === 1, claimedDone: r.claimed_done === 1, agent: r.agent,
+      model: r.model, round: r.round, checks: JSON.parse(r.checks_json)}));
   }
 
   recordDecision(runId: string, d: Decision, at = Date.now()): boolean {
