@@ -156,16 +156,22 @@ function lintToFinding(app: App, f: TriageFinding, verdict: Verdict | undefined)
 }
 
 const DAY_MS = 86_400_000;
-const SOURCE_EXT = /\.(js|jsx|ts|tsx|mjs|cjs|json|liquid)$/;
+/** Past this many changed files an incremental prompt is no cheaper than a full one. */
+const MAX_INCREMENTAL_FILES = 200;
+const UNREADABLE_EXT =
+  /\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?|heic|psd|woff2?|ttf|otf|eot|zip|tar|gz|tgz|bz2|xz|7z|rar|jar|pdf|mp[34]|mov|webm|wav|ogg|exe|dll|so|dylib|wasm|bin)$/i;
 const LOCKFILES = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lock', 'bun.lockb']);
 
-/** A repo-relative path from `git diff --name-only` that the security lane should read. */
-function isSweepableSource(path: string): boolean {
+/**
+ * A denylist, not an allowlist: the prompt's `secret` surface covers .env, keys, CI
+ * yml, app tomls, rules and docs, so only what the lane cannot usefully read is dropped.
+ */
+function isSweepable(path: string): boolean {
   if (!path || path.startsWith('/')) return false;
   const segments = path.split('/');
-  if (segments.includes('..') || segments.includes('docs') || segments.includes('__snapshots__')) return false;
+  if (segments.includes('..') || segments.includes('__snapshots__')) return false;
   const base = segments[segments.length - 1]!;
-  return !LOCKFILES.has(base) && SOURCE_EXT.test(base);
+  return !LOCKFILES.has(base) && !UNREADABLE_EXT.test(base);
 }
 
 interface SecurityPlan {
@@ -180,10 +186,10 @@ const FULL_UNRECORDED: SecurityPlan = {sweep: {mode: 'full'}, headSha: undefined
 
 /**
  * Every doubt falls back to a full sweep, never to a skip: an unreadable HEAD, no
- * record, a record never fully swept or older than `fullEveryDays`, a recorded sha
- * that is not an ancestor of HEAD (force-push, rewritten history, a shallow clone
- * that lost it), or a diff that fails. Skipping is only for a diff that succeeded
- * and holds no source file.
+ * record, no full sweep attempted within `fullEveryDays`, a recorded sha that is not
+ * an ancestor of HEAD (force-push, rewritten history, a shallow clone that lost it),
+ * a diff that fails, or one too big to be worth scoping. Skipping is only for a diff
+ * that succeeded and holds nothing sweepable.
  */
 async function planSecuritySweep(app: App, dir: string, deps: AuditJobDeps): Promise<SecurityPlan> {
   const git = (args: string[]) => deps.runner(['git', '-C', dir, ...args], deps.cfg.gitTimeoutMs);
@@ -194,18 +200,21 @@ async function planSecuritySweep(app: App, dir: string, deps: AuditJobDeps): Pro
   const full: SecurityPlan = {sweep: {mode: 'full'}, headSha, files: undefined};
 
   const record = deps.store.getSecuritySweep(app.appName);
-  if (!record || record.lastFullMs === undefined) return full;
-  if (deps.cfg.nowMs - record.lastFullMs >= deps.cfg.security.fullEveryDays * DAY_MS) return full;
+  if (!record) return full;
+  const lastFullTry = record.lastFullAttemptMs ?? record.lastFullMs;
+  if (lastFullTry === undefined || deps.cfg.nowMs - lastFullTry >= deps.cfg.security.fullEveryDays * DAY_MS) return full;
 
   const ancestor = await git(['merge-base', '--is-ancestor', record.sha, 'HEAD']);
   if (ancestor.code !== 0) return full;
 
   // quotePath off: the default octal-escapes non-ASCII paths, which would never match a file.
-  const diff = await git(['-c', 'core.quotePath=false', 'diff', '--name-only', record.sha, 'HEAD']);
+  // --no-renames: a rename's old path must be listed, like a deletion, so its findings resolve.
+  const diff = await git(['-c', 'core.quotePath=false', 'diff', '--name-only', '--no-renames', record.sha, 'HEAD']);
   if (diff.code !== 0) return full;
 
-  const files = diff.stdout.split('\n').map(s => s.trim()).filter(isSweepableSource);
+  const files = diff.stdout.split('\n').map(s => s.trim()).filter(isSweepable);
   if (!files.length) return {sweep: {mode: 'skipped'}, headSha, files: undefined};
+  if (files.length > MAX_INCREMENTAL_FILES) return full;
   return {sweep: {mode: 'incremental', files: files.length}, headSha, files};
 }
 
@@ -424,7 +433,8 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       verdicts = res.verdicts;
       hygieneCost = res.costUsd;
       laneFailures.push(...res.laneFailures);
-      if (!res.laneFailures.length) resolvable.push('hygiene');
+      // A triage failure leaves eslint's list complete, so only a hygiene failure blocks resolving.
+      if (!res.laneFailures.some(f => f.lane === 'hygiene')) resolvable.push('hygiene');
     } else {
       laneFailures.push({lane: 'hygiene', detail: (hygSettled.reason as Error)?.message ?? 'threw'});
     }
@@ -448,6 +458,13 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
         fullAtMs: plan.sweep.mode === 'full' ? deps.cfg.nowMs : undefined,
         nowMs: deps.cfg.nowMs
       });
+    } else if (plan.headSha && plan.sweep.mode === 'full') {
+      // Trade-off: the big repos' full sweeps time out most days, and retrying one daily
+      // left them with no sweep at all. A failed full now counts as the interval's attempt:
+      // incremental days carry on from the recorded sha (or, first run ever, from HEAD
+      // seeded unswept — code already there waits for the next full), and a full is only
+      // retried once `fullEveryDays` passes again.
+      deps.store.recordFullSweepAttempt(app.appName, {baselineSha: plan.headSha, atMs: deps.cfg.nowMs});
     }
     // Read once, for up to two consumers. Only read at all on a digest day or with the
     // Jira lane on: the whole point of the daily message is NOT repeating the backlog

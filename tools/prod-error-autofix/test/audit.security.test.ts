@@ -100,6 +100,14 @@ describe('validateSecurity — schema', () => {
     expect(r.ok).toBe(false);
   });
 
+  // Incremental sweeps resolve by exact path against `git diff` output, which never has `./`.
+  test('a leading ./ on a finding file is stripped so it matches diff paths', () => {
+    const r = validateSecurity(JSON.stringify([finding({file: './packages/functions/src/a.js'}), finding({file: '././b.js'})]));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.map(f => f.file)).toEqual(['packages/functions/src/a.js', 'b.js']);
+  });
+
   // A model that restates the schema before answering puts the real answer second.
   test('the last array in the reply wins', () => {
     const text = [
