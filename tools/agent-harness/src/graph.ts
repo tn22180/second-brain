@@ -20,6 +20,8 @@ export interface Graph {
   base: string;
   /** Ref to cut the integration branch from; default fresh `origin/<base>`. For unpushed local work. */
   baseRef?: string;
+  /** Repo-relative dirs (nested node_modules) symlinked from the main checkout into every worktree. */
+  linkPaths?: string[];
   /** Integration branch the runner builds. Never pushed by the runner. */
   branch: string;
   maxParallel: number;
@@ -57,6 +59,9 @@ export function parseGraph(raw: unknown): Parsed {
   // Passed to git as an argument: no leading dash (option injection), no whitespace.
   if (g.baseRef !== undefined && (typeof g.baseRef !== 'string' || !/^[A-Za-z0-9._/-]+$/.test(g.baseRef) || g.baseRef.startsWith('-'))) {
     return {ok: false, error: 'baseRef: a plain ref name'};
+  }
+  if (g.linkPaths !== undefined && (!Array.isArray(g.linkPaths) || g.linkPaths.some(p => typeof p !== 'string' || !p || isAbsolute(p) || p.split('/').includes('..')))) {
+    return {ok: false, error: 'linkPaths: repo-relative paths, no ..'};
   }
   const maxParallel = g.maxParallel ?? 3;
   if (!Number.isInteger(maxParallel) || maxParallel < 1 || maxParallel > 8) return {ok: false, error: 'maxParallel: 1..8'};

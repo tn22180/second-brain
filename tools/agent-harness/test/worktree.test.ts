@@ -78,4 +78,16 @@ describe('worktree', () => {
     const integ = await ensureIntegration({...g, baseRef: 'side'});
     expect(sh(integ, 'git', 'rev-parse', 'HEAD').trim()).toBe(sh(repo, 'git', 'rev-parse', 'side').trim());
   });
+
+  test('linkPaths symlinks nested dependency dirs into node and combined worktrees', async () => {
+    const {repo, g} = setup();
+    write(repo, 'tools/x/package.json', '{}\n');
+    sh(repo, 'git', 'add', 'tools/x/package.json');
+    sh(repo, 'git', 'commit', '-qm', 'tool');
+    write(repo, 'tools/x/node_modules/dep/index.js', 'module.exports = 1;\n');
+    const gl = {...g, linkPaths: ['tools/x/node_modules']};
+    await ensureIntegration(gl);
+    const n = await nodeWorktree(gl, 'n1');
+    expect(existsSync(join(n.path, 'tools/x/node_modules/dep/index.js'))).toBe(true);
+  });
 });

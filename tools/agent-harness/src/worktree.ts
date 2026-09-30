@@ -1,5 +1,5 @@
 import {existsSync, symlinkSync} from 'node:fs';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {spawnRunner, type Runner} from '../../prod-error-autofix/src/gcloud/run';
 
 const GIT_TIMEOUT = 120_000;
@@ -9,6 +9,7 @@ export interface GraphRef {
   repoPath: string;
   base: string;
   baseRef?: string;
+  linkPaths?: string[];
   branch: string;
 }
 
@@ -29,10 +30,14 @@ async function git(cwd: string, args: string[], runner: Runner = spawnRunner): P
 
 const ok = async (cwd: string, args: string[]) => (await spawnRunner(['git', ...args], GIT_TIMEOUT, {cwd})).code === 0;
 
-// Worktrees don't carry node_modules; the repos here hoist to the root (yarn 4), so one link does.
-function linkDeps(repoPath: string, wt: string) {
-  const src = join(repoPath, 'node_modules');
-  if (existsSync(src) && !existsSync(join(wt, 'node_modules'))) symlinkSync(src, join(wt, 'node_modules'));
+// Worktrees don't carry node_modules. Product repos hoist to the root (yarn 4); second-brain keeps
+// one per tool, named in the graph's linkPaths.
+function linkDeps(repoPath: string, wt: string, extra: string[] = []) {
+  for (const rel of ['node_modules', ...extra]) {
+    const src = join(repoPath, rel);
+    const dst = join(wt, rel);
+    if (existsSync(src) && !existsSync(dst) && existsSync(dirname(dst))) symlinkSync(src, dst);
+  }
 }
 
 /** The integration worktree on `g.branch`, cut from fresh `origin/<base>` (or local base with no remote). */
@@ -43,7 +48,7 @@ export async function ensureIntegration(g: GraphRef): Promise<string> {
   const baseRef = await resolveBaseRef(g, true);
   const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${g.branch}`]);
   await git(g.repoPath, exists ? ['worktree', 'add', '-q', integration, g.branch] : ['worktree', 'add', '-q', '-b', g.branch, integration, baseRef]);
-  linkDeps(g.repoPath, integration);
+  linkDeps(g.repoPath, integration, g.linkPaths);
   return integration;
 }
 
@@ -65,7 +70,7 @@ export async function combinedWorktree(g: GraphRef): Promise<{path: string; base
   await git(g.repoPath, ['worktree', 'add', '-q', '--detach', scratch, baseSha]);
   await git(scratch, ['read-tree', '-m', '-u', g.branch]);
   await git(scratch, ['reset', '-q']);
-  linkDeps(g.repoPath, scratch);
+  linkDeps(g.repoPath, scratch, g.linkPaths);
   return {path: scratch, baseSha};
 }
 
@@ -80,7 +85,7 @@ export async function nodeWorktree(g: GraphRef, nodeId: string): Promise<{path: 
     const tip = await git(p.integration, ['rev-parse', 'HEAD']);
     const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${p.nodeBranch}`]);
     await git(g.repoPath, exists ? ['worktree', 'add', '-q', p.node, p.nodeBranch] : ['worktree', 'add', '-q', '-b', p.nodeBranch, p.node, tip]);
-    linkDeps(g.repoPath, p.node);
+    linkDeps(g.repoPath, p.node, g.linkPaths);
   }
   return {path: p.node, baseSha: await git(p.node, ['rev-parse', 'HEAD'])};
 }

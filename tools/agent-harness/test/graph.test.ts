@@ -56,4 +56,9 @@ describe('parseGraph', () => {
     expect(err(graph([node('a')], {baseRef: '--upload-pack=x'}))).toContain('baseRef');
     expect(err(graph([node('a')], {baseRef: 'a b'}))).toContain('baseRef');
   });
+  test('linkPaths are repo-relative, no ..', () => {
+    expect(parseGraph(graph([node('a')], {linkPaths: ['tools/x/node_modules']})).ok).toBe(true);
+    expect(err(graph([node('a')], {linkPaths: ['/abs']}))).toContain('linkPaths');
+    expect(err(graph([node('a')], {linkPaths: ['../up']}))).toContain('linkPaths');
+  });
 });
