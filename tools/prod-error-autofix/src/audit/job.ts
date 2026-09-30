@@ -79,7 +79,8 @@ export interface AuditJobDeps {
   fileExists?: (absPath: string) => boolean;
 }
 
-export type SecuritySweep = {mode: 'full'} | {mode: 'incremental'; files: number} | {mode: 'skipped'};
+/** `since` on a skip is the sha the last sweep covered: what the report measures "no change" from. */
+export type SecuritySweep = {mode: 'full'} | {mode: 'incremental'; files: number} | {mode: 'skipped'; since: string};
 
 export interface AppAuditResult {
   appName: string;
@@ -88,10 +89,7 @@ export interface AppAuditResult {
   costUsd: number | undefined;
   mr: {cleanup: MrLaneResult | undefined};
   jira: JiraLaneResult | undefined;
-  /**
-   * How today's security lane was scoped. Not rendered: report.ts has no field for
-   * it and `laneFailures` is for failures, so it stops here until the report grows one.
-   */
+  /** How today's security lane was scoped; the same value sits on `report.securitySweep`. */
   securitySweep?: SecuritySweep;
 }
 
@@ -213,7 +211,7 @@ async function planSecuritySweep(app: App, dir: string, deps: AuditJobDeps): Pro
   if (diff.code !== 0) return full;
 
   const files = diff.stdout.split('\n').map(s => s.trim()).filter(isSweepable);
-  if (!files.length) return {sweep: {mode: 'skipped'}, headSha, files: undefined};
+  if (!files.length) return {sweep: {mode: 'skipped', since: record.sha}, headSha, files: undefined};
   if (files.length > MAX_INCREMENTAL_FILES) return full;
   return {sweep: {mode: 'incremental', files: files.length}, headSha, files};
 }
@@ -546,7 +544,8 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
         openFindings,
         hasSecuritySkill,
         laneFailures,
-        jiraTicketUrl: jira?.ticketUrl
+        jiraTicketUrl: jira?.ticketUrl,
+        securitySweep: plan.sweep
       }
     };
   } finally {
