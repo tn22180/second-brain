@@ -1,13 +1,15 @@
+import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import type {App} from '../registry';
+import type {Runner} from '../gcloud/run';
 import type {Store} from '../state/store';
 import type {WorktreeInput, WorktreeResult} from '../git/worktree';
 import {findingFp} from './findingFp';
-import {classify, type AuditFinding, type FindingKind, type LedgerDiff} from './ledger';
+import {classify, type AuditFinding, type FindingKind, type LedgerDiff, type ResolveScope} from './ledger';
 import type {LaneFailure} from './report';
 import type {AppReportInput} from './report';
 import type {LintResult, RunEslintInput} from './eslint';
-import type {SecurityLaneInput, SecurityLaneResult} from './securityLane';
+import {SECURITY_SKILL_PATH, type SecurityLaneInput, type SecurityLaneResult} from './securityLane';
 import type {SecurityFinding} from './securitySchema';
 import type {TriageFinding, TriageInput, TriageResult, TriageVerdict, Verdict} from './triage';
 import type {MrLaneInput, MrLaneKind, MrLaneResult} from './mr';
@@ -34,7 +36,8 @@ export interface AuditJobSettings {
   nowMs: number;
   /** Worktree create/remove. Git operations here are fast; not the LLM timeouts below. */
   gitTimeoutMs: number;
-  security: {model: string; timeoutMs: number};
+  /** `fullEveryDays`: the incremental sweep's backstop, see `planSecuritySweep`. */
+  security: {model: string; timeoutMs: number; fullEveryDays: number};
   triage: {model: string; timeoutMs: number};
   eslintTimeoutMs: number;
   /**
@@ -70,7 +73,13 @@ export interface AuditJobDeps {
   /** Never called when `cfg.jira` is absent, for the same reason. */
   runJiraLane: (input: JiraLaneInput, cfg: AuditJiraSettings) => Promise<JiraLaneResult>;
   store: Store;
+  /** Every git call this file makes — HEAD, ancestry, the changed-file diff. */
+  runner: Runner;
+  /** For the security-skill check on a day the security lane is skipped. Absolute path. */
+  fileExists?: (absPath: string) => boolean;
 }
+
+export type SecuritySweep = {mode: 'full'} | {mode: 'incremental'; files: number} | {mode: 'skipped'};
 
 export interface AppAuditResult {
   appName: string;
@@ -79,6 +88,11 @@ export interface AppAuditResult {
   costUsd: number | undefined;
   mr: {cleanup: MrLaneResult | undefined};
   jira: JiraLaneResult | undefined;
+  /**
+   * How today's security lane was scoped. Not rendered: report.ts has no field for
+   * it and `laneFailures` is for failures, so it stops here until the report grows one.
+   */
+  securitySweep?: SecuritySweep;
 }
 
 /**
@@ -139,6 +153,60 @@ function lintToFinding(app: App, f: TriageFinding, verdict: Verdict | undefined)
     severity: 'medium',
     verdict
   };
+}
+
+const DAY_MS = 86_400_000;
+const SOURCE_EXT = /\.(js|jsx|ts|tsx|mjs|cjs|json|liquid)$/;
+const LOCKFILES = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lock', 'bun.lockb']);
+
+/** A repo-relative path from `git diff --name-only` that the security lane should read. */
+function isSweepableSource(path: string): boolean {
+  if (!path || path.startsWith('/')) return false;
+  const segments = path.split('/');
+  if (segments.includes('..') || segments.includes('docs') || segments.includes('__snapshots__')) return false;
+  const base = segments[segments.length - 1]!;
+  return !LOCKFILES.has(base) && SOURCE_EXT.test(base);
+}
+
+interface SecurityPlan {
+  sweep: SecuritySweep;
+  /** Undefined when HEAD could not be read: the sweep still runs, nothing is recorded. */
+  headSha: string | undefined;
+  /** Set only for an incremental sweep. Deleted files stay in: their open findings should resolve. */
+  files: string[] | undefined;
+}
+
+const FULL_UNRECORDED: SecurityPlan = {sweep: {mode: 'full'}, headSha: undefined, files: undefined};
+
+/**
+ * Every doubt falls back to a full sweep, never to a skip: an unreadable HEAD, no
+ * record, a record never fully swept or older than `fullEveryDays`, a recorded sha
+ * that is not an ancestor of HEAD (force-push, rewritten history, a shallow clone
+ * that lost it), or a diff that fails. Skipping is only for a diff that succeeded
+ * and holds no source file.
+ */
+async function planSecuritySweep(app: App, dir: string, deps: AuditJobDeps): Promise<SecurityPlan> {
+  const git = (args: string[]) => deps.runner(['git', '-C', dir, ...args], deps.cfg.gitTimeoutMs);
+
+  const head = await git(['rev-parse', 'HEAD']);
+  const headSha = head.code === 0 ? head.stdout.trim() : '';
+  if (!headSha) return FULL_UNRECORDED;
+  const full: SecurityPlan = {sweep: {mode: 'full'}, headSha, files: undefined};
+
+  const record = deps.store.getSecuritySweep(app.appName);
+  if (!record || record.lastFullMs === undefined) return full;
+  if (deps.cfg.nowMs - record.lastFullMs >= deps.cfg.security.fullEveryDays * DAY_MS) return full;
+
+  const ancestor = await git(['merge-base', '--is-ancestor', record.sha, 'HEAD']);
+  if (ancestor.code !== 0) return full;
+
+  // quotePath off: the default octal-escapes non-ASCII paths, which would never match a file.
+  const diff = await git(['-c', 'core.quotePath=false', 'diff', '--name-only', record.sha, 'HEAD']);
+  if (diff.code !== 0) return full;
+
+  const files = diff.stdout.split('\n').map(s => s.trim()).filter(isSweepableSource);
+  if (!files.length) return {sweep: {mode: 'skipped'}, headSha, files: undefined};
+  return {sweep: {mode: 'incremental', files: files.length}, headSha, files};
 }
 
 interface HygieneOutcome {
@@ -301,37 +369,48 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
     // Without this the repo's own eslint binary is not there to run at all.
     await deps.linkNodeModules({repoPath: app.repoPath, worktreeDir: dir});
 
+    const plan = await planSecuritySweep(app, dir, deps).catch(() => FULL_UNRECORDED);
+    const skipped = plan.sweep.mode === 'skipped';
+
     const [secSettled, hygSettled] = await Promise.allSettled([
-      deps.securityLane({
-        appName: app.appName,
-        worktreeDir: dir,
-        model: deps.cfg.security.model,
-        timeoutMs: deps.cfg.security.timeoutMs,
-        // Measured 2026-08-20: every app's brain slice is 23289-23805 tokens against
-        // a 6000 budget, ~4x over. Appending that to every lane of every app, every
-        // morning, is a real cost for no measured benefit yet — `undefined` until a
-        // trimmed audit-specific slice exists.
-        brainSlice: undefined
-      }),
+      skipped
+        ? Promise.resolve(undefined)
+        : deps.securityLane({
+            appName: app.appName,
+            worktreeDir: dir,
+            model: deps.cfg.security.model,
+            timeoutMs: deps.cfg.security.timeoutMs,
+            // Measured 2026-08-20: every app's brain slice is 23289-23805 tokens against
+            // a 6000 budget, ~4x over. Appending that to every lane of every app, every
+            // morning, is a real cost for no measured benefit yet — `undefined` until a
+            // trimmed audit-specific slice exists.
+            brainSlice: undefined,
+            ...(plan.files ? {files: plan.files} : {})
+          }),
       runHygieneLane(app, dir, deps)
     ]);
 
     const laneFailures: LaneFailure[] = [];
     // Only a lane that finished may resolve what it no longer sees; see ResolveScope.
+    // A skipped security lane scanned nothing, so it is not in here either.
     const resolvable: FindingKind[] = [];
     let hasSecuritySkill = false;
+    let securityOk = false;
     let securityCost: number | undefined;
     let securityFindings: SecurityFinding[] = [];
 
-    if (secSettled.status === 'fulfilled') {
+    if (skipped) {
+      hasSecuritySkill = (deps.fileExists ?? existsSync)(join(dir, SECURITY_SKILL_PATH));
+    } else if (secSettled.status === 'fulfilled' && secSettled.value) {
       const res = secSettled.value;
       hasSecuritySkill = res.hasSecuritySkill;
       securityCost = res.costUsd;
       if (res.ok) {
         securityFindings = res.findings;
+        securityOk = true;
         resolvable.push('security');
       } else laneFailures.push({lane: 'security', detail: `${res.failure}: ${res.detail}`});
-    } else {
+    } else if (secSettled.status === 'rejected') {
       laneFailures.push({lane: 'security', detail: (secSettled.reason as Error)?.message ?? 'threw'});
     }
 
@@ -356,7 +435,20 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       ...lintFindings.map(f => lintToFinding(app, f, verdictByFp.get(f.fp)))
     ];
 
-    const ledger = classify(deps.store, app.appName, found, deps.cfg.nowMs, {kinds: resolvable});
+    const scope: ResolveScope = {kinds: resolvable};
+    // An incremental pass saw only these files; a finding elsewhere was not looked at.
+    if (plan.sweep.mode === 'incremental' && plan.files) scope.files = {security: plan.files};
+    const ledger = classify(deps.store, app.appName, found, deps.cfg.nowMs, scope);
+
+    // After the ledger write, so a throw there leaves tomorrow diffing from the old sha.
+    // A skip records HEAD too: no source change up to HEAD is as good as sweeping it.
+    if (plan.headSha && (securityOk || skipped)) {
+      deps.store.setSecuritySweep(app.appName, {
+        sha: plan.headSha,
+        fullAtMs: plan.sweep.mode === 'full' ? deps.cfg.nowMs : undefined,
+        nowMs: deps.cfg.nowMs
+      });
+    }
     // Read once, for up to two consumers. Only read at all on a digest day or with the
     // Jira lane on: the whole point of the daily message is NOT repeating the backlog
     // every morning, so there is no reason to pay for the read the other six days.
@@ -430,6 +522,7 @@ export async function runAuditJob(app: App, deps: AuditJobDeps): Promise<AppAudi
       costUsd,
       mr,
       jira,
+      securitySweep: plan.sweep,
       report: {
         appName: app.appName,
         ledger,

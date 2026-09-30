@@ -123,6 +123,18 @@ export interface AuditFindingRow extends AuditFinding {
   jiraKey: string | undefined;
 }
 
+/**
+ * Where the audit's security lane last finished, per app: the next run diffs from
+ * `sha` instead of re-reading the whole repo, which timed out most days on the
+ * three biggest repos.
+ */
+export interface SecuritySweepRecord {
+  sha: string;
+  /** Undefined until a full sweep has succeeded at least once. */
+  lastFullMs: number | undefined;
+  updatedMs: number;
+}
+
 interface RawAuditFinding {
   fp: string;
   app: string;
@@ -252,6 +264,13 @@ export class Store {
     this.addColumns('audit_findings', {jira_key: 'TEXT'});
     this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_app ON audit_findings(app, status)');
     this.db.run('CREATE INDEX IF NOT EXISTS audit_findings_seen ON audit_findings(last_seen_ms DESC)');
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS audit_security_sweeps (
+        app          TEXT PRIMARY KEY,
+        last_sha     TEXT NOT NULL,
+        last_full_ms INTEGER,
+        updated_ms   INTEGER NOT NULL
+      )`);
   }
 
   /** `ADD COLUMN` is the only in-place schema change sqlite allows, and it is not idempotent. */
@@ -582,5 +601,27 @@ export class Store {
 
   setAuditFindingJira(fp: string, key: string): void {
     this.db.query('UPDATE audit_findings SET jira_key = ? WHERE fp = ?').run(key, fp);
+  }
+
+  // ---- audit security sweep watermark ------------------------------------------
+
+  getSecuritySweep(app: string): SecuritySweepRecord | undefined {
+    const row = this.db
+      .query('SELECT last_sha, last_full_ms, updated_ms FROM audit_security_sweeps WHERE app = ?')
+      .get(app) as {last_sha: string; last_full_ms: number | null; updated_ms: number} | null;
+    return row ? {sha: row.last_sha, lastFullMs: opt(row.last_full_ms), updatedMs: row.updated_ms} : undefined;
+  }
+
+  /** `fullAtMs` undefined is an incremental sweep: the sha moves, the last full-sweep time stays. */
+  setSecuritySweep(app: string, input: {sha: string; fullAtMs: number | undefined; nowMs: number}): void {
+    this.db
+      .query(
+        `INSERT INTO audit_security_sweeps (app, last_sha, last_full_ms, updated_ms) VALUES (?, ?, ?, ?)
+         ON CONFLICT(app) DO UPDATE SET
+           last_sha = excluded.last_sha,
+           last_full_ms = COALESCE(excluded.last_full_ms, last_full_ms),
+           updated_ms = excluded.updated_ms`
+      )
+      .run(app, input.sha, input.fullAtMs ?? null, input.nowMs);
   }
 }
