@@ -32,6 +32,8 @@ describe('worktree', () => {
     const integ = await ensureIntegration(g);
     const n = await nodeWorktree(g, 'n1');
     expect(n.baseSha).toBe(sh(integ, 'git', 'rev-parse', 'HEAD').trim());
+    expect(n.fresh).toBe(true);
+    expect((await nodeWorktree(g, 'n1')).fresh).toBe(false);
     write(n.path, 'src/a.js', 'module.exports = 42;\n');
     write(n.path, 'stray.txt', 'not allowed\n');
     const staged = await stagedDiff(n.path, ['src/a.js']);

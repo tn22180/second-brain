@@ -4,6 +4,12 @@ export interface VerifyCommand {
   name: string;
   cmd: string[];
   timeoutMs?: number;
+  /**
+   * Must already pass on the untouched base (a whole-suite "no new failures" check). The graph
+   * runner runs these before dispatch: one that fails there is a broken contract, not work for
+   * the agent — five rounds spent on an environment problem is the failure this prevents.
+   */
+  preflight?: boolean;
 }
 
 export interface Contract {
@@ -63,6 +69,7 @@ export function parseContract(raw: unknown): Parsed {
     if (!v || typeof v.name !== 'string' || !v.name || !isStrArray(v.cmd)) {
       return {ok: false, error: 'verify: each entry needs name and cmd as a non-empty string array'};
     }
+    if (v.preflight !== undefined && typeof v.preflight !== 'boolean') return {ok: false, error: `verify ${v.name}: preflight must be boolean`};
   }
   if (c.reproduce !== undefined && !isStrArray(c.reproduce?.testCmd)) {
     return {ok: false, error: 'reproduce.testCmd: string array required'};

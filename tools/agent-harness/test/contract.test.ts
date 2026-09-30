@@ -36,4 +36,8 @@ describe('parseContract', () => {
     expect(parseContract({...base, allow: ['../secrets.env']}).ok).toBe(false);
     expect(parseContract({...base, allow: ['/etc/passwd']}).ok).toBe(false);
   });
+  test('preflight must be boolean', () => {
+    const r = parseContract({...base, verify: [{name: "n", cmd: ["true"], preflight: "yes"}]});
+    expect(r.ok).toBe(false);
+  });
 });

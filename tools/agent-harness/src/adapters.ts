@@ -1,7 +1,9 @@
 import {closeSync, existsSync, openSync, readFileSync, readSync, statSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
+import type {VerifyCommand} from './contract';
 import type {Proc, SuperviseAction} from './node';
+import {redact} from './redact';
 
 const CC = join(homedir(), '.local', 'bin', 'cc');
 const JEV = join(homedir(), '.local', 'bin', 'jev');
@@ -90,3 +92,16 @@ export async function superviseWith(
 
 export const superviseJev = (input: Record<string, unknown>) =>
   superviseWith([JEV, 'supervise', '--timeout', '60'], existsSync(HERMES_ENV) ? readEnvFile(HERMES_ENV) : {}, input);
+
+/** Run each check in `cwd`; failing ones come back as `name: <output tail>` (redacted). */
+export async function preflightChecks(cmds: VerifyCommand[], cwd: string): Promise<string[]> {
+  const failing: string[] = [];
+  for (const v of cmds) {
+    const child = Bun.spawn(v.cmd, {cwd, env: childEnv(process.env), stdin: 'ignore', stdout: 'pipe', stderr: 'pipe'});
+    const timer = setTimeout(() => child.kill(), v.timeoutMs ?? 600_000);
+    const [out, err, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+    clearTimeout(timer);
+    if (code !== 0) failing.push(`${v.name}: ${redact((err + out).trim().slice(-300)) || `exit ${code}`}`);
+  }
+  return failing;
+}

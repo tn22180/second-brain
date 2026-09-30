@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {mkdirSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
-import {startProc, superviseJev} from './adapters';
+import {preflightChecks, startProc, superviseJev} from './adapters';
 import type {Graph} from './graph';
 import type {Ledger} from './ledger';
 import {runNode, type NodeDeps} from './node';
@@ -18,6 +18,7 @@ export interface RunGraphOpts {
   start?: NodeDeps['start'];
   supervise?: NodeDeps['supervise'];
   sleep?: NodeDeps['sleep'];
+  preflight?: NodeDeps['preflight'];
   logDir?: string;
 }
 
@@ -81,6 +82,7 @@ export async function runGraph(
     ledger.setNode(graph.id, node.id, {state: 'running', rounds: 0});
     const r = await runNode(graph, node, {
       worktree: () => lock(() => nodeWorktree(graph, node.id)),
+      preflight: opts.preflight ?? preflightChecks,
       start: (argv, cwd) => (opts.start ?? ((a, c) => startProc(a, c, join(logDir, `${node.id}.log`))))(argv, cwd),
       supervise: opts.supervise ?? superviseJev,
       sleep: opts.sleep ?? (ms => new Promise(res => setTimeout(res, ms))),

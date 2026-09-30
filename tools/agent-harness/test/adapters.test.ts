@@ -2,7 +2,7 @@ import {describe, expect, test} from 'bun:test';
 import {mkdtempSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {childEnv, readEnvFile, startProc, superviseWith} from '../src/adapters';
+import {childEnv, preflightChecks, readEnvFile, startProc, superviseWith} from '../src/adapters';
 
 const tmp = () => mkdtempSync(join(tmpdir(), 'adapt-'));
 const until = async (f: () => boolean) => {
@@ -46,5 +46,13 @@ describe('adapters', () => {
     expect(bad.action).toBe('keep_waiting');
     const weird = await superviseWith(['sh', '-c', 'echo \'{"action":"rm -rf"}\''], {}, {goal: 'g', tail: 't', elapsed_s: 1, quiet_s: 1, new_output: true, looping: false, exited: false});
     expect(weird.action).toBe('keep_waiting');
+  });
+
+  test('preflightChecks returns the failing checks with an output tail', async () => {
+    const d = tmp();
+    const out = await preflightChecks([{name: 'ok', cmd: ['true']}, {name: 'bad', cmd: ['sh', '-c', 'echo "(fail) registry"; exit 1']}], d);
+    expect(out.length).toBe(1);
+    expect(out[0]).toContain('bad');
+    expect(out[0]).toContain('(fail) registry');
   });
 });

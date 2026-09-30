@@ -79,15 +79,16 @@ export async function removeWorktree(g: GraphRef, path: string): Promise<void> {
 }
 
 /** A node's own worktree, cut from the integration tip so it builds on its deps' merged work. */
-export async function nodeWorktree(g: GraphRef, nodeId: string): Promise<{path: string; baseSha: string}> {
+export async function nodeWorktree(g: GraphRef, nodeId: string): Promise<{path: string; baseSha: string; fresh: boolean}> {
   const p = paths(g, nodeId);
-  if (!existsSync(p.node)) {
+  const fresh = !existsSync(p.node);
+  if (fresh) {
     const tip = await git(p.integration, ['rev-parse', 'HEAD']);
     const exists = await ok(g.repoPath, ['rev-parse', '--verify', '-q', `refs/heads/${p.nodeBranch}`]);
     await git(g.repoPath, exists ? ['worktree', 'add', '-q', p.node, p.nodeBranch] : ['worktree', 'add', '-q', '-b', p.nodeBranch, p.node, tip]);
     linkDeps(g.repoPath, p.node, g.linkPaths);
   }
-  return {path: p.node, baseSha: await git(p.node, ['rev-parse', 'HEAD'])};
+  return {path: p.node, baseSha: await git(p.node, ['rev-parse', 'HEAD']), fresh};
 }
 
 /**

@@ -1,4 +1,4 @@
-import type {Contract} from './contract';
+import type {Contract, VerifyCommand} from './contract';
 import type {GraphNode} from './graph';
 import {redact} from './redact';
 import type {NodeOutcome} from './scheduler';
@@ -28,7 +28,9 @@ export interface SuperviseAction {
 }
 
 export interface NodeDeps {
-  worktree(): Promise<{path: string; baseSha: string}>;
+  worktree(): Promise<{path: string; baseSha: string; fresh: boolean}>;
+  /** Run checks on the worktree as it is; returns one line per failing check. */
+  preflight(cmds: VerifyCommand[], cwd: string): Promise<string[]>;
   start(argv: string[], cwd: string): Proc;
   supervise(input: {goal: string; tail: string; elapsed_s: number; quiet_s: number; new_output: boolean; looping: boolean; exited: boolean}): Promise<SuperviseAction>;
   sleep(ms: number): Promise<void>;
@@ -83,7 +85,7 @@ const failureText = (v: Verdict) =>
  * round cap is hit, then commit exactly the verified tree and merge it into the integration branch.
  */
 export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps): Promise<NodeResult> {
-  const {path, baseSha} = await deps.worktree();
+  const {path, baseSha, fresh} = await deps.worktree();
   const sid = deps.newSessionId();
   const model = node.meta?.model;
   const argvFor = (text: string, resume: boolean) => [
@@ -96,9 +98,40 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
     return {outcome: 'blocked', rounds, reason, runIds};
   };
 
+  // Only on a fresh worktree: after a resume the tree holds the agent's work, not the base.
+  const pre = node.contract.verify.filter(v => v.preflight);
+  if (fresh && pre.length) {
+    const failing = await deps.preflight(pre, path);
+    if (failing.length) return blocked(0, `check fails before any change — fix the contract or env, not the code: ${failing.join('; ')}`);
+  }
+
+  const contractFor = (round: number): Contract => ({...node.contract, id: `${graph.id}-${node.id}`, source: graph.source,
+    repoPath: path, baseSha, meta: {...node.meta, round}});
+  const finish = async (v: Verdict, round: number): Promise<NodeResult> => {
+    try {
+      await deps.commit(path, node.contract.allow, v.diffSha, `${node.id}: ${node.contract.goal}`.slice(0, 200));
+      await deps.merge(`Merge node ${node.id} (${v.runId})`);
+    } catch (e) {
+      return blocked(round, e instanceof Error ? e.message : String(e));
+    }
+    return {outcome: 'done', rounds: round, runIds};
+  };
+
   let message = buildPrompt(node);
+  let firstRound = 1;
+  // A rerun finds the previous attempt's work still in the worktree. Check it before paying for
+  // an agent: it may already pass (the old failure was the contract's), or the agent starts
+  // from the concrete failure instead of re-deriving the task.
+  if (!fresh) {
+    const v = await deps.verify(contractFor(1));
+    runIds.push(v.runId);
+    if (v.pass) return finish(v, 1);
+    message = `${message}\n\n## Work from a previous attempt is already in this worktree\n${failureText(v)}`;
+    firstRound = 2;
+  }
+
   let resume = false;
-  for (let round = 1; round <= MAX_ROUNDS; round++) {
+  for (let round = firstRound; round <= MAX_ROUNDS; round++) {
     let nudges = 0;
     let proc = deps.start(argvFor(message, resume), path);
     resume = true;
@@ -134,19 +167,9 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
       }
     }
 
-    const contract: Contract = {...node.contract, id: `${graph.id}-${node.id}`, source: graph.source, repoPath: path, baseSha,
-      meta: {...node.meta, round}};
-    const v = await deps.verify(contract);
+    const v = await deps.verify(contractFor(round));
     runIds.push(v.runId);
-    if (v.pass) {
-      try {
-        await deps.commit(path, node.contract.allow, v.diffSha, `${node.id}: ${node.contract.goal}`.slice(0, 200));
-        await deps.merge(`Merge node ${node.id} (${v.runId})`);
-      } catch (e) {
-        return blocked(round, e instanceof Error ? e.message : String(e));
-      }
-      return {outcome: 'done', rounds: round, runIds};
-    }
+    if (v.pass) return finish(v, round);
     message = failureText(v);
   }
   return blocked(MAX_ROUNDS, `verify still failing after ${MAX_ROUNDS} rounds`);

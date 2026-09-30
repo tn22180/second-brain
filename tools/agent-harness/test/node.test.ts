@@ -13,7 +13,8 @@ function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: n
   const actions = [...(opts.actions ?? [])];
   const verdicts = [...opts.verdicts];
   const deps: NodeDeps = {
-    worktree: async () => ({path: '/wt', baseSha: 'b'.repeat(40)}),
+    worktree: async () => ({path: '/wt', baseSha: 'b'.repeat(40), fresh: true}),
+    preflight: async () => [],
     start: (argv): Proc => {
       calls.starts.push(argv);
       // Each process "runs" for as many polls as there are queued supervise actions, then exits.
@@ -106,5 +107,46 @@ describe('runNode', () => {
     const {deps} = fakes({verdicts: [verdict(true)]});
     deps.commit = async () => { throw new Error('tree drifted after verify'); };
     expect(await runNode(graph, node, deps)).toMatchObject({outcome: 'blocked'});
+  });
+
+  test('preflight: a check that already fails on the untouched base blocks before any agent round', async () => {
+    const {deps, calls} = fakes({verdicts: []});
+    let asked: string[] = [];
+    deps.preflight = async (cmds) => { asked = cmds.map(c => c.name); return ['suite: (fail) registry matches the repos on disk']; };
+    const n = {...node, contract: {...node.contract, verify: [{name: 'jest', cmd: ['npx', 'jest']}, {name: 'suite', cmd: ['bun', 'test'], preflight: true}]}};
+    const r = await runNode(graph, n, deps);
+    expect(asked).toEqual(['suite']);
+    expect(r).toMatchObject({outcome: 'blocked', rounds: 0});
+    expect(r.reason).toContain('fails before any change');
+    expect(calls.starts).toEqual([]);
+  });
+
+  test('resume: existing work that already passes is committed without dispatching an agent', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(true)]});
+    deps.worktree = async () => ({path: '/wt', baseSha: 'b'.repeat(40), fresh: false});
+    const r = await runNode(graph, node, deps);
+    expect(r).toMatchObject({outcome: 'done', rounds: 1});
+    expect(calls.starts).toEqual([]);
+    expect(calls.commits).toBe(1);
+  });
+
+  test('resume: existing work that fails goes to the agent with the failure, not the bare prompt', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(false, 'Tests: 1 failed'), verdict(true)]});
+    deps.worktree = async () => ({path: '/wt', baseSha: 'b'.repeat(40), fresh: false});
+    const r = await runNode(graph, node, deps);
+    expect(r.outcome).toBe('done');
+    expect(calls.starts.length).toBe(1);
+    expect(calls.starts[0]!.at(-1)).toContain('add foo');
+    expect(calls.starts[0]!.at(-1)).toContain('Tests: 1 failed');
+  });
+
+  test('preflight is skipped when the worktree already holds work (resume)', async () => {
+    const {deps} = fakes({verdicts: [verdict(true)]});
+    deps.worktree = async () => ({path: '/wt', baseSha: 'b'.repeat(40), fresh: false});
+    let ran = false;
+    deps.preflight = async () => { ran = true; return ['x']; };
+    const n = {...node, contract: {...node.contract, verify: [{name: 'suite', cmd: ['bun', 'test'], preflight: true}]}};
+    expect((await runNode(graph, n, deps)).outcome).toBe('done');
+    expect(ran).toBe(false);
   });
 });
