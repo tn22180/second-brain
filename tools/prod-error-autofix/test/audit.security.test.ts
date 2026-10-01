@@ -100,6 +100,14 @@ describe('validateSecurity — schema', () => {
     expect(r.ok).toBe(false);
   });
 
+  // Incremental sweeps resolve by exact path against `git diff` output, which never has `./`.
+  test('a leading ./ on a finding file is stripped so it matches diff paths', () => {
+    const r = validateSecurity(JSON.stringify([finding({file: './packages/functions/src/a.js'}), finding({file: '././b.js'})]));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.map(f => f.file)).toEqual(['packages/functions/src/a.js', 'b.js']);
+  });
+
   // A model that restates the schema before answering puts the real answer second.
   test('the last array in the reply wins', () => {
     const text = [
@@ -184,6 +192,37 @@ describe('runSecurityLane', () => {
     expect(prompt).toContain('[]');
   });
 
+  test('without a file list the prompt is the whole-repo sweep, unchanged', () => {
+    expect(buildSecurityPrompt({...INPUT, files: undefined})).toBe(buildSecurityPrompt(INPUT));
+    expect(buildSecurityPrompt(INPUT)).not.toContain('Files to sweep');
+  });
+
+  test('a file list narrows the sweep to those files and their direct callers/callees', () => {
+    const files = ['packages/functions/src/handlers/a.js', 'packages/functions/src/services/b.ts'];
+    const prompt = buildSecurityPrompt({...INPUT, files});
+    expect(prompt).toContain('Files to sweep');
+    for (const f of files) expect(prompt).toContain(`- ${f}`);
+    expect(prompt).toContain('directly call');
+    expect(prompt).toContain('called by');
+    // The citation rule still binds: a narrowed sweep is no licence to invent lines.
+    expect(prompt).toContain('file:line');
+    // Every surface and the answer shape survive the narrowing.
+    for (const surface of ['credential_exposure', 'shop_scoping', 'untrusted_input', 'secret_in_log', 'authn']) {
+      expect(prompt).toContain(surface);
+    }
+    expect(prompt).toContain('JSON array');
+  });
+
+  test('the file list reaches the agent', async () => {
+    let seen: ClaudeInvocation | undefined;
+    const claude: ClaudeRunner = async inv => {
+      seen = inv;
+      return ok('[]');
+    };
+    await runSecurityLane({...INPUT, files: ['packages/functions/src/handlers/a.js']}, claude);
+    expect(seen!.prompt).toContain('- packages/functions/src/handlers/a.js');
+  });
+
   test('the agent runs in the worktree so the repo skills load', async () => {
     let seen: ClaudeInvocation | undefined;
     const claude: ClaudeRunner = async inv => {
@@ -250,6 +289,34 @@ describe('runSecurityLane', () => {
     if (r.ok) return;
     expect(r.failure).toBe('invalid_answer');
     expect(r.errors.length).toBeGreaterThan(0);
+  });
+
+  test('an invalid_answer detail carries the reply length and a head/tail excerpt', async () => {
+    const reply = `HEAD-MARK ${'x '.repeat(400)}\n\n  TAIL-MARK`;
+    const r = await runSecurityLane(INPUT, async () => ok(reply));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).toContain(`${reply.length} chars`);
+    expect(r.detail).toContain('HEAD-MARK');
+    expect(r.detail).toContain('TAIL-MARK');
+    expect(r.detail).not.toContain('\n');
+    expect(r.detail.length).toBeLessThan(500);
+  });
+
+  test('a token in the reply excerpt is redacted out of the detail', async () => {
+    const reply = `Found ${FAKE_SHOPIFY_TOKEN} in the tree. ${'y '.repeat(300)} rotate ${FAKE_SHOPIFY_TOKEN}`;
+    const r = await runSecurityLane(INPUT, async () => ok(reply));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).not.toContain(FAKE_SHOPIFY_TOKEN);
+    expect(r.detail).toContain('<redacted>');
+  });
+
+  test('an empty reply says so', async () => {
+    const r = await runSecurityLane(INPUT, async () => ok(''));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detail).toContain('empty reply');
   });
 
   // audit_findings.title is written to state.db. Redacting on the way to Telegram

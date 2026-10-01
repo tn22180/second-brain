@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {findingFp, normaliseTitle} from '../src/audit/findingFp';
 import {classify} from '../src/audit/ledger';
-import type {AuditFinding} from '../src/audit/ledger';
+import type {AuditFinding, ResolveScope} from '../src/audit/ledger';
 import {Store} from '../src/state/store';
 
 describe('findingFp', () => {
@@ -41,29 +41,42 @@ const FINDING: AuditFinding = {
   severity: 'low'
 };
 
+const ALL: ResolveScope = {kinds: ['security', 'hygiene']};
+
+const SEC_FINDING: AuditFinding = {
+  fp: findingFp({app: 'SEO', file: 'src/api.js', rule: 'authn', title: 'session gate after swagger gate'}),
+  app: 'SEO',
+  kind: 'security',
+  file: 'src/api.js',
+  line: 64,
+  rule: 'authn',
+  title: 'session gate after swagger gate',
+  severity: 'high'
+};
+
 describe('classify', () => {
   test('first sighting is fresh, second run is carried', () => {
     const store = new Store(':memory:');
     const f = [FINDING];
-    expect(classify(store, 'SEO', f, 1000).fresh).toHaveLength(1);
-    const second = classify(store, 'SEO', f, 2000);
+    expect(classify(store, 'SEO', f, 1000, ALL).fresh).toHaveLength(1);
+    const second = classify(store, 'SEO', f, 2000, ALL);
     expect(second.fresh).toHaveLength(0);
     expect(second.carried).toBe(1);
   });
 
   test('a finding that stops appearing is resolved once, then not counted again', () => {
     const store = new Store(':memory:');
-    classify(store, 'SEO', [FINDING], 1000);
-    expect(classify(store, 'SEO', [], 2000).resolved).toBe(1);
-    expect(classify(store, 'SEO', [], 3000).resolved).toBe(0);
+    classify(store, 'SEO', [FINDING], 1000, ALL);
+    expect(classify(store, 'SEO', [], 2000, ALL).resolved).toBe(1);
+    expect(classify(store, 'SEO', [], 3000, ALL).resolved).toBe(0);
   });
 
   // Set by a human, never by the pipeline. Suppressing forever is a decision, not a step.
   test('accepted findings are suppressed and never re-reported', () => {
     const store = new Store(':memory:');
-    classify(store, 'SEO', [FINDING], 1000);
+    classify(store, 'SEO', [FINDING], 1000, ALL);
     store.setAuditFindingStatus(FINDING_FP, 'accepted');
-    const d = classify(store, 'SEO', [FINDING], 2000);
+    const d = classify(store, 'SEO', [FINDING], 2000, ALL);
     expect(d.fresh).toHaveLength(0);
     expect(d.carried).toBe(0);
     expect(d.suppressed).toBe(1);
@@ -71,9 +84,9 @@ describe('classify', () => {
 
   test('a finding that comes back after being resolved is fresh again', () => {
     const store = new Store(':memory:');
-    classify(store, 'SEO', [FINDING], 1000);
-    classify(store, 'SEO', [], 2000);
-    expect(classify(store, 'SEO', [FINDING], 3000).fresh).toHaveLength(1);
+    classify(store, 'SEO', [FINDING], 1000, ALL);
+    classify(store, 'SEO', [], 2000, ALL);
+    expect(classify(store, 'SEO', [FINDING], 3000, ALL).fresh).toHaveLength(1);
   });
 
   // classify only READS accepted/false_positive to decide suppression. Nothing in
@@ -81,19 +94,62 @@ describe('classify', () => {
   // call made through setAuditFindingStatus directly, from a report a person read.
   test('classify never writes accepted or false_positive itself', () => {
     const store = new Store(':memory:');
-    classify(store, 'SEO', [FINDING], 1000);
-    classify(store, 'SEO', [], 2000);
-    classify(store, 'SEO', [FINDING], 3000);
+    classify(store, 'SEO', [FINDING], 1000, ALL);
+    classify(store, 'SEO', [], 2000, ALL);
+    classify(store, 'SEO', [FINDING], 3000, ALL);
     const row = store.getAuditFinding(FINDING_FP);
     expect(row?.status).not.toBe('accepted');
     expect(row?.status).not.toBe('false_positive');
   });
 });
 
+describe('classify scope', () => {
+  // A lane that timed out found nothing because it looked at nothing; resolving on
+  // that flips every open finding and re-reports all of them as fresh the next day.
+  test('a kind outside the scope keeps its open findings open', () => {
+    const store = new Store(':memory:');
+    classify(store, 'SEO', [FINDING, SEC_FINDING], 1000, ALL);
+    const d = classify(store, 'SEO', [FINDING], 2000, {kinds: ['hygiene']});
+    expect(d.resolved).toBe(0);
+    expect(store.getAuditFinding(SEC_FINDING.fp)?.status).toBe('open');
+    expect(classify(store, 'SEO', [FINDING, SEC_FINDING], 3000, ALL).fresh).toHaveLength(0);
+  });
+
+  test('a kind inside the scope still resolves what it no longer finds', () => {
+    const store = new Store(':memory:');
+    classify(store, 'SEO', [FINDING, SEC_FINDING], 1000, ALL);
+    const d = classify(store, 'SEO', [SEC_FINDING], 2000, {kinds: ['hygiene']});
+    expect(d.resolved).toBe(1);
+    expect(d.resolvedRows.map(r => r.fp)).toEqual([FINDING.fp]);
+  });
+
+  test('an empty scope resolves nothing', () => {
+    const store = new Store(':memory:');
+    classify(store, 'SEO', [FINDING, SEC_FINDING], 1000, ALL);
+    expect(classify(store, 'SEO', [], 2000, {kinds: []}).resolved).toBe(0);
+    expect(store.openAuditFindings('SEO')).toHaveLength(2);
+  });
+
+  test('a files list limits resolution to the files that were scanned', () => {
+    const store = new Store(':memory:');
+    const other: AuditFinding = {
+      ...SEC_FINDING,
+      fp: findingFp({app: 'SEO', file: 'src/other.js', rule: 'authn', title: 't'}),
+      file: 'src/other.js',
+      title: 't'
+    };
+    classify(store, 'SEO', [SEC_FINDING, other, FINDING], 1000, ALL);
+    const d = classify(store, 'SEO', [], 2000, {kinds: ['security', 'hygiene'], files: {security: ['src/api.js']}});
+    // security: only the scanned file resolves; hygiene has no list, so it is a full sweep.
+    expect(d.resolvedRows.map(r => r.fp).sort()).toEqual([SEC_FINDING.fp, FINDING.fp].sort());
+    expect(store.getAuditFinding(other.fp)?.status).toBe('open');
+  });
+});
+
 describe('jira_key on audit_findings', () => {
   test('a finding remembers its ticket across runs', () => {
     const store = new Store(':memory:');
-    classify(store, 'SEO', [FINDING], 1000);
+    classify(store, 'SEO', [FINDING], 1000, ALL);
     expect(store.openAuditFindings('SEO')[0]!.jiraKey).toBeUndefined();
 
     store.setAuditFindingJira(FINDING_FP, 'FAL-720');
@@ -101,7 +157,7 @@ describe('jira_key on audit_findings', () => {
 
     // The point of the column: the next sweep sees the same finding as carried and can
     // comment on FAL-720 instead of opening a second ticket for it.
-    const second = classify(store, 'SEO', [FINDING], 2000);
+    const second = classify(store, 'SEO', [FINDING], 2000, ALL);
     expect(second.fresh).toHaveLength(0);
     expect(second.carried).toBe(1);
     expect(store.openAuditFindings('SEO')[0]!.jiraKey).toBe('FAL-720');

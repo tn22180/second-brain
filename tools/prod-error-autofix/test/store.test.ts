@@ -1,4 +1,5 @@
 import {beforeEach, describe, expect, test} from 'bun:test';
+import {Database} from 'bun:sqlite';
 import {Store, type SeenAlertInput} from '../src/state/store';
 
 const NOW = 1_753_800_000_000;
@@ -101,6 +102,71 @@ describe('alerts', () => {
     first.close();
     const second = new Store(path);
     expect(second.getAlert('fp1')?.appName).toBe('BLOG');
+    second.close();
+  });
+});
+
+describe('security sweep record', () => {
+  test('an app never swept has no record', () => {
+    expect(store.getSecuritySweep('SEO')).toBeUndefined();
+  });
+
+  test('a full sweep records the sha, the full-sweep time and the attempt time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    expect(store.getSecuritySweep('SEO')).toEqual({sha: 'aaa111', lastFullMs: NOW, lastFullAttemptMs: NOW, updatedMs: NOW});
+  });
+
+  test('an incremental sweep moves the sha and keeps the last full-sweep and attempt times', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    store.setSecuritySweep('SEO', {sha: 'bbb222', fullAtMs: undefined, nowMs: NOW + HOUR});
+    expect(store.getSecuritySweep('SEO')).toEqual({sha: 'bbb222', lastFullMs: NOW, lastFullAttemptMs: NOW, updatedMs: NOW + HOUR});
+  });
+
+  test('a failed full attempt with no record seeds the baseline sha and no full-sweep time', () => {
+    store.recordFullSweepAttempt('SEO', {baselineSha: 'aaa111', atMs: NOW});
+    const rec = store.getSecuritySweep('SEO');
+    expect(rec).toEqual({sha: 'aaa111', lastFullMs: undefined, lastFullAttemptMs: NOW, updatedMs: NOW});
+  });
+
+  test('a failed full attempt on an existing record keeps its sha and full-sweep time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    store.recordFullSweepAttempt('SEO', {baselineSha: 'ccc333', atMs: NOW + HOUR});
+    expect(store.getSecuritySweep('SEO')).toEqual({sha: 'aaa111', lastFullMs: NOW, lastFullAttemptMs: NOW + HOUR, updatedMs: NOW + HOUR});
+  });
+
+  test('a database from before the attempt column gains it without losing the record', () => {
+    const path = `/tmp/autofix-sweep-legacy-${NOW}-${Math.round(performance.now())}.db`;
+    const legacy = new Database(path, {create: true});
+    legacy.run(`CREATE TABLE audit_security_sweeps (
+      app TEXT PRIMARY KEY, last_sha TEXT NOT NULL, last_full_ms INTEGER, updated_ms INTEGER NOT NULL)`);
+    legacy.run(`INSERT INTO audit_security_sweeps VALUES ('SEO', 'aaa111', ${NOW}, ${NOW})`);
+    legacy.close();
+    const migrated = new Store(path);
+    expect(migrated.getSecuritySweep('SEO')).toEqual({sha: 'aaa111', lastFullMs: NOW, lastFullAttemptMs: undefined, updatedMs: NOW});
+    migrated.recordFullSweepAttempt('SEO', {baselineSha: 'x', atMs: NOW + HOUR});
+    expect(migrated.getSecuritySweep('SEO')?.lastFullAttemptMs).toBe(NOW + HOUR);
+    migrated.close();
+    // Reopening a migrated file must not try to add the column twice.
+    new Store(path).close();
+  });
+
+  test('records are per app', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    expect(store.getSecuritySweep('APC')).toBeUndefined();
+  });
+
+  test('an incremental record with no full sweep before it has no full-sweep time', () => {
+    store.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: undefined, nowMs: NOW});
+    expect(store.getSecuritySweep('SEO')?.lastFullMs).toBeUndefined();
+  });
+
+  test('reopening an existing database keeps the record and migrates cleanly', () => {
+    const path = `/tmp/autofix-sweep-test-${NOW}-${Math.round(performance.now())}.db`;
+    const first = new Store(path);
+    first.setSecuritySweep('SEO', {sha: 'aaa111', fullAtMs: NOW, nowMs: NOW});
+    first.close();
+    const second = new Store(path);
+    expect(second.getSecuritySweep('SEO')?.sha).toBe('aaa111');
     second.close();
   });
 });

@@ -56,6 +56,7 @@ export interface AuditRunDeps {
   runMrLane: AuditJobDeps['runMrLane'];
   runJiraLane: AuditJobDeps['runJiraLane'];
   store: Store;
+  runner: AuditJobDeps['runner'];
   /** Lane C. Falls back to `renderReport` on a throw or a timeout — a broken
    * agent at 06:00 must not mean a morning with real findings goes unreported. */
   supervisor: (input: ReportInput) => Promise<string>;
@@ -83,7 +84,8 @@ function buildJobDeps(cfg: AuditRunConfig, deps: AuditRunDeps): AuditJobDeps {
     triageLane: deps.triageLane,
     runMrLane: deps.runMrLane,
     runJiraLane: deps.runJiraLane,
-    store: deps.store
+    store: deps.store,
+    runner: deps.runner
   };
 }
 
@@ -181,7 +183,11 @@ export function buildAuditRunConfig(cfg: Config, nowMs: number, onlyApp?: string
     nowMs,
     worktreeRoot: cfg.paths.worktreeRoot,
     gitTimeoutMs: cfg.timeouts.gcloudMs,
-    security: {model: cfg.audit.models.security, timeoutMs: cfg.audit.timeouts.securityMs},
+    security: {
+      model: cfg.audit.models.security,
+      timeoutMs: cfg.audit.timeouts.securityMs,
+      fullEveryDays: cfg.audit.securityFullEveryDays
+    },
     triage: {model: cfg.audit.models.triage, timeoutMs: cfg.audit.timeouts.triageMs},
     eslintTimeoutMs: cfg.audit.timeouts.eslintMs,
     // The MR lane is the same fix agent the daemon already runs — reuses its model
@@ -229,6 +235,7 @@ export function buildAuditRunDeps(cfg: Config, store: Store): AuditRunDeps {
     runJiraLane: (input, jiraCfg) =>
       runJiraLane(input, {cfg: {baseUrl: jiraCfg.baseUrl, token: jiraCfg.token}}),
     store,
+    runner: spawnRunner,
     supervisor: input =>
       runSupervisor(input, spawnClaude, {model: cfg.audit.models.supervisor, timeoutMs: cfg.audit.timeouts.supervisorMs}),
     sendTelegram: (telegramCfg, text) => sendTelegram(telegramCfg, text),

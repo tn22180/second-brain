@@ -37,14 +37,37 @@ export interface LedgerDiff {
 }
 
 /**
+ * What this run actually looked at, so only that can be declared gone. A lane that
+ * failed found nothing because it scanned nothing — resolving on its empty list
+ * flipped every open finding of that kind and re-reported them all as fresh the next
+ * day. `files` is for a sweep that scans only some files of a kind (an incremental
+ * security pass): a kind with a list resolves only rows in those files; a kind
+ * without one was swept whole. Keyed by kind so one kind cannot carry two lists.
+ */
+export interface ResolveScope {
+  kinds: FindingKind[];
+  files?: Partial<Record<FindingKind, string[]>>;
+}
+
+/**
  * Turns "what the scanners found today" into "what is new" so the daily report
  * does not repeat the same unused constants forever. A finding is `fresh` the
  * first time it is seen and any time it reappears after being `resolved`;
  * `accepted` / `false_positive` are a human's call and outrank the scan in both
  * directions — they are suppressed, not re-reported, until a human changes them.
  */
-export function classify(store: Store, app: string, found: AuditFinding[], nowMs: number): LedgerDiff {
+export function classify(
+  store: Store,
+  app: string,
+  found: AuditFinding[],
+  nowMs: number,
+  scope: ResolveScope
+): LedgerDiff {
   const seen = new Set(found.map(f => f.fp));
+  const kinds = new Set(scope.kinds);
+  const filesByKind = new Map(
+    Object.entries(scope.files ?? {}).map(([kind, paths]) => [kind, new Set(paths)] as const)
+  );
   const fresh: AuditFinding[] = [];
   let carried = 0;
   let suppressed = 0;
@@ -64,6 +87,9 @@ export function classify(store: Store, app: string, found: AuditFinding[], nowMs
   const resolvedRows: AuditFindingRow[] = [];
   for (const row of store.openAuditFindings(app)) {
     if (seen.has(row.fp)) continue;
+    if (!kinds.has(row.kind)) continue;
+    const files = filesByKind.get(row.kind);
+    if (files && !files.has(row.file)) continue;
     store.setAuditFindingStatus(row.fp, 'resolved');
     resolvedRows.push(row);
   }

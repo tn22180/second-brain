@@ -116,6 +116,12 @@ describe('buildConfig', () => {
     expect(buildConfig({...base, AUDIT_SECURITY_TIMEOUT_MS: '999'}).audit.timeouts.securityMs).toBe(999);
   });
 
+  test('the security lane sweeps the whole repo every 7 days by default', () => {
+    expect(buildConfig(base).audit.securityFullEveryDays).toBe(7);
+    expect(buildConfig({...base, AUDIT_SECURITY_FULL_EVERY_DAYS: '3'}).audit.securityFullEveryDays).toBe(3);
+    expect(() => buildConfig({...base, AUDIT_SECURITY_FULL_EVERY_DAYS: 'weekly'})).toThrow(/must be a number/);
+  });
+
   test('the digest lands on Monday by default', () => {
     expect(buildConfig(base).audit.digestWeekday).toBe(1);
     expect(buildConfig({...base, AUDIT_DIGEST_WEEKDAY: '3'}).audit.digestWeekday).toBe(3);

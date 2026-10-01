@@ -1,5 +1,6 @@
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {dirname} from 'node:path';
+import type {SecuritySweep} from './job';
 import type {AuditFinding, LedgerDiff} from './ledger';
 import {redactSecret} from './securitySchema';
 
@@ -32,6 +33,11 @@ export interface AppReportInput {
   laneFailures: LaneFailure[];
   /** Today's ticket for this app, when the security lane opened one. */
   jiraTicketUrl?: string;
+  /**
+   * How the security lane was scoped today. Undefined when the app failed before the
+   * plan was made: nothing is printed then, rather than a guess.
+   */
+  securitySweep?: SecuritySweep;
 }
 
 export interface ReportInput {
@@ -61,6 +67,12 @@ const TELEGRAM_MESSAGE_LIMIT = 4096;
 
 const SEVERITY_RANK: Record<string, number> = {high: 3, medium: 2, low: 1};
 const SEVERITY_EMOJI = ['⚪', '⚪', '🟡', '🔴']; // indexed by rank 0..3
+
+function sweepLabel(sweep: SecuritySweep): string {
+  if (sweep.mode === 'incremental') return `incremental (${sweep.files} files)`;
+  if (sweep.mode === 'skipped') return `skipped — no change since ${sweep.since}`;
+  return 'full';
+}
 
 function worstEmoji(findings: AuditFinding[]): string {
   const rank = findings.reduce((max, f) => Math.max(max, SEVERITY_RANK[f.severity] ?? 0), 0);
@@ -98,6 +110,7 @@ function appSection(app: AppReportInput, digest: boolean, included: Set<string> 
   const label = digest ? 'tồn' : 'mới';
   const lines = [`${worstEmoji(shown)} ${app.appName} · ${shown.length} ${label}`];
   if (app.jiraTicketUrl) lines.push(`  🎫 ${app.jiraTicketUrl}`);
+  if (app.securitySweep) lines.push(`  security: ${sweepLabel(app.securitySweep)}`);
   const pool = included ? shown.filter(f => included.has(f.fp)) : shown;
   // Security before hygiene, high before low — what a human needs to see
   // first at 06:00, not scan order. Applied whether or not the cap is active,
@@ -111,16 +124,21 @@ function assemble(input: ReportInput, included: Set<string> | undefined, dropped
   const lines: string[] = [`🔎 Audit ${input.date} · ${input.apps.length} app`, ''];
 
   const quietApps: string[] = [];
+  const quietSweeps: string[] = [];
   for (const app of input.apps) {
     const section = appSection(app, input.digest, included);
     if (section.quiet) {
       quietApps.push(app.appName);
+      if (app.securitySweep) quietSweeps.push(`${app.appName} ${sweepLabel(app.securitySweep)}`);
       continue;
     }
     lines.push(...section.lines, '');
   }
 
-  if (quietApps.length) lines.push(`${quietApps.join(', ')}: không có gì mới`, '');
+  if (quietApps.length) lines.push(`${quietApps.join(', ')}: không có gì mới`);
+  // Without this a skipped day (no source change) reads exactly like a clean full sweep.
+  if (quietSweeps.length) lines.push(`security: ${quietSweeps.join('; ')}`);
+  if (quietApps.length) lines.push('');
 
   // No silent cap: a message that reads as complete while quietly dropping
   // findings is the failure this replaces, not a smaller version of it.

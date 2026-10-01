@@ -84,9 +84,24 @@ export async function archiveBranchTip(
   return saved.code === 0 ? ref : undefined;
 }
 
+const FETCH_BACKOFF_MS = [2000, 5000];
+
+// git.avada.net blips (DNS, HTTP2 framing, 530 from the Cloudflare edge) cost a whole
+// app's audit in one run. Auth and unknown-ref failures never match, so they fail at once.
+const TRANSIENT_FETCH =
+  /could not resolve host|temporary failure in name resolution|http2 framing|returned error: 5\d\d|connection (reset|timed out|refused)|operation timed out|early eof|unexpected disconnect|remote end hung up|not closed cleanly|curl 92|ssl_error_syscall|gnutls_handshake|gnutls_record_recv|tls connection was non-properly terminated/i;
+
+export function isTransientFetchError(output: string, timedOut = false): boolean {
+  // A hung fetch killed by the runner leaves little or no output to match on.
+  return timedOut || TRANSIENT_FETCH.test(output);
+}
+
+const defaultSleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
 export async function createWorktree(
   input: WorktreeInput,
-  runner: Runner = spawnRunner
+  runner: Runner = spawnRunner,
+  sleep: (ms: number) => Promise<void> = defaultSleep
 ): Promise<WorktreeResult> {
   const git = (args: string[]) => runner(['git', '-C', input.repoPath, ...args], input.timeoutMs);
 
@@ -97,9 +112,18 @@ export async function createWorktree(
     return {ok: false, detail: `${input.dir} already exists — a previous job did not clean up`};
   }
 
-  const fetched = await git(['fetch', '--quiet', 'origin', input.baseBranch]);
-  if (fetched.code !== 0) {
-    return {ok: false, detail: `fetch failed: ${(fetched.stderr || fetched.stdout).trim().slice(0, 300)}`};
+  const maxAttempts = FETCH_BACKOFF_MS.length + 1;
+  for (let attempt = 1; ; attempt++) {
+    const fetched = await git(['fetch', '--quiet', 'origin', input.baseBranch]);
+    if (fetched.code === 0) break;
+    const output = (fetched.stderr || fetched.stdout).trim();
+    if (attempt >= maxAttempts || !isTransientFetchError(output, fetched.timedOut)) {
+      return {
+        ok: false,
+        detail: `fetch failed after ${attempt} attempt${attempt === 1 ? '' : 's'}: ${output.slice(0, 300)}`
+      };
+    }
+    await sleep(FETCH_BACKOFF_MS[attempt - 1] ?? 0);
   }
 
   const sha = await git(['rev-parse', `origin/${input.baseBranch}`]);
