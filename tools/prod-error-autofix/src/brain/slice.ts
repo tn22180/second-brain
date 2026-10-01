@@ -9,7 +9,8 @@ import {normalize} from '../fingerprint';
  * from scratch every time — and the whole point of *slicing* it is that the brain
  * can grow without every job paying for all of it.
  *
- * Always loaded: CORE, patterns, the one app file for the alert, the index.
+ * Always loaded: CORE, patterns, the one app file for the alert, and this app's newest
+ * index lines (the whole index outgrew the budget ~6x by 2026-09-30: 736 lines, every app).
  * Conditionally: at most one past incident, when it is the same fingerprint or a
  * near miss on the same service.
  * Never: other apps' files, or the rest of the incidents.
@@ -122,6 +123,28 @@ function pickIncident(input: SliceInput): {path: string; text: string; reason: s
   return best ? {path: best.path, text: best.text, reason: `near miss ${best.score.toFixed(2)}`} : undefined;
 }
 
+/** Newest lines of one app kept in the index section; full records stay in incidents/. */
+export const INDEX_LINES_PER_APP = 25;
+const LEARN_MARKER = '<!-- LEARN appends below this line -->';
+
+/**
+ * The index header plus this app's own lines, newest first (LEARN prepends), capped. Other
+ * apps' incidents never help diagnose this one, and an index loaded whole on every job grew
+ * without bound. What was left out is counted, so the agent knows the rest exists.
+ */
+export function indexForApp(text: string, appName: string, maxLines = INDEX_LINES_PER_APP): string {
+  const cut = text.indexOf(LEARN_MARKER);
+  const head = cut >= 0 ? text.slice(0, cut + LEARN_MARKER.length) : '';
+  const body = (cut >= 0 ? text.slice(cut + LEARN_MARKER.length) : text).split('\n').filter(l => l.startsWith('- '));
+  // Fields are ` · `-separated; the app is the third. Exact match, so SEO never picks up SEO-X.
+  const mine = body.filter(l => l.split(' · ')[2]?.trim() === appName);
+  const kept = mine.slice(0, maxLines);
+  const older = mine.length - kept.length;
+  const others = body.length - mine.length;
+  const note = [older ? `${older} older ${appName}` : '', others ? `${others} other-app` : ''].filter(Boolean).join(', ');
+  return [head, ...kept, ...(note ? [`(${note} incident line(s) not loaded — see brain/index.md)`] : [])].filter(Boolean).join('\n') + '\n';
+}
+
 export function buildSlice(input: SliceInput): BrainSlice {
   const sections: SliceSection[] = [];
   const skipped: {path: string; reason: string}[] = [];
@@ -145,7 +168,14 @@ export function buildSlice(input: SliceInput): BrainSlice {
     skipped.push({path: appPath, reason: `no brain file for app ${input.appName}`});
   }
 
-  add('index', join(input.brainRoot, 'index.md'));
+  const indexPath = join(input.brainRoot, 'index.md');
+  const indexText = read(indexPath);
+  if (indexText === undefined) {
+    skipped.push({path: indexPath, reason: 'missing'});
+  } else {
+    const text = indexForApp(indexText, input.appName);
+    sections.push({name: 'index', path: indexPath, text, tokens: estimateTokens(text)});
+  }
 
   const incident = pickIncident(input);
   if (incident) {

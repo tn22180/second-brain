@@ -243,3 +243,48 @@ describe('parseIncidentHeader', () => {
     expect(parseIncidentHeader('no header at all', 'fallback').fingerprint).toBe('fallback');
   });
 });
+
+describe('index section', () => {
+  let root: string;
+  const header = '# Incident index\n\nintro\n\n<!-- LEARN appends below this line -->\n';
+  const line = (fp: string, app: string) => `- \`${fp}\` · 2026-09-30 · ${app} · svc · cause · — · infra`;
+  beforeEach(() => {
+    root = join(require('node:os').tmpdir(), `brain-index-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(join(root, 'apps'), {recursive: true});
+    writeFileSync(join(root, 'CORE.md'), 'core');
+    writeFileSync(join(root, 'patterns.md'), 'patterns');
+    writeFileSync(join(root, 'apps', 'SEO.md'), 'seo');
+  });
+  afterEach(() => rmSync(root, {recursive: true, force: true}));
+  const slice = () => buildSlice({brainRoot: root, appName: 'SEO', fingerprint: 'zz', service: undefined, message: undefined, tokenBudget: 6000});
+
+  test('carries only this app\'s lines, newest first, with a count of what was left out', () => {
+    const lines = [line('s1', 'SEO'), line('b1', 'BLOG'), line('s2', 'SEO'), line('i1', 'IMG-OPT')];
+    writeFileSync(join(root, 'index.md'), header + lines.join('\n') + '\n');
+    const idx = slice().sections.find(s => s.name === 'index')!.text;
+    expect(idx).toContain('`s1`');
+    expect(idx).toContain('`s2`');
+    expect(idx.indexOf('`s1`')).toBeLessThan(idx.indexOf('`s2`'));
+    expect(idx).not.toContain('BLOG');
+    expect(idx).not.toContain('IMG-OPT ·');
+    expect(idx).toContain('2 other-app');
+    expect(idx).toContain('<!-- LEARN appends below this line -->');
+  });
+
+  test('caps the app\'s lines and says how many older ones exist', () => {
+    const lines = Array.from({length: 60}, (_, i) => line(`s${i}`, 'SEO'));
+    writeFileSync(join(root, 'index.md'), header + lines.join('\n') + '\n');
+    const idx = slice().sections.find(s => s.name === 'index')!.text;
+    expect(idx).toContain('`s0`');
+    expect(idx).toContain('`s24`');
+    expect(idx).not.toContain('`s25`');
+    expect(idx).toContain('35 older SEO');
+  });
+
+  test('an app name that is a prefix of another does not pick up its lines', () => {
+    writeFileSync(join(root, 'index.md'), header + [line('a', 'SEO'), line('b', 'SEO-X')].join('\n') + '\n');
+    const idx = slice().sections.find(s => s.name === 'index')!.text;
+    expect(idx).toContain('`a`');
+    expect(idx).not.toContain('`b`');
+  });
+});
