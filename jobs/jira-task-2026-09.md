@@ -144,3 +144,69 @@ h3. Done khi
 * Có số: bao nhiêu merchant token đã vào log prod, từ ngày nào.
 * Có quyết định rotate/không kèm lý do.
 ```
+
+---
+
+# Tổng tháng 9 — toàn bộ việc (quét 2026-10-01)
+
+Nguồn: 140 MR tạo bởi `tuannv` trên git.avada.net 01–30/09 (124 merged · 15 opened · 1 closed; seo 99, blogs 16,
+APC 10, AEO 8, img 3, cdn 2, worker-sdk 1, bug-fix-agent 1) đối chiếu 43 task FAL giao `tuannv` tạo trong tháng.
+Mục 1–3 ở trên nằm trong bảng B. Việc trên MR cùng branch chạy nhiều app (cùng một thay đổi) gộp thành 1 task.
+
+## A. Đã có task FAL — chỉ cần gắn MR / kéo status
+
+| FAL | Status | MR | Ghi chú |
+|---|---|---|---|
+| FAL-814 Ollama Cloud | Testing Production | seo !2219 !2220, APC !194 (opened) | |
+| FAL-823 Enterprise Slack alert | Archived | seo !2229 (opened) !2230 !2250, img !280 | |
+| FAL-852 UG link 404 | Archived | seo !2240 | |
+| FAL-863 meta rác vẫn trừ credit | Done | seo !2255 | |
+| FAL-898 LocalBusiness myshopify URL | Done | seo !2291 | |
+| FAL-920 shipping theo điều kiện | **To Do** | seo !2304 !2329 !2332 | đã merge 3 MR → kéo status |
+| FAL-943 Content length lệch | **To Do** | seo !2325 | kéo status |
+| FAL-1013 Fix with AI / score range | Done | seo !2333 | |
+| FAL-1029 variant @id | **To Do** | seo !2340 | kéo status |
+| FAL-761 internal key AEO | Done | AEO !130 !132 | |
+| FAL-912 MCP lộ token settings | Done | seo !2300 | khớp theo nội dung, kiểm |
+| FAL-918 bulk FAQ 404 | **To Do** | seo !2306 | khớp theo nội dung, kiểm → kéo status |
+| FAL-835 missing meta title `<input>` | Done | seo !2225 (falcon-bot, opened) | khớp theo nội dung |
+| FAL-815 Dev Zone rework | Archived | seo !2213 !2276, blogs !892, APC !197 | credit grant history; kiểm có muốn tách task |
+| FAL-911 / 942 / 1041 image compression | Done/Done/To Do | seo !2214 !2266 !2268 !2296 !2297 !2299 !2339 !2346 !2347 | chia MR cho 3 task lúc tạo; !2346 !2347 còn opened |
+| FAL-748 rotate integration token | To Do | seo !2246 !2248 | **lệch**: 2 MR gắn `[FAL-748]` nhưng là worker health/retune → gắn lại sang task fleet (B4) |
+
+Task có MR gắn key nhưng **không giao tuannv** — thêm mình vào assignees hoặc tạo task riêng:
+- FAL-829 AI Inline 500 (Blog, chưa ai nhận) ← blogs !881 — nhận luôn.
+- FAL-881 meta CTA (SEO, chưa ai nhận) ← seo !2295 — nhận luôn.
+- FAL-718 Version history (truongnn) ← blogs !878.
+- FAL-658 / FAL-440 bundle + multistore (dungtt,tunglv / BA) ← xem B1.
+
+## B. Cần tạo mới
+
+| # | Summary đề xuất | Type · App | MR |
+|---|---|---|---|
+| 1 | `[DEV][SEO] Filter product tables by stock status` | Task · SEO | seo !2262 (chi tiết mục 1 ở trên) |
+| 2 | `[BUG][SEO] Audit product list rỗng khi có locale — 1 translation timeout giết cả trang` | Bug · SEO | seo !2263 (mục 2) |
+| 3 | `[DEV][SEO] Rotate token dev store + đo lộ token merchant qua log` | Task · SEO | — (mục 3) |
+| B1 | `[DEV][SEO] All-in-one bundle + multistore: review fix, sibling-only auth, verify charge, chặn bypass subscribe` | Task · SEO | seo !2283 !2284 !2285 !2288 !2290 !2292(opened) !2313 · blogs !894–!898 !900(opened) · APC !199–!203 (!203 opened) — link FAL-658 |
+| B2 | `[DEV][SEO] Affiliate v2: 5 vòng review fix + ẩn menu cho prod trial` | Task · SEO | seo !2273 !2274 !2275 !2277 !2280 !2281 !2282 — link FAL-107 |
+| B3 | `[DEV][SEO] Security phase 4 SEO: Firestore/Storage rules, scope rules theo shop, proxy auth, XSS JSON-LD/FAQ, credit self-grant, SSRF` | Task · SEO | seo !2316–!2324 !2330 !2334–!2337 |
+| B4 | `[DEV] Security: GDPR redact callback + XSS/injection cho AEO, Blog, APC, img` | Task · (4 app) | AEO !141, blogs !910, APC !208, img !286 |
+| B5 | `[DEV][SEO] Worker fleet: stuck-slot leak, phantom load, health Redis, retune RSS, deploy timeout + dọn đĩa follower` | Task · SEO | seo !2215 !2216(opened) !2217 !2218(opened) !2246 !2248 !2261 !2271 !2311, worker-sdk !1 |
+| B6 | `[DEV][SEO] Job dock: registry shopJobs, review hint, đếm đúng counter, release run chết` | Task · SEO | seo !2256 !2264 !2265(closed) !2269 |
+| B7 | `[DEV][SEO] MCP OAuth: credit gate, refresh-token DoS, TTL, endpoint APP_BASE_URL, form-action Shopify` | Task · SEO | seo !2227 !2231 !2232 !2234 !2236 !2237 !2241(opened) — link FAL-526 |
+| B8 | `[DEV][SEO] GSC v2: review fix !2081 + thay trang Search Console cũ` | Task · SEO | seo !2221 !2226 — link FAL-460 |
+| B9 | `[BUG][SEO] Optimize: thay file bằng source rỗng làm mất ảnh merchant (20 shop)` | Bug · SEO | seo !2314 |
+| B10 | `[DEV][SEO] Image: Free plan quota 1 lần + TS AI dev-zone cấp image quota` | Task · SEO | seo !2315 !2345 |
+| B11 | `[BUG][SEO] seo.meta metafield bị wipe câm: Speed Up save đè, customOpenHours crash, mất write không dấu vết` | Bug · SEO | seo !2289 !2293 !2294 |
+| B12 | `[DEV][SEO] Structured data: chọn Product/ProductGroup, exclude theo page type, itemCondition, bỏ comment HTML storefront` | Task · SEO | seo !2239 !2302 !2305, blogs !901 |
+| B13 | `[DEV] Crisp: tag segment no-ai cho store staff Shopify + fix widget mở 2 conversation` | Task · (5 app) | seo !2238 !2278(opened), blogs !893, APC !198, AEO !125, img !281 |
+| B14 | `[DEV] Cross-sell banner Product Feed (SEO, Blog, Speed) + APC render từ config localized` | Task | cdn banner-cross-sell !1 !2, APC !206 |
+| B15 | `[BUG][AEO] Rescan nhân đôi chain khi Pub/Sub redeliver + encode handle + PubSub client leak` | Bug · AEO | AEO !122 !138 !140 |
+| B16 | `[DEV][AEO] AI Referral: verify app embed Tracker trên trang AI referral` | Task · AEO | AEO !133 |
+| B17 | `[DEV][Blog] Related keywords list 1 call + related post fetch lỗi không trắng editor + dev zone TS AI` | Task · Blog | blogs !879 !899 !908, !883 (falcon-bot) |
+| B18 | `[DEV][SEO] Dọn: xoá router /chatbot chết, xoá 2 legacy ScriptTag từ Dev Zone, swagger /api/seo-issues` | Task · SEO | seo !2298 !2301 !2327 |
+| B19 | `[DEV][SEO] Audit: extract copy SEO issue để dịch + label AI content meta coverage` | Task · SEO | seo !2228 !2249 |
+| B20 | `[DEV][SEO] AutoPilot v1 — revive products/create + trang settings` | Task · SEO | seo !2312 (Draft, opened) — tạo khi ra khỏi draft |
+
+Bỏ qua (tooling team/cá nhân, không FAL): bug-fix-agent !9 (chạy bot native launchd), harness, prod-error-autofix.
+Việc vận hành không MR đã có task: FAL-818 fleet-control, FAL-819 Bull Board, FAL-820 dọn VM, FAL-821 autofix, FAL-822 skill CS.

@@ -1,0 +1,173 @@
+{
+  "id": "audit-lanes-review",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain",
+  "base": "main",
+  "baseRef": "fix/audit-lanes",
+  "branch": "fix/audit-lanes-review",
+  "maxParallel": 2,
+  "linkPaths": [
+    "tools/prod-error-autofix/node_modules",
+    "projects/Falcon"
+  ],
+  "nodes": [
+    {
+      "id": "sweep-logic",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "opus"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). The daily audit's security lane just became incremental (src/audit/job.ts planSecuritySweep and around, src/state/store.ts audit_security_sweeps). A code review found these defects — fix all of them, TDD (failing test first, watch it fail, then fix):\n\n1. IMPORTANT job.ts ~159,166,208: the changed-file filter is an allowlist of js/ts/json/liquid and drops every `docs` segment, but the security prompt's `secret` surface explicitly covers comments, fixtures, docs, tests. A commit adding only .env, *.pem, CI *.yml, shopify.app.*.toml, firestore.rules or docs/*.md is `skipped` and HEAD is recorded, so it is never swept until the weekly full. Invert to a denylist: drop only binary/image/font/archive files, lockfiles (yarn.lock, package-lock.json, pnpm-lock.yaml, bun.lockb) and __snapshots__/. Keep docs and dotfiles.\n2. IMPORTANT job.ts ~197,445: bootstrap never happens where it matters. No record → full; full times out → nothing recorded → full again tomorrow, forever (seo/APC/img-opt full sweeps time out most days). Same after every 7-day mark. Fix: record a full-sweep ATTEMPT time (new nullable column, migration-safe: ALTER TABLE ADD COLUMN guarded by PRAGMA table_info). When a full sweep fails: if a previous sha exists, the next day runs incremental from that sha and a full is retried only after the full interval passes since the last attempt; if no sha exists yet (first ever run), record HEAD as the baseline sha with no full-success time, so the next day can go incremental (the first failed full means nothing was swept — do NOT resolve anything that day; just seed the baseline). Document the trade-off in one comment.\n3. IMPORTANT job.ts ~427: hygiene is added to the resolvable kinds only when res.laneFailures is empty, but laneFailures also carries `triage` lane failures (triage timeout/deadline) while the eslint list is still complete. Gate only on failures whose lane === 'hygiene'.\n4. MINOR job.ts ~204-209: no cap on changed files. If more than 200 changed files, treat the day as a full sweep.\n5. MINOR job.ts ~204: `git diff --name-only` follows renames so the old path is missing; add `--no-renames` so the old path is in the list like a deletion.\n6. MINOR: the LLM may return `./packages/...`; normalise a leading `./` on security finding files where findings are validated (src/audit/securitySchema.ts), so they match diff paths.\n7. Add ONE test that uses a real git repo in a tmp dir (not the fake git) for the incremental path: commit, record, change+rename+delete, and check the planned file list (includes old and new rename paths and the deleted file; excludes a lockfile).\n\nDo not touch src/audit/report.ts or src/git/worktree.ts — other work owns them.",
+      "contract": {
+        "goal": "incremental security sweep covers dotfiles/docs, bootstraps after a failed full, caps big diffs, lists renames; hygiene resolves despite triage failure; ./ paths normalised",
+        "allow": [
+          "tools/prod-error-autofix/src/audit/job.ts",
+          "tools/prod-error-autofix/src/state/store.ts",
+          "tools/prod-error-autofix/src/audit/securitySchema.ts",
+          "tools/prod-error-autofix/test/audit.job.test.ts",
+          "tools/prod-error-autofix/test/store.test.ts",
+          "tools/prod-error-autofix/test/audit.security.test.ts",
+          "tools/prod-error-autofix/test/audit.incremental.git.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "job/store/security tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/audit.job.test.ts",
+              "test/store.test.ts",
+              "test/audit.security.test.ts",
+              "test/audit.incremental.git.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "preflight": true,
+            "timeoutMs": 900000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ]
+          },
+          {
+            "name": "typecheck",
+            "timeoutMs": 300000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ]
+          }
+        ]
+      },
+      "wallMinutes": 120
+    },
+    {
+      "id": "fetch-transient",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). src/git/worktree.ts now retries transient `git fetch` failures (see the transient regex ~lines 91-92 and test/git.fetchRetry.test.ts). A review found two common blips it misses: (a) a fetch that hangs until the runner's timeout — the runner result has timedOut: true / 'killed after …ms' — fails immediately instead of retrying; (b) `error: RPC failed; curl 92 HTTP/2 stream 5 was not closed cleanly: CANCEL` and TLS resets (`SSL_ERROR_SYSCALL`, `gnutls_handshake`) are not matched. Make both retry; auth errors and unknown refs must still fail at once. TDD: add failing tests to test/git.fetchRetry.test.ts first, watch them fail, then fix.",
+      "contract": {
+        "goal": "fetch retry also covers timeouts, HTTP/2 stream / RPC failed and TLS resets",
+        "allow": [
+          "tools/prod-error-autofix/src/git/worktree.ts",
+          "tools/prod-error-autofix/test/git.fetchRetry.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "fetch retry tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/git.fetchRetry.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "preflight": true,
+            "timeoutMs": 900000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ]
+          },
+          {
+            "name": "typecheck",
+            "timeoutMs": 300000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-sweep",
+      "deps": [
+        "sweep-logic"
+      ],
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "prompt": "Repo: tools/prod-error-autofix (Bun + TypeScript). The audit's security lane is now full / incremental / skipped per app per day (job.ts produces a `securitySweep` value on the app result — read job.ts to find its exact shape). The daily Telegram report (src/audit/report.ts renderReport/assemble) does not show it, so a skipped day (no source change) reads exactly like 'full sweep, clean', and an incremental day reads like a full one. Fix: carry the sweep info into the report input (AppReportInput, and wherever run.ts builds it) and render one short line per app, e.g. `security: full` / `security: incremental (12 files)` / `security: skipped — no change since abc1234`. Keep the message compact (quiet apps can be summarised on one line). Pass it to the supervisor input too if the supervisor gets per-app lane info. TDD: failing tests in test/audit.report.test.ts (and test/audit.job.test.ts or a run test if the plumbing needs it) first, watch them fail, then implement.",
+      "contract": {
+        "goal": "the daily audit report states per app whether the security sweep was full, incremental (N files) or skipped",
+        "allow": [
+          "tools/prod-error-autofix/src/audit/report.ts",
+          "tools/prod-error-autofix/src/audit/run.ts",
+          "tools/prod-error-autofix/src/audit/job.ts",
+          "tools/prod-error-autofix/src/audit/supervisor.ts",
+          "tools/prod-error-autofix/test/audit.report.test.ts",
+          "tools/prod-error-autofix/test/audit.job.test.ts",
+          "tools/prod-error-autofix/test/audit.run.test.ts"
+        ],
+        "verify": [
+          {
+            "name": "report tests",
+            "cmd": [
+              "bun",
+              "--cwd",
+              "tools/prod-error-autofix",
+              "test",
+              "test/audit.report.test.ts",
+              "test/audit.job.test.ts"
+            ]
+          },
+          {
+            "name": "no new failures in suite",
+            "preflight": true,
+            "timeoutMs": 900000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && f=$(bun test 2>&1 | grep -E '^\\(fail\\)' | grep -v 'the real brain'); if [ -n \"$f\" ]; then echo \"$f\" | head -20; exit 1; fi"
+            ]
+          },
+          {
+            "name": "typecheck",
+            "timeoutMs": 300000,
+            "cmd": [
+              "sh",
+              "-c",
+              "cd tools/prod-error-autofix && bunx tsc --noEmit"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

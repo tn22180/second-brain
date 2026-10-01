@@ -20,9 +20,6 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 ### OPEN — cần Tony quyết (2026-07-21 hold)
 - [ ] Worker fleet tự spill sang GCF khi worker unhealthy → khỏi external liveness probe. **Mâu thuẫn open-loop `liveness-53b`.** Chốt: nếu spill đủ thay probe → đóng liveness-53b + promote fact. Chưa chốt → để nguyên. (candidate lặp 07-16/18/19/20) #hold
 
-### TEST read-loop (2026-07-21) — xoá sau khi verify
-- [ ] (×2) TEST read-loop hoạt động — nếu session mới thấy dòng này tức hook OK
-
 ### memory candidates 2026-07-21
 - [ ] (×1) docs_gate phải chỉ chạy trên MR target master — trên staging branch nó deploy prod (bug đã fix, image-optimizer)
 - [ ] (×1) /arena AI-token leaderboard (nguyentuan) đã deploy prod nhưng backend chưa feed data → rỗng
@@ -34,10 +31,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) isActiveInstall pilot đã rollout toàn bộ ~100k shop (chỉ set status), scan nốt 6,261 shop rồi chuẩn bị purge.
 
 ### memory candidates 2026-07-23
-- [ ] (×3) Shared prod-error lib publish public npm tên `avada-prod-error-alert` (unscoped, KHÔNG `@avada/prod-error-alert`) — sửa lại ref trong `seo-prod-error-slack-pipeline`
-- [ ] (×3) Log sink prod-error đã tạo cho tất cả project prod, không chỉ seo
-- [ ] (×3) CI các app dùng immutable install → mọi MR thêm dep phải commit `yarn.lock` kèm, nếu không fail
-- [ ] (×3) MR cho repo `blogs` phải base từ `master`
+- [x] (×3) Shared prod-error lib publish public npm tên `avada-prod-error-alert` (unscoped, KHÔNG `@avada/prod-error-alert`) — sửa lại ref trong `seo-prod-error-slack-pipeline` → CLAUDE.md + memory sửa 2026-10-01 (npm 0.1.0)
+- [x] (×3) Log sink prod-error đã tạo cho tất cả project prod, không chỉ seo → CLAUDE.md Conventions
+- [x] (×3) CI các app dùng immutable install → mọi MR thêm dep phải commit `yarn.lock` kèm, nếu không fail → CLAUDE.md Conventions
+- [x] (×3) MR cho repo `blogs` phải base từ `master` → CLAUDE.md Conventions
 
 ### memory candidates 2026-07-24
 - [ ] (×1) Job stuck (self-chaining Pub/Sub fan-out) resume được bằng skill `resume-stuck-job` — CS tự chạy, recipe registry theo app
@@ -239,8 +236,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Sort theo inventory ở `seo-audit/seoOnPage` không trả data — field inventory chưa được index/đổ vào doc audit, phải check nguồn trước khi sort FE
 
 ### memory candidates 2026-09-15
-- [ ] (×2) worker-sdk executor từ `2b9a426` reject handler vượt timeout để BullMQ free slot — fleet worker "chết"/"processing ảo" trước đây là slot bị handler treo giữ, không phải box down; check handler settle trước khi restart box
-- [ ] (×2) worker-sdk vẫn push được lên remote mới (commit 2026-09-15 dưới `tuannv@avada.email`) — xác nhận lại remote nào đang ghi, vì group `avada` trên gitlab.com đã read-only
+- [x] (×2) worker-sdk executor từ `2b9a426` reject handler vượt timeout để BullMQ free slot — fleet worker "chết"/"processing ảo" trước đây là slot bị handler treo giữ, không phải box down; check handler settle trước khi restart box → `seo-fleet-stuck-slot-leak` (2026-10-01: sdk 0.5.8 đã publish, seo master vẫn lock 0.5.7)
+- [x] (×2) worker-sdk vẫn push được lên remote mới (commit 2026-09-15 dưới `tuannv@avada.email`) — xác nhận lại remote nào đang ghi, vì group `avada` trên gitlab.com đã read-only → origin = git.avada.net/avada/falcon/product/worker-sdk (`avada-gitlab-host-migration`; `avada-gitlab-selfhost` sửa 2026-10-01)
 
 ### memory candidates 2026-09-15
 - [ ] (×1) Chưa có quyền tạo project trong group `seoon-team` trên git.avada.net (2026-09-15) — worker-sdk migrate kẹt, cần admin cấp quyền
@@ -298,3 +295,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo shipping rate trong structured data tính theo tier riêng của từng variant, key theo price, chỉ tính variant được in ra (FAL-920, `f143e6385b9`/`84b669dea75`)
 - [ ] (×1) Email notification report broken link (seo) sẽ bị bỏ, task giao MinhPt kèm !2338. Đừng coi việc mất email là bug
 - [ ] (×1) Task point tháng 2026-09 đã tới hạn 09-29/30 mà open loop vẫn còn. Cần tạo ngay kẻo trượt sang tháng sau
+
+### memory candidates 2026-10-01
+- [ ] (×1) seo `jobDataMigrate` kẹt 'doing' >6h: re-scan sẽ huỷ phần còn sót rồi restart sync, Report hiện banner stalled (`73b68cfc16c`, `aa8c0a1f0e4`). Chờ cắt tag mới lên prod. Shop báo "scan mãi không xong" thì check tag trước
+- [ ] (×1) seo sec-p4 C5: store data routes đã bỏ public cross-app key (`9f716360691`), đã deploy 2026-10-01. Liên quan `integration-key-unbound-fleetwide`: cần check 4 app kia có cùng lỗ không
+- [ ] (×1) seo image-seo: AI credit gate từng giết các lượt chạy filename không tốn AI credit (`4bff97c3411`). Shop hết credit mà rename filename fail thì check fix đã lên tag chưa
+- [ ] (×1) Hướng service ngoài Shopify: chỉ bán service đo lường được. ADS (meta feed + google feed + ChatGPT ads) là ứng viên chính, SEO chỉ là phần nhỏ. Brief ở `jobs/2026-10-01-services-beyond-shopify.md`
+- [ ] (×1) KPI tháng của Tuan làm bằng notes qua share-note, không tạo task Jira riêng. Note phải kèm link store

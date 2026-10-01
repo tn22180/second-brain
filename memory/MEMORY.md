@@ -12,7 +12,7 @@
 - [seo shopify.app.*.toml per-dev](seo-shopify-toml-per-dev.md) — many per-dev tomls, each → own dev store, no canonical pair; don't normalize.
 - [seo gen2 follower fleet deploy](seo-gen2-follower-fleet-deploy.md) — box1/box2 = compose.gen2-follower.yml, image name-pinned local; [deploy-worker] KHÔNG chạm box; boxes chỉ tới qua Tailscale; registry down + inventory thiếu box → hand-ship image.
 - [seo gen2 worker FIREBASE_CONFIG](seo-gen2-worker-firebase-config.md) — hydrate image cần FIREBASE_CONFIG env (không phải FIREBASE_STORAGE_BUCKET) vì import-chain no-arg init chạy trước block bucket của worker.mjs.
-- [seo fleet stuck-slot leak](seo-fleet-stuck-slot-leak.md) — heartbeat xanh ≠ nhận việc; job treo giữ BullMQ slot, worker:active=0 đánh lừa. Nhìn processedOn trong bull:*:active; fix seo !2271 + worker-sdk !1.
+- [seo fleet stuck-slot leak](seo-fleet-stuck-slot-leak.md) — heartbeat xanh ≠ nhận việc; job treo giữ BullMQ slot, worker:active=0 đánh lừa. Nhìn processedOn trong bull:*:active; fix seo !2271 + worker-sdk 0.5.8 (seo master vẫn lock 0.5.7 tới 10-01).
 - [fleet-control Queues DOWN semantics](fleet-control-queues-down-semantics.md) — "Queues DOWN" = 1+ failed job trong 24h window, cosmetic; worker liveness (up===0) là row riêng. metrics:jobs giữ count độc lập với bull:*.
 - [seo fleet: Tailscale + staging4](seo-fleet-tailscale-staging4.md) — worker fleet over Tailscale mesh; staging4=avada-seo-staging-4; box IPs uncommitted, not in repo.
 - [seo fleet Tailscale ACL auto-deploy](seo-fleet-tailscale-acl-autodeploy.md) — central=tag:deploy, box1/box2=tag:worker-box, accept rule → non-interactive SSH. Gotchas: box1 --ssh off, box2 was user-owned untagged, SSH-into-central needs dst:tag:deploy (autogroup:self ≠ tagged nodes).
@@ -20,7 +20,7 @@
 - [seo worker memoryMb là copy GCF](seo-worker-memory-measured.md) — RSS đo thật nhỏ hơn 2–8x (recursive 4096 khai vs 499 peak); budget prod 5190 nên không tier nào chạm cap concurrency.
 - [seo fleet→GCF spill](seo-fleet-gcf-spill.md) — dispatchWork 3 gates + spill theo MEMORY (MR2204): job.memoryMb > maxFreeMb (worker:mem hash). KHÔNG có ngưỡng queue tổng. Spill OFF ở prod tới khi FLEET_SPILL_ENABLED=true.
 - [fleet-control public hosting](fleet-control-public-hosting.md) — fleet.tuannv-dev.site via Cloudflare Tunnel(cloudflared@central)+Access(Google/OTP); config in /etc/cloudflared not ~; REDIS_PORT=6380; basic-auth off + ufw deny tailscale0:3900.
-- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18. Group `avada` trên gitlab.com nay READ-ONLY → worker-sdk hết remote ghi được. Bảng remote trong second-brain/CLAUDE.md đã sai.
+- [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18. Group `avada` trên gitlab.com nay READ-ONLY; worker-sdk đã sang git.avada.net/avada/falcon/product (09-15). Bảng remote trong second-brain/CLAUDE.md đã sai.
 - [seo prod deploy theo tag](seo-prod-deploy-by-tag.md) — merge master KHÔNG deploy; pipeline master chỉ có docs_gate. Cắt tag mới deploy. Đừng nhầm với silent-freeze.
 - [blog prod deploy theo tag](blogs-prod-deploy-by-tag.md) — `only: - tags`; 2026-09-03 master hơn tag cuối 183 commit, fix bot nằm chết 3 tuần. `git tag --contains <sha>` trước khi kết luận prod thiếu fix.
 - [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
@@ -79,4 +79,8 @@
 - [Tooling cá nhân không cần Jira](no-jira-for-own-tooling.md) — harness/hook/skill/loop không tạo FAL; pilot harness qua tony-wf, không chờ ticket.
 - [Telegram DM format](telegram-dm-format.md) — ngắn, dòng đầu <b>title session</b> (HTML parse_mode); mr_notify/harness/loop-health đã theo.
 - [Telegram chỉ báo](telegram-notify-only.md) — không xử lý reply; Tuan dùng Orca trên điện thoại để lái session.
+- [AEO llms.txt đè Shopify: 82% chưa đè](aeo-llms-txt-override-coverage.md) — app ghi `templates/llms.txt.liquid` vào main theme, opt-in; probe 10-01: 1454 shop live, 82% vẫn template Shopify, 6% chữ ký app.
+- [APC review giả + AEO làm tròn giá USD](apc-fake-testimonial-aeo-usd-round.md) — 2 bug prod tìm ra 10-01: templates.js:51 slot testimonial bịa 7/10; formatCurrency USD maxFraction 0.
+- [share-note token ở file](share-note-token-file.md) — NOTES_API_KEY không export; đọc `~/.config/avada/notes-token` inline khi chạy bun index.ts.
 - [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.
+- [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (52/64); vá+restart 10-01 07:00Z (31a2fb0), đo lại từ 10-08 bằng harness/retro_autofix.py (nền 16% cần round 2).

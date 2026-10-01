@@ -1,0 +1,49 @@
+{
+ "platform": "Squarespace (www) + Shopify (shop. subdomain)",
+ "source_used": [
+  "shopify:/products.json + /products/<handle>.json",
+  "squarespace:/store?format=json"
+ ],
+ "products_found": 39,
+ "items_written": 31,
+ "requests_used": 16,
+ "fields_coverage": {
+  "item_id": 100.0,
+  "group_id": 100.0,
+  "title": 100.0,
+  "description": 100.0,
+  "url": 100.0,
+  "image_url": 100.0,
+  "additional_image_urls": 48.4,
+  "brand": 100.0,
+  "seller_name": 100.0,
+  "price": 100.0,
+  "currency": 100.0,
+  "sale_price": 0.0,
+  "availability": 100.0,
+  "gtin": 0.0,
+  "mpn": 0.0,
+  "sku": 54.8,
+  "condition": 0.0,
+  "color": 0.0,
+  "size": 6.5,
+  "material": 0.0,
+  "category_path": 12.9,
+  "weight": 45.2,
+  "source": 100.0
+ },
+ "problems": [
+  "shopify: skipped 'Custom Writing' (option-set-388558-checkbox-2) — Globo product-options add-on, not standalone sellable, no image",
+  "shopify: skipped 'Add Custom Writing' (option-set-387850-checkbox-1) — Globo product-options add-on, not standalone sellable, no image",
+  "squarespace: skipped 19 store items priced $0.00 (display/menu entries, not sellable): Brown Butter Caramel Cake; Summer's End Cake; Strawberry Shortcake; Carrot Cake; Red Velvet; Brooklyn Butterscotch Blackout Cake; Bonfire Cake; Chocolate Pumpkin Crispy; Chocolate Ganache & Meringue; Raspberry Rose Cake; New York Cream Pie Cake; Apple Cinnamon Swirl; Summer's End Peach Rye Cake; Rainbow Celebration Cake w/ Vanilla Buttercream; Rainbow Celebration Cake w/ Chocolate Buttercream; Caramel Crispy; Peanut Butter Fully Loaded; Tahini Coffee Caramel; Mango Sticky Rice",
+  "both platforms live: Squarespace /store (31 items, 12 priced ice-cream-sandwich singles) and Shopify shop.thegoodbatch.com (8 products); homepage nav links to Shopify /pages/order — Shopify is the primary order channel",
+  "Squarespace /store is not linked from www nav; reachable only via sitemap",
+  "no GTIN/barcode on any variant (food/bakery — expect identifier_exists=false)",
+  "condition not exposed by either platform -> null (not assumed 'new')",
+  "Shopify weight 0 on 3 cake/pastry products -> null; Squarespace weights all 0 -> null",
+  "Shopify 'Cookies' product handle is 'house-dozen-anna-test' (looks like test handle, product is live & priced)",
+  "Gift Card (For In-Store) included; most channels (Google/Meta) disallow gift cards — filter downstream",
+  "Squarespace has no categories/tags -> category_path null; Shopify product_type set on 2/6",
+  "local pickup/delivery bakery (Brooklyn); shipping not inferable from public data"
+ ]
+}

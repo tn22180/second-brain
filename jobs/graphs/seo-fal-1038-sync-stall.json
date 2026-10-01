@@ -1,0 +1,56 @@
+{
+  "id": "seo-fal-1038",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "fix/fal-1038-onpage-sync-stall",
+  "maxParallel": 2,
+  "nodes": [
+    {
+      "id": "backend-stale-restart",
+      "deps": [],
+      "meta": {"agent": "cc-p", "model": "opus"},
+      "wallMinutes": 90,
+      "prompt": "Repo: seo (Shopify app, Firebase Functions, jest 24 run from repo root: `npx jest <path>`). Ticket FAL-1038: Onpage audit Report stuck on \"Syncing pages… (3/4 completed)\" forever.\n\nRoot cause (verified on prod): packages/functions/src/services/jobDataMigrate.service.js settleElasticsearchChunk commits the claim flag `nextTriggered_<type>=true` inside a transaction, then OUTSIDE it runs upsertJob/getShopById/triggerNextBulkOperation (the final-type branch is what sets status 'done'). The handlehooksubscribergen2 instance was OOM-killed right after the commit, so every Pub/Sub redelivery sees the flag and returns shouldTriggerNext=false. The jobDataMigrate doc stays status 'doing' forever. mutationBulkOperation (packages/functions/src/controllers/auditAgentController.js, POST /audit/bulk-operation) returns 400 while any doc is 'doing', so the merchant can never re-scan. Prod has 188 shops with a 'doing' doc older than 2h (various causes: this crash, bulk ops that never reported back).\n\nTask: make a re-scan click recover a dead run.\n1. New pure helper packages/functions/src/helpers/jobDataMigrate/isStaleSearchIndexJob.js exporting SEARCH_INDEX_STALE_MS = 6h and isStaleSearchIndexJob(job, now = Date.now()) → true only when job.status === statusJob.doing and its updatedAt (Firestore Timestamp, Date, ISO string or ms — check what the repository returns) is older than SEARCH_INDEX_STALE_MS; missing/unparseable updatedAt → false (never treat unknown as dead). Comment the WHY of 6h in one line: the bulk-op wait phase writes nothing to the doc, so a short window would kill healthy large-shop runs.\n2. mutationBulkOperation: a 'doing' doc that is stale no longer blocks. Before restarting, best-effort (each in its own try/catch, logged, never failing the request): cancelBulkOperation({shop, id: job.bulkOpId}) when bulkOpId is set, and deleteAllChunksForShop(shopId) — same calls cancelBulkDataMigration already makes. Then continue on the existing \"sync next time\" path unchanged (status doing, count+1, upsertJob RUNNING, dispatchWork with a fresh runId). logger.warn once with shopId, job id and age in minutes. A non-stale 'doing' doc still 400s exactly as now.\n3. Update the comment in packages/functions/src/const/jobRegistry.js near SEARCH_INDEX_SYNC (\"Not STALE: mutationBulkOperation 400s while any doc is still doing…\") so it stays true — a doing doc older than SEARCH_INDEX_STALE_MS is now restartable via the same resume route. Do not change catalog behaviour.\n4. docs/features/seo-audit.md: add a short subsection on stale-run recovery (threshold, what the re-scan does, that the Report UI treats a stale run as not scanning — another task builds that UI with the same 6h constant). Cite code as the doc already does; run the docs-gate check below.\n\nTDD: write failing tests first and watch them fail. Tests: packages/functions/src/helpers/jobDataMigrate/__tests__/isStaleSearchIndexJob.test.js (boundaries, each updatedAt shape, non-doing statuses) and packages/functions/src/controllers/__tests__/auditAgentController.mutationBulkOperation.test.js (fresh doing → 400 and no dispatch; stale doing → cancel+cleanup+dispatch with new runId and 200; cancel throwing still restarts; no doc → create path unchanged). Mock like auditAgentController.fixAuditIssue.test.js does. Do not touch jobDataMigrate.service.js or anything under packages/assets.",
+      "contract": {
+        "goal": "a re-scan on a jobDataMigrate doc stuck in 'doing' for more than 6h cancels leftovers and restarts the sync instead of returning 400",
+        "allow": [
+          "packages/functions/src/controllers/auditAgentController.js",
+          "packages/functions/src/helpers/jobDataMigrate/isStaleSearchIndexJob.js",
+          "packages/functions/src/helpers/jobDataMigrate/__tests__/isStaleSearchIndexJob.test.js",
+          "packages/functions/src/controllers/__tests__/auditAgentController.mutationBulkOperation.test.js",
+          "packages/functions/src/const/jobRegistry.js",
+          "docs/features/seo-audit.md"
+        ],
+        "verify": [
+          {"name": "stale-restart tests", "cmd": ["npx", "jest", "--ci", "packages/functions/src/helpers/jobDataMigrate", "packages/functions/src/controllers/__tests__/auditAgentController"]},
+          {"name": "job registry tests", "preflight": true, "cmd": ["npx", "jest", "--ci", "packages/functions/src/const/__tests__"]},
+          {"name": "docs-gate citations", "preflight": true, "cmd": ["node", "-e", "process.exit(require('./scripts/docs-gate/citations').main() === 0 ? 0 : 1)"]}
+        ],
+        "reproduce": {"testCmd": ["npx", "jest", "--ci", "packages/functions/src/controllers/__tests__/auditAgentController.mutationBulkOperation.test.js"]},
+        "security": {"appName": "seo"}
+      }
+    },
+    {
+      "id": "report-stale-unlock",
+      "deps": [],
+      "meta": {"agent": "cc-p", "model": "sonnet"},
+      "wallMinutes": 60,
+      "prompt": "Repo: seo (Polaris v13 frontend in packages/assets, jest 24 run from repo root: `npx jest <path>`). Ticket FAL-1038: Onpage audit Report (packages/assets/src/pages/Audit/Report.js) shows skeleton + \"Syncing pages… (3/4 completed)\" forever and disables the scan button, because `isScanning = scanMutation.isPending || jobState?.status === 'doing'` and the backend run died without ever leaving 'doing' (jobState comes from useJobDataMigrate, an onSnapshot on the jobDataMigrate doc).\n\nA parallel backend task makes POST /audit/bulk-operation restart a 'doing' run whose updatedAt is older than 6 hours. Your task is the UI half:\n1. New pure helper packages/assets/src/helpers/audit/isStaleScanJob.js exporting SCAN_STALE_MS = 6 * 60 * 60 * 1000 and isStaleScanJob(jobState, now = Date.now()) → true only when status === 'doing' and updatedAt (check what useJobDataMigrate actually yields: Firestore Timestamp with toDate/toMillis, seconds object, Date, ISO or ms) is older than SCAN_STALE_MS; unknown/missing updatedAt → false. One-line comment: must equal the backend's SEARCH_INDEX_STALE_MS (packages/functions/src/helpers/jobDataMigrate/isStaleSearchIndexJob.js) or the button unlocks while the server still 400s.\n2. Report.js: a stale job is not scanning — isScanning false, no skeleton, no Syncing banner, scan button enabled. Show a short Polaris Banner (tone warning) above the report: the last sync did not finish, click scan to run it again. New i18n key Audit.Report.syncStalled added to EVERY file in packages/assets/src/locale/translations/ (translate properly per language; origin.json too, matching how existing Audit.Report keys appear there). Re-evaluate staleness on a timer (e.g. once a minute) only while status is 'doing', so an open tab unlocks without reload.\n\nTDD: failing test first, watch it fail. Test packages/assets/src/helpers/audit/__tests__/isStaleScanJob.test.js (boundaries, each updatedAt shape, non-doing). Also add a test that every translation file has Audit.Report.syncStalled (put it in packages/assets/src/locale/__tests__/auditSyncStalledKey.test.js). Do not touch anything under packages/functions or docs.",
+      "contract": {
+        "goal": "the audit Report treats a 'doing' scan job older than 6h as not scanning: re-scan enabled, stalled banner shown",
+        "allow": [
+          "packages/assets/src/pages/Audit/Report.js",
+          "packages/assets/src/helpers/audit/isStaleScanJob.js",
+          "packages/assets/src/helpers/audit/__tests__/isStaleScanJob.test.js",
+          "packages/assets/src/locale/__tests__/auditSyncStalledKey.test.js",
+          "packages/assets/src/locale/translations/"
+        ],
+        "verify": [
+          {"name": "stale helper + i18n tests", "cmd": ["npx", "jest", "--ci", "packages/assets/src/helpers/audit", "packages/assets/src/locale"]},
+          {"name": "eslint Report", "cmd": ["sh", "-c", "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/assets/src/pages/Audit/Report.js packages/assets/src/helpers/audit/isStaleScanJob.js"]}
+        ]
+      }
+    }
+  ]
+}

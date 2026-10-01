@@ -16,6 +16,8 @@ legacy bỏ qua `signal`. Trigger là Firestore gRPC trên central `DEADLINE_EXC
 **How to apply:** Khi nghi "worker chết": kiểm `processedOn` của các job trong `bull:worker-*:active`
 (cùng 1 lock token = cùng 1 process) trước khi tin heartbeat. Cứu nhanh = `docker restart` container
 đó (job stalled được pick lại trong ~1 phút). Fix: seo !2271 (guard reject trong wrapper) +
-worker-sdk MR !1 trên git.avada.net (executor reject sau grace 5s) → publish 0.5.8 rồi bump seo.
+worker-sdk MR !1 trên git.avada.net (executor reject sau grace 5s) — merged `2b9a426`, npm 0.5.8 đã
+publish. **Kiểm 2026-10-01: seo `origin/master` yarn.lock vẫn resolve 0.5.7** → fleet prod chưa có fix
+executor, chỉ có guard của !2271. Bump lock seo trước khi coi lỗi treo slot là đã đóng.
 Còn mở: Firestore `preferRest: true` (84 `new Firestore()`), và fleet-control nên hiển thị tuổi job
 active theo tier. Liên quan: [[fleet-control-queues-down-semantics]], [[seo-worker-memory-measured]].

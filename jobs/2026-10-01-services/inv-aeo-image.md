@@ -1,0 +1,62 @@
+# Inventory engine: AEO + Image Optimizer (độ dính Shopify)
+
+Pin tree: AEO `llm-ai-search-seo` @ `origin/main` 3d032ef · IMG `avada-image-optimizer` @ `origin/master` 9f797672 (fetch 2026-10-01). Đọc qua `git show`, không checkout. Path tương đối `packages/functions/src/` trừ khi ghi khác.
+
+## Kết luận trước
+
+- **Cả 2 app không có AI generation nào ở prod code.** AEO: `config/openai.js:4` khai `OPEN_AI_KEY`, 0 chỗ dùng. IMG: dep `openai ^4.47.1` trong `package.json:75`, 0 import. Alt text + rename file = **template `{{product.title}}`**, không phải AI. `aiApi.js` / `aiController` của IMG = API cho agent TS AI gọi vào, không phải model.
+- **Không có**: AI visibility / brand-mention tracking trong câu trả lời LLM (0 hit `mention|visibility|citation`; `competitors` chỉ là CRUD Firestore), AI crawler tracking (UA bot bị **vứt**, không log — `aiReferralController.js:74`), AVIF (0 hit), resize ảnh sản phẩm (`.resize(` chỉ 1 chỗ, overlay page-loader `sharp.js:344`), MCP server ở AEO (0 hit). MCP chỉ có ở IMG: `packages/mcp-connector/` (Cloud Run, OAuth per-shop, gọi app API → HIGH).
+- Engine chạy được từ URL công khai gần như nguyên: **markdown scrape**, **JSON-LD/schema extract + 6 check schema**, **AI referral classifier + beacon**, **Sharp compress/WebP**, **llms.txt builder** (cần thay nguồn links).
+
+## AEO — `llm-ai-search-seo`
+
+| Capability | Entry file:line (verified) | Input | AI | Output | Coupling | Effort non-Shopify |
+|---|---|---|---|---|---|---|
+| llms.txt / llms-full.txt **generator** | `helpers/buildLlmTxt.js:299` `buildLlmTxtParts`, `:327` `buildLlmTxtContent`, `:266` `chunkLlmsData`, `:346` `capLlmsTxtContent` | `linksByType` [{type, links:[{title,url,handle,description,price…}]}] + shop name/domain + `localeConfigs` | — | Markdown string | **MED** — hàm thuần, nhưng `links` đến từ Shopify bulk op (links-sync) + field dịch kiểu Shopify (`getTranslationFieldName`) | **S–M**: viết adapter sitemap/crawl → `linksByType`; bỏ multi-locale ở v1. Ngày đầu chạy được 1 locale |
+| llms.txt **delivery** | `controllers/llmsTxtThemeController.js` → themeFilesUpsert `templates/llms.txt.liquid` + snippets; legacy `routes/proxy.js:39` `getLlmTxt` | theme write | — | file trong theme | **HIGH** | Non-Shopify: giao file tĩnh / hướng dẫn upload root; hoặc host ở domain mình + redirect |
+| agents.md | `controllers/agentMdController.js:32` `fetchDefaultAgentMd` (fetch `/agents.md` Shopify tự sinh), `:100` save → `templates/agents.md.liquid` | theme write | — | merchant tự soạn | **HIGH** — **không có generator**, chỉ editor + seed từ default Shopify | **M**: phải viết generator mới |
+| Markdown cho từng page (generated) | `helpers/buildPageMd.js:24` `buildPageMd({resource,type,…,structuredData})` | resource shape Admin GraphQL (product/collection/page/article) | — (turndown) | `.md` | **MED** — logic Turndown + structured-data → md tái dùng; shape input là Shopify | **M**: map HTML/JSON-LD scrape → `resource` shape |
+| Markdown delivery | `routes/proxy.js:30` `GET /proxy/ai/md/:locale/:type/:handle`; link `extensions/md-alternate/blocks/md-alternate-link.liquid` | App Proxy + theme ext | — | `.md` live | **HIGH** | Non-Shopify cần reverse-proxy/edge worker |
+| **Markdown scrape từ URL** | `services/markdownScrapeService.js:37` `scrapeMarkdown(url,{allowedHosts})` | **URL công khai** | — (Readability + jsdom + turndown) | Markdown | **LOW** — 0 dính Shopify, có SSRF allowlist, cap size, check mime | **S**: gọi thẳng; không render JS (SPA trống) |
+| AI referral tracking — classifier | `services/aiReferralService.js:78` `classifyReferrer`, `:17` `isAiBot`, `:29` `isNonAiReferrer`; seed `const/aiReferralDomains.js` | referrer + utm_source (+ shopID cho custom rule) | — | `{platform, matchedBy}` | **LOW** | **S** |
+| AI referral — beacon + ingest + rollup | beacon `extensions/md-alternate/blocks/ai-referral-tracker.liquid:1-60` (sendBeacon text/plain tới `seo-on-aeo.firebaseapp.com/proxy/track/ai-referral`); ingest `routes/proxy.js:49` → `controllers/aiReferralController.js:48` `track` → `getShopByField(shopDomain)` `:79`; rollup `handlers/scheduled/fanoutAiReferralAggregation.js`, `handlers/pubsub/subscribeAggregateAiReferrals.js` | JS snippet trên site | — | Firestore `aiReferrals`/`aiReferralStats` daily | **MED** — JS thuần, chỉ dính `shop.permanent_domain` + lookup shop theo domain | **S–M**: snippet `<script>` với `siteId`, track() resolve site thay vì shop. Đây là engine port nhanh nhất có dashboard |
+| AI crawler (GPTBot…) tracking | — (chỉ filter: `aiReferralController.js:74` drop khi `isAiBot`) | — | — | — | n/a | **Không có**. Cần log server/CDN — Shopify không cho, non-Shopify thì làm được (log Cloudflare/nginx) → engine mới, M |
+| AI bot robots.txt rules | `services/robotTxtService.js:286` `applyAiBotRobotsRules` (thuần); delivery `:331` `syncAiBotRobotsRules` → `templates/robots.txt.liquid` | robots.txt array | — | robots rules cho GPTBot/ClaudeBot/Google-Extended/PerplexityBot/DeepSeek (`const/convertModalNameToBot.js`) | gen **LOW** / delivery **HIGH** | **S**: sinh đoạn robots.txt cho khách dán |
+| Schema/JSON-LD extract (audit scraper) | `helpers/schemaScraper.js:313` `extractSchemaData(html)`, `:124` `parseJsonLdBlocks`, `:104` `extractPageTitle`; `helpers/parseJsonLd.js:166` `extractStructuredData` | HTML từ URL | — | merged Product JSON-LD, FAQ/rating/breadcrumb | **LOW** (regex, không Puppeteer) | **S** |
+| AEO checklist — structuredData (6 check: Product, FAQ, AggregateRating, Organization, BreadcrumbList, MerchantReturnPolicy) | `services/aeoChecklist/checks/structuredDataChecks.js:216` `runStructuredDataChecks(shop, shopDomain, {overrideUrls})`; check `:340-391` | **URL công khai** (truyền `overrideUrls`); default URL lấy qua GraphQL `:447` `getDefaultScanUrls` | — | pass/fail per check + scannedUrls | **LOW–MED** — chỉ default URL + password-page Shopify dính | **S**: truyền `overrideUrls`, stub `shop={id}` |
+| AEO checklist — content (#7–15) | `checks/contentChecks.js:86` `runContentChecks` (GraphQL `makeGraphQlApi` `:40`) | Admin API | — | 9 check sản phẩm | **HIGH** | **M**: viết lại trên JSON-LD scrape |
+| AEO checklist — technical (#16–25) | `checks/technicalChecks.js:4` `runTechnicalChecks(shop, settings)` | settings nội bộ app (llms bật chưa, bot nào allow) | — | | **HIGH** — đo state của chính app, không đo site | **S** viết lại: fetch `/llms.txt`, `/robots.txt` của site và parse |
+| Checklist score | `services/aeoChecklist/scoring.js` (weights SD .35 / content .30 / technical .35); runner `services/aeoChecklist/runner.js:22` | kết quả 3 nhóm | — | score 0-100 | LOW (thuần) / runner HIGH (metaobject, Firestore) | S |
+| AEO audit (product score) | `services/aeoAudit/auditScoring.js:41` `AuditScoreService extends AeoScoreService` (npm `aeo-score ^2.0.1`); scan `services/aeoAudit/aeoAuditService.js` `rescanAudit`; scrape `aeoAuditQueries.js:271-285` | Admin GraphQL product + storefront scrape | — | score/product, checks, severity | **MED** — scorer là lib npm, input trộn Admin field + scrape | **M**: build product object từ JSON-LD scrape; chỉ products |
+| MCP server | — | — | — | — | **Không có trong AEO** | — |
+
+## Image Optimizer — `avada-image-optimizer`
+
+| Capability | Entry file:line (verified) | Input | AI | Output | Coupling | Effort non-Shopify |
+|---|---|---|---|---|---|---|
+| **Compress (Sharp)** | `helpers/optimize/sharp.js:21` default `process(image, settings)` (fetch URL hoặc `image.buffer`), `:151` `compressImage`, `:224` `getQualityByType` | **URL ảnh công khai** hoặc buffer + `{compressType, qualityPct, typeFormat, force_webp}` | — | `{log:{oldSize,newSize,skippedLarger}, base64, destBuffer}` | **LOW** — chỉ import `api` + const | **S**: gọi thẳng. Skip animated, skip nếu to hơn |
+| WebP conversion | `sharp.js:167-177` `force_webp` (jpeg/png/tiff/heif → webp, q×0.9) | như trên | — | WebP buffer | **LOW** | **S** |
+| AVIF | — (0 hit) | | | | **Không có** | S: thêm `sharp().avif()` |
+| Resize | chỉ `sharp.js:293` `customImageWithOverlay` (page-loader overlay); `helpers/optimize/resizeAndUploadImagePageLoader.js:6` upload Shopify Files | | — | | **Không có resize ảnh SP** | S: `sharp().resize()` |
+| Pipeline compress + upload + backup | `services/optimize/fileImageService.js:70` `compressAndUploadToStorage`, `:293` `optimizeFileImage`; ghi lại qua `fileUpdate` (V1, `cloudRunWorker.js`) / `bulkOperationRunMutation` (V3, `cloudRunWorker.js:159`) | Admin API (Files) + bulk op webhook | — | ảnh mới trên Shopify CDN + log | **HIGH** | **L**: write-back cần CMS adapter (Woo REST media, Magento API) |
+| Backup / revert | GCS `services/originalImageService.js:24` bucket, `:86` `getOriginalStoragePath`, `:119` `fetchOriginalBuffer`; revert `services/revert/index.js:605` `handleRevertFileImageToOriginal`, `:772` `handleRevertFileImageToVersion` | shopId + mediaImageId (Shopify GID) | — | ảnh gốc/slot chất lượng trên GCS | **MED** — lưu GCS tái dùng; key theo GID + revert ghi Shopify | **M** |
+| Alt text | `helpers/optimize/changeAlt.js:12` `changeAlt({imgType,shop,object,alt})` — thay `{{product.x | filter}}` | template + object product/shop | **— (không AI)** | alt string | **MED** — engine template thuần, biến là field Shopify | **S** engine; **M** nếu muốn bán "AI alt" (phải viết mới: vision model) |
+| File rename | `helpers/optimize/changeFilename.js:15` `changeFilename(...)` | template + object | — | slug filename | **MED** (thuần, ghi qua `fileUpdate`) | S engine / L write-back |
+| Lazy-load | `services/lazyLoadService.js:91` `handleSetLazyLoad` — sửa theme assets (`layout/sections/snippets/templates`), `config/assets.js:281` `LAZY_PRODUCT_DESCRIPTION` | theme write | — | `loading="lazy"` trong liquid | **HIGH** | S nếu bán dạng snippet JS / hướng dẫn; logic liquid không port được |
+| MCP connector (agent điều khiển app) | `packages/mcp-connector/src/index.mjs`, tools `src/tools/registerTools.mjs` | OAuth per-shop → app API | — | MCP tools | **HIGH** | L |
+| (bonus, ngoài scope ảnh) Public speed audit | `routes/public.js:36` `POST /speed-audit` → `services/speedAudit/runPublicAudit.js:155` (Lighthouse mobile+desktop) | **URL công khai** | — | báo cáo Lighthouse | **LOW** — đã public, CORS | **0–S**: đã chạy được cho URL bất kỳ hôm nay |
+| (bonus) Sitemap discovery | `services/speedAuditMulti/discovery/fromSitemap.js:191` `parseSitemapIndex` | `sitemap.xml` | — | routes theo type | **MED** — regex `sitemap_<type>_N.xml` kiểu Shopify (`:30`) | S: thêm parser sitemap chuẩn → feed llms.txt adapter |
+
+## Top engine chạy được TODAY trên URL bất kỳ, glue < 1 ngày
+
+1. **AI-readiness scan từ URL** = `structuredDataChecks.js:216` `runStructuredDataChecks({id}, host, {overrideUrls})` + `schemaScraper.js:313` `extractSchemaData` + fetch `/llms.txt`, `/robots.txt` + `robotTxtService.js:286` logic bot. Glue: wrapper HTTP + 3 check technical viết lại (fetch file). Ra được báo cáo "AEO score" bán như lead-magnet/audit.
+2. **Markdown/llms content từ URL** = `markdownScrapeService.js:37` `scrapeMarkdown` (per page) + `buildLlmTxt.js:327` `buildLlmTxtContent` với adapter sitemap → `linksByType` (title/url/description lấy từ `<title>`/meta). Glue: sitemap parser chuẩn (~vài giờ), bỏ locale. Output file tĩnh khách tự upload.
+3. **AI referral tracker** = `aiReferralService.js:78` `classifyReferrer` + JS beacon trong `ai-referral-tracker.liquid` bỏ Liquid → `<script data-site=…>`. Glue: đổi `track()` resolve `siteId` thay `getShopByField`, rollup + Firestore giữ nguyên. Dashboard FE hiện là Polaris embedded → cần trang ngoài (khối lượng lớn nhất là FE, không phải engine).
+4. **Image compress/WebP từ URL** = `sharp.js:21` `process({url}, {compressType, force_webp:true})`. Glue: endpoint nhận list URL → trả zip/ảnh nén + báo cáo bytes tiết kiệm. Write-back vào Woo/Magento = phần L, không thuộc "today".
+5. **Lighthouse speed audit** = `runPublicAudit.js:155` — đã public ở `POST /speed-audit`, 0 glue.
+
+## Cảnh báo cho việc đóng gói
+
+- "AI alt text", "AI visibility/brand mention", "AI crawler analytics", "AVIF", "resize" **chưa tồn tại** — nếu bán thì là build mới, không phải đóng gói.
+- Mọi delivery (theme file, App Proxy, Files API, theme asset) là Shopify-only; giá trị port được nằm ở generator/checker thuần.
+- `scrapeMarkdown` + `schemaScraper` không render JS → site SPA/headless (custom) ra trống; `structuredDataChecks` có nhánh Puppeteer chỉ cho storefront có password.

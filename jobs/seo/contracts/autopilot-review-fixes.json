@@ -1,0 +1,118 @@
+{
+  "id": "autopilot-review-fixes",
+  "source": "/Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md",
+  "goal": "Fix review findings F1-F5 on feat/autopilot: isolate realtime products/create from bulk runs, webhook lifecycle, speed monitor hardening, FE warnings/banner/tracking, controller status + deterministic tests",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-autopilot",
+  "baseSha": "13e67ee9ee58406616ba3e6e9f5e694b97791519",
+  "allow": [
+    "docs/features/autopilot.md",
+    "packages/assets/src/pages/AutoPilot/AutoPilot.js",
+    "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+    "packages/functions/src/controllers/autopilotController.js",
+    "packages/functions/src/handlers/cron/__tests__/publishAutopilotSpeedMonitor.test.js",
+    "packages/functions/src/handlers/exports/pubsubFunctions.js",
+    "packages/functions/src/handlers/pubsub/__tests__/subscribeAutopilotSpeedMonitor.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/bulkOperationHook.productCreate.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/createProductHook.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/imageHook.test.js",
+    "packages/functions/src/handlers/webhook/bulkOperationHook.js",
+    "packages/functions/src/handlers/webhook/createProductHook.js",
+    "packages/functions/src/handlers/webhook/imageHook.js",
+    "packages/functions/src/repositories/__tests__/autopilotStatsRepository.test.js",
+    "packages/functions/src/repositories/webhookLogRepository.js",
+    "packages/functions/src/services/__tests__/installationService.test.js",
+    "packages/functions/src/services/__tests__/shopifyService.productCreateWebhook.test.js",
+    "packages/functions/src/services/autopilot/__tests__/autopilotService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/productCreateService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/speedMonitorService.test.js",
+    "packages/functions/src/services/autopilot/productCreateService.js",
+    "packages/functions/src/services/autopilot/speedMonitorService.js",
+    "packages/functions/src/services/installationService.js",
+    "packages/functions/src/services/optimize/__tests__/productServiceRealtimeExhaustion.test.js",
+    "packages/functions/src/services/optimize/productService.js",
+    "packages/functions/src/services/shopifyService.js",
+    "packages/functions/templates/notifySpeedDropTemplate.html"
+  ],
+  "verify": [
+    {
+      "name": "jest-autopilot",
+      "cmd": [
+        "npx",
+        "jest",
+        "packages/functions/src/services/autopilot",
+        "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+        "packages/functions/src/handlers/webhook",
+        "packages/functions/src/handlers/pubsub",
+        "packages/functions/src/handlers/cron",
+        "packages/functions/src/repositories/__tests__/autopilotStatsRepository.test.js",
+        "packages/functions/src/services/__tests__/installationService.test.js",
+        "packages/functions/src/services/__tests__/shopifyService.productCreateWebhook.test.js",
+        "packages/functions/src/services/optimize/__tests__/productServiceRealtimeExhaustion.test.js",
+        "packages/functions/src/commands"
+      ],
+      "timeoutMs": 600000
+    },
+    {
+      "name": "eslint",
+      "cmd": [
+        "env",
+        "DISABLE_V8_COMPILE_CACHE=1",
+        "npx",
+        "eslint",
+        "packages/assets/src/pages/AutoPilot/AutoPilot.js",
+        "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+        "packages/functions/src/controllers/autopilotController.js",
+        "packages/functions/src/handlers/cron/__tests__/publishAutopilotSpeedMonitor.test.js",
+        "packages/functions/src/handlers/exports/pubsubFunctions.js",
+        "packages/functions/src/handlers/pubsub/__tests__/subscribeAutopilotSpeedMonitor.test.js",
+        "packages/functions/src/handlers/webhook/__tests__/bulkOperationHook.productCreate.test.js",
+        "packages/functions/src/handlers/webhook/__tests__/createProductHook.test.js",
+        "packages/functions/src/handlers/webhook/__tests__/imageHook.test.js",
+        "packages/functions/src/handlers/webhook/bulkOperationHook.js",
+        "packages/functions/src/handlers/webhook/createProductHook.js",
+        "packages/functions/src/handlers/webhook/imageHook.js",
+        "packages/functions/src/repositories/__tests__/autopilotStatsRepository.test.js",
+        "packages/functions/src/repositories/webhookLogRepository.js",
+        "packages/functions/src/services/__tests__/installationService.test.js",
+        "packages/functions/src/services/__tests__/shopifyService.productCreateWebhook.test.js",
+        "packages/functions/src/services/autopilot/__tests__/autopilotService.test.js",
+        "packages/functions/src/services/autopilot/__tests__/productCreateService.test.js",
+        "packages/functions/src/services/autopilot/__tests__/speedMonitorService.test.js",
+        "packages/functions/src/services/autopilot/productCreateService.js",
+        "packages/functions/src/services/autopilot/speedMonitorService.js",
+        "packages/functions/src/services/installationService.js",
+        "packages/functions/src/services/optimize/__tests__/productServiceRealtimeExhaustion.test.js",
+        "packages/functions/src/services/optimize/productService.js",
+        "packages/functions/src/services/shopifyService.js"
+      ],
+      "timeoutMs": 300000
+    },
+    {
+      "name": "assets-build",
+      "cmd": [
+        "yarn",
+        "workspace",
+        "@avada/assets",
+        "run",
+        "production"
+      ],
+      "timeoutMs": 900000
+    },
+    {
+      "name": "docs-gate",
+      "cmd": [
+        "node",
+        "scripts/docs-gate/index.js"
+      ],
+      "timeoutMs": 300000
+    }
+  ],
+  "security": {
+    "appName": "seo"
+  },
+  "meta": {
+    "agent": "general-purpose x5",
+    "model": "opus/sonnet",
+    "round": 1
+  }
+}

@@ -318,3 +318,44 @@ Còn lại trước merge: E2E staging 1 (bật 2 card mới, tạo sp → có �
 - Hook: products/create (alt / nén / audit), cron 404 (redirect tạo thật, mỗi chunk 1 lần), speed (scan / alert), run-for-existing (lượt chạy). Speed lưu thêm `speedPrevious` để hiện chênh lệch.
 - UI: Overview (banner N/6, 5 ô số tháng này + tháng trước, ô speed mobile/desktop + delta + lần check kế) → heading Settings → card như cũ. Component `AutoPilotOverview.js`.
 - Commits `a10bd6cf4d7` (BE) + FE commit sau đó. Verify: 29 suite / 287 test, eslint, build exit 0, docs-gate PASS. Counter tính từ lúc deploy, không backfill.
+
+---
+
+## Review & improve (tony-wf, 2026-10-01)
+
+Scope: toàn branch `feat/autopilot` (`git diff origin/master...HEAD`, 76 file, 25 commit), MR !2312.
+
+### Decisions
+- Review chia 4 hướng song song (BE correctness · FE · security · cost/ops/tests) thay vì 1 reviewer — diff 8k dòng, 1 reviewer sẽ đọc lướt.
+- Chạy in-session, không graph mode — các fix dồn vào cùng vài file autopilot, mỗi fix cần đọc diff fix trước.
+- Giữ CI pin `deploy_staging: feat/autopilot` tới khi E2E staging xong; revert là bước trước merge, không phải việc của run này.
+- Không merge master mới (origin/master đã đi thêm) — không có conflict với file autopilot (đã check 3bf5841b5bd); merge sau khi review MR.
+
+### Progress
+| # | Task | Agent / Model | Status | Rounds | Sec | Notes |
+|---|------|---------------|--------|--------|-----|-------|
+| R | Review 4 hướng | general-purpose ×4 (opus/sonnet) | ✅ | — | — | BE 1 high/4 med/5 low · FE 1 high/3 med · Sec 0 high, 4 low · Ops 1 blocker (CI pin) |
+| F1 | Tách realtime products/create khỏi bulk run + early exit + dedup | general-purpose / opus | ✅ | 1/5 | clean | `802479a9f5e`; realtime skip trả `{skipped:true}`, không đóng run; early-exit trước GraphQL; dedup log xoá khi dispatch fail |
+| F2 | Vòng đời webhook (reinstall, legacy imageHook, already-taken) | general-purpose / sonnet | ✅ | 1/5 | clean | `802479a9f5e`; afterInstall re-register; imageHook xoá products/create legacy; already-taken → ok |
+| F3 | Speed monitor hardening + test publisher/subscriber | general-purpose / sonnet | ✅ | 1/5 | clean | `802479a9f5e`; maxInstances 10; speedAlerts chỉ khi gửi được; log mã lỗi SMTP; `store_name \| escape` |
+| F4 | FE: warnings, banner, tracking, dọn i18n | general-purpose / sonnet | ✅ | 1/5 | clean | `802479a9f5e`; WEBHOOK_CARDS + merge; banner từ data; feature_started/completed/failed. Bỏ xoá 6 key chết: generator chỉ prune en.json → lệch origin.json (invariant en≡origin) |
+| F5 | Controller GET status + test inject now | general-purpose / sonnet | ✅ | 1/5 | clean | `802479a9f5e`; get → status thật; test cố định clock (jest 24 không có setSystemTime → stub Date) |
+
+- Không sửa (low / có sẵn): race `doneOptimize` khi bấm Run đồng thời (FE đã khoá nút, giống manual start); Redis cache 10' có thể giữ setting cũ ngay sau save; Pub/Sub giao trùng → mail 2 lần (hiếm); save đọc ~5 doc (không đáng); `subscribeHandleHook` nuốt lỗi (có sẵn, rethrow có thể chạy lại việc tốn credit).
+- Giữ `speedScans` dù chưa hiển thị: ≤1 write/shop/ngày, là data cho trend sau.
+- Harness verify: 1 contract gộp cho F1–F5 thay vì mỗi task 1 cái — 5 task chạy song song cùng worktree, diff của task này nằm ngoài allow của task kia.
+- Out-of-scope (báo, không sửa): `/proxy/unsubscribe/:identifier` không xác thực (Base64 JSON, ai biết shopID unsubscribe được); `/api/autopilot*` mở qua swagger JWT → kế thừa lỗ `integrationKeys` không bind shop (đã có memory); `webhookLogRepository.js:70` log full error; `webhookMiddleware.js:26` bỏ HMAC khi `APP_IS_LOCAL="false"` (chuỗi).
+
+#### Task plans
+- **F1** Goal: realtime products/create không đóng/không cộng vào bulk run; hết credit/quota chỉ skip ảnh; shop tắt AutoPilot không tốn GraphQL; dispatch lỗi không mất event. Files: `services/autopilot/productCreateService.js`, `services/optimize/productService.js` (chỉ nhánh hết credit/quota), `handlers/webhook/bulkOperationHook.js` (nhánh products/create), `handlers/webhook/createProductHook.js`, tests. Approach: cờ `autopilotRealtime` + `historyId:null, lastHistoryIds:{}` (rejected: chỉ null id — `updateShopData doneOptimize:true` vẫn mở khoá run). Test: `npx jest packages/functions/src/services/autopilot packages/functions/src/handlers/webhook packages/functions/src/services/optimize`. Risk: handler dùng chung bulk run — nhánh không cờ phải giữ nguyên. Rollback: revert commit.
+- **F2** Goal: reinstall đăng ký lại webhook khi còn flag; legacy `products/create`→`/webhook/image` bị xoá; userError "already taken" → ok. Files: `handlers/webhook/imageHook.js`, `services/installationService.js` (afterInstall), `services/shopifyService.js` (`createProductCreateWebhook`), tests. Test: jest các file đó. Risk: afterInstall chạy mọi install — phải never-throw. Rollback: revert.
+- **F3** Goal: subscriber có `maxInstances`; `speedAlerts` chỉ khi gửi được ≥1 mail; log mail không lộ email; `store_name` escape; test publisher/subscriber + `shop.isMerchantUnsubscribe`. Files: `handlers/exports/pubsubFunctions.js` (1 dòng), `services/autopilot/speedMonitorService.js`, `templates/notifySpeedDropTemplate.html`, `handlers/cron/publishAutopilotSpeedMonitor.js`, `handlers/pubsub/subscribeAutopilotSpeedMonitor.js`, tests, `docs/features/autopilot.md`. Test: `npx jest packages/functions/src/services/autopilot packages/functions/src/handlers`. Risk: thấp. Rollback: revert.
+- **F4** Goal: warning chỉ card dùng webhook + merge; banner từ data đã lưu; tracking Run theo spec (started/completed/failed + error_reason); xoá key chết. Files: `packages/assets/src/pages/AutoPilot/*`, `const/productAnalytics.js` nếu cần, locales (regen). Test: build embed+standalone exit 0, eslint. Risk: tracking schema sai. Rollback: revert.
+- **F5** Goal: `GET /autopilot` lỗi trả status thật + test; test dùng đồng hồ thật inject `now`. Files: `controllers/autopilotController.js` + test, `repositories/__tests__/autopilotStatsRepository.test.js`, `services/autopilot/__tests__/autopilotService.test.js` (+ chỗ nhận `now` nếu cần trong service). Test: jest các file. Rollback: revert.
+
+### Verify (2026-10-01)
+- `harness verify` contract `contracts/autopilot-review-fixes.json`: **pass 8/8** (base, scope 27 file, jest-autopilot, eslint, assets-build, docs-gate, security, stable).
+- Full `src` jest: 340 suite, 6 fail — 4 có sẵn (shopify2026Client, overviewCardScore, onPageListQuery.helpers, workListStore) + 2 flaky chỉ khi chạy full (jobRegistryService, openrouter/truncation: pass riêng lẻ cả trên base `13e67ee9ee5` lẫn HEAD).
+- Security toàn branch: 0 high/critical; 4 low → 2 fixed (escape, log PII), 2 kept (race doneOptimize có sẵn; dedup fixed ở F1).
+
+**COMPLETE (review round)** — commit `802479a9f5e`, pushed, MR !2312 vẫn Draft. Rounds: 1/5 mỗi task. Trước merge: revert CI pin `51fb98d297f`, E2E staging 1.

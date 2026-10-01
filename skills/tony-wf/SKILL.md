@@ -238,7 +238,7 @@ Rules:
 - **Scope creep found while planning** (task is really three tasks, or it depends on something
   not in the brief) → stop, split it in both trackers, tell the user. Do not absorb it silently.
 
-### 7. Execute sequentially with a capped test-fix loop
+### 7. Execute with a capped test-fix loop (single task, or the graph's fallback)
 
 For each task:
 
@@ -266,9 +266,12 @@ For each task:
 Also pass `"meta": {"agent", "model", "round"}` in the contract — the ledger keeps it per run so
 `harness stats` / a later learn step can tell which executor false-dones on which task shape.
 
-#### Graph mode (pilot) — 3+ tasks, or tasks that can run in parallel
+#### Graph mode — the default for 2+ tasks
 
-Instead of §6–§8 per task in this session, write `<brief-dir>/graphs/<slug>.json` (schema:
+With two or more tasks, run them as a graph instead of §6–§8 per task in this session. Stay
+sequential in-session only when a task needs a human answer mid-way, or the tasks are so
+coupled that each needs to read the previous one's diff before it can be planned — record
+that reason under `## Decisions`. Write `<brief-dir>/graphs/<slug>.json` (schema:
 `~/Documents/second-brain/tools/agent-harness/src/graph.ts`): one node per task with `deps`,
 `prompt` (the §6 plan + task text), `contract` (goal/allow/verify/reproduce/security — no
 id/repoPath/baseSha, the runner sets them) and `meta.model`. Concurrent nodes must not share

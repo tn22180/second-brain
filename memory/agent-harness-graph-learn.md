@@ -12,4 +12,4 @@ metadata:
 - Verdict detail qua `redact()` trước ledger/Telegram. Contract có `meta {agent, model, round}` — thiếu meta thì learn không đếm.
 
 **Why:** Tuan muốn lên bậc 6 (graph) và 7 (self-improve) sau khi harness vững.
-**How to apply:** tony-wf "Graph mode" cho 3+ task hoặc task song song. Pilot đầu: `jobs/graphs/harness-minors.json`. Liên quan [[agent-autonomy-mr-not-merge]], [[telegram-dm-format]].
+**How to apply:** từ 2026-10-01 graph là MẶC ĐỊNH cho 2+ task code giao được (tony-wf + ~/.claude/CLAUDE.md); tuần tự chỉ khi cần hỏi giữa chừng/phụ thuộc chặt, ghi lý do vào Decisions. Debug/hỏi/sửa 1 file làm trực tiếp. Check suite-wide đánh `preflight: true`; second-brain cần `linkPaths` (node_modules của tool + projects/Falcon). Pilot đầu: `jobs/graphs/harness-minors.json`. Liên quan [[agent-autonomy-mr-not-merge]], [[telegram-dm-format]].

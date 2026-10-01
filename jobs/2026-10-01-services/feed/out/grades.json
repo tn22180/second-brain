@@ -1,0 +1,275 @@
+[
+ {
+  "store": "jococups.com",
+  "items": 257,
+  "apparel_store": false,
+  "raw": {
+   "items": 257,
+   "chatgpt_pass_pct": 97.7,
+   "google_pass_pct": 0.0,
+   "chatgpt_errors": [
+    [
+     "description_has_html",
+     4
+    ],
+    [
+     "price_zero",
+     2
+    ]
+   ],
+   "google_errors": [
+    [
+     "identifier_missing",
+     257
+    ],
+    [
+     "description_has_html",
+     4
+    ],
+    [
+     "price_zero",
+     2
+    ]
+   ]
+  },
+  "fixed": {
+   "items": 255,
+   "chatgpt_pass_pct": 100.0,
+   "google_pass_pct": 100.0,
+   "chatgpt_errors": [],
+   "google_errors": []
+  },
+  "quality_warnings": [
+   [
+    "title_no_brand",
+    257
+   ],
+   [
+    "single_image",
+    30
+   ],
+   [
+    "desc<100c",
+    3
+   ]
+  ]
+ },
+ {
+  "store": "paulsmith.com",
+  "items": 674,
+  "apparel_store": true,
+  "raw": {
+   "items": 674,
+   "chatgpt_pass_pct": 99.1,
+   "google_pass_pct": 16.6,
+   "chatgpt_errors": [
+    [
+     "missing:brand",
+     6
+    ]
+   ],
+   "google_errors": [
+    [
+     "apparel_missing:gender",
+     556
+    ],
+    [
+     "apparel_missing:age_group",
+     556
+    ],
+    [
+     "missing:brand",
+     6
+    ]
+   ]
+  },
+  "fixed": {
+   "items": 674,
+   "chatgpt_pass_pct": 99.1,
+   "google_pass_pct": 75.4,
+   "chatgpt_errors": [
+    [
+     "missing:brand",
+     6
+    ]
+   ],
+   "google_errors": [
+    [
+     "apparel_missing:gender",
+     160
+    ],
+    [
+     "missing:brand",
+     6
+    ]
+   ]
+  },
+  "quality_warnings": [
+   [
+    "title_no_brand",
+    650
+   ],
+   [
+    "no_category",
+    78
+   ],
+   [
+    "desc<100c",
+    1
+   ]
+  ]
+ },
+ {
+  "store": "planetbike.com",
+  "items": 131,
+  "apparel_store": false,
+  "raw": {
+   "items": 131,
+   "chatgpt_pass_pct": 84.7,
+   "google_pass_pct": 0.0,
+   "chatgpt_errors": [
+    [
+     "variant_dict_empty",
+     13
+    ],
+    [
+     "missing:availability",
+     7
+    ]
+   ],
+   "google_errors": [
+    [
+     "identifier_missing",
+     131
+    ],
+    [
+     "missing:availability",
+     7
+    ]
+   ]
+  },
+  "fixed": {
+   "items": 131,
+   "chatgpt_pass_pct": 100.0,
+   "google_pass_pct": 94.7,
+   "chatgpt_errors": [],
+   "google_errors": [
+    [
+     "missing:availability",
+     7
+    ]
+   ]
+  },
+  "quality_warnings": [
+   [
+    "title_no_brand",
+    131
+   ],
+   [
+    "single_image",
+    34
+   ],
+   [
+    "desc<100c",
+    1
+   ]
+  ]
+ },
+ {
+  "store": "thegoodbatch.com",
+  "items": 31,
+  "apparel_store": false,
+  "raw": {
+   "items": 31,
+   "chatgpt_pass_pct": 6.5,
+   "google_pass_pct": 0.0,
+   "chatgpt_errors": [
+    [
+     "variant_dict_empty",
+     29
+    ]
+   ],
+   "google_errors": [
+    [
+     "identifier_missing",
+     31
+    ],
+    [
+     "policy:gift_card",
+     4
+    ]
+   ]
+  },
+  "fixed": {
+   "items": 27,
+   "chatgpt_pass_pct": 100.0,
+   "google_pass_pct": 100.0,
+   "chatgpt_errors": [],
+   "google_errors": []
+  },
+  "quality_warnings": [
+   [
+    "title_no_brand",
+    31
+   ],
+   [
+    "no_category",
+    27
+   ],
+   [
+    "single_image",
+    16
+   ],
+   [
+    "desc<100c",
+    8
+   ],
+   [
+    "test_like_url",
+    7
+   ]
+  ]
+ },
+ {
+  "store": "weber.com",
+  "items": 120,
+  "apparel_store": false,
+  "raw": {
+   "items": 120,
+   "chatgpt_pass_pct": 55.8,
+   "google_pass_pct": 100.0,
+   "chatgpt_errors": [
+    [
+     "variant_dict_empty",
+     51
+    ],
+    [
+     "bad_url:image_url",
+     2
+    ]
+   ],
+   "google_errors": []
+  },
+  "fixed": {
+   "items": 120,
+   "chatgpt_pass_pct": 100.0,
+   "google_pass_pct": 100.0,
+   "chatgpt_errors": [],
+   "google_errors": []
+  },
+  "quality_warnings": [
+   [
+    "title_no_brand",
+    99
+   ],
+   [
+    "single_image",
+    10
+   ],
+   [
+    "desc<100c",
+    1
+   ]
+  ]
+ }
+]

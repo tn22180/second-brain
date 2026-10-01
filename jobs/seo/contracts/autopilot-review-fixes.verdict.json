@@ -1,0 +1,72 @@
+{
+  "contractId": "autopilot-review-fixes",
+  "runId": "autopilot-review-fixes-2fc9c027",
+  "at": 1790843474193,
+  "pass": true,
+  "diffSha": "85d51b6302565fd68f593d1c86939aa8d2be7913",
+  "changed": [
+    "docs/features/autopilot.md",
+    "packages/assets/src/pages/AutoPilot/AutoPilot.js",
+    "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+    "packages/functions/src/controllers/autopilotController.js",
+    "packages/functions/src/handlers/cron/__tests__/publishAutopilotSpeedMonitor.test.js",
+    "packages/functions/src/handlers/exports/pubsubFunctions.js",
+    "packages/functions/src/handlers/pubsub/__tests__/subscribeAutopilotSpeedMonitor.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/bulkOperationHook.productCreate.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/createProductHook.test.js",
+    "packages/functions/src/handlers/webhook/__tests__/imageHook.test.js",
+    "packages/functions/src/handlers/webhook/bulkOperationHook.js",
+    "packages/functions/src/handlers/webhook/createProductHook.js",
+    "packages/functions/src/handlers/webhook/imageHook.js",
+    "packages/functions/src/repositories/__tests__/autopilotStatsRepository.test.js",
+    "packages/functions/src/repositories/webhookLogRepository.js",
+    "packages/functions/src/services/__tests__/installationService.test.js",
+    "packages/functions/src/services/__tests__/shopifyService.productCreateWebhook.test.js",
+    "packages/functions/src/services/autopilot/__tests__/autopilotService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/productCreateService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/speedMonitorService.test.js",
+    "packages/functions/src/services/autopilot/productCreateService.js",
+    "packages/functions/src/services/autopilot/speedMonitorService.js",
+    "packages/functions/src/services/installationService.js",
+    "packages/functions/src/services/optimize/__tests__/productServiceRealtimeExhaustion.test.js",
+    "packages/functions/src/services/optimize/productService.js",
+    "packages/functions/src/services/shopifyService.js",
+    "packages/functions/templates/notifySpeedDropTemplate.html"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "27 file(s)"
+    },
+    {
+      "name": "jest-autopilot",
+      "ok": true
+    },
+    {
+      "name": "eslint",
+      "ok": true
+    },
+    {
+      "name": "assets-build",
+      "ok": true
+    },
+    {
+      "name": "docs-gate",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.5661538
+}

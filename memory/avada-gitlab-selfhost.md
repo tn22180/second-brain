@@ -33,10 +33,9 @@ không phải. Gửi kèm UA trình duyệt (`Mozilla/5.0 …Chrome/…`) là qu
 **Group `avada` trên gitlab.com đã bị khoá READ-ONLY** (phát hiện 2026-09-03 khi push
 `worker-sdk`): `remote: Your top-level group is over the user limit and has been placed in a
 read-only state.` → push trả **403**. Repo nào chưa cutover sang self-host thì hiện **không có
-remote ghi được**. `@avada-falcon/worker-sdk` là trường hợp đó: origin vẫn
-`gitlab.com/avada/seoon-team/worker-sdk`, và git.avada.net **chưa có** project đó
-(`avada/worker-sdk` và `avada/seoon-team/worker-sdk` đều 404). Muốn ship sdk phải tạo project
-self-host trước, hoặc đẩy tạm sang namespace cá nhân `tn22180`.
+remote ghi được**. `@avada-falcon/worker-sdk` từng là trường hợp đó (09-03); **đã giải quyết 2026-09-15**: origin =
+`git.avada.net/avada/falcon/product/worker-sdk` (gitlab.com giữ ở remote `gitlab-old`), xem
+[[avada-gitlab-host-migration]].
 
 `fleet-control` = `gitlab.com/tn22180/falcon-tech-lead-manager` (namespace cá nhân, KHÔNG bị
 khoá, vẫn push được). Trunk của nó là **`master`**; `origin/main` chỉ có "Initial commit" —

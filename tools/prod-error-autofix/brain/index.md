@@ -7,6 +7,18 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1ts4gf7` · 2026-10-01 · SEO · lighthouseauditrunnergen2 · A single mobile/densen4G Lighthouse+Chrome audit of https://www.djiusa.com/collections/accessories needs more  · — · infra
+- `171glpo` · 2026-10-01 · IMG-OPT · changelogTriggers-shopInfos · Not a runtime failure: anhnt@avada.io's 2026-09-30T14:20Z prod deploy of app-plaza-image-optimizer failed its  · — · fix_disabled
+- `953ckz` · 2026-10-01 · IMG-OPT · autoOptimizeImages · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the 2026-09-30T14 · — · infra
+- `1m0fqsl` · 2026-10-01 · IMG-OPT · changelogTriggers-subscriptions · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen2 deploy audit log — anhnt@avada.io's  · — · infra
+- `1fc6o1e` · 2026-10-01 · IMG-OPT · computeAfterScoreSubscriber · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the 2026-09-30T14 · — · infra
+- `orasbc` · 2026-10-01 · IMG-OPT · RevertImageCollectionSubscriber · Not a runtime failure: the alerted ERROR is a Cloud Functions gen1 deploy audit log — the 2026-09-30T14:20Z Up · — · infra
+- `b9a2xu` · 2026-10-01 · IMG-OPT · changelogTriggers-shops · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen2 deploy audit log — anhnt@avada.io's  · — · infra
+- `10poefd` · 2026-10-01 · IMG-OPT · api · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the UpdateFunctio · — · infra
+- `1xhq5xp` · 2026-10-01 · IMG-OPT · apiv2 · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen2 deploy audit log — anhnt@avada.io's  · — · infra
+- `1f3vgxm` · 2026-10-01 · IMG-OPT · handleProdErrorAlertGen2 · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen2 deploy audit log — anhnt@avada.io's  · — · infra
+- `192zuv9` · 2026-10-01 · SEO · apigen2 · On a shop's very first embed load, GET /api/realtime-token raced the concurrent GET /api/shops login: @avada/c · — · fix_disabled
+- `m3fuu4` · 2026-10-01 · BLOG · syncsubscribeactivecharge · Duplicate/recurrence of recorded fingerprints 4mbx6l and 7nba8f, now firing from the daily syncSubscribeActive · — · fix_disabled
 - `rf3q6k` · 2026-09-30 · BLOG · api · no verified cause · — · inconclusive
 - `1vbwf7r` · 2026-09-29 · BLOG · api · no verified cause · — · inconclusive
 - `7nba8f` · 2026-09-29 · BLOG · apisa · Duplicate of recorded fingerprint 4mbx6l, now on the standalone service and a third store: the blog→APC leg of · — · fix_disabled
