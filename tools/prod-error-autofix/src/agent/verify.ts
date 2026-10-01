@@ -81,8 +81,12 @@ export interface EvidenceVerdict {
 
 /**
  * Re-runs the model's own filter. `--limit 1` is enough: the claim under test is
- * "this query matches something", not the exact count, and a full re-read would
- * cost as much as the original pull.
+ * "this query matches something" (or, for `matched: 0`, "matches nothing"), not the
+ * exact count, and a full re-read would cost as much as the original pull.
+ *
+ * `matched: 0` is absence evidence — "no 5xx in the window", "zero Memory limit lines".
+ * Until 2026-10-01 it was rejected as unreproducible: 52 of the 64 "matched nothing"
+ * rejections in Sep 2026 were exactly these honest zeros, each burning a round.
  */
 export async function verifyEvidence(
   input: {projectId: string; timeoutMs: number},
@@ -114,6 +118,12 @@ export async function verifyEvidence(
     parsed = JSON.parse(res.stdout || '[]') as unknown[];
   } catch {
     parsed = [];
+  }
+  if (evidence.matched === 0) {
+    if (parsed.length) {
+      return {evidence, ok: false, observed: parsed.length, reason: 'claimed to match nothing, but the query returns entries'};
+    }
+    return {evidence, ok: true, observed: 0, reason: undefined};
   }
   if (!parsed.length) {
     return {evidence, ok: false, observed: 0, reason: 'query matched nothing — evidence not reproducible'};
@@ -153,6 +163,10 @@ export async function verifyAnalysis(
   }
   for (const v of evidence) {
     if (!v.ok) rejections.push(`evidence rejected — ${v.reason}\n  query: ${v.evidence.logQuery}`);
+  }
+  // Absence can rule a cause out, never establish one.
+  if (input.requireEvidence && analysis.evidence.length && analysis.evidence.every(e => e.matched === 0)) {
+    rejections.push('every evidence query is an absence (matched 0); add at least one query that matches the error itself');
   }
   if (analysis.confidence === 'low') {
     rejections.push('confidence is low; either find evidence that raises it or this ends as inconclusive');

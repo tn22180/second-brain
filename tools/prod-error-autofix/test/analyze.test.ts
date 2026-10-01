@@ -4,7 +4,7 @@ import {join} from 'node:path';
 import {analyze, buildAnalyzePrompt, type AnalyzeInput} from '../src/agent/analyze';
 import {extractJson, parseAnalysis, validateAnalysis, type Analysis} from '../src/agent/analysisSchema';
 import {buildArgs, failureDetail, parseEnvelope, type ClaudeInvocation, type ClaudeResult} from '../src/agent/claudeCli';
-import {libToSrc, verifyCitation, verifyEvidence} from '../src/agent/verify';
+import {libToSrc, verifyAnalysis, verifyCitation, verifyEvidence} from '../src/agent/verify';
 import type {LogBundle} from '../src/gcloud/logs';
 import type {RunResult, Runner} from '../src/gcloud/run';
 import type {ParsedAlert} from '../src/parseAlert';
@@ -182,6 +182,44 @@ describe('verifyEvidence', () => {
     );
     expect(v.ok).toBe(false);
     expect(v.reason).toContain('not reproducible');
+  });
+
+  test('an absence claim (matched 0) passes when the query still returns nothing', async () => {
+    const v = await verifyEvidence(
+      {projectId: 'p', timeoutMs: 1000},
+      {logQuery: 'httpRequest.status>=500', matched: 0, sample: 'no 5xx in the window'},
+      runner({stdout: '[]'})
+    );
+    expect(v.ok).toBe(true);
+  });
+
+  test('an absence claim is rejected when the query returns entries', async () => {
+    const v = await verifyEvidence(
+      {projectId: 'p', timeoutMs: 1000},
+      {logQuery: 'httpRequest.status>=500', matched: 0, sample: undefined},
+      runner({stdout: '[{"x":1}]'})
+    );
+    expect(v.ok).toBe(false);
+    expect(v.reason).toContain('claimed to match nothing');
+  });
+
+  test('an analysis backed only by absence evidence is rejected', async () => {
+    const report = await verifyAnalysis(
+      {repoRoot: process.cwd(), projectId: 'p', timeoutMs: 1000, requireEvidence: true},
+      {
+        rootCause: 'r',
+        mechanism: 'm',
+        citations: [],
+        evidence: [{logQuery: 'httpRequest.status>=500', matched: 0, sample: undefined}],
+        confidence: 'high',
+        reproPlan: 'p',
+        fixSketch: 'f',
+        isInfra: false
+      },
+      runner({stdout: '[]'})
+    );
+    expect(report.ok).toBe(false);
+    expect(report.rejections.join('\n')).toContain('every evidence query is an absence');
   });
 
   test('a query that will not run is rejected with the error', async () => {
