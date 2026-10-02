@@ -7,6 +7,8 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `tk9lv5` · 2026-10-02 · BLOG · api · no verified cause · — · inconclusive
+- `13qk38s` · 2026-10-01 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `1ts4gf7` · 2026-10-01 · SEO · lighthouseauditrunnergen2 · A single mobile/densen4G Lighthouse+Chrome audit of https://www.djiusa.com/collections/accessories needs more  · — · infra
 - `171glpo` · 2026-10-01 · IMG-OPT · changelogTriggers-shopInfos · Not a runtime failure: anhnt@avada.io's 2026-09-30T14:20Z prod deploy of app-plaza-image-optimizer failed its  · — · fix_disabled
 - `953ckz` · 2026-10-01 · IMG-OPT · autoOptimizeImages · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — the 2026-09-30T14 · — · infra
@@ -106,7 +108,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1pqydjx` · 2026-09-29 · SEO · mcpgen2 · analysisRepository.updateByType dereferences `faqs.isFAQsSet` on an analysis doc whose stored `faqs` is null,  · — · fix_disabled
 - `mne0rk` · 2026-09-10 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields a primitive number instead of an o · — · fix_disabled
 - `c7rec9` · 2026-09-09 · SEO · handleoptimizeimagegen2 · no verified cause · — · inconclusive
-- `1y50rr7` · 2026-09-09 · SEO · ollamaquotaalertgen2 · no verified cause · — · inconclusive
+- `1y50rr7` · 2026-10-01 · SEO · ollamaquotaalertgen2 · no verified cause · — · inconclusive
 - `qp6czb` · 2026-09-09 · SEO · apigen2 · GET /api/genFaqBulk/fWnE11VkwlBaGq5ShBiu returns 500 deterministically because that bulk's item list holds at  · — · fix_disabled
 - `17g9p6f` · 2026-09-09 · SEO · apisagen2 · GET /apiSa/genFaqBulk/HPAqhHJo9kED8jNXivTO returns 500 deterministically because bulk HPAqhHJo9kED8jNXivTO ref · — · fix_disabled
 - `135nfbs` · 2026-09-09 · BLOG · api · getProductsGraphQL hand-builds the Shopify GraphQL document by splicing the merchant's raw `search` query para · — · fix_disabled
