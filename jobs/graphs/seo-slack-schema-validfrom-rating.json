@@ -1,0 +1,53 @@
+{
+  "id": "seo-slack-schema-validfrom-rating",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "fix/schema-validfrom-fake-rating",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "validfrom-fake-rating",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "wallMinutes": 60,
+      "prompt": "Repo: seo (Shopify app; Firebase Functions + theme app extension; jest 24 run from repo root: `npx jest --ci <path>`). Two Slack bug threads, one MR (same files).\n\nT2 (iconic-rugs-au, https://avadaio.slack.com/archives/G01N5G8D562/p1791115075459679): Product JSON-LD Offer emits \"validFrom\": \"2030-01-01\" \u2014 tells Google the price is not valid until 2030. Default in packages/functions/src/config/default.js:121 `validFrom: '2030-01-01'`. Liquid only checks `!= blank`, never a future date, and ignores excludeFields: extensions/theme-app-extension/snippets/avada-product-and-collection.liquid:284-285 and :389-390; legacy copies in packages/functions/src/config/customGsdLiquid.js:290-291 and :615-616 (the :615 one is inside ratingReviewsStructured, which may not have an `excludeFields` variable \u2014 assign it from productAndCollection.excludeFields the same way line 27 does). Prod: 196 shops currently emit validFrom 2030 on storefront. CS set excludeFields \"validFrom\" for the shop and it had no effect.\nFix: (1) default.js:121 \u2192 `validFrom: ''` (leave priceValidUntil alone). (2) In each of the 4 places, emit validFrom only when not blank AND <= today (`{%- assign avadaToday = 'now' | date: '%Y-%m-%d' -%}`, string compare works for YYYY-MM-DD) AND `excludeFields` does not contain \"validFrom\". Keep the JSON valid (watch the leading comma at the extension sites and the trailing comma at :616). No data migration.\n\nT4 (ladyandoscar, https://avadaio.slack.com/archives/G01N5G8D562/p1791102519313699): fake AggregateRating 5 stars / 1 review on every product page of a shop with no reviews. extensions/theme-app-extension/snippets/avada-rating-and-review.liquid:72-77 and customGsdLiquid.js ratingReviewsStructured (~:600-606) print `\"ratingValue\": {% if ratingValue > 0 %}...{% else %}5{% endif %}`, `\"reviewCount\": ... else 1`. Fake ratings risk a Google manual action for structured-data spam.\nFix: emit the whole aggregateRating object only when `appReview != 'ali-reviews' and ratingValue > 0 and reviewCount > 0`; delete the 5/1 fallbacks. The Product object must stay valid JSON without it (offers remain).\n\nDo NOT touch getStructuredSetting.js or the UI toggle (separate product decision). Do not touch packages/functions/src/config/integration/appList.js (another task owns it).\n\nTDD: add failing tests first in packages/functions/src/config/__tests__/customGsdLiquid.jsonld.test.js (it already renders these templates with liquidjs; follow its patterns): validFrom future \u2192 absent; past \u2192 present; excludeFields contains validFrom \u2192 absent; JSON parses in every case. Rating: no reviews \u2192 no aggregateRating key, JSON parses; 4.5/3 \u2192 exactly 4.5 and 3. For the two extension snippets, add a test file packages/functions/src/config/__tests__/themeExtensionSchemaGuards.test.js that renders the snippet files with the same liquidjs setup if feasible (read file from extensions/theme-app-extension/snippets/); if a snippet cannot render under liquidjs, fall back to a source-level assertion (no `{% else %}5{% endif %}` / `else %}1`, and validFrom guarded by the date + excludeFields condition) and say so in a comment. The commit message for the extension change must include [deploy-extensions] in its title.",
+      "contract": {
+        "goal": "Product JSON-LD never emits a future or excluded validFrom, and never emits an AggregateRating without real reviews",
+        "allow": [
+          "packages/functions/src/config/default.js",
+          "packages/functions/src/config/customGsdLiquid.js",
+          "extensions/theme-app-extension/snippets/avada-product-and-collection.liquid",
+          "extensions/theme-app-extension/snippets/avada-rating-and-review.liquid",
+          "packages/functions/src/config/__tests__/customGsdLiquid.jsonld.test.js",
+          "packages/functions/src/config/__tests__/themeExtensionSchemaGuards.test.js"
+        ],
+        "verify": [
+          {
+            "name": "jsonld tests",
+            "cmd": [
+              "npx",
+              "jest",
+              "--ci",
+              "packages/functions/src/config/__tests__"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/config/__tests__/customGsdLiquid.jsonld.test.js"
+          ]
+        },
+        "security": {
+          "appName": "seo"
+        }
+      }
+    }
+  ]
+}

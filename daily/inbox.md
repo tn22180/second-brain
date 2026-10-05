@@ -302,3 +302,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo image-seo: AI credit gate từng giết các lượt chạy filename không tốn AI credit (`4bff97c3411`). Shop hết credit mà rename filename fail thì check fix đã lên tag chưa
 - [ ] (×1) Hướng service ngoài Shopify: chỉ bán service đo lường được. ADS (meta feed + google feed + ChatGPT ads) là ứng viên chính, SEO chỉ là phần nhỏ. Brief ở `jobs/2026-10-01-services-beyond-shopify.md`
 - [ ] (×1) KPI tháng của Tuan làm bằng notes qua share-note, không tạo task Jira riêng. Note phải kèm link store
+
+### memory candidates 2026-10-05
+- [ ] (×1) Luật point FAL tháng (chốt 2026-10-05): [BUG] = 1 dev + 1 test (nếu có tester). Techlead ăn 20% dev point, task làm 1 mình thì 100%. Bỏ task archived, task review và task có Issue Links
+- [ ] (×1) Roster tính point SEOOn không gồm Ducnm01. Task của Nghĩa/Lâm/Tuân (không có techlead SEOOn) phải đánh riêng
+- [ ] (×1) seo embed phải fetch `/shops` trước realtime sign-in, không thì sinh doc shop trùng (`dc15beef562`). Shop có 2 doc thì check fix đã lên tag chưa
+- [ ] (×1) Air Reviews embed handle có dạng `air-reviews-N`. Detect app review theo handle phải match prefix (`29f2cb1fff3`)
+- [ ] (×1) seo schema không emit `validFrom` tương lai và AggregateRating giả 5/1 (`273d1705d67`, `[deploy-extensions]`). Đây là extension nên phải curl storefront để verify, không tin merge title

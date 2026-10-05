@@ -84,3 +84,6 @@
 - [share-note token ở file](share-note-token-file.md) — NOTES_API_KEY không export; đọc `~/.config/avada/notes-token` inline khi chạy bun index.ts.
 - [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.
 - [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (52/64); vá+restart 10-01 07:00Z (31a2fb0), đo lại từ 10-08 bằng harness/retro_autofix.py (nền 16% cần round 2).
+- [Reply thread Slack khi xong](reply-slack-thread-on-done.md) — fix bug từ thread support xong phần nào reply luôn vào thread (link MR, nguyên nhân, khách cần làm gì, deploy chưa); bot token falcon-fix-bot.
+- [seo [deploy-extensions] mất ở merge commit](seo-deploy-extensions-merge-title.md) — rule check CI_COMMIT_TITLE; merge title 'Merge branch…' → extension KHÔNG deploy; tag pipeline không có job extension. Curl storefront để verify.
+- [Team SEOOn = 6 người](seoon-team-members.md) — tuannv, tunglv, truongnn, minhpt, dungtt, tranggt; đừng lấy cả Board 1 trong roster jira.

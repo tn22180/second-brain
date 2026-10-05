@@ -1,0 +1,56 @@
+{
+  "id": "seo-slack-air-reviews-handle",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "fix/air-reviews-embed-handle",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "air-reviews-handle",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "haiku"
+      },
+      "wallMinutes": 30,
+      "prompt": "Repo: seo (Firebase Functions; jest 24 run from repo root: `npx jest --ci <path>`). Slack thread T3 (f2xvjq-10, https://avadaio.slack.com/archives/G01N5G8D562/p1791105893380469): merchant enables Review snippet in Search Appearance, reloads, toggle shows OFF again. Stored data is correct (Firestore + metafield seo.meta2 ratingAndReview.status:true, selected [\"ag-product-reviews\"]); only the UI status is wrong.\n\nRoot cause: packages/functions/src/config/integration/appList.js:28-32 APP_AIR_REVIEW_BLOCKS = ['avada-product-reviews','ag-product-reviews','air-product-reviews']. This shop's Air Reviews app embed in settings_data.json is `shopify://apps/air-reviews-1/blocks/app-embed/c4e1e9ca-4d46-4e76-bc39-7e42417cb327` (Shopify keeps the app handle from install time; same extension uuid as the ag-product-reviews handle). isAppInstalledByBlock (packages/functions/src/services/shopifyGraphQlService.js ~:1921, `block.type.includes(name)`) matches none \u2192 installed=[] \u2192 getStructuredSetting.js:94-97 forces status=false. gatherShopData.js:82 (GSD autofill) uses the same list.\n\nFix: add 'air-reviews' to APP_AIR_REVIEW_BLOCKS (matches air-reviews-1 via includes). Before adding, verify it cannot falsely match another app's block type used elsewhere with this list (grep APP_AIR_REVIEW_BLOCKS consumers). Add a one-line why-comment (handle kept from install time, so newer installs carry air-reviews-N). Do not edit shopifyGraphQlService.js, getStructuredSetting.js or gatherShopData.js.\n\nTDD: failing test first: packages/functions/src/config/integration/__tests__/appList.airReviewBlocks.test.js \u2014 given block types `shopify://apps/air-reviews-1/blocks/app-embed/c4e1e9ca-4d46-4e76-bc39-7e42417cb327` and the legacy `shopify://apps/ag-product-reviews/blocks/...`, the same predicate isAppInstalledByBlock uses (`APP_AIR_REVIEW_BLOCKS.some(n => type.includes(n))` \u2014 check the real implementation and mirror it, or import and call isAppInstalledByBlock with a mocked shopify client if that is cheap) returns true; an unrelated block (e.g. judgeme_core) returns false.",
+      "contract": {
+        "goal": "Air Reviews embeds with handle air-reviews-N are detected as installed so the Review snippet toggle keeps its saved state",
+        "allow": [
+          "packages/functions/src/config/integration/appList.js",
+          "packages/functions/src/config/integration/__tests__/appList.airReviewBlocks.test.js"
+        ],
+        "verify": [
+          {
+            "name": "air reviews block test",
+            "cmd": [
+              "npx",
+              "jest",
+              "--ci",
+              "packages/functions/src/config/integration"
+            ]
+          },
+          {
+            "name": "gsd autofill tests",
+            "preflight": true,
+            "cmd": [
+              "npx",
+              "jest",
+              "--ci",
+              "packages/functions/src/services/gsdAutoFill"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/config/integration/__tests__/appList.airReviewBlocks.test.js"
+          ]
+        }
+      }
+    }
+  ]
+}

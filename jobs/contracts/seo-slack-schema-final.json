@@ -1,0 +1,34 @@
+{
+ "id": "seo-slack-schema-final",
+ "source": "tony-wf",
+ "goal": "Product JSON-LD never emits a future or excluded validFrom, and never emits an AggregateRating without real reviews",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-seo-slack-schema-validfrom-rating",
+ "baseSha": "e84a81581a3d56f939fc34ed9be8b4667569bba5",
+ "allow": [
+  "packages/functions/src/config/default.js",
+  "packages/functions/src/config/customGsdLiquid.js",
+  "extensions/theme-app-extension/snippets/avada-product-and-collection.liquid",
+  "extensions/theme-app-extension/snippets/avada-rating-and-review.liquid",
+  "packages/functions/src/config/__tests__/customGsdLiquid.jsonld.test.js",
+  "packages/functions/src/config/__tests__/themeExtensionSchemaGuards.test.js"
+ ],
+ "verify": [
+  {
+   "name": "jsonld tests",
+   "cmd": [
+    "npx",
+    "jest",
+    "--ci",
+    "packages/functions/src/config/__tests__"
+   ]
+  }
+ ],
+ "security": {
+  "appName": "seo"
+ },
+ "meta": {
+  "agent": "inline",
+  "model": "opus",
+  "round": 2
+ }
+}

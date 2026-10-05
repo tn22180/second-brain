@@ -1,0 +1,39 @@
+{
+  "contractId": "seo-slack-schema-final",
+  "runId": "seo-slack-schema-final-fb6e9940",
+  "at": 1791167392946,
+  "pass": true,
+  "diffSha": "93fad41f60d67af8e15b0edf47b40c63ee079bda",
+  "changed": [
+    "extensions/theme-app-extension/snippets/avada-product-and-collection.liquid",
+    "extensions/theme-app-extension/snippets/avada-rating-and-review.liquid",
+    "packages/functions/src/config/__tests__/customGsdLiquid.jsonld.test.js",
+    "packages/functions/src/config/__tests__/themeExtensionSchemaGuards.test.js",
+    "packages/functions/src/config/customGsdLiquid.js",
+    "packages/functions/src/config/default.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "6 file(s)"
+    },
+    {
+      "name": "jsonld tests",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.3456168
+}

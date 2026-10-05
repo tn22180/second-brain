@@ -7,6 +7,10 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1b8cw0y` · 2026-10-05 · SEO · handlesyncurlredirectsbatchgen2 · handleSyncUrlRedirectsBatchGen2 re-downloads and fully parses the same 74,919-line Shopify bulk JSONL on every · — · fix_disabled
+- `2b34wp` · 2026-10-05 · SEO · handlesyncurlredirectsbatchgen2 · no verified cause · — · inconclusive
+- `plgvnt` · 2026-10-05 · BLOG · embedapp · The single unretried, untimeouted node-fetch in getEmbedTemplate to https://avada-blog-app.web.app/embed-templ · — · fix_disabled
+- `15yxvhj` · 2026-10-05 · BLOG · api · The fire-and-forget `void syncShopDataFromShopify(shop.id)` in afterLoginService is the only voided call in th · — · fix_disabled
 - `tk9lv5` · 2026-10-02 · BLOG · api · no verified cause · — · inconclusive
 - `13qk38s` · 2026-10-01 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `1ts4gf7` · 2026-10-01 · SEO · lighthouseauditrunnergen2 · A single mobile/densen4G Lighthouse+Chrome audit of https://www.djiusa.com/collections/accessories needs more  · — · infra
