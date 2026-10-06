@@ -9,6 +9,7 @@ export const MAX_ROUNDS = 5;
 const MAX_NUDGES = 3;
 const POLL_MS = 60_000;
 const DEFAULT_WALL_MIN = 45;
+export const DEFAULT_CODEX_MODEL = 'gpt-6-astra';
 
 export interface Proc {
   exited(): boolean;
@@ -16,6 +17,8 @@ export interface Proc {
   kill(): void;
   /** Last lines of the run's output, for the supervisor. */
   tail(): string;
+  /** Codex picks its own thread id; the adapter reads it back from the run's JSONL log. */
+  threadId?(): string | undefined;
 }
 
 /** `jev supervise` output. */
@@ -80,20 +83,44 @@ const failureText = (v: Verdict) =>
   );
 
 /**
- * One node, end to end: dispatch `cc -p` in its worktree, let `jev supervise` watch it, verify
+ * Coding goes to Codex unless the node opts into Claude: `meta.executor: 'claude'`. A Claude
+ * alias left in `meta.model` (graphs written before the switch) does not pin Claude — only
+ * a `gpt-*` model is passed through to Codex.
+ */
+export function argvFor(node: GraphNode, sid: string, text: string, resume: boolean, threadId?: string): string[] {
+  const model = node.meta?.model;
+  if (node.meta?.executor === 'claude') {
+    return [
+      'cc', '-p', '--permission-mode', 'acceptEdits', ...(resume ? ['--resume', sid] : ['--session-id', sid]),
+      // stream-json: the log fills as the agent works, so the supervisor judges real progress
+      // instead of an empty tail (text mode prints only at exit).
+      ...(model ? ['--model', model] : []), '--output-format', 'stream-json', '--verbose', text
+    ];
+  }
+  // Called directly, not via `cc codex`: that wrapper path dies on BSD `date +%N` and self-upgrades
+  // over local edits. workspace-write keeps writes inside the worktree; `exec` never asks for approval.
+  const opts = ['--json', '-m', model?.startsWith('gpt-') ? model : DEFAULT_CODEX_MODEL, '-c', 'sandbox_mode="workspace-write"'];
+  return resume && threadId ? ['codex', 'exec', 'resume', ...opts, threadId, text] : ['codex', 'exec', ...opts, text];
+}
+
+/**
+ * One node, end to end: dispatch Codex (or `cc -p`) in its worktree, let `jev supervise` watch it, verify
  * the result independently, resume the same session with the failure until it passes or the
  * round cap is hit, then commit exactly the verified tree and merge it into the integration branch.
  */
 export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps): Promise<NodeResult> {
   const {path, baseSha, fresh} = await deps.worktree();
   const sid = deps.newSessionId();
-  const model = node.meta?.model;
-  const argvFor = (text: string, resume: boolean) => [
-    'cc', '-p', '--permission-mode', 'acceptEdits', ...(resume ? ['--resume', sid] : ['--session-id', sid]),
-    // stream-json: the log fills as the agent works, so the supervisor judges real progress
-    // instead of an empty tail (text mode prints only at exit).
-    ...(model ? ['--model', model] : []), '--output-format', 'stream-json', '--verbose', text
-  ];
+  const codex = node.meta?.executor !== 'claude';
+  let threadId: string | undefined;
+  let proc: Proc | undefined;
+  const launch = (text: string, resume: boolean): Proc => {
+    threadId = proc?.threadId?.() ?? threadId;
+    // Codex without a thread id to resume (it died before printing one) starts over with the full task.
+    const lost = codex && resume && !threadId;
+    proc = deps.start(argvFor(node, sid, lost ? `${buildPrompt(node)}\n\n${text}` : text, resume && !lost, threadId), path);
+    return proc;
+  };
   const runIds: string[] = [];
   const wallMs = (node.wallMinutes ?? DEFAULT_WALL_MIN) * 60_000;
   const blocked = async (rounds: number, reason: string): Promise<NodeResult> => {
@@ -136,20 +163,20 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
   let resume = false;
   for (let round = firstRound; round <= MAX_ROUNDS; round++) {
     let nudges = 0;
-    let proc = deps.start(argvFor(message, resume), path);
+    let p = launch(message, resume);
     resume = true;
     const started = deps.now();
     let lastTail = '';
     let quietSince = started;
     for (;;) {
-      if (proc.exited()) break;
+      if (p.exited()) break;
       await deps.sleep(POLL_MS);
-      if (proc.exited()) break;
-      const tail = proc.tail();
+      if (p.exited()) break;
+      const tail = p.tail();
       const now = deps.now();
       if (tail !== lastTail) quietSince = now;
       if (now - started > wallMs) {
-        proc.kill();
+        p.kill();
         return blocked(round, `round exceeded ${wallMs / 60_000} min`);
       }
       const a = await deps.supervise({goal: node.contract.goal, tail, elapsed_s: (now - started) / 1000,
@@ -157,16 +184,16 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
       lastTail = tail;
       // An instruction in the agent's output that tries to steer the supervisor is an attack, not a hint.
       if (a.injection_seen || a.action === 'escalate') {
-        proc.kill();
+        p.kill();
         return blocked(round, `jev escalate: ${a.reason ?? 'no reason'}`);
       }
       if (a.action === 'nudge' || a.action === 'answer_question') {
         if (++nudges > MAX_NUDGES) {
-          proc.kill();
+          p.kill();
           return blocked(round, `${MAX_NUDGES} nudges without converging`);
         }
-        proc.kill();
-        proc = deps.start(argvFor(a.message ?? a.answer ?? a.reason ?? 'continue', true), path);
+        p.kill();
+        p = launch(a.message ?? a.answer ?? a.reason ?? 'continue', true);
       }
     }
 

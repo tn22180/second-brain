@@ -2,7 +2,7 @@ import {describe, expect, test} from 'bun:test';
 import {mkdtempSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {childEnv, preflightChecks, readEnvFile, startProc, superviseWith} from '../src/adapters';
+import {childEnv, codexThreadId, preflightChecks, readEnvFile, startProc, superviseWith} from '../src/adapters';
 
 const tmp = () => mkdtempSync(join(tmpdir(), 'adapt-'));
 const until = async (f: () => boolean) => {
@@ -54,5 +54,13 @@ describe('adapters', () => {
     expect(out.length).toBe(1);
     expect(out[0]).toContain('bad');
     expect(out[0]).toContain('(fail) registry');
+  });
+
+  test('codexThreadId reads the first thread.started from an appended JSONL log', () => {
+    const f = join(tmp(), 'n.log');
+    expect(codexThreadId(f)).toBeUndefined();
+    writeFileSync(f, ['Reading additional input from stdin...', '{"type":"thread.started","thread_id":"th-a"}', '{"type":"turn.started"}',
+      '{"type":"thread.started","thread_id":"th-b"}'].join('\n'));
+    expect(codexThreadId(f)).toBe('th-a');
   });
 });
