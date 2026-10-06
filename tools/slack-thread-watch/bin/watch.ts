@@ -29,6 +29,10 @@ const STATE_FILE = join(STATE_DIR, 'state.json');
 // The retired falcon-fix-bot's Slack app: already a member of both channels, read+post scopes.
 const SLACK_TOKEN_FILE = join(HOME, 'Projects', 'falcon-fix-bot', 'secrets', 'slack-bot.token');
 const ORCA = '/Applications/Orca.app/Contents/Resources/bin/orca';
+// SLACK_TOKEN + JIRA_TOKEN for /support-handoff's preflight. Orca's terminal does not inherit
+// our env, and the skill's own .env is lost on plugin update, so the session sources this
+// 0600 file — the command line carries the path, never the values.
+const SESSION_ENV = join(HOME, '.config', 'slack-thread-watch', 'session.env');
 const WORKSPACE = 'avadaio';
 // SLACK_WATCH_ONLY_CHANNEL replaces the real channels outright (test runs): watching them too
 // with a second state file would open a second session for any real thread that lands meanwhile.
@@ -102,7 +106,7 @@ async function spawn(app: string, channel: string, ts: string): Promise<string> 
   });
   const path = JSON.parse(stdout)?.result?.worktree?.path;
   if (!path) throw new Error(`worktree create returned no path: ${stdout.slice(0, 200)}`);
-  await run(ORCA, ['terminal', 'create', '--worktree', `path:${path}`, '--title', 'support-handoff', '--command', `claude --permission-mode auto "${prompt}"`, '--json'], {
+  await run(ORCA, ['terminal', 'create', '--worktree', `path:${path}`, '--title', 'support-handoff', '--command', `set -a; . '${SESSION_ENV}'; set +a; exec claude --permission-mode auto "${prompt}"`, '--json'], {
     timeout: 60_000,
   });
   return name;
@@ -176,6 +180,10 @@ async function main() {
   else log('[dry-run] state not saved', JSON.stringify({watermark: state.watermark, pending: state.pending.length}));
 }
 
+if (!existsSync(SESSION_ENV)) {
+  console.error(`session env missing at ${SESSION_ENV}`);
+  process.exit(1);
+}
 if (!existsSync(ORCA)) {
   console.error(`orca CLI missing at ${ORCA}`);
   process.exit(1);
