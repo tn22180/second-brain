@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test';
-import {capRemaining, isNewThread, messageText, permalink, resolveApp, worktreeName} from '../src/watch';
+import {isNewThread, messageText, permalink, resolveApp, worktreeName} from '../src/watch';
 
 describe('resolveApp', () => {
   it('reads the CS post App: line', () => {
@@ -38,11 +38,5 @@ describe('helpers', () => {
   it('permalink and worktree name', () => {
     expect(permalink('avadaio', 'G01', '1791210973.238389')).toBe('https://avadaio.slack.com/archives/G01/p1791210973238389');
     expect(worktreeName('seo', '1791210973.238389')).toBe('slack-seo-1791210973238');
-  });
-  it('rolling cap', () => {
-    const now = new Date('2026-10-06T10:00:00Z');
-    const recent = ['2026-10-06T09:30:00Z', '2026-10-06T08:00:00Z'];
-    expect(capRemaining(recent, now, 5, 3_600_000)).toBe(4);
-    expect(capRemaining(Array(5).fill('2026-10-06T09:59:00Z'), now, 5, 3_600_000)).toBe(0);
   });
 });

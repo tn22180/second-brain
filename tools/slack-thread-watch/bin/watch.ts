@@ -9,7 +9,6 @@ import {join} from 'node:path';
 import {promisify} from 'node:util';
 import {notifyTelegram} from '../../agent-harness/src/notify';
 import {
-  capRemaining,
   emptyState,
   isNewThread,
   messageText,
@@ -53,8 +52,6 @@ const SESSION_BRIEF = [
   'Cuối cùng reply vào thread: nguyên nhân, link MR, mã task Jira, chưa deploy.',
 ].join(' ');
 const ACK_TEXT = 'Đã nhận, đang phân tích và xử lý. Có kết quả sẽ reply trong thread này.';
-const CAP = 5;
-const CAP_WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 
 const dryRun = process.argv.includes('--dry-run');
@@ -174,11 +171,6 @@ async function main() {
       if (!dryRun && !otherTeam) await notifyTelegram(`<b>slack-thread-watch</b>\n⚠️ thread mới, không nhận ra app — không mở session\n${link}\n${summary}`);
       continue;
     }
-    if (capRemaining(state.recentSpawns, now, CAP, CAP_WINDOW_MS) === 0) {
-      log(`cap: defer ${p.ts}`);
-      keep.push(p);
-      continue;
-    }
     if (dryRun) {
       log(`[dry-run] would spawn ${app} ${worktreeName(app, p.ts)} for ${link}`);
       continue;
@@ -186,7 +178,6 @@ async function main() {
     try {
       const name = await spawn(app, p.channel, p.ts);
       state.spawned[p.ts] = {app, worktree: name, at: now.toISOString()};
-      state.recentSpawns.push(now.toISOString());
       log(`spawned ${name} for ${link}`);
       try {
         await postAck(token, p.channel, p.ts);
@@ -202,7 +193,6 @@ async function main() {
     }
   }
   state.pending = keep;
-  state.recentSpawns = state.recentSpawns.filter(iso => now.getTime() - Date.parse(iso) < CAP_WINDOW_MS);
 
   if (!dryRun) saveState(state);
   else log('[dry-run] state not saved', JSON.stringify({watermark: state.watermark, pending: state.pending.length}));

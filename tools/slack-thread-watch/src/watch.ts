@@ -17,13 +17,11 @@ export interface State {
   watermark: Record<string, string>;
   /** thread ts -> what was spawned for it; the ledger that stops a second session per thread. */
   spawned: Record<string, {app: string; worktree: string; at: string}>;
-  /** Threads waiting because the hourly cap was hit or the spawn failed. */
+  /** Threads whose spawn failed, retried up to MAX_ATTEMPTS. */
   pending: {channel: string; ts: string; attempts: number}[];
-  /** Spawn times (ISO) inside the rolling cap window. */
-  recentSpawns: string[];
 }
 
-export const emptyState = (): State => ({watermark: {}, spawned: {}, pending: [], recentSpawns: []});
+export const emptyState = (): State => ({watermark: {}, spawned: {}, pending: []});
 
 // Longest/most specific first: "seo on ai product copy" must win over "seo". Mirrors the
 // aliases falcon-fix-bot learned from real CS posts (tools/lib/parse.js), incl. the
@@ -76,10 +74,4 @@ export function permalink(workspace: string, channel: string, ts: string): strin
 /** Orca worktree / branch name: short, unique per thread, safe for git refs. */
 export function worktreeName(app: string, ts: string): string {
   return `slack-${app}-${ts.replace('.', '').slice(0, 13)}`;
-}
-
-/** Spawns allowed right now under a rolling-window cap. */
-export function capRemaining(recent: string[], now: Date, cap: number, windowMs: number): number {
-  const live = recent.filter(iso => now.getTime() - Date.parse(iso) < windowMs);
-  return Math.max(0, cap - live.length);
 }
