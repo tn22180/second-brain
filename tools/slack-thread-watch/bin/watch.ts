@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // One pass: read new top-level threads in the support channels, open one Orca worktree with a
-// Claude session per thread (`/support-handoff <permalink>`), DM Tuan. Run by launchd every 2 min.
+// Claude session per thread (`/falcon:support-handoff <permalink>`), DM Tuan. Run by launchd every 2 min.
 // `--dry-run` decides and prints without spawning, DMing or saving state.
 import {execFile} from 'node:child_process';
 import {existsSync, mkdirSync, readFileSync, renameSync, writeFileSync} from 'node:fs';
@@ -100,7 +100,7 @@ async function newTopLevel(token: string, channel: string, oldest: string): Prom
 // the shell command.
 async function spawn(app: string, channel: string, ts: string): Promise<string> {
   const name = worktreeName(app, ts);
-  const prompt = `/support-handoff ${permalink(WORKSPACE, channel, ts)}`;
+  const prompt = `/falcon:support-handoff ${permalink(WORKSPACE, channel, ts)}`;
   const {stdout} = await run(ORCA, ['worktree', 'create', '--repo', `name:${app}`, '--name', name, '--json'], {
     timeout: 120_000,
   });
