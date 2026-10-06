@@ -52,6 +52,7 @@ const SESSION_BRIEF = [
   'Xong thì tạo 1 task Jira FAL bằng skill falcon:jira (nguyên nhân, cách fix, link MR, link thread) — KHÔNG link tới issue nào khác, không hỏi link.',
   'Cuối cùng reply vào thread: nguyên nhân, link MR, mã task Jira, chưa deploy.',
 ].join(' ');
+const ACK_TEXT = 'Đã nhận, đang phân tích và xử lý. Có kết quả sẽ reply trong thread này.';
 const CAP = 5;
 const CAP_WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -83,6 +84,19 @@ async function slack(token: string, method: string, params: Record<string, strin
   const j = (await res.json()) as {ok: boolean; error?: string} & Record<string, any>;
   if (!j.ok) throw new Error(`${method}: ${j.error}`);
   return j;
+}
+
+// Ack from the watcher, not the session: it lands within seconds of the spawn and does not
+// depend on the session getting past its preflight.
+async function postAck(token: string, channel: string, ts: string) {
+  const res = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8'},
+    body: JSON.stringify({channel, thread_ts: ts, text: ACK_TEXT}),
+    signal: AbortSignal.timeout(20_000),
+  });
+  const j = (await res.json()) as {ok: boolean; error?: string};
+  if (!j.ok) throw new Error(`chat.postMessage: ${j.error}`);
 }
 
 async function newTopLevel(token: string, channel: string, oldest: string): Promise<SlackMessage[]> {
@@ -174,6 +188,11 @@ async function main() {
       state.spawned[p.ts] = {app, worktree: name, at: now.toISOString()};
       state.recentSpawns.push(now.toISOString());
       log(`spawned ${name} for ${link}`);
+      try {
+        await postAck(token, p.channel, p.ts);
+      } catch (e) {
+        log(`ack failed ${p.ts}: ${(e as Error).message}`);
+      }
       await notifyTelegram(`<b>slack-thread-watch</b>\n🧵 ${esc(app)} → Orca worktree <code>${esc(name)}</code>\n${link}\n${summary}`);
     } catch (e) {
       const attempts = p.attempts + 1;
