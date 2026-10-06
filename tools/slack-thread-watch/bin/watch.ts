@@ -43,6 +43,15 @@ const CHANNELS: Record<string, string | null> = process.env.SLACK_WATCH_ONLY_CHA
       C08928RK00H: 'blogs', // blog-support
       C0BGRTWUE8Y: null, // system-alert
     };
+// Unattended run: no dev is there to answer the skill's questions, so the brief settles them
+// up front. Shell-quoted inside "…" below — keep it free of `"`, `$` and backticks.
+const SESSION_BRIEF = [
+  'Chạy không người trông, đừng dừng lại hỏi.',
+  'Đọc thread xong thì audit và fix luôn: tìm nguyên nhân ở code + data prod (chỉ đọc), sửa trên branch riêng, chạy test, mở MR. Cấm merge, push master, tag, deploy.',
+  'Không phải bug code thì ghi rõ lý do, không sửa gì.',
+  'Xong thì tạo 1 task Jira FAL bằng skill falcon:jira (nguyên nhân, cách fix, link MR, link thread) — KHÔNG link tới issue nào khác, không hỏi link.',
+  'Cuối cùng reply vào thread: nguyên nhân, link MR, mã task Jira, chưa deploy.',
+].join(' ');
 const CAP = 5;
 const CAP_WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -100,7 +109,7 @@ async function newTopLevel(token: string, channel: string, oldest: string): Prom
 // the shell command.
 async function spawn(app: string, channel: string, ts: string): Promise<string> {
   const name = worktreeName(app, ts);
-  const prompt = `/falcon:support-handoff ${permalink(WORKSPACE, channel, ts)}`;
+  const prompt = `/falcon:support-handoff ${permalink(WORKSPACE, channel, ts)} ${SESSION_BRIEF}`;
   const {stdout} = await run(ORCA, ['worktree', 'create', '--repo', `name:${app}`, '--name', name, '--json'], {
     timeout: 120_000,
   });
