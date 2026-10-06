@@ -1,0 +1,35 @@
+{
+  "contractId": "blog-ai-writer-stall-branch",
+  "runId": "blog-ai-writer-stall-branch-705522f1",
+  "at": 1791257322477,
+  "pass": true,
+  "diffSha": "119ed860946486135e8271597bd51485e2ec71b8",
+  "changed": [
+    "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+    "packages/functions/src/langgraph/nodes/callModelNode.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "2 file(s)"
+    },
+    {
+      "name": "be stall tests",
+      "ok": true
+    },
+    {
+      "name": "fe idle tests",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0
+}

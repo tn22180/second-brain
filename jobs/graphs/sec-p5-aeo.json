@@ -1,0 +1,100 @@
+{
+ "id": "sec-p5-aeo",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/llm-ai-search-seo",
+ "base": "main",
+ "branch": "fix/sec-p5-aeo-backlog",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "proxyauth",
+   "deps": [],
+   "prompt": "Repo: llm-ai-search-seo (AEO Shopify app; base branch main; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference shipped in sibling seo: swaggerAuth exchangeToken binds integration.shopId (seo swaggerAuth.js:47-55) and reads the token from Authorization header first; internal support keys (internalAuth.js / internalKeyRepository, hashed, actor+ticket, audit) already exist in this repo.\n\nClose cross-tenant shop writes via the shared integration key (brief E1, E2, E5).\n- routes/proxy.js:51-61 guard /proxy/shop, /proxy/shop/update, /proxy/shop/locales, /proxy/checklist/default-scan-urls, /proxy/links/sync|stop|status with validateAccessToken, which accepts the 2 app-wide integrationKeys (no shopId) and takes the store from a header. /proxy/shop/update -> updateShopData (repositories/shopRepository.js:94) uses a blocklist ['plan','isDevZone','installedAt'] that shrinks when the body sends isDevZone:true, so a key holder writes any field on any shop doc.\n  * Delete POST /proxy/shop/update.\n  * For the other routes: if the equivalent /api/* route is in the internal-key allowlist (swaggerAuth INTERNAL_ROUTES ~19-37), delete the /proxy route; otherwise move it behind an internal-key guard (getActiveInternalKey from Authorization: Bearer, required actor+ticket headers, recordInternalKeyUse for non-GET) — reuse code from internalAuth.js, do not invent a new credential.\n  * Delete /proxy/abc (dead).\n  * If updateShopData's blocklist is still reachable from any remaining route, convert it to an allowlist for that caller.\n- middleware/swaggerAuth.js exchangeToken (~56-110): read the key only from the X-SEO-Access-Token or Authorization header (query -> 400), require integration.shopId === resolved shop id (403 otherwise; both current keys have no shopId and stop working — intended), and verifySwaggerToken (~137-152) re-checks credential.shopId === decoded shop on every request.\n- controllers/devController.js ~57 GET /api/dev/integration-token returns the plaintext app-wide key: delete route + handler.\n- Tests: exchangeToken (bound key other shop -> 403, query token -> 400); routes source pin (/proxy/shop/update, /proxy/abc, /api/dev/integration-token absent; remaining /proxy routes not on validateAccessToken).\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).\n\nTest files (exact paths): packages/functions/src/__tests__/proxyRoutes.security.test.js and packages/functions/src/__tests__/swaggerAuth.exchangeToken.test.js. Note: packages/functions/src/__tests__/llmsTxtTranslatedDescription.test.js already fails on main — not yours, do not touch it.",
+   "contract": {
+    "goal": "Repo: llm-ai-search-seo (AEO Shopify app; base branch main; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference shipped in sibling seo: swaggerAuth exchangeToken binds integration.shopId (seo swaggerAuth.js:47-55) a",
+    "allow": [
+     "packages/functions/src/routes/",
+     "packages/functions/src/middleware/",
+     "packages/functions/src/controllers/devController.js",
+     "packages/functions/src/controllers/",
+     "packages/functions/src/repositories/shopRepository.js",
+     "packages/functions/src/__tests__/",
+     "docs/",
+     ".claude/skills/",
+     ".agent/skills/"
+    ],
+    "verify": [
+     {
+      "name": "auth tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__/proxyRoutes.security.test.js",
+       "packages/functions/src/__tests__/swaggerAuth.exchangeToken.test.js",
+       "packages/functions/src/middleware"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "llm-ai-search-seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 90
+  },
+  {
+   "id": "llms",
+   "deps": [
+    "proxyauth"
+   ],
+   "prompt": "Repo: llm-ai-search-seo (AEO Shopify app; base branch main; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference shipped in sibling seo: swaggerAuth exchangeToken binds integration.shopId (seo swaggerAuth.js:47-55) and reads the token from Authorization header first; internal support keys (internalAuth.js / internalKeyRepository, hashed, actor+ticket, audit) already exist in this repo.\n\nWrap llms.txt header in raw and disable TinyMCE script URLs (brief E3, E4).\n- helpers/planLlmsThemeWrite.js:23 seeds the header without wrapLiquidRaw while chunks at :26 are wrapped; llmsTxtThemeController setMode seeds via buildLlmTxtParts (contains shop.name/summary), save writes body.content raw, get must unwrap; devLlmsController.js:169 writes raw. Use helpers/liquidRaw.js wrapLiquidRaw/unwrapLiquidRaw at each write and unwrap on read. Old unwrapped headers must still read verbatim (unwrap is a no-op without the wrapper).\n- packages/assets/src/components/AvadaTinyMCEEditor/AvadaTinyMCEEditor.js:230 allow_script_urls: true -> false.\n- Extend packages/functions/src/__tests__/liquidRaw.test.js (or a new planLlmsThemeWrite test): a header containing `{{ shop.name }}` and `{% endraw %}` renders byte-for-byte as literal text.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: llm-ai-search-seo (AEO Shopify app; base branch main; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference shipped in sibling seo: swaggerAuth exchangeToken binds integration.shopId (seo swaggerAuth.js:47-55) a",
+    "allow": [
+     "packages/functions/src/helpers/planLlmsThemeWrite.js",
+     "packages/functions/src/helpers/liquidRaw.js",
+     "packages/functions/src/controllers/llmsTxtThemeController.js",
+     "packages/functions/src/controllers/devLlmsController.js",
+     "packages/functions/src/__tests__/",
+     "packages/assets/src/components/AvadaTinyMCEEditor/"
+    ],
+    "verify": [
+     {
+      "name": "liquid raw tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__/liquidRaw.test.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "llm-ai-search-seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "sonnet"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

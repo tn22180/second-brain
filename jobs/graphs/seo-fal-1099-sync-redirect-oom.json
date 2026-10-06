@@ -1,0 +1,51 @@
+{
+  "id": "seo-fal-1099-sync-redirect-oom",
+  "source": "session-2026-10-06",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "fix/FAL-1099-sync-redirect-oom",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "sync-redirect-oom",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "opus"
+      },
+      "wallMinutes": 75,
+      "prompt": "Repo: seo (Shopify app, Firebase Functions; jest 24 run from repo root: `npx jest --ci <path>`). Ticket FAL-1099, Slack https://avadaio.slack.com/archives/G01N5G8D562/p1791210973238389: DevZone \"Sync Broken URL Redirects\" stuck at 3000/58930 for shop rzcrew.myshopify.com (169,388 products, 88,588 Shopify redirects). Re-running, even with \"Only unresolved URLs\", never progresses.\n\nVerified on prod:\n- errorAlerts: handlesyncurlredirectsbatchgen2 \"Memory limit of 1024 MiB exceeded with 1057 MiB used\", 14 times since 2026-10-04, last one 14:08:51Z, 3s after syncRedirectLogs/JZYbegD2s1EujPSb8ezR stopped updating (status=RUNNING, totalProcessed=3000, totalToProcess=58930).\n\nRoot cause, three parts:\n1. packages/functions/src/handlers/pubsub/subscribeSyncUrlRedirectsBatch.js handle() (:404-416): EVERY 1000-URL batch downloads the whole bulk JSONL with largeDataApi(url), holds it as one string, split('\\n') into an array, then parseBulkOperationData builds Maps of every redirect and (FULL mode) every product/collection/page/article path x locales. Peak = string + array + both maps -> OOM on a 1 GiB function (pubsubFunctions.js:213; worker fleet runs the same handle() via src/jobs/functions/syncUrlRedirectsBatch.js).\n2. In FULL mode with deleteUnnecessaryRedirects, findUnnecessaryRedirects + deleteShopifyRedirects run in EVERY batch (~59 times for this shop) although the result does not depend on the batch.\n3. A batch killed by OOM never reaches the catch, so nothing marks the run failed; subscribeSyncUrlRedirects.js:70 then aborts every new trigger while status is RUNNING -> stuck forever.\n\nRequired change:\nA. In handle(): read the bulk file as a stream, line by line (fetch(url) + response.body via stream/readline, or an equivalent streaming helper in a NEW file under packages/functions/src/helpers/), never the whole text. Build the lookup maps keeping ONLY entries that this batch's urlsToProcess can actually look up. Derive the exact keys from shouldDeleteUrl (it normalises with normalizePathForMatching and also tries locale-stripped variants via stripLocalePrefix) — matching results for every URL in the batch must be identical to today's full-map behaviour. Keep entries slim.\nB. Run the unnecessary-redirect deletion (needs the full maps) only in the batch with index === 0, also via the streaming read. Other batches skip it.\nC. In subscribeSyncUrlRedirects.js, the RUNNING guard must let a new trigger through when the log is stale: status RUNNING and updatedAt older than a threshold (named constant, e.g. 30 minutes — batches touch updatedAt on every completion). Log that it is taking over a stale run.\n\nTests (new files under packages/functions/src/handlers/pubsub/__tests__/, mock Firestore/Shopify/fetch like the existing tests there):\n- batch: for a small bulk JSONL fixture, shouldDelete decisions with the filtered maps equal those of the old full maps for every URL (include locale-prefixed URLs and redirect-exists / now-active / still-broken cases).\n- batch: findUnnecessaryRedirects/deleteShopifyRedirects path runs for index 0 and NOT for index 1000.\n- batch: largeDataApi is no longer called (the file is streamed).\n- parent: RUNNING with fresh updatedAt still aborts; RUNNING with updatedAt older than the threshold proceeds.\n\nDo not change the payload shape, pubsub/worker wiring, memory settings, or any other caller of largeDataApi. Match file style. No commits.",
+      "contract": {
+        "goal": "Sync Broken URL Redirects batches stream the bulk file and keep only their own paths, run the unnecessary-redirect cleanup once, and a stale RUNNING log no longer blocks re-runs",
+        "allow": [
+          "packages/functions/src/handlers/pubsub/subscribeSyncUrlRedirectsBatch.js",
+          "packages/functions/src/handlers/pubsub/subscribeSyncUrlRedirects.js",
+          "packages/functions/src/helpers/streamJsonlLines.js",
+          "packages/functions/src/handlers/pubsub/__tests__/"
+        ],
+        "verify": [
+          {
+            "name": "pubsub handler tests",
+            "cmd": [
+              "npx",
+              "jest",
+              "--ci",
+              "packages/functions/src/handlers/pubsub/__tests__"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/handlers/pubsub/__tests__/subscribeSyncUrlRedirects"
+          ]
+        }
+      }
+    }
+  ],
+  "order": [
+    "sync-redirect-oom"
+  ]
+}

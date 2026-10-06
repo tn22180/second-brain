@@ -1,0 +1,49 @@
+{
+  "goal": "LLM stream stall in AI writer fails fast (60s idle -> abort -> SSE error event) instead of hanging to the 540s function kill; controller emits :ping heartbeat every 15s; shared withIdleTimeout helper with tests.",
+  "allow": [
+    "packages/functions/src/helpers/withIdleTimeout.js",
+    "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+    "packages/functions/src/langgraph/nodes/callModelNode.js",
+    "packages/functions/src/langgraph/nodes/__tests__/callModelNode.test.js",
+    "packages/functions/src/langgraph/models/openAiChatModel.js",
+    "packages/functions/src/controllers/langGraphController.js",
+    "packages/functions/src/controllers/__tests__/langGraphController.heartbeat.test.js",
+    "docs/features/ai-blog-generator.md"
+  ],
+  "verify": [
+    {
+      "name": "be stall tests",
+      "cmd": [
+        "env",
+        "-u",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "npx",
+        "jest",
+        "--ci",
+        "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+        "packages/functions/src/langgraph",
+        "packages/functions/src/controllers/__tests__"
+      ]
+    }
+  ],
+  "reproduce": {
+    "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js"
+    ]
+  },
+  "security": {
+    "appName": "blogs"
+  },
+  "id": "blog-ai-writer-stall-be-inline",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs-wt-blog-ai-writer-stall",
+  "baseSha": "29e1cfd3ee8288b257c149547fc2119c4cb55b1b",
+  "meta": {
+    "agent": "cc-p+inline",
+    "model": "sonnet",
+    "round": 6
+  }
+}

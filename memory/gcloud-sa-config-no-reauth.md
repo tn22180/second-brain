@@ -1,6 +1,6 @@
 ---
 name: gcloud-sa-config-no-reauth
-description: "gcloud config `sa` (tony-cli SA) is active since 2026-09-29 to dodge avadagroup.com Workspace reauth; read-only across 5 prod projects, switch to `default` for writes/deploy."
+description: "gcloud config `sa` was tony-cli SA (09-29) to dodge Workspace reauth — BROKEN 2026-10-06: `sa` now holds the user account, reauth fails again; ~/.openclaw/firebase-sa.json (ADC) also missing."
 metadata:
   node_type: memory
   type: reference
@@ -18,5 +18,7 @@ Fix 2026-09-29: gcloud configuration `sa` = `tony-cli@avada-seo.iam.gserviceacco
 - Impersonation (`auth/impersonate_service_account`) KHÔNG cứu được: vẫn cần token user → vẫn dính reauth.
 - ADC (`GOOGLE_APPLICATION_CREDENTIALS` → `~/.openclaw/firebase-sa.json`) tách biệt; gcloud/bq không đọc biến này.
 - Fix triệt để = Workspace admin đổi Google Cloud session control (Never require reauth / exempt trusted apps) — policy toàn domain.
+
+**2026-10-06 — đã hỏng:** `gcloud config configurations list` cho thấy `sa` ACCOUNT = `tuannv@avadagroup.com` (không còn tony-cli) → `gcloud --configuration=sa logging read` chết reauth. File ADC `~/.openclaw/firebase-sa.json` không tồn tại nhưng shell vẫn export `GOOGLE_APPLICATION_CREDENTIALS` tới nó → test jest init firebase-admin fail (workaround `env -u GOOGLE_APPLICATION_CREDENTIALS`). Bot SA `firebase-adminsdk-5luw0@avada-blog-app` (falcon-fix-bot secrets) KHÔNG có quyền logging. Cần re-set `sa` về key tony-cli.
 
 **How to apply:** lỗi reauth → check `gcloud config configurations list` trước khi bảo user login. PERMISSION_DENIED trên lệnh ghi → đang ở `sa`, chuyển `default`. Key SA không hết hạn → giữ quyền tối thiểu (xem [[seo-worker-box-credential-surface]]).

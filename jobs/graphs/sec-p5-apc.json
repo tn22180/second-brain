@@ -1,0 +1,68 @@
+{
+ "id": "sec-p5-apc",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/ai-product-copy",
+ "base": "master",
+ "branch": "fix/sec-p5-apc-sibling-bfcm",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "sibling",
+   "deps": [],
+   "prompt": "Repo: ai-product-copy (APC Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md.\n\nMove cross-app store-data routes off integration keys before BFCM (brief A1).\n- routes/proxy.js: GET /proxy/shop/apc, POST /proxy/apc/bfcm-sale and /proxy/apc/bfcm-sale/deactivate use validateAccessToken, which (since FAL-720) requires integration.shopId — but all 4 prod integrationKeys have no shopId, so these return 403 for the SEO/Blog backends (1x403 already on /shop/apc) and BFCM in November will fail. Move them to the existing middleware/requireSiblingApp.js (BUNDLE_SIBLING_KEY_SEO / BUNDLE_SIBLING_KEY_BLOG). Verified by hash on prod CI vars: SEO sends AVADA_SEO_ON_APC_PRO_ACCESS_TOKEN == APC BUNDLE_SIBLING_KEY_SEO, Blog sends AVADA_AI_PRODUCT_COPY_PRO_ACCESS_TOKEN == APC BUNDLE_SIBLING_KEY_BLOG — and both env vars hold the SAME value on prod, so ctx.state.siblingApp cannot distinguish SEO from Blog: do NOT restrict BFCM to one sibling (comment why in one line).\n- Handlers that take shop from the X-SEO-Shop-Domain header keep doing so (sibling keys are app-level by design); whitelist any body fields spread into shop data if a handler spreads ctx.req.body.\n- Test: packages/functions/src/__tests__/proxyRoutes.sibling.test.js pinning wiring on routes source + middleware behaviour (merchant key 401, sibling key passes).\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: ai-product-copy (APC Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root). Brief: second-brain jobs/2026-10-06-security-backlog.md.",
+    "allow": [
+     "packages/functions/src/routes/proxy.js",
+     "packages/functions/src/controllers/",
+     "packages/functions/src/__tests__/",
+     "packages/functions/src/middleware/",
+     "docs/",
+     ".claude/skills/",
+     ".agent/skills/"
+    ],
+    "verify": [
+     {
+      "name": "sibling tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__/proxyRoutes.sibling.test.js",
+       "packages/functions/src/middleware"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/__tests__/proxyRoutes.sibling.test.js"
+     ]
+    },
+    "security": {
+     "appName": "ai-product-copy"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

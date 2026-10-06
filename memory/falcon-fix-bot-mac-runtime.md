@@ -8,6 +8,8 @@ metadata:
   modified: 2026-09-23T02:32:00.342Z
 ---
 
+**TẮT LẠI 2026-10-06 chiều** (disable+bootout), thay bằng [[slack-thread-watch]]. Trước đó **BẬT LẠI 2026-10-06** (launchctl enable+bootstrap) trên branch `feat/bot-context-parity` (MR !10, stack trên !9): memory allowlist (`TEAM_MEMORY_DIR`), fs-query/shop-query trong session, Skill, `--agent`, FIX_MODEL=claude-opus-5-5, sandbox + deny `secrets/` + `claudeMdExcludes` (trước đó `~/.claude/CLAUDE.md` của Tuan rò vào MỌI session bot vì runtime nằm dưới /Users/nguyentuan). Token GitLab "falcon agent" hết 2027-10-06 — runtime đọc `~/Projects/falcon-fix-bot/secrets/`, KHÔNG phải secrets/ của folder dev. Lỗ còn: clone không có node_modules + sandbox chặn mạng → session fix không chạy được test.
+
 **TẮT HẲN 2026-09-30** theo lệnh Tuan: `launchctl disable` + `bootout` cả daemon lẫn watchdog (watchdog trước để khỏi alert giả OPS); daemon thoát sạch sau SIGTERM, không LOCK dở. Code + state để nguyên. Bật lại: `launchctl enable gui/$(id -u)/<label>` rồi `bootstrap` plist trong LaunchAgents (daemon trước watchdog). Đã gỡ khỏi `harness/loops.yml` ([[personal-loop-health]]).
 
 Từ **2026-09-23 09:11 (+07)** bot chạy native: launchd `com.falcon-fix-bot.daemon` +

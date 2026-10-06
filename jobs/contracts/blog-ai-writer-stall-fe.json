@@ -1,0 +1,44 @@
+{
+  "goal": "AI writer UI never spins forever: 45s client idle watchdog aborts a dead SSE stream, and every non-cancel failure (HTTP error, idle timeout, auth handshake failure) ends in the error state with the existing toast.",
+  "allow": [
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/GenerateBlogPost.jsx",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/streamLangGraph.js",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__/",
+    "docs/features/ai-blog-generator.md"
+  ],
+  "verify": [
+    {
+      "name": "fe idle tests",
+      "cmd": [
+        "env",
+        "-u",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "npx",
+        "jest",
+        "--ci",
+        "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__",
+        "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js"
+      ]
+    }
+  ],
+  "reproduce": {
+    "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__"
+    ]
+  },
+  "security": {
+    "appName": "blogs"
+  },
+  "id": "blog-ai-writer-stall-fe-inline",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs-wt-blog-ai-writer-stall",
+  "baseSha": "0d1d3f5fe0af201419c11d39a7445b532537494f",
+  "meta": {
+    "agent": "general-purpose",
+    "model": "sonnet",
+    "round": 1
+  }
+}

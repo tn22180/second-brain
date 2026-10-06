@@ -142,9 +142,8 @@ After brainstorming:
 |---|---|---|---|
 | Find where code lives, map a directory, list callers | `cavecrew-investigator` | haiku | Read-only lookup, compressed output |
 | Broad multi-directory sweep, unknown naming conventions | `Explore` | sonnet | Needs judgment on where to look |
-| Typo, rename, single-function rewrite, 1–2 file mechanical edit | `cavecrew-builder` | haiku | Bounded scope, refuses 3+ files |
-| New feature, new files, cross-file refactor | `general-purpose` | sonnet | Needs full toolset + context |
-| Architecture decision, tricky algorithm, security-sensitive change | `general-purpose` | opus | Cost of being wrong is high |
+| **Any task that writes code** — edit, new files, refactor, bug fix | **Codex** (`codex exec`) | `gpt-6-astra` | Tuan's call 2026-10-06: Codex codes, Claude plans/reviews/tracks |
+| Architecture decision, tricky algorithm (deciding, not writing) | `Plan` | opus | Cost of being wrong is high; the code still goes to Codex |
 | Design an implementation strategy for a hard task | `Plan` | opus | Architect role, no writes |
 | Review a diff / file / branch | `cavecrew-reviewer` | sonnet | Severity-tagged, no scope creep |
 | Domain-specific (UI/UX, Shopify, billing, credits, Jira) | matching **skill**, executed inline | — | Skill beats generic agent |
@@ -155,6 +154,13 @@ Rules:
 - Give each subagent: the task statement, the files it may touch, the acceptance test, and "do not touch anything outside this scope".
 - Record the chosen agent + model in the Progress table so the routing is auditable.
 - If no agent fits and the task is small, do it inline. Do not invent an agent type.
+- **Dispatching Codex in-session** (single task, graph fallback): run in the background via Bash,
+  log to `<brief-dir>/runs/<task-id>.log`:
+  `codex exec --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' -C <worktree> "<plan>" < /dev/null`.
+  The first `"thread.started","thread_id"` in the log is the session; a failed round goes back
+  with `codex exec resume --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' <thread_id> "<failure>"`.
+  Never `--dangerously-bypass-approvals-and-sandbox`, never via the `cc codex` wrapper (breaks on macOS).
+  Codex reads the repo's `CLAUDE.md` via `project_doc_fallback_filenames` in `~/.codex/config.toml`.
 
 ### 5. Create dual tracking
 
@@ -274,12 +280,12 @@ coupled that each needs to read the previous one's diff before it can be planned
 that reason under `## Decisions`. Write `<brief-dir>/graphs/<slug>.json` (schema:
 `~/Documents/second-brain/tools/agent-harness/src/graph.ts`): one node per task with `deps`,
 `prompt` (the §6 plan + task text), `contract` (goal/allow/verify/reproduce/security — no
-id/repoPath/baseSha, the runner sets them) and `meta.model`. Concurrent nodes must not share
+id/repoPath/baseSha, the runner sets them) and `meta.model` (`gpt-*`, default `gpt-6-astra`). Concurrent nodes must not share
 files; add a dep or split files. Then run it in the background:
 
 `bun run ~/Documents/second-brain/tools/agent-harness/bin/harness.ts graph run <graph.json>`
 
-Each node: own worktree off the integration branch → `cc -p` → `jev supervise` every 60 s →
+Each node: own worktree off the integration branch → `codex exec` (gpt-6-astra; `meta.executor: "claude"` → `cc -p`) → `jev supervise` every 60 s →
 harness verify → resume same session with the failure (5-round cap) → commit verified tree →
 merge into `branch`. Progress DMs arrive on Telegram; `graph status <id>` reads the ledger.
 Rerunning the same file resumes (done nodes are skipped). The runner **never pushes**: when

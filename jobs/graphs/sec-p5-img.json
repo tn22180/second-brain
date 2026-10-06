@@ -1,0 +1,101 @@
+{
+ "id": "sec-p5-img",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/avada-image-optimizer",
+ "base": "master",
+ "branch": "fix/sec-p5-img-backlog",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "public",
+   "deps": [],
+   "prompt": "Repo: avada-image-optimizer (Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root; gen1 publicEndpoint serves /public/**). Brief: second-brain jobs/2026-10-06-security-backlog.md. Same fix already shipped in sibling repo seo (commit 9c096d8a177 put revert routes behind session tokens; ef80d721c89 locked integration key reads to DevZone).\n\nRemove unauthenticated revert routes and sign unsubscribe links (brief I1, I4).\n- routes/public.js:27 POST /public/revert-product/:id?shop= -> revertController.js:55: no auth; getShopInfoByAppId (repositories/shopRepository.js:431) falls back to the shop domain when the id does not match, so anyone reverts alt text and images on any store (writes revertId/doneRevert, publishes recursive RECURSIVE_REVERT_IMAGES_ALT). GET /public/get-jsonl-data/:id?shop= returns a signed URL to another store's optimize history. No caller in any Falcon repo. Delete both routes and their handlers if nothing else imports them.\n- Unsubscribe link (services/email/index.js:161,323; routes/public.js:14) is unsigned: sign it like this: `${b64}.${hmacSha256 base64url}`, verify with timingSafeEqual; secret from env UNSUBSCRIBE_SECRET falling back to the Shopify app secret already in config; accept unsigned legacy identifiers only until 2026-11-06 (weekly mails already sent).\n- Tests: routes source pin (revert-product / get-jsonl-data absent); token sign/verify/tamper/cutoff tests.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).\n\nTest files go in packages/functions/src/__tests__/ (verify runs that directory; it does not exist yet — create it).",
+   "contract": {
+    "goal": "Repo: avada-image-optimizer (Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root; gen1 publicEndpoint serves /public/**). Brief: second-brain jobs/2026-10-06-security-backlog.md. Same fix already shipped in sibling repo seo (commit 9c096d8a177 put revert routes behind se",
+    "allow": [
+     "packages/functions/src/routes/public.js",
+     "packages/functions/src/controllers/revertController.js",
+     "packages/functions/src/repositories/shopRepository.js",
+     "packages/functions/src/services/email/",
+     "packages/functions/src/helpers/",
+     "packages/functions/src/controllers/",
+     "packages/functions/src/__tests__/",
+     "docs/",
+     ".claude/skills/",
+     ".agent/skills/"
+    ],
+    "verify": [
+     {
+      "name": "public route tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "avada-image-optimizer"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "keys",
+   "deps": [
+    "public"
+   ],
+   "prompt": "Repo: avada-image-optimizer (Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root; gen1 publicEndpoint serves /public/**). Brief: second-brain jobs/2026-10-06-security-backlog.md. Same fix already shipped in sibling repo seo (commit 9c096d8a177 put revert routes behind session tokens; ef80d721c89 locked integration key reads to DevZone).\n\nLock integration key endpoints (brief I2) and tighten the feature-request DOMPurify config (brief I3).\n- controllers/integrationKeyController.js: getOne (`/api/integration/keys?name=`) finds by name app-wide, so any merchant reads the accessToken of any key (incl. the app-wide 'crossapp' key); createOne mints keys with no shopId. Mirror seo ef80d721c89: both handlers require a DevZone/CRM session (find this repo's equivalent of canAccessDevZone / isCrmLogin; if none exists, require the dev-zone flag the repo already uses for staff routes and say which in the final message), and responses never include accessToken except to that staff session.\n- packages/assets/src/config/DOMPurify.js allows iframe with arbitrary src and style; used for stored feature-request comments (CardSpeedRequest.jsx:220, UserComment.jsx:202). Remove iframe and style from the allowlist.\n- Tests: controller test merchant session -> 403, no accessToken in body; DOMPurify config test that <iframe> and style= are stripped (jsdom env).\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).\n\nTest files (exact paths, verify runs these): packages/functions/src/controllers/__tests__/integrationKeyController.test.js and packages/assets/src/config/__tests__/DOMPurify.test.js.",
+   "contract": {
+    "goal": "Repo: avada-image-optimizer (Shopify app; Firebase Functions packages/functions/src, Koa; jest from repo root; gen1 publicEndpoint serves /public/**). Brief: second-brain jobs/2026-10-06-security-backlog.md. Same fix already shipped in sibling repo seo (commit 9c096d8a177 put revert routes behind se",
+    "allow": [
+     "packages/functions/src/controllers/integrationKeyController.js",
+     "packages/functions/src/repositories/integrationRepository.js",
+     "packages/functions/src/routes/api.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/__tests__/",
+     "packages/assets/src/config/",
+     "packages/assets/src/config/"
+    ],
+    "verify": [
+     {
+      "name": "key + purify tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/controllers/__tests__/integrationKeyController.test.js",
+       "packages/assets/src/config/__tests__/DOMPurify.test.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "avada-image-optimizer"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

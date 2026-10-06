@@ -1,0 +1,110 @@
+{
+  "id": "blog-ai-writer-stall",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+  "base": "master",
+  "branch": "fix/ai-writer-stream-stall",
+  "maxParallel": 1,
+  "linkPaths": [
+    "node_modules",
+    "packages/functions/node_modules",
+    "packages/assets/node_modules"
+  ],
+  "nodes": [
+    {
+      "id": "be",
+      "deps": [],
+      "prompt": "Repo: blogs (Avada Blog Shopify app). Functions = Koa in packages/functions/src (ESM via babel, alias @functions -> packages/functions/src). Jest runs from repo root: `npx jest <path>`. Brief: second-brain jobs/2026-10-06-blog-ai-writer-hang.md (FAL-1100).\n\nBug: merchant clicks Content Manager > Create post with AI, spinner never ends, no credit deducted. Root cause found in code: the AI writer streams POST /langgraph/blog (controllers/langGraphController.js `generate`, ~line 42) as SSE. The LLM call is `chatModel.stream(lcMessages)` at langgraph/nodes/callModelNode.js:313 iterated with `for await (const chunk of stream)` at ~:412 with NO idle timeout; the ChatOpenAI client (langgraph/models/openAiChatModel.js) has no `timeout`. When OpenRouter holds the connection open without sending chunks, generation waits until the 540s Cloud Function kill, and the controller writes nothing between `ready` and the first blog_chunk, so the browser cannot tell a slow stream from a dead one.\n\nDo:\n1. New helper packages/functions/src/helpers/withIdleTimeout.js, pure JS, no deps, usable from both Node and the browser (the React app imports @functions/helpers/* already): `export async function* withIdleTimeout(iterable, ms, {onTimeout} = {})` — yields every item of the async iterable; if no item arrives within `ms` after the previous one (or after start), call `onTimeout()` if given, call `iterator.return?.()` best-effort (don't await forever on it), and throw an Error whose `code` is 'STREAM_IDLE_TIMEOUT' and message says no data for N ms. Always clear the timer (no leaked timers when the consumer breaks early or the source throws). Export the code constant too.\n2. callModelNode.js: create an AbortController, pass `{signal}` as the 2nd arg to `chatModel.stream(lcMessages, {signal})`, and iterate `withIdleTimeout(stream, LLM_STREAM_IDLE_TIMEOUT_MS, {onTimeout: () => controller.abort()})`. LLM_STREAM_IDLE_TIMEOUT_MS = 60000 (export it, define near the node). The thrown error must propagate so the controller's existing catch writes the SSE `error` event (it already does; don't change that catch).\n3. openAiChatModel.js: add `timeout: 60000` (ms, covers waiting for response headers per attempt) and `maxRetries: 2` to the ChatOpenAI options so a dead upstream cannot burn the 540s budget across LangChain's default 6 retries. One-line why-comment.\n4. langGraphController.js `generate`: after `writeEvent({type: 'ready'})`, start `setInterval` writing the SSE comment `:ping\\n\\n` every 15000 ms (skip when ctx.res.writableEnded; call ctx.res.flush if present, same as writeEvent). Clear it in the existing `finally` and in the `close` handler. Comment the why in one line: the browser's idle watchdog needs bytes while the server is legitimately busy (image generation, outline planning).\n5. Tests (jest, fake timers or real short ms):\n   - packages/functions/src/helpers/__tests__/withIdleTimeout.test.js: passes through items; throws code STREAM_IDLE_TIMEOUT and calls onTimeout when a source stalls; does not throw for a source that is slow but under the limit between items; no pending timer after normal completion and after early break; propagates source errors unchanged.\n   - extend packages/functions/src/langgraph/nodes/__tests__/callModelNode.test.js: a chatModel whose stream yields one chunk then never resolves -> node rejects with code STREAM_IDLE_TIMEOUT and the signal passed to stream() is aborted (use jest.useFakeTimers or mock the constant via a small timeout — choose what works with jest 24). Keep existing tests passing.\n   - packages/functions/src/controllers/__tests__/langGraphController.heartbeat.test.js ONLY IF the controller can be imported in jest with mocks of its imports; if that is impractical, skip this test and say why in your final message.\n\nRules: touch only files in the contract allow list. Comments say WHY only, never narrate WHAT; no step numbering, no banners; no console.log. No new dependencies. Do not change credit deduction logic or the shape of existing SSE events. Run the verify commands yourself before saying done. Final message: file:line of each change and the test output.",
+      "contract": {
+        "goal": "LLM stream stall in AI writer fails fast (60s idle -> abort -> SSE error event) instead of hanging to the 540s function kill; controller emits :ping heartbeat every 15s; shared withIdleTimeout helper with tests.",
+        "allow": [
+          "packages/functions/src/helpers/withIdleTimeout.js",
+          "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+          "packages/functions/src/langgraph/nodes/callModelNode.js",
+          "packages/functions/src/langgraph/nodes/__tests__/callModelNode.test.js",
+          "packages/functions/src/langgraph/models/openAiChatModel.js",
+          "packages/functions/src/controllers/langGraphController.js",
+          "packages/functions/src/controllers/__tests__/langGraphController.heartbeat.test.js"
+        ],
+        "verify": [
+          {
+            "name": "be stall tests",
+            "cmd": [
+              "env",
+              "-u",
+              "GOOGLE_APPLICATION_CREDENTIALS",
+              "npx",
+              "jest",
+              "--ci",
+              "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+              "packages/functions/src/langgraph",
+              "packages/functions/src/controllers/__tests__"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js"
+          ]
+        },
+        "security": {
+          "appName": "blogs"
+        }
+      },
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "wallMinutes": 45
+    },
+    {
+      "id": "fe",
+      "deps": [
+        "be"
+      ],
+      "prompt": "Repo: blogs (Avada Blog Shopify app). React app in packages/assets/src (aliases @assets -> packages/assets/src, @functions -> packages/functions/src). Jest runs from repo root: `npx jest <path>` (assets jest.config uses jsdom). Brief: second-brain jobs/2026-10-06-blog-ai-writer-hang.md (FAL-1100).\n\nBug: Create post with AI spinner never ends. The spinner (packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/GenerateBlogPost.jsx:706) shows while status==='generating', cleared only by onSuccess/onError of the mutation or a stream error event. `streamLangGraph` (same file, :41-127) iterates the SSE stream from ClientFetchSSE with no idle deadline, so a stalled connection keeps the spinner forever. Separately, mutation onError (:346-352) only sets status 'error' with no toast (the page goes blank — merchant sees nothing), and the auth handshake failure at :486-489 silently sets status 'idle'.\n\nThe previous task added packages/functions/src/helpers/withIdleTimeout.js (`withIdleTimeout(iterable, ms, {onTimeout})`, throws Error with code 'STREAM_IDLE_TIMEOUT'); read it and reuse it, do not duplicate it. The server now sends an SSE `:ping` comment every 15s, which processSSEResponse yields as a chunk, so any chunk counts as liveness.\n\nDo:\n1. In streamLangGraph: create a local AbortController linked to the caller's `signal` (abort local when caller aborts), pass the local signal to sseClient.send, and iterate `withIdleTimeout(sseClient.send(...), CLIENT_STREAM_IDLE_TIMEOUT_MS, {onTimeout: () => local.abort()})` with CLIENT_STREAM_IDLE_TIMEOUT_MS = 45000 (3 missed heartbeats). An idle timeout must surface as a normal error (NOT name 'AbortError', or onError would treat it as a user cancel). Errors that come from a server `error` event must be marked (e.g. `error.fromStreamEvent = true`) because the stream handler already toasted them.\n2. Mutation onError: for non-AbortError errors that are not fromStreamEvent, route through the existing stream handler so the UI gets the same failure state and toast as a server error: call `streamEventHandlerRef.current?.({type: 'error', error: error.message})` (that handler in SettingGenAiBlog/index.jsx ~:947 sets generationFailed, status 'error' and the toast 'Could not finish this blog post. Please generate again.'); fall back to setStatus('error') if the handler is missing.\n3. The two handshake-failure branches (`isEmbeddedApp && !idToken && !sessionToken`, in handleGenerate and triggerOnboarding) must not fail silently: send the same error through the stream handler (fallback setStatus('error')) instead of setStatus('idle').\n4. Export streamLangGraph (named export) only if needed for the test; keep the default export unchanged.\n5. Test: packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__/streamLangGraph.idle.test.js — mock @assets/helpers/clientFetchSSE (its source uses import.meta which jest 24 cannot parse — mock the module entirely) and any other import that fails under jest; prove (a) a send() generator that yields ':ok' then never resolves rejects with code STREAM_IDLE_TIMEOUT and aborts the signal it was given, (b) a server error event rejects with fromStreamEvent true, (c) a normal result stream resolves. If importing GenerateBlogPost.jsx under jest proves impossible after reasonable mocking, move streamLangGraph into a sibling module (e.g. StepUI/streamLangGraph.js, add it to your changes) and test that instead — say which in your final message.\n\nRules: touch only files in the contract allow list. i18n: the toast string already exists in the handler — do not add new user-visible strings. Comments say WHY only; no console.log added; no new dependencies. Run the verify commands yourself before saying done. Final message: file:line of each change and the test output.",
+      "contract": {
+        "goal": "AI writer UI never spins forever: 45s client idle watchdog aborts a dead SSE stream, and every non-cancel failure (HTTP error, idle timeout, auth handshake failure) ends in the error state with the existing toast.",
+        "allow": [
+          "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/GenerateBlogPost.jsx",
+          "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/streamLangGraph.js",
+          "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__/"
+        ],
+        "verify": [
+          {
+            "name": "fe idle tests",
+            "cmd": [
+              "env",
+              "-u",
+              "GOOGLE_APPLICATION_CREDENTIALS",
+              "npx",
+              "jest",
+              "--ci",
+              "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__",
+              "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__"
+          ]
+        },
+        "security": {
+          "appName": "blogs"
+        }
+      },
+      "meta": {
+        "agent": "cc-p",
+        "model": "sonnet"
+      },
+      "wallMinutes": 45
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+ "id": "sec-p5-seo",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "master",
+ "branch": "fix/sec-p5-seo-backlog",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "routes",
+   "deps": [],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/requireSiblingApp.js, middleware/requireInternalKey.js, middleware/__tests__/validateAccessToken.routes.test.js (pins router wiring by reading routes/proxy.js source because the router cannot be imported in jest).\n\nClose unauthenticated /proxy routes (brief S2, S3-chat, S5).\n- routes/proxy.js: delete GET /test/rum and GET /test/updateActive and their handlers in controllers/devController.js (testRum ~2138, updateActive ~2172) if nothing else imports them. /test/crawlProxy gets `requireInternalKey` (import exists in proxy.js); commands/updateCdnExtensions.js:69 must send `internalAuthHeader()` the same way that file already does around line 81.\n- Delete POST /proxy/chat and aiChatController.getChat (0 requests in 30d; only old caller is avada-apps-cdn marketing tool) — keep any other export of aiChatController that is still imported.\n- Delete POST /proxy/optimizeProduct, middleware/validateAction.js and controllers/actionController.js if they have no other importer (0 requests/30d, no Shopify Flow extension).\n- Do NOT touch /proxy/temp/seo-tool/image in this node.\n- New test packages/functions/src/middleware/__tests__/proxyRoutes.unauthenticated.test.js pinning on source: the removed paths are absent, /test/crawlProxy block contains requireInternalKey.\n- Update .claude/skills/security/SKILL.md and its mirror .agent/skills/security/SKILL.md only if they cite the deleted files (docs-gate must pass).\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/re",
+    "allow": [
+     "packages/functions/src/routes/proxy.js",
+     "packages/functions/src/controllers/devController.js",
+     "packages/functions/src/controllers/aiChatController.js",
+     "packages/functions/src/middleware/validateAction.js",
+     "packages/functions/src/controllers/actionController.js",
+     "packages/functions/src/commands/updateCdnExtensions.js",
+     "packages/functions/src/middleware/__tests__/",
+     "packages/functions/src/controllers/__tests__/",
+     ".claude/skills/",
+     ".agent/skills/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "route tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/middleware/__tests__"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/middleware/__tests__/proxyRoutes.unauthenticated.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "credit",
+   "deps": [
+    "routes"
+   ],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/requireSiblingApp.js, middleware/requireInternalKey.js, middleware/__tests__/validateAccessToken.routes.test.js (pins router wiring by reading routes/proxy.js source because the router cannot be imported in jest).\n\nStop self-declared store email from minting free AI credits (brief S1) and remove the hardcoded X-Avada-Key (brief S9).\n- controllers/creditCartController.js:18-19,56,149: `isInternalShop` trusts shop.email ending in an Avada domain (merchant types it in Shopify) to create a test charge that activate then treats as paid. Replace with the subscription convention (handlers/api.js:55, apiV2.js:77): checkout uses `test: !appConfig.isProduction`; activate grants only when status === 'ACTIVE' and not (charge.test && appConfig.isProduction). Delete TEST_EMAIL_DOMAINS / isInternalShop. Update controllers/__tests__/credit.selfGrant.test.js: prod + test charge + avada email -> activateCreditBundle NOT called; non-prod + test -> granted; prod checkout sends test:false.\n- handlers/onCreateCouponUsage.js:42 hardcodes header 'X-Avada-Key'. Read it from process.env (name it AVADA_COUPON_KEY unless the file/config already has a matching env name); if unset, log an error and skip the call (fail closed). Add a small test. The old literal is burned and must be rotated — say so in your final message, do not repeat the value.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/re",
+    "allow": [
+     "packages/functions/src/controllers/creditCartController.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/handlers/onCreateCouponUsage.js",
+     "packages/functions/src/handlers/__tests__/",
+     "packages/functions/src/config/app.js"
+    ],
+    "verify": [
+     {
+      "name": "credit tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/controllers/__tests__/credit"
+      ]
+     },
+     {
+      "name": "coupon tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/handlers/__tests__"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/controllers/__tests__/credit.selfGrant.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "unsub",
+   "deps": [
+    "credit"
+   ],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/requireSiblingApp.js, middleware/requireInternalKey.js, middleware/__tests__/validateAccessToken.routes.test.js (pins router wiring by reading routes/proxy.js source because the router cannot be imported in jest).\n\nSign unsubscribe links (brief S4).\n- handlers/proxy/controllers/emailController.js:14 decodes `/proxy/unsubscribe/:identifier` as unsigned base64 JSON {shopID,email,isMerchant}: anyone who knows a shopId unsubscribes that merchant or removes an email. Links are generated in services/mailService.js:83,117,283 (getMerchantUnsubscribeUrl etc.).\n- New helper packages/functions/src/helpers/email/unsubscribeToken.js: sign(payload) -> `${b64}.${hmacSha256(secret,b64) base64url}`; verify(identifier) -> payload | null using crypto.timingSafeEqual after a length check. Secret: reuse an existing server secret from config (look in config/app.js / config/shopify.js — prefer a dedicated env UNSUBSCRIBE_SECRET falling back to the Shopify app secret; note the env in final message).\n- Unsigned legacy identifiers are accepted only until a constant LEGACY_UNSIGNED_UNTIL = merge date + 30 days (use 2026-11-06) because weekly mails already sent carry unsigned links; after it, reject without writing.\n- Tests: signed -> writes; tampered -> 400 and no write; unsigned after cutoff -> no write; unsigned before cutoff -> writes.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/re",
+    "allow": [
+     "packages/functions/src/handlers/proxy/controllers/emailController.js",
+     "packages/functions/src/services/mailService.js",
+     "packages/functions/src/helpers/email/",
+     "packages/functions/src/handlers/proxy/controllers/__tests__/",
+     "packages/functions/src/config/app.js"
+    ],
+    "verify": [
+     {
+      "name": "unsub tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/helpers/email",
+       "packages/functions/src/handlers/proxy/controllers/__tests__"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "sonnet"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "rules",
+   "deps": [
+    "unsub"
+   ],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/requireSiblingApp.js, middleware/requireInternalKey.js, middleware/__tests__/validateAccessToken.routes.test.js (pins router wiring by reading routes/proxy.js source because the router cannot be imported in jest).\n\nFirestore vote rule needs auth; drop dead storage rule (brief S6, S7).\n- firestore.rules:131-148 `isVoteToggle()` has no auth check, so anyone with the public web config can spam votes. The only caller (packages/assets .../liveVoteFeatureReq.js:90 voteLike) already reads the doc first, which needs auth, so every legit caller is signed in with the realtime token (claim shopId, helpers/realtimeToken.js:23; rules helper shopOf()/isShop exists near the top of firestore.rules). New condition: request.auth != null && shopOf() != null && the likedUserIds change is exactly [shopOf()] added (delta 1) or removed (delta -1), using toSet().difference(...) == [shopOf()].toSet(). Check voteLike pushes the shop id (not a random id) into likedUserIds; if it pushes something else, adapt the FE call in that same file (add it to scope) so the rule matches.\n- storage.rules:9-14 previewCompress/{shopId} public read: no code writes that Storage path (bucket has 0 objects). Delete both blocks.\n- Test packages/functions/src/__tests__/securityRules.source.test.js pinning on rules source: isVoteToggle contains request.auth != null and shopOf(); storage.rules has no previewCompress and no `if true`.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/re",
+    "allow": [
+     "firestore.rules",
+     "storage.rules",
+     "packages/functions/src/__tests__/",
+     "packages/assets/src/"
+    ],
+    "verify": [
+     {
+      "name": "rules source tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__/securityRules.source.test.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "frontend",
+   "deps": [
+    "rules"
+   ],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/requireSiblingApp.js, middleware/requireInternalKey.js, middleware/__tests__/validateAccessToken.routes.test.js (pins router wiring by reading routes/proxy.js source because the router cannot be imported in jest).\n\nFrontend: image compress via authenticated API, TinyMCE script URLs (brief S3 FE, S8).\n- packages/assets/src/pages/ImageCompress/ImageCompress.js:398 posts to unauthenticated /proxy/temp/seo-tool/image with axios. Switch to `fetchAuthenticatedApi('/seo-tool/image', {method:'POST', body: formData})` (route exists: functions routes/api.js:373; helper supports FormData, assets helpers.js ~488) and adapt response reading. Leave the proxy route in place (old cached FE bundles still call it); add a one-line comment above that route in routes/proxy.js: remove after the next tag.\n- Cherry-pick the two local commits on branch fix/tinymce-allow-script-urls: 05bd198ceb2 (allow_script_urls false) and 868f2c0bbd0 (AIGenerator renders text, not dangerouslySetInnerHTML). Resolve conflicts if any. If the commits are not reachable, re-implement: AvadaTinyMCEEditor.js:339 allow_script_urls:false; AIGenerator.js:282,292 render as text.\n- Verify with eslint on the changed assets files.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa routers; jest 24 run from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-06-security-backlog.md. Pattern reference already on master: middleware/re",
+    "allow": [
+     "packages/assets/src/",
+     "packages/functions/src/routes/proxy.js"
+    ],
+    "verify": [
+     {
+      "name": "eslint assets",
+      "cmd": [
+       "env",
+       "DISABLE_V8_COMPILE_CACHE=1",
+       "npx",
+       "eslint",
+       "packages/assets/src/pages/ImageCompress",
+       "packages/assets/src/components/AvadaTinyMCEEditor"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "sonnet"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

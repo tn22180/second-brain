@@ -1,0 +1,37 @@
+{
+  "contractId": "seo-instant-indexing-errors",
+  "runId": "seo-instant-indexing-errors-953e43fb",
+  "at": 1791271946155,
+  "pass": true,
+  "diffSha": "cabbe0e5dec583551063c18f3f941e68b186c875",
+  "changed": [
+    "packages/assets/src/pages/InstantIndexing/InstantIndexing.js",
+    "packages/functions/src/const/googleIndexing.js",
+    "packages/functions/src/services/__tests__/instantIndexingService.test.js",
+    "packages/functions/src/services/instantIndexingService.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "4 file(s)"
+    },
+    {
+      "name": "indexing tests",
+      "ok": true
+    },
+    {
+      "name": "reproduce",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0
+}

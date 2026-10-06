@@ -1,0 +1,41 @@
+{
+  "contractId": "blog-ai-writer-stall-fe-inline",
+  "runId": "blog-ai-writer-stall-fe-inline-f7316f63",
+  "at": 1791257230161,
+  "pass": true,
+  "diffSha": "7ad29dc4f70c7b0208da98bc41ab31ff5880fba2",
+  "changed": [
+    "docs/features/ai-blog-generator.md",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/GenerateBlogPost.jsx",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__/streamLangGraph.idle.test.js",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/streamLangGraph.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "4 file(s)"
+    },
+    {
+      "name": "fe idle tests",
+      "ok": true
+    },
+    {
+      "name": "reproduce",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.29079279999999996
+}

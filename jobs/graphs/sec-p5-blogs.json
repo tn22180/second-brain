@@ -1,0 +1,126 @@
+{
+ "id": "sec-p5-blogs",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "master",
+ "branch": "fix/sec-p5-blogs-backlog",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "proxy",
+   "deps": [],
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling repo seo: routes moved from validateAccessToken to requireSiblingApp, browser install-check returns only {userType,isInstalled}, route wiring pinned in a jest test that reads routes source (router cannot be imported in jest). blogs already has middleware/requireSiblingApp.js matching BUNDLE_SIBLING_KEY_SEO / BUNDLE_SIBLING_KEY_APC and sets ctx.state.siblingApp (const/allInOne.js).\n\nClose the BFCM downgrade hole and dead proxy routes (brief B1, B2, B4, B6).\n- POST /proxy/blog/bfcm-sale and /proxy/blog/bfcm-sale/deactivate (handlers appProxyController.handleBFCMFromSeoOn ~182, deactivateSeoOnFromBfcm ~253) use validateAccessToken; the 'crossapp'/'bfcm' integration key equals the token hardcoded in the public npm package avada-components-seoon, so anyone can downgrade any shop to FREE (20 shops active). Move both to requireSiblingApp and return 403 unless ctx.state.siblingApp === the SEO app constant. Verified by hash on prod CI vars: SEO sends AVADA_SEO_ON_BLOG_PRO_ACCESS_TOKEN == blogs BUNDLE_SIBLING_KEY_SEO, and APC's key differs, so the check is reliable.\n- GET /proxy/shop/blog (shopifyController.setClient ~589): CrossAppBanner browser call with the public key; respond {userType, isInstalled} only.\n- validateIpRateLimit.js:27 takes the FIRST x-forwarded-for entry (client-controlled). Use the last entry (appended by Google Front End); keep behaviour when the header is absent.\n- Delete GET /proxy/ai-summary/blogs (marked // test, unauthenticated, 0 hits) and its handler if unused. For POST /proxy/summary-articles/manage: if the published-article webhook is consumed via Pub/Sub (subscribeSummaryNewPublishedArticle) and nothing registers this URL, delete the route; otherwise add Shopify webhook HMAC verification with the existing webhook verifier.\n- Tests: new packages/functions/src/__tests__/proxyRoutes.security.test.js pinning wiring on source; middleware test for the siblingApp check (merchant key 401, APC key 403, SEO key passes) and for XFF last-entry.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling re",
+    "allow": [
+     "packages/functions/src/routes/",
+     "packages/functions/src/controllers/appProxyController.js",
+     "packages/functions/src/controllers/shopifyController.js",
+     "packages/functions/src/controllers/settingsController.js",
+     "packages/functions/src/middleware/",
+     "packages/functions/src/__tests__/",
+     "packages/functions/src/controllers/__tests__/"
+    ],
+    "verify": [
+     {
+      "name": "proxy security tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/__tests__/proxyRoutes.security.test.js",
+       "packages/functions/src/middleware"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/__tests__/proxyRoutes.security.test.js"
+     ]
+    },
+    "security": {
+     "appName": "blogs"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "opus"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "xss",
+   "deps": [
+    "proxy"
+   ],
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling repo seo: routes moved from validateAccessToken to requireSiblingApp, browser install-check returns only {userType,isInstalled}, route wiring pinned in a jest test that reads routes source (router cannot be imported in jest). blogs already has middleware/requireSiblingApp.js matching BUNDLE_SIBLING_KEY_SEO / BUNDLE_SIBLING_KEY_APC and sets ctx.state.siblingApp (const/allInOne.js).\n\nSanitize stored HTML rendered in admin (brief B3).\n- packages/assets/src/components/AISummary/SummaryManager/SummaryManager.js:490 renders stored AI summary with dangerouslySetInnerHTML; summaries saved before the server-side sanitize fix still execute in admin. Add packages/assets/src/helpers/sanitizeStoredHtml.js exporting sanitizeSummary(html) using DOMPurify with an allowlist equal to packages/functions/src/helpers/sanitizeSummaryHtml.js WHITE_LIST (copy the tags/attrs; do not import server code), and sanitizeBlockHtml(html) for editor blocks (inline formatting + a/href http(s)/mailto, no iframe, no style, no event handlers). Do NOT use the existing DOMPURIFY_CONFIG (it allows iframe).\n- Wrap every dangerouslySetInnerHTML on stored data in: molecules/EditorJs/Faq/FaqUI.js, Quote/QuoteUI.js, ImageTool/ImageUi.js, RecipeTool/RecipeContent.js, ProductCard/ProductCardUI.jsx, ProductDetail/ProductDetailUi.js, LineAndBarChart/LineAndBarChart.js. Skip ones that render static constants.\n- Test packages/assets/src/helpers/__tests__/sanitizeStoredHtml.test.js (jest jsdom env via docblock `@jest-environment jsdom` if root config is node): `<img src=x onerror=alert(1)><p>ok</p>` -> no onerror/img, keeps <p>ok</p>; `<iframe>` removed.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling re",
+    "allow": [
+     "packages/assets/src/"
+    ],
+    "verify": [
+     {
+      "name": "sanitize tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/assets/src/helpers/__tests__/sanitizeStoredHtml.test.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "sonnet"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "oauth",
+   "deps": [
+    "xss"
+   ],
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling repo seo: routes moved from validateAccessToken to requireSiblingApp, browser install-check returns only {userType,isInstalled}, route wiring pinned in a jest test that reads routes source (router cannot be imported in jest). blogs already has middleware/requireSiblingApp.js matching BUNDLE_SIBLING_KEY_SEO / BUNDLE_SIBLING_KEY_APC and sets ctx.state.siblingApp (const/allInOne.js).\n\nGoogle OAuth callback leaks tokens to any opener (brief B5).\n- controllers/googleController.js oauthCallback ends with an inline script `postMessage({tokens, accounts}, \"*\")` and JSON.stringify inlined into <script>. Set targetOrigin to the app's own origin (derive from config app base URL / host already in config; find it), and escape `<` as \\u003c (also U+2028/2029) in the inlined JSON. If `state` is not bound to a session, do not redesign it — mention it in the final message as a follow-up.\n- Test: response body contains no `\"*\"` targetOrigin; an account name containing `</script>` does not terminate the script.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a Shopify limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json unless listed. Do not add dependencies. Run the verify commands yourself before saying done. Write the exploit-before-fix scenario and file:line of each change in your final message (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`; assets React in packages/assets with dompurify ^3 already a dependency). Brief: second-brain jobs/2026-10-06-security-backlog.md. Reference fix already shipped in sibling re",
+    "allow": [
+     "packages/functions/src/controllers/googleController.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/helpers/"
+    ],
+    "verify": [
+     {
+      "name": "oauth tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/controllers/__tests__/googleController"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   },
+   "meta": {
+    "agent": "cc-p",
+    "model": "sonnet"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

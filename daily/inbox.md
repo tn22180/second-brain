@@ -309,3 +309,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo embed phải fetch `/shops` trước realtime sign-in, không thì sinh doc shop trùng (`dc15beef562`). Shop có 2 doc thì check fix đã lên tag chưa
 - [ ] (×1) Air Reviews embed handle có dạng `air-reviews-N`. Detect app review theo handle phải match prefix (`29f2cb1fff3`)
 - [ ] (×1) seo schema không emit `validFrom` tương lai và AggregateRating giả 5/1 (`273d1705d67`, `[deploy-extensions]`). Đây là extension nên phải curl storefront để verify, không tin merge title
+
+### memory candidates 2026-10-06
+- [ ] (×1) axyseo đã sang `git.avada.net/avada/falcon/product/axyseo` (repo thứ 6 sau migrate). Clone cũ trỏ `gitlab.com/avada/axyseo` push 403 read-only → phải `git remote set-url`. Update `avada-gitlab-host-migration`
+- [ ] (×1) seo Sync Broken URL Redirects từng OOM vì mỗi batch load cả bulk file. Fix FAL-1099 (`daefe28bc0a`) stream file + bỏ chặn bởi log RUNNING cũ, chờ tag lên prod. Feature chỉ cần cho khách enterprise
+- [ ] (×1) Sync redirect shop lớn chạy dở (51000/62997 URLs) sau fix FAL-1099 → hướng đẩy job vào worker fleet. Check job đã chạy trên worker hay còn trên GCF trước khi bảo CS chạy lại
+- [ ] (×1) axyseo 2.1.62: Content length không đếm token dấu câu (FAL-943, seo `9f605f4ed06`). Shop báo content length lệch thì check bản axyseo seo đang lock

@@ -1,4 +1,6 @@
 - [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
+- [slack-thread-watch](slack-thread-watch.md) — thread support mới → Orca worktree + claude "/falcon:support-handoff <link>" (auto mode); launchd 2 phút, 3 kênh, thay falcon-fix-bot.
+- [Kiểm rồi mới báo, không đoán](check-before-reporting-no-guessing.md) — trạng thái deploy/box/credential phải chạy lệnh kiểm trước khi nói; memory chỉ là gợi ý (sai 2 lần 10-06).
 - [Ask rule là prefix: git -C lọt](ask-rule-prefix-git-c.md) — (push đã chuyển sang git_guard hook 2026-09-30, không còn ask rule git push) rule prefix không khớp `git -C … push`/for-loop.
 - [Check master before building](check-master-before-building.md) — grep master cho feature TRƯỚC khi code; team chạy song song cùng 1 brief qua Claude, MR 2229 build xong mới biết master đã có.
 - [Verify the branch before diagnosing](verify-branch-before-diagnosing.md) — pin the tree before ANY code claim; the worktree you sit in feels like truth. Fired twice: SEO-260714, then a whole doc set written 207 commits behind master.
@@ -23,7 +25,7 @@
 - [Avada GitLab self-host](avada-gitlab-selfhost.md) — git.avada.net 19.1.0 CE; API chặn UA lạ (403/1010, không phải token); seo cutover 2026-08-18. Group `avada` trên gitlab.com nay READ-ONLY; worker-sdk đã sang git.avada.net/avada/falcon/product (09-15). Bảng remote trong second-brain/CLAUDE.md đã sai.
 - [seo prod deploy theo tag](seo-prod-deploy-by-tag.md) — merge master KHÔNG deploy; pipeline master chỉ có docs_gate. Cắt tag mới deploy. Đừng nhầm với silent-freeze.
 - [blog prod deploy theo tag](blogs-prod-deploy-by-tag.md) — `only: - tags`; 2026-09-03 master hơn tag cuối 183 commit, fix bot nằm chết 3 tuần. `git tag --contains <sha>` trước khi kết luận prod thiếu fix.
-- [seo master has no detect_worker](seo-master-no-detect-worker.md) — master redeploys prod worker ONLY on [deploy-worker] title; auto-detect lives on feat/worker-pubsub-migration, not master. GLAB_TOKEN in speed-up-report .env.
+- [seo worker deploy theo tag](seo-master-no-detect-worker.md) — `deploy_worker` chạy trên MỌI prod tag (từ !2169, 08-22), không cần `[deploy-worker]`; allow_failure → verify job, đừng tin màu pipeline. Luật title cũ đã chết.
 - [Crisp plugin mất, prod chết](crisp-plugin-lost-prod-dead.md) — mọi read Crisp prod trả `not_subscribed` từ ~08-10; list 1-sao đóng băng 07-29; token mới mới ở seo .env.local, prod chưa update.
 - [5 repo đã chuyển sang git.avada.net](avada-gitlab-host-migration.md) — AEO/APC/seo/img ở `avada/`, worker-sdk ở `avada/falcon/product/` (09-15); gitlab.com read-only 403 cả push lẫn API; glab đã auth cả 2 host.
 - [Gen2 deploy đóng băng im lặng](gen2-deploy-silent-freeze.md) — revision fail health check nhưng pipeline vẫn xanh; APC đứng im 14 ngày. Check `status.traffic[0].revisionName`, không tin pipeline. Thủ phạm hay gặp: dep khai ở root thay vì packages/functions.
@@ -46,9 +48,9 @@
 - [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
-- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — TẮT HẲN 2026-09-30 (disable+bootout, code/state giữ); trước đó native launchd ở ~/Projects/falcon-fix-bot.
+- [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — TẮT 2026-10-06 (disable+bootout), thay bằng slack-thread-watch; code/state + MR !10 giữ để rollback.
 - [seo local clone is shallow](seo-local-clone-shallow.md) — merge-base rỗng / "unrelated histories" với origin/master là do shallow (68 graft), không phải lịch sử khác; đã `fetch --unshallow` 2026-09-07.
-- [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights trừ 5 credit action `gscInsights`.
+- [seo GSC v2 shipped](seo-gsc-v2-shipped.md) — !2081 merged 2026-09-07, page cũ xoá, chưa deploy tới khi cắt tag; TTL `googleInsights` chưa enable, insights KHÔNG trừ credit nữa (bỏ ở c70ad42d503, 09-09).
 - [seo MCP prod OAuth: lỗi CSP form-action](seo-mcp-oauth-shopify-callback.md) — redirect_uri ĐÃ whitelist (16 callback 200); chết ở nhánh form vì form-action thiếu admin.shopify.com. Đếm POST /mcp-oauth/shop vs callback trước khi nghi whitelist.
 - [OpenClaw chạy ollama-cloud](openclaw-ollama-cloud-setup.md) — provider ollama-cloud + key từ seo .env; nvm default phải >=22.22.3, daemon dùng brew node nên CLI chết mà gateway vẫn chạy. 401 09-12→09-14 là baseUrl thiếu (bay sang api.openai.com), không phải key.
 - [seo fleet GCS egress](seo-fleet-gcs-egress.md) — box ngoài GCP → mọi read GCS = egress $0.12/GiB; legacy FILE_PAGE tải lại cả fileImageJsonl mỗi batch 20 ảnh; SKU `Network Data Transfer GAE/Firebase Storage` bị report gộp vào "Firestore / Storage".
@@ -71,7 +73,7 @@
 - [GCF Gen1 push sub không restore tay](gcf-gen1-push-sub-no-manual-restore.md) — tách sang pull là tắt tới lần deploy; Firestore flag thua race chain tự publish. AEO rescan 09-25, fix MR !140.
 - [seo checklist read cho TS AI có sẵn](seo-checklist-read-for-ts-ai.md) — `/api/seo-score` + internal key từ v1.86.2; `/api/seo-issues` GET-ghi lọt audit, doc sửa !2327.
 - [Render trong JSON-LD = JSON hỏng](theme-extension-render-in-jsonld.md) — Shopify bọc mọi app-snippet render bằng comment HTML; FAL-920 làm vỡ Product JSON-LD mọi shop seo, fix !2329 dùng capture.
-- [gcloud config `sa` né reauth](gcloud-sa-config-no-reauth.md) — Workspace avadagroup.com ép reauth; config `sa`=tony-cli ACTIVE từ 09-29, đọc bq/logging/Firestore 5 prod; ghi/deploy → `--configuration=default`.
+- [gcloud config `sa` né reauth](gcloud-sa-config-no-reauth.md) — HỎNG 10-06: `sa` giờ là user account (reauth chết), ADC ~/.openclaw/firebase-sa.json mất; trước đó tony-cli SA đọc 5 prod.
 - [seo onpage score: browser vs ES](seo-onpage-score-client-vs-es.md) — table tính điểm live trên browser; Report + modal score range đọc ES, chỉ có sau store scan → check `jobDataMigrate` trước.
 - [Shopify `| json` escape `/`](shopify-json-filter-escapes-slash.md) — `</script>` ra `<\/script>` nên `| json` an toàn trong JSON-LD; liquidjs không escape nên test local báo thiếu; `escape_once` thì không an toàn.
 - [Loop-health cá nhân](personal-loop-health.md) — harness/loops.yml kiểm output 6 loop launchd mỗi giờ → Telegram DM riêng (bot Hermes), không vào nhóm; loop mới phải thêm vào đây.
@@ -87,3 +89,8 @@
 - [Reply thread Slack khi xong](reply-slack-thread-on-done.md) — fix bug từ thread support xong phần nào reply luôn vào thread (link MR, nguyên nhân, khách cần làm gì, deploy chưa); bot token falcon-fix-bot.
 - [seo [deploy-extensions] mất ở merge commit](seo-deploy-extensions-merge-title.md) — rule check CI_COMMIT_TITLE; merge title 'Merge branch…' → extension KHÔNG deploy; tag pipeline không có job extension. Curl storefront để verify.
 - [Team SEOOn = 6 người](seoon-team-members.md) — tuannv, tunglv, truongnn, minhpt, dungtt, tranggt; đừng lấy cả Board 1 trong roster jira.
+- [Harness security gate vs Stop hook](harness-security-gate-stop-hook.md) — `review_unavailable` ngẫu nhiên trên blogs: check-docs.sh Stop hook chạy trong reviewer claude -p; cho docs/ vào diff, fix gốc ở security.ts chưa làm.
+- [Codex Astra viết code](codex-astra-codes.md) — từ 10-06 việc code giao đi chạy `codex exec -m gpt-6-astra` workspace-write; Claude chỉ plan/review/track; harness mặc định codex.
+- [Codex OTel → Grafana](codex-otel-tracking.md) — token Codex chỉ lên Grafana qua [otel] trong ~/.codex/config.toml (thêm 10-06); harness gọi codex exec thẳng, không qua cc; label tool=claude bị kế thừa.
+- [seo AGENTS.md cướp Codex](seo-agents-md-hijacks-codex.md) — master có AGENTS.md persona "morgan" (tunglv 09-03) → codex từ chối code, exit 0; dùng `-c project_doc_max_bytes=0` tới khi gỡ.
+- [Slack: reply bằng tk cá nhân](slack-reply-as-personal.md) — session Claude Code post Slack bằng PERSONAL_SLACK_TOKEN (second-brain/.env, xoxp tuannv087), không bằng bot; tool tự động vẫn bot.

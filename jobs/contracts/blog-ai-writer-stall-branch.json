@@ -1,0 +1,53 @@
+{
+  "id": "blog-ai-writer-stall-branch",
+  "source": "tony-wf",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs-wt-blog-ai-writer-stall",
+  "baseSha": "57c0e95a689b937da7fbd067799fa27965a7562c",
+  "goal": "Prettier fix on FAL-1100 branch; full BE+FE test suites",
+  "allow": [
+    "docs/features/ai-blog-generator.md",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/GenerateBlogPost.jsx",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__/",
+    "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/streamLangGraph.js",
+    "packages/functions/src/controllers/langGraphController.js",
+    "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+    "packages/functions/src/helpers/withIdleTimeout.js",
+    "packages/functions/src/langgraph/models/openAiChatModel.js",
+    "packages/functions/src/langgraph/nodes/__tests__/callModelNode.test.js",
+    "packages/functions/src/langgraph/nodes/callModelNode.js"
+  ],
+  "verify": [
+    {
+      "name": "be stall tests",
+      "cmd": [
+        "env",
+        "-u",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "npx",
+        "jest",
+        "--ci",
+        "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+        "packages/functions/src/langgraph",
+        "packages/functions/src/controllers/__tests__"
+      ]
+    },
+    {
+      "name": "fe idle tests",
+      "cmd": [
+        "env",
+        "-u",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "npx",
+        "jest",
+        "--ci",
+        "packages/assets/src/pages/GenAIBlog/SettingGenAiBlog/MainSettingGenAIBlog/StepUI/__tests__",
+        "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js"
+      ]
+    }
+  ],
+  "meta": {
+    "agent": "inline",
+    "model": "opus",
+    "round": 1
+  }
+}

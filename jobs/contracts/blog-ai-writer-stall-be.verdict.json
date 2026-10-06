@@ -1,0 +1,44 @@
+{
+  "contractId": "blog-ai-writer-stall-be-inline",
+  "runId": "blog-ai-writer-stall-be-inline-f7aa8473",
+  "at": 1791257086312,
+  "pass": true,
+  "diffSha": "6a3479d4adfe76f085860426ee2d8d048a92e5a1",
+  "changed": [
+    "docs/features/ai-blog-generator.md",
+    "packages/functions/src/controllers/langGraphController.js",
+    "packages/functions/src/helpers/__tests__/withIdleTimeout.test.js",
+    "packages/functions/src/helpers/withIdleTimeout.js",
+    "packages/functions/src/langgraph/models/openAiChatModel.js",
+    "packages/functions/src/langgraph/nodes/__tests__/callModelNode.test.js",
+    "packages/functions/src/langgraph/nodes/callModelNode.js"
+  ],
+  "checks": [
+    {
+      "name": "base",
+      "ok": true
+    },
+    {
+      "name": "scope",
+      "ok": true,
+      "detail": "7 file(s)"
+    },
+    {
+      "name": "be stall tests",
+      "ok": true
+    },
+    {
+      "name": "reproduce",
+      "ok": true
+    },
+    {
+      "name": "security",
+      "ok": true
+    },
+    {
+      "name": "stable",
+      "ok": true
+    }
+  ],
+  "costUsd": 0.262517
+}

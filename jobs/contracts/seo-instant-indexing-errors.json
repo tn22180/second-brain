@@ -1,0 +1,18 @@
+{
+  "id": "seo-instant-indexing-errors",
+  "source": "tony-wf",
+  "goal": "Instant Indexing surfaces Google's failure reason: authorize() errors and batch 403 parts become googleError; FE shows resp.error on success:false.",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-indexing-errors",
+  "baseSha": "4dce8ab606c712aee98b66aadaacf0405f8df0c3",
+  "allow": [
+    "packages/functions/src/services/instantIndexingService.js",
+    "packages/functions/src/const/googleIndexing.js",
+    "packages/functions/src/services/__tests__/instantIndexingService.test.js",
+    "packages/assets/src/pages/InstantIndexing/InstantIndexing.js"
+  ],
+  "verify": [
+    {"name": "indexing tests", "cmd": ["npx", "jest", "--ci", "packages/functions/src/services/__tests__/instantIndexingService.test.js"]}
+  ],
+  "reproduce": {"testCmd": ["npx", "jest", "--ci", "packages/functions/src/services/__tests__/instantIndexingService.test.js"]},
+  "meta": {"agent": "codex", "model": "gpt-6-astra", "round": 1}
+}

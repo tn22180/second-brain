@@ -1,0 +1,40 @@
+{
+  "id": "bot-tag-thread-assignee",
+  "source": "session-2026-10-06",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/falcon-bug-fix-agent",
+  "base": "feat/bot-context-parity",
+  "branch": "fix/tag-thread-assignee",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "tag-thread-assignee",
+      "deps": [],
+      "meta": {
+        "agent": "cc-p",
+        "model": "opus"
+      },
+      "wallMinutes": 45,
+      "prompt": "Repo: falcon-bug-fix-agent (Node, plain CommonJS; tests: `npm test`, single file `node --test test/<file>.test.js` — always a FILE path). Read .claude/skills (bot-safety-gates, bot-pipeline-internals) before touching src/pipeline.js.\n\nProblem (live 2026-10-06, seo thread 1791210973.238389): the techlead had already tagged the dev who owns FAL-1099 (<@U08RFSYS5D5>, tunglv) in the thread. Called in with bypassClaim, the bot reached the TAG branch (src/pipeline.js `if (decision === \"TAG\")`, ~:723) and tagged the git-history owner from resolveOwner instead — the techlead himself. A dev already assigned in the thread must be the one tagged.\n\nRequired change:\n1. Add a pure exported helper in src/pipeline.js, e.g. `threadAssignees(thread, { engineer, roster, slackRoster })` -> string[] of Slack UIDs: dev/techlead mentions made in thread replies by an engineer (reuse the same rules classifyThread uses: skip bot authors, MENTION_RE, engineerUids/claim roles, then filterAssignableMentions), excluding the mentioning author themself, de-duplicated, in first-seen order. It must work regardless of bypassClaim (bypassClaim sets `claimed = null`, so do not depend on `claimed`).\n2. TAG branch: if threadAssignees(...) is non-empty, tag those UIDs and skip resolveOwner; otherwise keep today's resolveOwner behaviour unchanged. report.tagReply currently takes a single ownerId — extend it minimally (e.g. accept an array or a pre-joined mention string) without changing its output for the single-owner case.\n3. Ledger entry for TAG: `tagged` records the assignee(s) the same way it records the owner today.\n\nTests: new test/pipeline-assignees.test.js — helper: assignee mentioned by techlead -> returned; mention by CS/unknown author -> ignored; a tester-only mention -> ignored per filterAssignableMentions; bot messages ignored; author excluded. TAG wiring: with an assigned dev in the thread the posted text tags that UID and resolveOwner is not used (stub ctx like test/pipeline-fixpath.test.js does). Whole `npm test` must stay green; test count only grows. No commits.",
+      "contract": {
+        "goal": "When a dev is already assigned in the thread, the TAG reply tags that dev instead of the git-history owner",
+        "allow": [
+          "src/pipeline.js",
+          "src/report.js",
+          "test/pipeline-assignees.test.js"
+        ],
+        "verify": [
+          {
+            "name": "full suite",
+            "cmd": [
+              "npm",
+              "test"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "order": [
+    "tag-thread-assignee"
+  ]
+}

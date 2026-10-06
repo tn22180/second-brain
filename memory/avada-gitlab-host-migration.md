@@ -45,3 +45,10 @@ tự chạy dòng đó. npm publish `@avada-falcon/worker-sdk` vẫn manual, tá
 Liên quan: [[gen2-deploy-silent-freeze]]
 
 **glab mr create chết với git.avada.net** (2026-09-25): `-R git.avada.net/avada/seo` và `GITLAB_HOST=git.avada.net` đều báo "Configured remotes: github.com." rồi không tạo gì. Dùng API: `glab api --hostname git.avada.net -X POST "projects/avada%2Fseo/merge_requests" -f source_branch=… -f target_branch=master -f title=… -f description=…` → tạo được (MR !2315).
+
+Cập nhật 2026-10-06: **`axyseo`** chuyển sang `https://git.avada.net/avada/falcon/product/axyseo.git`
+(Tuan tạo tay, có commit README rỗng → phải bật `allow_force_push` qua API `PATCH protected_branches/main`,
+Tuan tự force-push vì git-guard chặn, rồi tắt lại). Local `origin` đã đổi sang host mới. npm publish
+axyseo cần OTP/web-auth của Tuan; `prepublishOnly` (`yarn build`) chết vì yarn nhận `~` là project →
+build bằng `npx babel` rồi `npm publish --ignore-scripts`. Registry trả 202, vài phút mới hiện.
+`glab mr create -R git.avada.net/avada/seo` lại chạy được lần này (MR !2364).

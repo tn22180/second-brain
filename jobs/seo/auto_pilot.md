@@ -359,3 +359,9 @@ Scope: toàn branch `feat/autopilot` (`git diff origin/master...HEAD`, 76 file, 
 - Security toàn branch: 0 high/critical; 4 low → 2 fixed (escape, log PII), 2 kept (race doneOptimize có sẵn; dedup fixed ở F1).
 
 **COMPLETE (review round)** — commit `802479a9f5e`, pushed, MR !2312 vẫn Draft. Rounds: 1/5 mỗi task. Trước merge: revert CI pin `51fb98d297f`, E2E staging 1.
+
+#### PO decision 2026-10-06: 404 auto-redirect chỉ Enterprise
+- Card 404 trong AutoPilot: bật chỉ khi Enterprise/`noLimit` (`canUseAutoRedirect`), chọn weekly hoặc daily. Pro → modal nâng Enterprise, badge "Enterprise plan" trên card.
+- Bảng giá: Pro = "auto-optimize new products, weekly speed checks"; Enterprise = "daily speed checks, automatic 404 redirects".
+- Cron 404 giữ nguyên gate Pro → shop Pro đã bật từ DevZone vẫn chạy, tắt được từ AutoPilot (không tự tắt hộ merchant).
+- Verify: 148 test autopilot pass, build exit 0, docs-gate PASS, locale 14 file khớp (en≡origin).

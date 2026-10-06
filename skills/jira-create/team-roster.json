@@ -1,0 +1,41 @@
+{
+  "teams": {
+    "Speed": {
+      "apps": ["Speed"],
+      "board": "Optimize",
+      "defined": true,
+      "members": {
+        "techlead": ["lamln"],
+        "ba": ["bachdv"],
+        "dev": ["hailt", "taing"],
+        "tester": ["tranggt"]
+      }
+    },
+    "Organic": {
+      "apps": ["SEO", "AEO", "Blog", "APC"],
+      "board": "Organic Traffic",
+      "defined": true,
+      "members": {
+        "po": ["linhnq"],
+        "techlead": ["tuannv"],
+        "ba": [],
+        "dev": ["minhpt", "ducnm01", "truongnn", "tunglv"],
+        "tester": ["dungtt"]
+      }
+    },
+    "Paid": {
+      "apps": ["Feed", "Ads", "Pixels"],
+      "board": "Paid Traffic",
+      "defined": true,
+      "members": {
+        "techlead": ["nghiavt"],
+        "ba": ["tamnc"],
+        "dev": ["anhnt3", "trungph"],
+        "tester": ["trangdt"]
+      }
+    }
+  },
+  "unassignedManagers": [],
+  "designers": ["dungta"],
+  "note": "Cap nhat 2026-07-13 (nhieu designer): designer dung CHUNG ca team Falcon, luu o mang top-level 'designers' (them/bot nguoi tai day). Hien co 1 nguoi: dungta (KHAC dungtt - Tester Organic). Quy tac assignee task naming Solar tag [DESIGN]: dung 1 designer -> tu giao nguoi do; nhieu designer -> mac dinh nguoi tao task, agent goi y danh sach de chon; deu override duoc. Cap nhat 2026-07-13: anh Lam bo sung Tester cho Organic + Paid. Organic.tester dungtt (dungtt@avadagroup.com), Paid.tester trangdt (trangdt@avadagroup.com) - truoc do 2 username nay nam o unassignedManagers, nay da gan team => unassignedManagers rong. Cap nhat 2026-07-10 (nguyen goc): anh Lam define 3 team qua BRIEF task 4 + CONFIRM username qua task 6. Username da xac nhan: Organic.po linhnq, Organic.dev [minhpt, ducnm01, truongnn, tunglv], Paid.dev [anhnt3, trungph], Paid.tl nghiavt; Speed [lamln, bachdv, hailt, taing, tranggt-tester]. LUU Y: Speed.tester tranggt (Trang GT) KHAC Paid.tester trangdt (Trang DT) - hai nguoi khac nhau, khac username; role 'po' them cho Organic (schema goc chi co techlead/ba/dev/tester) de khong mat data Linh-PO."
+}
