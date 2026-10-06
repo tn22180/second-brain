@@ -28,7 +28,7 @@ export interface Contract {
   reproduce?: {testCmd: string[]};
   security?: {appName: string; model?: string};
   /** Who is doing the task, for self-improve to compare. Optional; not checked by the verifier. */
-  meta?: {agent?: string; model?: string; round?: number};
+  meta?: {agent?: string; model?: string; executor?: string; round?: number};
 }
 
 type Parsed = {ok: true; contract: Contract} | {ok: false; error: string};
@@ -80,9 +80,10 @@ export function parseContract(raw: unknown): Parsed {
   if (c.meta !== undefined) {
     const m = c.meta as Record<string, unknown> | null;
     if (!m || typeof m !== 'object') return {ok: false, error: 'meta: object required'};
-    for (const k of ['agent', 'model'] as const) {
+    for (const k of ['agent', 'model', 'executor'] as const) {
       if (m[k] !== undefined && typeof m[k] !== 'string') return {ok: false, error: `meta.${k}: string required`};
     }
+    if (m.executor !== undefined && m.executor !== 'codex' && m.executor !== 'claude') return {ok: false, error: 'meta.executor: codex | claude'};
     if (m.round !== undefined && !Number.isInteger(m.round)) return {ok: false, error: 'meta.round: integer required'};
   }
   return {ok: true, contract: c as Contract};

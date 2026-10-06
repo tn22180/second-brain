@@ -47,6 +47,18 @@ function tailOf(path: string): string {
   }
 }
 
+/**
+ * First `thread.started` in a Codex `--json` log. The log is per node and appended across
+ * rounds; a resumed run keeps the same thread, so the first one is the one to resume.
+ */
+export function codexThreadId(logFile: string): string | undefined {
+  try {
+    return readFileSync(logFile, 'utf8').match(/"type":"thread\.started","thread_id":"([^"]+)"/)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
 /** Spawn with stdout+stderr appended to `logFile`; `cc` resolves to the telemetry wrapper. */
 export function startProc(argv: string[], cwd: string, logFile: string): Proc {
   const cmd = argv[0] === 'cc' ? [CC, ...argv.slice(1)] : argv;
@@ -62,7 +74,8 @@ export function startProc(argv: string[], cwd: string, logFile: string): Proc {
     exited: () => code !== null,
     exitCode: () => code,
     kill: () => child.kill(),
-    tail: () => tailOf(logFile)
+    tail: () => tailOf(logFile),
+    threadId: () => codexThreadId(logFile)
   };
 }
 

@@ -2,13 +2,13 @@ import {describe, expect, test} from 'bun:test';
 import {runNode, type NodeDeps, type Proc, type SuperviseAction} from '../src/node';
 import type {Verdict} from '../src/verify';
 
-const node = {id: 't1', deps: [], prompt: 'add foo', meta: {agent: 'general-purpose', model: 'sonnet'},
+const node = {id: 't1', deps: [], prompt: 'add foo', meta: {agent: 'general-purpose', model: 'sonnet', executor: 'claude'},
   contract: {goal: 'foo works', allow: ['src/foo.js'], verify: [{name: 'jest', cmd: ['npx', 'jest']}]}};
 const graph = {id: 'gq', source: 'tony-wf', repoPath: '/r', base: 'master', branch: 'feat/gq'};
 const verdict = (pass: boolean, detail = 'x'): Verdict => ({contractId: 'gq-t1', runId: `r${Math.random()}`, at: 0, pass, diffSha: 'tree1',
   changed: ['src/foo.js'], checks: [{name: 'jest', ok: pass, ...(pass ? {} : {detail})}], costUsd: 0});
 
-function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: number}) {
+function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: number; thread?: string}) {
   const calls = {starts: [] as string[][], kills: 0, commits: 0, merges: 0, verifyRounds: [] as number[], events: [] as string[]};
   const actions = [...(opts.actions ?? [])];
   const verdicts = [...opts.verdicts];
@@ -20,7 +20,7 @@ function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: n
       // Each process "runs" for as many polls as there are queued supervise actions, then exits.
       let exited = actions.length === 0;
       return {exited: () => exited, exitCode: () => (exited ? 0 : null), kill: () => { calls.kills++; exited = true; }, tail: () => 'working…',
-        _finish: () => { exited = true; }} as Proc;
+        threadId: () => opts.thread, _finish: () => { exited = true; }} as Proc;
     },
     supervise: async () => {
       const a = actions.shift() ?? {action: 'keep_waiting'};
@@ -166,5 +166,46 @@ describe('runNode', () => {
     const r = await runNode(graph, {...node, wallMinutes: 120}, deps);
     // 50 min passed: default (45) would have blocked; 120 lets it keep going until jev's queue runs out
     expect(r.reason ?? '').not.toContain('exceeded 45');
+  });
+});
+
+describe('runNode on codex (the default executor)', () => {
+  const cnode = {...node, meta: {agent: 'general-purpose', model: 'opus'}};
+
+  test('no executor → codex exec, workspace-write, default model; a Claude alias does not leak through', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(true)]});
+    expect((await runNode(graph, cnode, deps)).outcome).toBe('done');
+    const argv = calls.starts[0]!;
+    expect(argv.slice(0, 2)).toEqual(['codex', 'exec']);
+    expect(argv.join(' ')).toContain('--json');
+    expect(argv.join(' ')).toContain('-m gpt-6-astra');
+    expect(argv.join(' ')).toContain('sandbox_mode="workspace-write"');
+    expect(argv.join(' ')).not.toContain('danger');
+    expect(argv.at(-1)).toContain('add foo');
+  });
+
+  test('a gpt-* model is passed through', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(true)]});
+    await runNode(graph, {...cnode, meta: {model: 'gpt-6-sol'}}, deps);
+    expect(calls.starts[0]!.join(' ')).toContain('-m gpt-6-sol');
+  });
+
+  test('failed verify resumes the codex thread read back from the log', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(false, 'Tests: 2 failed'), verdict(true)], thread: 'th-1'});
+    expect((await runNode(graph, cnode, deps)).outcome).toBe('done');
+    const second = calls.starts[1]!;
+    expect(second.slice(0, 3)).toEqual(['codex', 'exec', 'resume']);
+    expect(second.at(-2)).toBe('th-1');
+    expect(second.at(-1)).toContain('Tests: 2 failed');
+    expect(second.at(-1)).not.toContain('add foo');
+  });
+
+  test('no thread id to resume → fresh exec carrying the full task plus the failure', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(false, 'Tests: 2 failed'), verdict(true)]});
+    await runNode(graph, cnode, deps);
+    const second = calls.starts[1]!;
+    expect(second.slice(0, 3)).toEqual(['codex', 'exec', '--json']);
+    expect(second.at(-1)).toContain('add foo');
+    expect(second.at(-1)).toContain('Tests: 2 failed');
   });
 });
