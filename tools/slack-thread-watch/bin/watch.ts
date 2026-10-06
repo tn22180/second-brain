@@ -22,16 +22,23 @@ import {
 
 const run = promisify(execFile);
 const HOME = homedir();
-const STATE_DIR = join(HOME, '.cache', 'slack-thread-watch');
+// Test runs point these at #falcon-bot-test and a separate state dir, so they never race the
+// launchd job over state.json.
+const STATE_DIR = process.env.SLACK_WATCH_STATE_DIR ?? join(HOME, '.cache', 'slack-thread-watch');
 const STATE_FILE = join(STATE_DIR, 'state.json');
 // The retired falcon-fix-bot's Slack app: already a member of both channels, read+post scopes.
 const SLACK_TOKEN_FILE = join(HOME, 'Projects', 'falcon-fix-bot', 'secrets', 'slack-bot.token');
 const ORCA = '/Applications/Orca.app/Contents/Resources/bin/orca';
 const WORKSPACE = 'avadaio';
-const CHANNELS: Record<string, string | null> = {
-  G01N5G8D562: null, // seo-suite-support carries every app; the CS post's "App:" line decides
-  C08928RK00H: 'blogs', // blog-support
-};
+// SLACK_WATCH_ONLY_CHANNEL replaces the real channels outright (test runs): watching them too
+// with a second state file would open a second session for any real thread that lands meanwhile.
+const CHANNELS: Record<string, string | null> = process.env.SLACK_WATCH_ONLY_CHANNEL
+  ? {[process.env.SLACK_WATCH_ONLY_CHANNEL]: null}
+  : {
+      G01N5G8D562: null, // seo-suite-support carries every app; the CS post's "App:" line decides
+      C08928RK00H: 'blogs', // blog-support
+      C0BGRTWUE8Y: null, // system-alert
+    };
 const CAP = 5;
 const CAP_WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -83,7 +90,8 @@ async function newTopLevel(token: string, channel: string, oldest: string): Prom
 
 // Not `worktree create --agent claude`: Orca launches its agents with
 // --dangerously-skip-permissions, and this session starts from customer-written Slack text.
-// A plain `claude` keeps the default mode, so every write asks Tuan (from Orca mobile).
+// Auto mode instead: the session runs unattended on the harness machine, but the permission
+// classifier still stops risky actions that bypass would let through.
 // The prompt is built only from a channel id and a numeric ts — nothing user-written reaches
 // the shell command.
 async function spawn(app: string, channel: string, ts: string): Promise<string> {
@@ -94,7 +102,7 @@ async function spawn(app: string, channel: string, ts: string): Promise<string> 
   });
   const path = JSON.parse(stdout)?.result?.worktree?.path;
   if (!path) throw new Error(`worktree create returned no path: ${stdout.slice(0, 200)}`);
-  await run(ORCA, ['terminal', 'create', '--worktree', `path:${path}`, '--title', 'support-handoff', '--command', `claude "${prompt}"`, '--json'], {
+  await run(ORCA, ['terminal', 'create', '--worktree', `path:${path}`, '--title', 'support-handoff', '--command', `claude --permission-mode auto "${prompt}"`, '--json'], {
     timeout: 60_000,
   });
   return name;
