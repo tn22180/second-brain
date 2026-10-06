@@ -64,3 +64,9 @@ loops:
     checks:
       - {kind: launchd, label: ai.openclaw.gateway, running: true}
       - {kind: file_fresh, path: ~/Library/Logs/openclaw/gateway.log, max_age: 24h}
+
+  - name: slack-thread-watch
+    checks:
+      - {kind: launchd, label: com.tn22180.slack-thread-watch}
+      # Runs every 2 min and rewrites state.json each pass; 15m tolerates a short sleep.
+      - {kind: file_fresh, path: ~/.cache/slack-thread-watch/state.json, max_age: 15m}
