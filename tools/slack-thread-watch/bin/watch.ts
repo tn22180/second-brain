@@ -164,7 +164,7 @@ async function main() {
     const link = permalink(WORKSPACE, p.channel, p.ts);
     const summary = esc(text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160));
     if (!app) {
-      // An "App:" line naming another team's app (Product Feed, …) is not ours — skip quietly.
+      // An "App:" line naming an app with no repo here is not ours — skip quietly.
       // Only a post we cannot place at all is worth a DM.
       const otherTeam = /app:\s*\S/i.test(text);
       log(`skip ${p.ts}: ${otherTeam ? 'other team app' : 'no app'}`);

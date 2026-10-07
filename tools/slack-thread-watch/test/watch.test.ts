@@ -7,6 +7,7 @@ describe('resolveApp', () => {
     expect(resolveApp('App: SEO On AEO\nShop URL: x', null)).toBe('llm-ai-search-seo');
     expect(resolveApp('App: SEO On AI Product Copy', null)).toBe('ai-product-copy');
     expect(resolveApp('App: Avada Speed Optimization', null)).toBe('avada-image-optimizer');
+    expect(resolveApp('App: Avada Product Feed\nShop URL: x', null)).toBe('product-feed');
   });
   it('the most specific alias wins over "seo"', () => {
     expect(resolveApp('App: SEO On Blog', null)).toBe('blogs');

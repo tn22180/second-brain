@@ -34,6 +34,8 @@ const APP_ALIASES: [string, string][] = [
   ['avada image optimizer', 'avada-image-optimizer'],
   ['image optimizer', 'avada-image-optimizer'],
   ['avada speed optimization', 'avada-image-optimizer'],
+  ['avada product feed', 'product-feed'],
+  ['product feed', 'product-feed'],
   ['seo suite', 'seo'],
   ['seo on blog', 'blogs'],
   ['avada blog', 'blogs'],
