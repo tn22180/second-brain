@@ -83,6 +83,7 @@
 - [Telegram chỉ báo](telegram-notify-only.md) — không xử lý reply; Tuan dùng Orca trên điện thoại để lái session.
 - [AEO llms.txt đè Shopify: 82% chưa đè](aeo-llms-txt-override-coverage.md) — app ghi `templates/llms.txt.liquid` vào main theme, opt-in; probe 10-01: 1454 shop live, 82% vẫn template Shopify, 6% chữ ký app.
 - [APC review giả + AEO làm tròn giá USD](apc-fake-testimonial-aeo-usd-round.md) — 2 bug prod tìm ra 10-01: templates.js:51 slot testimonial bịa 7/10; formatCurrency USD maxFraction 0.
+- [product-feed inventory](product-feed-inventory.md) — 10-07: ChatGPT ~80% có sẵn, nguồn chỉ Shopify, identifier_exists gần như không ghi, 2 lỗ tự mở plan (renderImageLimit, devZoneGuard).
 - [share-note token ở file](share-note-token-file.md) — NOTES_API_KEY không export; đọc `~/.config/avada/notes-token` inline khi chạy bun index.ts.
 - [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.
 - [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (52/64); vá+restart 10-01 07:00Z (31a2fb0), đo lại từ 10-08 bằng harness/retro_autofix.py (nền 16% cần round 2).
@@ -94,3 +95,4 @@
 - [Codex OTel → Grafana](codex-otel-tracking.md) — token Codex chỉ lên Grafana qua [otel] trong ~/.codex/config.toml (thêm 10-06); harness gọi codex exec thẳng, không qua cc; label tool=claude bị kế thừa.
 - [seo AGENTS.md cướp Codex](seo-agents-md-hijacks-codex.md) — master có AGENTS.md persona "morgan" (tunglv 09-03) → codex từ chối code, exit 0; dùng `-c project_doc_max_bytes=0` tới khi gỡ.
 - [Slack: reply bằng tk cá nhân](slack-reply-as-personal.md) — session Claude Code post Slack bằng PERSONAL_SLACK_TOKEN (second-brain/.env, xoxp tuannv087), không bằng bot; tool tự động vẫn bot.
+- [blogs MCP free là cố ý](blogs-mcp-tools-free-by-design.md) — 0215e3a95 bỏ charge mọi MCP tool; audit "MCP alt-text không trừ credit" = false positive; cap chi phí bằng giới hạn ảnh, không charge.

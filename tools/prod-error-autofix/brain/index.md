@@ -7,6 +7,8 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1932qke` · 2026-10-06 · SEO · apigen2 · GET /api/localStorages/bfcm-2024 500'd inside @avada/core's embed-auth middleware, not in app code: the browse · — · fix_disabled
+- `rz2smt` · 2026-10-06 · SEO · mcpgen2 · no verified cause · — · inconclusive
 - `1b8cw0y` · 2026-10-05 · SEO · handlesyncurlredirectsbatchgen2 · handleSyncUrlRedirectsBatchGen2 re-downloads and fully parses the same 74,919-line Shopify bulk JSONL on every · — · fix_disabled
 - `2b34wp` · 2026-10-06 · SEO · handlesyncurlredirectsbatchgen2 · no verified cause · — · inconclusive
 - `plgvnt` · 2026-10-05 · BLOG · embedapp · The single unretried, untimeouted node-fetch in getEmbedTemplate to https://avada-blog-app.web.app/embed-templ · — · fix_disabled

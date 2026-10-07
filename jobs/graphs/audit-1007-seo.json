@@ -1,0 +1,76 @@
+{
+ "id": "audit-1007-seo",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "master",
+ "branch": "fix/audit-1007-seo",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "redact",
+   "deps": [],
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa; jest 24 from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).\n\nStop Google OAuth tokens and instant-indexing secrets leaking out of settings (brief S1).\nExploits:\n(a) GET /proxy/shop?settingField=google (routes/proxy.js:42, verifySessionToken): controllers/shopController.js:137-143 getSettings({field}) returns the bare `google` object for that field (presenters/seoPresenter.js:132 getDataWithDefault), then redactSettings (:102) looks for a top-level `google` key, finds none, and returns tokens raw — any staff session of the shop, incl. restricted staff, reads the owner's GSC access/refresh token.\n(b) POST /settings/speedUp (seoController.js:471-478) and /settings/imageCompress (:1453) echo saveSettings' data, which repositories/seoRepository.js:211-257 only passes through maskInstantIndexingInPresented, so google.tokens comes back.\n(c) services/setting/updateSettingToTheme.js:23-40 buildSeoMetafields writes JSON.stringify({...data, ...}) of the full decrypted settings (incl. google.tokens and instantIndexing service-account key / IndexNow key) into the seo.meta / meta2 app metafield (callers seoController.js:97, :336-337 and others).\nFix:\n- shopController.getShopProxy: accept only settingField 'image' (only caller: extensions/optimize-product-images/src/utils.js:9) or absent; anything else -> ctx.status 400. Use redactSettingsField(settings, settingField) (seoPresenter.js:119).\n- seoRepository.saveSettings: return data through redactSettings (seoPresenter) instead of maskInstantIndexingInPresented, on all return paths; first grep server-side callers of saveSettings' returned data (seoController.js:527 setPageSpeed, :558, services/shopifyService.js:508 etc.) and confirm none reads data.google.tokens or raw instantIndexing; if one does, have it read from getSettings instead and say so.\n- buildSeoMetafields: drop top-level `google` and `instantIndexing` from both the spread data and the object passed to getStructuredValueByFeature. Liquid never reads them (site.google.* comes from `site`, prepareSite) — keep `site` untouched.\n- Tests: extend controllers/__tests__/shopController.getShopProxy.redact.test.js (settingField 'google' -> 400 and no secret; 'image' still works), services/setting/__tests__/updateSettingsToTheme.metafield.test.js (parse both metafield values, no google/instantIndexing/secret strings), controllers/__tests__/seoController.settingsSecrets.test.js or a new repositories/__tests__/seoRepository.saveSettings.test.js (returned data has no tokens).\nOut of scope, do not write: a backfill that rewrites existing metafields in prod. You may add packages/functions/src/commands/stripSecretsFromSeoMetafield.js only as a dry-run-by-default script (requires --apply to write) if an existing commands/ pattern makes it trivial; otherwise skip and say so.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json. Do not add dependencies. Run the verify commands yourself before saying done. In your final message give file:line of each change and the exploit-before-fix scenario (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, Koa; jest 24 from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).",
+    "allow": [
+     "packages/functions/src/controllers/shopController.js",
+     "packages/functions/src/repositories/seoRepository.js",
+     "packages/functions/src/services/setting/updateSettingToTheme.js",
+     "packages/functions/src/presenters/seoPresenter.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/services/setting/__tests__/",
+     "packages/functions/src/repositories/__tests__/",
+     "packages/functions/src/presenters/__tests__/",
+     "packages/functions/src/commands/stripSecretsFromSeoMetafield.js",
+     "docs/",
+     ".claude/skills/",
+     ".agent/skills/"
+    ],
+    "verify": [
+     {
+      "name": "redact tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/controllers/__tests__/shopController.getShopProxy.redact.test.js",
+       "packages/functions/src/services/setting/__tests__/updateSettingsToTheme.metafield.test.js",
+       "packages/functions/src/presenters/__tests__",
+       "packages/functions/src/controllers/__tests__/seoController.settingsSecrets.test.js"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/controllers/__tests__/shopController.getShopProxy.redact.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "meta": {
+    "agent": "codex",
+    "executor": "codex",
+    "model": "gpt-6-astra"
+   },
+   "wallMinutes": 75
+  }
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "id": "audit-1007-blogs",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "master",
+ "branch": "fix/audit-1007-blogs",
+ "maxParallel": 2,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "model",
+   "deps": [],
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).\n\nBackend allowlist for the LLM model id merchants send (brief B1).\nExploit: controllers/langGraphController.js:66 takes payload.aiModel as any string; services/openAi.service.js:42 resolveModel passes unknown ids straight to OpenRouter, so a free-plan merchant sends aiModel:'openai/o1-pro' and gets billed the same credits (credits = completion tokens, model-agnostic) while we pay 30-240x. FE gates gpt-5.2 by hasGpt5Access (packages/assets/src/helpers/hasGpt5Access.js:7) only.\n- New helper packages/functions/src/helpers/allowedTextModel.js exporting resolveAllowedTextModel(shop, requested): returns requested only if it is one of 'gpt-4.1', 'claude-3-7-sonnet-latest', 'gpt-5.2' (use constants from const/AIModalIds.js); 'gpt-5.2' only when isShopPro(shop) (config/subscription/plans.js:271) || shop.isUseGPT5; anything else returns undefined. Do NOT map a rejected id to 'gpt-4.1': helpers/checkTimeShopInstall.js isLegacyMiniUnlimited treats gpt-4.1 as free for legacy shops.\n- Use it everywhere a model id is read from the request body, before any isOutOfTokens/isLegacyMiniUnlimited/reduceTokens call so billing sees the resolved id: langGraphController.js:66, genAIBlogController.js:46 and :144 (and :405 if it is a text model id), blogAssist.controller.js:93, toolsYouTubeController.js:102. Each controller already loads the shop or can via getShopById(getCurrentShop(ctx)).\n- langgraph/config/constants.js:5 DEFAULT_MAX_OUTPUT_TOKENS = 16384 (longest blog ~7k output tokens); make sure it actually reaches the chat model options (langgraph/models/openAiChatModel.js) — if the value is never read, wire it as maxTokens.\n- Tests: packages/functions/src/helpers/__tests__/allowedTextModel.test.js (allowed ids pass; 'openai/o1-pro' -> undefined; gpt-5.2 on free plan -> undefined, on pro or isUseGPT5 -> 'gpt-5.2'); and extend controllers/__tests__/genAIBlogController.tokenDeduction.test.js or add one asserting a forged aiModel never reaches the service.\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json. Do not add dependencies. Run the verify commands yourself before saying done. In your final message give file:line of each change and the exploit-before-fix scenario (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).",
+    "allow": [
+     "packages/functions/src/helpers/allowedTextModel.js",
+     "packages/functions/src/helpers/__tests__/",
+     "packages/functions/src/controllers/langGraphController.js",
+     "packages/functions/src/controllers/genAIBlogController.js",
+     "packages/functions/src/controllers/blogAssist.controller.js",
+     "packages/functions/src/controllers/toolsYouTubeController.js",
+     "packages/functions/src/controllers/__tests__/genAIBlogController",
+     "packages/functions/src/controllers/__tests__/langGraphController",
+     "packages/functions/src/langgraph/config/constants.js",
+     "packages/functions/src/langgraph/models/openAiChatModel.js"
+    ],
+    "verify": [
+     {
+      "name": "model tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/helpers/__tests__/allowedTextModel.test.js",
+       "packages/functions/src/controllers/__tests__/genAIBlogController.tokenDeduction.test.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/helpers/__tests__/allowedTextModel.test.js"
+     ]
+    },
+    "security": {
+     "appName": "blogs"
+    }
+   },
+   "meta": {
+    "agent": "codex",
+    "executor": "codex",
+    "model": "gpt-6-astra"
+   },
+   "wallMinutes": 60
+  },
+  {
+   "id": "alttext",
+   "deps": [],
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).\n\nBound the alt-text fan-out and charge MCP alt-text (brief B2).\nExploit: POST /audit-agent/fix-issue/preview (routes/api.js:272) with issueType TEXT_IMAGES and pageData.body holding thousands of <img>: services/auditAgent/chains.js:467-501 generateImageAltText runs getVisionCompletion for every image findImagesMissingAlt (helpers/imagesMissingAlt.js:5) finds, pLimit(10), no cap; previewFix (services/auditAgent/fixIssue.service.js:192) never charges; legacy shops pass isOutOfTokens (controllers/auditAgentController.js:25-31). No rate limit: config/rateLimit.js has no /audit-agent entry. MCP tool mcp/tools/generateAltText.js computes `metered` (:114-119) but never calls reduceTokens.\n- chains.js: cap images per call at MAX_ALT_TEXT_IMAGES = 50 (export it); extra images are skipped with logger.warn including shopId-free counts. Keep the return shape.\n- auditAgentController.js readFixRequest (:40): reject pageData.body longer than 1,000,000 chars with 400.\n- config/rateLimit.js: add '/audit-agent' entry following the existing AI entries (windowSeconds AI_WINDOW_SECONDS, maxRequests 10). Check middleware/ratelimiter.js matches route keys by prefix or exact path; if exact, add the three /audit-agent/fix-issue* paths instead.\n- mcp/tools/generateAltText.js: charge `metered` via reduceTokens following chargeFix in fixIssue.service.js:153 (same args shape, an idempotency key unique per call), only when metered > 0 and not legacy-free (mirror how tokenCost treats legacy). If the balance is insufficient before generation, return the tool's existing error/insufficient shape instead of generating.\n- Do NOT change legacy-unlimited policy itself.\n- Tests: extend services/auditAgent/__tests__/chains.imageAltText.test.js (500 imgs -> getVisionCompletion called 50 times); new mcp/tools/__tests__/generateAltText.charge.test.js (reduceTokens called with metered); a test for the 400 on oversized body (controllers/__tests__/auditAgentController.textImages.test.js pattern).\n\nRules: touch only the files in the contract allow list. Comments say WHY only (a constraint, a limit, an ordering), never narrate WHAT; no step numbering, no banners. Never write a secret/token literal anywhere (code, tests, comments, logs) — tests use obviously fake values. Do not modify .env*, lockfiles, .gitlab-ci.yml, firebase.json. Do not add dependencies. Run the verify commands yourself before saying done. In your final message give file:line of each change and the exploit-before-fix scenario (it goes into the MR).",
+   "contract": {
+    "goal": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, Koa; jest from repo root `npx jest <path>`). Brief: second-brain jobs/2026-10-07-audit-fix.md (read its Decisions section).",
+    "allow": [
+     "packages/functions/src/services/auditAgent/chains.js",
+     "packages/functions/src/services/auditAgent/__tests__/",
+     "packages/functions/src/helpers/imagesMissingAlt.js",
+     "packages/functions/src/controllers/auditAgentController.js",
+     "packages/functions/src/controllers/__tests__/auditAgentController",
+     "packages/functions/src/config/rateLimit.js",
+     "packages/functions/src/mcp/tools/generateAltText.js",
+     "packages/functions/src/mcp/tools/__tests__/"
+    ],
+    "verify": [
+     {
+      "name": "alttext tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/auditAgent/__tests__/chains.imageAltText.test.js",
+       "packages/functions/src/mcp/tools/__tests__/generateAltText.charge.test.js",
+       "packages/functions/src/controllers/__tests__/auditAgentController.textImages.test.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/auditAgent/__tests__/chains.imageAltText.test.js"
+     ]
+    },
+    "security": {
+     "appName": "blogs"
+    }
+   },
+   "meta": {
+    "agent": "codex",
+    "executor": "codex",
+    "model": "gpt-6-astra"
+   },
+   "wallMinutes": 60
+  }
+ ]
+}

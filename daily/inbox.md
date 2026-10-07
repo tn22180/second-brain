@@ -315,3 +315,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo Sync Broken URL Redirects từng OOM vì mỗi batch load cả bulk file. Fix FAL-1099 (`daefe28bc0a`) stream file + bỏ chặn bởi log RUNNING cũ, chờ tag lên prod. Feature chỉ cần cho khách enterprise
 - [ ] (×1) Sync redirect shop lớn chạy dở (51000/62997 URLs) sau fix FAL-1099 → hướng đẩy job vào worker fleet. Check job đã chạy trên worker hay còn trên GCF trước khi bảo CS chạy lại
 - [ ] (×1) axyseo 2.1.62: Content length không đếm token dấu câu (FAL-943, seo `9f605f4ed06`). Shop báo content length lệch thì check bản axyseo seo đang lock
+
+### memory candidates 2026-10-07
+- [ ] (×1) product-feed nằm ở `git.avada.net/avada/blocko-team/product-feed`, khác group falcon. Quyền push/MR và roster owner có thể khác 5 app SEOOn, check trước khi mở MR
+- [ ] (×1) slack-thread-watch: thread có task Jira CS tạo sẵn thì join task đó, không tạo FAL mới (`31e332c`). Thấy task trùng thì check logic detect này trước
+- [ ] (×1) Audit fix 2026-10-07 chạy qua harness graph tách theo repo (`jobs/graphs/audit-1007-seo.json`, `audit-1007-blogs.json`), brief ở `jobs/2026-10-07-audit-fix.md`
+- [ ] (×1) SEO đã có tính năng social. Đưa vào brief services-beyond-shopify cùng ADS feed (meta/google/ChatGPT) khi tính service đo lường được

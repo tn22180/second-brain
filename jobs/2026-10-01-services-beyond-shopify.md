@@ -1,4 +1,4 @@
-# Service bán ra ngoài Shopify — kiểm kê + chạy thử 10 store (2026-10-01)
+# Service bán ra ngoài Shopify — kiểm kê + chạy thử 10 store (2026-10-01, cập nhật 2026-10-07)
 
 ## Kết luận
 
@@ -6,13 +6,15 @@ Chọn **4 service trả phí + 1 audit miễn phí làm mồi**. Shopping Feed 
 
 | # | Service | Engine chạy thật | Chất lượng output | Effort ra được non-Shopify | Chi phí biên/store |
 |---|---|---|---|---|---|
-| 0 | **Shopping Feed — Google + Meta + ChatGPT** (mục 5) | 5/5 store non-Shopify, 1.213 item | feed đạt spec: ChatGPT 90.6% → **99.5%**, Google 19.1% → **85.7%** sau auto-fix | M — chưa đọc được code Product Feed | ≈$0 (không LLM) |
+| 0 | **Shopping Feed — Google + Meta + ChatGPT** (mục 5) | 5/5 store non-Shopify, 1.213 item | feed đạt spec: ChatGPT 90.6% → **99.5%**, Google 19.1% → **85.7%** sau auto-fix | M — app đã có 3 kênh + ChatGPT ~80%; thiếu adapter non-Shopify | ≈$0 (AI chỉ khi sửa lỗi) |
 | 1 | **AI Content** — viết lại mô tả SP + meta + bài blog | 10/10 SP, 5/5 bài | 3.1/5 copy; blog score 51–58 | M (2–3 tuần) | ~$0.15/tháng (50 SP + 4 bài) |
 | 2 | **SEO + Schema audit & fix pack** | 10/10 | 3.7/5, dán được 7/10 | M (2–3 tuần) | ≈$0 (3 LLM call, Ollama flat) |
 | 3 | **AI Search (AEO) — llms.txt có catalog + schema + markdown** | 10/10 (9 sinh được file) | 45/45 link 200 | S làm hộ (3–5 ngày); M kèm WP plugin/edge | ≈$0 (không LLM) |
 | 4 | **Speed audit** (miễn phí, mồi bán 1–3) | 10/10 | report đủ; fix cần quyền site | S | ≈$0 |
 
-Loại: **SOCIAL** — 0 tính năng (chỉ joy có social-earn cho loyalty). **EMAIL** — chỉ email giao dịch; app Email Marketing cũ còn mỗi asset CDN (commit cuối 2024-03).
+**SOCIAL** — gộp vào gói SEO, không thành service riêng. `seo` có module Social networks (`/search/social`, `pages/Social/`): social profile → `sameAs` trong Organization schema, OG/Twitter title/description/thumbnail từng trang + Bulk Edit, preview Facebook/Twitter, job `subscribeOverwriteSocialTags`. Tức là tối ưu cách link hiện khi share — không đăng bài, không quản kênh. Joy có social-earn cho loyalty.
+
+Loại: **EMAIL** — chỉ email giao dịch; app Email Marketing cũ còn mỗi asset CDN (commit cuối 2024-03).
 
 Chạy ra ngoài Shopify được vì lõi là prompt + crawl, không phải Shopify API. Phần Shopify chỉ là lớp ghi ngược (metafield, theme file, Files API) → ngoài Shopify thay bằng **file bàn giao (CSV/HTML/llms.txt) + REST của Woo/BigCommerce/WP**.
 
@@ -88,7 +90,12 @@ Code chạy: `git archive` default branch → scratch, babel/esbuild, stub Fires
 
 ## 5. Shopping Feed — Google + Meta + ChatGPT (test 2026-10-01)
 
-**Vì sao:** Avada đã có Product Feed (Google + Meta, health score, đọc trạng thái duyệt từ Merchant Center) — kiểm qua MCP connector: kênh chỉ có `google` / `meta`, **chưa có ChatGPT**, catalog chỉ lấy từ Shopify. ChatGPT Ads live 02/2026, self-serve từ 05/05, product feed trong Ads Manager từ 06/2026, $1B run-rate 31/08. OpenAI tự ra app Shopify ngày 16/09 (chỉ US) → với Shopify mình bán **sửa lỗi + tối ưu + đa kênh**; với non-Shopify OpenAI **không có app**, phải tự dựng feed → chỗ trống lớn nhất.
+**Vì sao:** Avada đã có Product Feed — đọc code `product-feed` `origin/master` 6e17a5b (2026-10-07), chi tiết `jobs/2026-10-01-services/inv-product-feed.md`:
+- Kênh: **Google** (Merchant API file-fetch, approval qua Reports API `product_view`), **Meta** (`product_feeds` + override COUNTRY/LANGUAGE, đọc `review_status`), **"Any platform" XML**, và **ChatGPT đã có ~80%** (`openaiAdsController.js`: CSV đủ cột, enum đúng, cờ eligible, variant fields, đẩy SFTP qua OpenAI Ads API). TikTok mới là hằng số; Pinterest/Microsoft chưa có.
+- ChatGPT còn thiếu: gzip (S), push chỉ khi publish — chưa đạt "≥ daily" với shop không auto-sync (S), status tự động (M), status từng item (L), validator riêng (S–M). Rủi ro: `sftp_access` và `/feeds/uploads` của OpenAI chưa có tài liệu chính thức.
+- Nguồn catalog **chỉ Shopify bulk op**, không có webhook product (trễ tới ~1 ngày). Sau khi chuẩn hoá vào `feedProducts` (~40 field/variant, `productSyncService.js:743-793`) thì rules → validation → `xmlFeedFormatter` → GCS không phụ thuộc Shopify. Adapter Woo/CSV/JSON-LD ghi vào `feedProducts` là dùng lại được: 2 điểm cắt M + 4 điểm S. Auth/tenant và UI embedded là L — bán dạng dịch vụ team tự vận hành thì bỏ qua được.
+- 48 rule validation, 4 auto-fix. AI: OpenRouter `qwen/qwen3.7-flash`, chỉ để sửa lỗi feed (title/desc thiếu hoặc dài, category, thuộc tính apparel) — không tối ưu bán hàng, không gọi APC.
+- Plan: chưa có billing; trial 10 feed / 100 SKU / không auto-sync, mở khoá do CS bật tay. ChatGPT Ads live 02/2026, self-serve từ 05/05, product feed trong Ads Manager từ 06/2026, $1B run-rate 31/08. OpenAI tự ra app Shopify ngày 16/09 (chỉ US) → với Shopify mình bán **sửa lỗi + tối ưu + đa kênh**; với non-Shopify OpenAI **không có app**, phải tự dựng feed → chỗ trống lớn nhất.
 
 **Spec** (lấy 2026-10-01 từ developers.openai.com + support.google.com/merchants):
 - ChatGPT bắt buộc 9 field: `item_id, title (≤150), description (≤5000), url, brand, seller_name, image_url, availability, price`. Giá dạng chuỗi `"79.99 USD"`. Có biến thể → thêm `group_id, listing_has_variations, variant_dict`. Cờ eligibility: `is_eligible_search`, `is_eligible_checkout`, `is_ads_eligible`. Gửi full snapshot qua SFTP ≥1 lần/ngày (parquet / jsonl.gz / csv.gz).
@@ -121,14 +128,20 @@ Code chạy: `git archive` default branch → scratch, babel/esbuild, stub Fires
 
 **Giới hạn:** chấm theo spec, **chưa push thật** lên Merchant Center / ChatGPT nên chưa có tỷ lệ duyệt thật (cần account test). Chưa dựng feed Meta (spec gần Google). Chưa kiểm lệch giá landing page — lỗi #1 của Google — nhưng giá lấy thẳng từ trang live nên lệch = 0 tại thời điểm lấy. Mẫu ≤120 SP/store.
 
-**Cần làm:** xin quyền đọc repo `blocko-team/product-feed` để biết engine build feed tách Shopify được tới đâu; thêm kênh ChatGPT vào app (cả Shopify ngoài US — app OpenAI mới chạy US).
+**So với lỗi test tìm ra (10 loại):** app đã sửa trọn 3 (`variant_dict` rỗng, item $0, HTML trong description); một phần 3 (`identifier_exists=no` gần như không bao giờ ghi vì mode Auto tính cả brand mà brand mặc định = Vendor; `pre_order` chỉ map cho ChatGPT; apparel chỉ AI suggest, chỉ Google, 6 nước); **chưa có rule** cho 4 (group 1 biến thể với Google/Meta, dấu cách trong URL ảnh, title thiếu brand, chỉ 1 ảnh).
+
+**Cần làm:**
+1. Vá 2 lỗ trước khi bán plan: `PUT /settings` cho merchant tự nâng `renderImageLimit`; `devZoneGuard` tin email shop chưa xác thực có đuôi domain Avada khi `trustShopEmail` bật → shop tự mở khoá, kể cả cờ toàn app. Kiểm env prod: `accessTokenKey` có đang dùng giá trị mặc định trùng `.env.example` không; IAM bucket GCS public-read.
+2. Sửa `identifier_exists` + thêm 4 rule còn thiếu — chính là lỗi làm Google từ chối 100% ở 4/5 store test.
+3. ChatGPT: gzip + push theo lịch daily + status tự động.
+4. Adapter non-Shopify ghi vào `feedProducts` — 5 adapter catalog của test này là bản nháp.
 
 Feed và script: `jobs/2026-10-01-services/feed/` (`out/*.chatgpt.jsonl.gz`, `out/*.google.xml`, `out/grades.json`, `build_feeds.py`, `spec.md`).
 
 ## Thứ tự làm
 
 1. Sửa 2 bug đang sai cho khách hiện tại (APC review giả, AEO giá USD) — tuần này.
-2. Shopping Feed: thêm kênh ChatGPT vào Product Feed + xin quyền repo để tách nguồn catalog khỏi Shopify. 5 adapter catalog đã chạy được trong test này.
+2. Shopping Feed: vá 2 lỗ plan/devZone, sửa `identifier_exists` + 4 rule thiếu, hoàn thiện ChatGPT (gzip, daily push, status), rồi adapter non-Shopify vào `feedProducts`.
 3. AEO làm hộ cho Woo trước (S, 3–5 ngày) — rẻ nhất, không cần LLM.
 4. Runner độc lập dùng chung cho Feed + S1 + S3: fetcher có UA + adapter catalog (Shopify `.json` / Woo Store API / BigCommerce `/remote/v1` / SFCC `Product-Variation` / JSON-LD / DOM) + xuất file. Một lớp này mở cả 3 service (M, 2–3 tuần).
 5. Speed report đi kèm làm mồi; không đầu tư fix-as-a-service (L).
@@ -139,6 +152,6 @@ Feed và script: `jobs/2026-10-01-services/feed/` (`out/*.chatgpt.jsonl.gz`, `ou
 - 10 store, 1 SP + home mỗi store; Lighthouse 1 run.
 - Chất lượng chấm bằng agent, chưa có người làm marketing duyệt.
 - Non-Shopify thật chỉ 4 platform (Woo, BigCommerce, SFCC, Squarespace) + 1 headless; Magento chưa test được do bot wall.
-- Shopping Feed: chấm theo spec, chưa push thật; không đọc được code Product Feed/Pixel.
+- Shopping Feed: chấm theo spec, chưa push thật lên kênh; chưa đọc code Pixel.
 
 Chi tiết: `jobs/2026-10-01-services/` — 5 file kiểm kê (`inv-*.md`) + 4 file chạy thử (`test-s1..s4-*.md`).
