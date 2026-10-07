@@ -17,6 +17,7 @@ Verified against each repo's `.firebaserc` on 2026-07-28.
 | `ai-product-copy` | `ai-product-copy` | `ai-product-copy-staging` | assets, functions, scripttag |
 | `llm-ai-search-seo` (AEO) | `seo-on-aeo` | `seoon-llm-ai-search` | assets, copyright, functions |
 | `avada-image-optimizer` | `app-plaza-image-optimizer` | `seoon-image-optimizer-staging` | assets, copyright, functions, scripttag |
+| `product-feed` (blocko-team, verified 2026-10-07) | `avada-product-feed` | `product-feed-staging` (+ `product-feed-staging-2`) | assets, functions, scripttag |
 | `avachat` | `seo-chat-bot-99cc0` | `avada-seo-staging-8` | admin, chat-ui, functions |
 | `joy` | `avada-joy` | `avada-joy-staging` (+ `-2..29`) | assets, functions, scripttag, web-components (plus 3 test-only dirs) |
 | `speed-up-report` | — | `plaza-staging-3` | pnpm workspace: `apps/*`, `packages/*` |
