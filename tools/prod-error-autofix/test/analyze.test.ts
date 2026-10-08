@@ -32,6 +32,47 @@ const goodAnalysis: Analysis = {
 };
 
 describe('extractJson', () => {
+  test('ignores braces and escaped quotes inside unfenced string values', () => {
+    const analysis = {
+      ...goodAnalysis,
+      rootCause: 'The parser encounters { followed by "unexpected" input and another {',
+      mechanism: 'A literal } and a trailing backslash \\'
+    };
+    const json = JSON.stringify(analysis);
+    const text = `The analysis is ${json} End of reply.`;
+    expect(extractJson(text)).toBe(json);
+    expect(parseAnalysis(text)).toEqual({ok: true, value: analysis});
+  });
+
+  test('prefers the fenced top-level analysis over nested objects and later prose objects', () => {
+    const analysis = {...goodAnalysis, rootCause: 'A literal } } precedes the nested citations'};
+    const json = JSON.stringify(analysis);
+    const text = '```json\n' + json + '\n```\nExtra context: {"note":"{ inside a string"}';
+    expect(extractJson(text)).toBe(json);
+    expect(parseAnalysis(text)).toEqual({ok: true, value: analysis});
+  });
+
+  test('takes the last fenced object that parses, skipping invalid and non-object fences', () => {
+    const json = JSON.stringify(goodAnalysis);
+    const text = '```json\n{"rootCause":"string"}\n```\n```json\n' + json +
+      '\n```\n```json\n{invalid}\n```\n```json\n[]\n```\n```json\nnull\n```';
+    expect(extractJson(text)).toBe(json);
+  });
+
+  test('falls back to the last parseable scanned object when fences contain no object', () => {
+    const json = JSON.stringify(goodAnalysis);
+    const text = '```json\n[]\n```\nThe schema is {"rootCause":"string"}. The answer is ' +
+      json + '\nAn invalid example: {invalid}';
+    expect(extractJson(text)).toBe(json);
+    expect(parseAnalysis(text)).toEqual({ok: true, value: goodAnalysis});
+  });
+
+  test('a stray brace in the prose before the answer does not hide it', () => {
+    const json = JSON.stringify(goodAnalysis);
+    const text = 'The body starts with an unmatched { so the parser choked.\n' + json;
+    expect(extractJson(text)).toBe(json);
+  });
+
   test('finds a bare object', () => {
     expect(extractJson('{"a":1}')).toBe('{"a":1}');
   });

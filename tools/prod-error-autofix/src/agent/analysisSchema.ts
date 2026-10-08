@@ -32,21 +32,43 @@ export interface Analysis {
 export type ValidationResult = {ok: true; value: Analysis} | {ok: false; errors: string[]};
 
 /**
- * Agents wrap JSON in prose or fences however they like. Take the last balanced
- * object in the text — the last one, because a model that restates the schema
- * before answering puts the real answer second.
+ * Prefer fenced objects over a string-aware brace scan; take the last valid object in each group
+ * because a model that restates the schema before answering puts the real answer second.
  */
 export function extractJson(text: string): string | undefined {
   const fenced = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/g)].map(m => m[1]!.trim());
-  const candidates = fenced.length ? fenced : [];
+  for (const group of [fenced, scanObjects(text)]) {
+    for (let i = group.length - 1; i >= 0; i--) {
+      const candidate = group[i]!;
+      try {
+        const parsed: unknown = JSON.parse(candidate);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return candidate;
+      } catch {}
+    }
+  }
+  return undefined;
+}
+
+function scanObjects(text: string, from = 0): string[] {
+  const candidates: string[] = [];
   let depth = 0;
   let start = -1;
-  for (let i = 0; i < text.length; i++) {
+  let inString = false;
+  let escaped = false;
+  for (let i = from; i < text.length; i++) {
     const ch = text[i];
-    if (ch === '{') {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"' && depth > 0) {
+      inString = true;
+    } else if (ch === '{') {
       if (depth === 0) start = i;
       depth++;
-    } else if (ch === '}') {
+    } else if (ch === '}' && depth > 0) {
       depth--;
       if (depth === 0 && start >= 0) {
         candidates.push(text.slice(start, i + 1));
@@ -54,16 +76,9 @@ export function extractJson(text: string): string | undefined {
       }
     }
   }
-  for (let i = candidates.length - 1; i >= 0; i--) {
-    const candidate = candidates[i]!;
-    try {
-      const parsed: unknown = JSON.parse(candidate);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return candidate;
-    } catch {
-      // keep looking
-    }
-  }
-  return undefined;
+  // An unclosed `{` (a stray brace in the prose) swallowed everything after it; rescan past it.
+  if (depth > 0 && start >= 0) candidates.push(...scanObjects(text, start + 1));
+  return candidates;
 }
 
 const CONFIDENCES: Confidence[] = ['high', 'medium', 'low'];
