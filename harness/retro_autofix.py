@@ -7,9 +7,8 @@ Reads the headless `claude -p` transcripts the daemon leaves in ~/.claude/projec
     python3 harness/retro_autofix.py --since 2026-09-01 --until 2026-10-01
 
 Baseline 2026-09-01..10-01, before the absence-evidence fix in verify.ts:
-548 rounds (464 R1, 72 R2, 12 R3); 64 of the round-2+ rejections were "matched
-nothing", 52 of those were honest `matched: 0` claims. Re-run after a week of the
-patched daemon; the absence share should drop to ~0 and R2+/R1 should fall.
+131 rounds (109 R1, 17 R2, 5 R3); 17 "matched nothing" rejections, 13 of them honest
+`matched: 0` claims. (The first count, 464 R1 / 64 / 52, followed resume.py's symlinks.)
 """
 import argparse
 import collections
@@ -67,6 +66,10 @@ def main():
     rounds = collections.Counter()
     reasons = collections.Counter()
     for path in glob.glob(f'{ROOT}/*/*.jsonl'):
+        # resume.py symlinks every session into the second-brain project dir so /resume
+        # lists them all; following the links counts each run twice.
+        if os.path.islink(path):
+            continue
         try:
             if os.path.getmtime(path) < lo.timestamp():
                 continue

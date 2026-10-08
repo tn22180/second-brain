@@ -85,7 +85,7 @@ export interface EvidenceVerdict {
  * exact count, and a full re-read would cost as much as the original pull.
  *
  * `matched: 0` is absence evidence — "no 5xx in the window", "zero Memory limit lines".
- * Until 2026-10-01 it was rejected as unreproducible: 52 of the 64 "matched nothing"
+ * Until 2026-10-01 it was rejected as unreproducible: 13 of the 17 "matched nothing"
  * rejections in Sep 2026 were exactly these honest zeros, each burning a round.
  */
 export async function verifyEvidence(
