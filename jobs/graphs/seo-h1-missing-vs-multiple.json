@@ -1,0 +1,70 @@
+{
+ "id": "seo-h1-missing-vs-multiple",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "master",
+ "branch": "fix/h1-missing-vs-multiple",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "h1-text",
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; React/Polaris v13 in packages/assets/src, Firebase Functions in packages/functions/src; jest 24 from repo root `npx jest <path>`; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). The root AGENTS.md is a persona file for an unrelated tool (\"morgan\"/Bullpen) — ignore it entirely; this prompt is your whole brief.\n\nRequest (Slack, support/product): the on-page audit's H1 issue must tell \"missing H1\" and \"multiple H1\" apart. Today both cases show the same sentence.\n\nCurrent behaviour: packages/assets/src/helpers/analysis/patchSingleH1Status.js resolves status binary — exactly 1 H1 (max of live crawl h1Count and description descH1Count) -> good, 0 or >=2 -> bad — and overrides item.content with `texts` = {good, bad}. The FE passes texts from useOnPageAnalysis.js getSingleH1Texts (i18n `Axyseo.singleH1.good` / `.bad`, bad = \"Use exactly one H1 tag to clearly define your page's topic.\"). The backend copy packages/functions/src/helpers/analysis/patchSingleH1Status.js is called from packages/functions/src/services/calculateScore.js (~L365) without texts; titles come from packages/functions/src/const/axyseoTitles.js singleH1 via applyAxyseoTitles.\n\nFix (keep the status mapping exactly as is — bad for both, good for exactly 1; only the sentence changes):\n- In both patchSingleH1Status copies, when status is bad pick the bad sentence by count: total 0 -> texts.missing, total >=2 -> texts.multiple, falling back to texts.bad when the specific one is absent. Keep the two copies behaviourally identical.\n- Missing sentence: \"No H1 tag found. Add one H1 to clearly define your page's topic.\"  Multiple sentence: \"Multiple H1 tags found. Use only one H1 tag to clearly define your page's topic.\"\n- FE: add `missing` and `multiple` to the singleH1 block of packages/assets/src/hooks/service/analysis/Axyseo.json (source of truth) and to `Axyseo.singleH1` in EVERY packages/assets/src/locale/translations/*.json; getSingleH1Texts passes them.\n- BE: add missing/multiple to axyseoTitles.js singleH1 and pass texts from calculateScore.js so stored assessments carry the right sentence too.\nTests: packages/assets/src/helpers/analysis/__tests__/patchSingleH1Status.test.js and packages/functions/src/helpers/analysis/__tests__/patchSingleH1Status.test.js — cases: (h1Count 0, desc 0) -> bad + missing text; (2,0) -> bad + multiple text; (0,2) -> bad + multiple; (1,1) -> good; (1,0) -> good; isSkipped -> untouched; missing/multiple absent -> falls back to texts.bad. Plus packages/assets/src/locale/__tests__/singleH1Keys.test.js: every translations/*.json has string Axyseo.singleH1.missing and .multiple.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Locale files: add keys next to the existing singleH1 keys, do not reformat or reorder anything else (`yarn update-label` cannot run here — hand-edit). en.json (and origin.json if present) get the English strings verbatim; every other locale gets a proper translation in its language. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 60,
+   "contract": {
+    "goal": "SEO on-page audit shows a distinct sentence for missing H1 vs multiple H1 (FE + BE patchSingleH1Status)",
+    "allow": [
+     "packages/assets/src/helpers/analysis/patchSingleH1Status.js",
+     "packages/assets/src/helpers/analysis/__tests__/patchSingleH1Status.test.js",
+     "packages/functions/src/helpers/analysis/patchSingleH1Status.js",
+     "packages/functions/src/helpers/analysis/__tests__/patchSingleH1Status.test.js",
+     "packages/assets/src/hooks/onPage/useOnPageAnalysis.js",
+     "packages/assets/src/hooks/service/analysis/Axyseo.json",
+     "packages/assets/src/locale/translations/",
+     "packages/assets/src/locale/__tests__/singleH1Keys.test.js",
+     "packages/functions/src/const/axyseoTitles.js",
+     "packages/functions/src/services/calculateScore.js"
+    ],
+    "verify": [
+     {
+      "name": "h1 tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/assets/src/helpers/analysis/__tests__/patchSingleH1Status.test.js",
+       "packages/functions/src/helpers/analysis/__tests__/patchSingleH1Status.test.js",
+       "packages/assets/src/locale/__tests__/singleH1Keys.test.js"
+      ]
+     },
+     {
+      "name": "locale json valid",
+      "cmd": [
+       "node",
+       "-e",
+       "const fs=require('fs');const d='packages/assets/src/locale/translations/';for(const f of fs.readdirSync(d))JSON.parse(fs.readFileSync(d+f,'utf8'));JSON.parse(fs.readFileSync('packages/assets/src/hooks/service/analysis/Axyseo.json','utf8'))"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/assets/src/helpers/analysis/__tests__/patchSingleH1Status.test.js"
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -365,3 +365,11 @@ Scope: toàn branch `feat/autopilot` (`git diff origin/master...HEAD`, 76 file, 
 - Bảng giá: Pro = "auto-optimize new products, weekly speed checks"; Enterprise = "daily speed checks, automatic 404 redirects".
 - Cron 404 giữ nguyên gate Pro → shop Pro đã bật từ DevZone vẫn chạy, tắt được từ AutoPilot (không tự tắt hộ merchant).
 - Verify: 148 test autopilot pass, build exit 0, docs-gate PASS, locale 14 file khớp (en≡origin).
+
+#### Decision 2026-10-08: bỏ card Image compression
+- Lý do: Shopify CDN đã tự tối ưu ảnh (bàn cùng MR !2270 audit checklist). Nén ảnh chỉ còn ở trang Image thủ công.
+- Gỡ: card + Run for existing của card (Run chỉ còn `altText`, mã `image_quota` bỏ), TYPE_IMAGE khỏi products/create, `optimizeOnCreate` khỏi flag list (webhook/reinstall/command), ô `compressProducts`. AutoPilot còn 5 card.
+- `autopilot.optimizeOnCreate` cũ trên staging: không migrate, không ai đọc (test khoá: flag cũ = true không đánh thức hook).
+- Bảng giá Pro → "AutoPilot: alt text and SEO score for new products, weekly speed checks". Sidekick sửa theo.
+- Verify: harness `contracts/autopilot-drop-compression.json` **pass 9/9** (35 file); jest 147/147 vùng autopilot; build OK; docs-gate PASS; locale en≡origin, key chết cắt cả 14 file. Fail còn lại (`overviewCardScore`, `workListStore`) có sẵn trên master.
+- Commit `a8a27f3414a`, push → pipeline 228776 (deploy staging 1 theo pin).

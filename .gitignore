@@ -32,3 +32,4 @@ conversations/
 *service-account*.json
 *adminsdk*.json
 tools/jira-point-sync/last-payload.json
+.playwright-mcp/

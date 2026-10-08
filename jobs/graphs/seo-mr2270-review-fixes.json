@@ -1,0 +1,237 @@
+{
+ "id": "seo-mr2270-review-fixes",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "FAL-837",
+ "branch": "fix/FAL-837-review-fixes",
+ "maxParallel": 4,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "i18n-score-below",
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch is FAL-837 (shop SEO checklist redo). Brief: second-brain jobs/2026-10-08-seo-mr2270-review-fixes.md.\n\nBug: `i18n.translate('Audit.appliedFilters.scoreBelow', {score: scoreBelow})` is called in packages/assets/src/pages/Audit/Products/List.js:101, Collections/List.js:93, Articles/List.js:200, but the key exists nowhere — packages/assets/src/pages/Audit/Audit.json `appliedFilters` (~L172-185) lacks it and so do all packages/assets/src/locale/translations/*.json. The checklist's On-page score Fix link sets `scoreBelow`, so the On-page tab throws MissingTranslationError.\nFix: add `\"scoreBelow\": \"Score below {score}\"` to Audit.json appliedFilters (source of truth), and add `Audit.appliedFilters.scoreBelow` to EVERY file in packages/assets/src/locale/translations/ (en.json and origin.json get the English string verbatim; each other locale gets a proper translation in that language, keeping the `{score}` placeholder untouched). Insert it next to the other appliedFilters keys; do not reformat or reorder anything else in those files (keep the diff to one added line per file + trailing comma fix). `yarn update-label` cannot run here (needs network + API key) — that is why you hand-edit.\nTest: packages/assets/src/locale/__tests__/auditScoreBelowKey.test.js — every translations/*.json has Audit.appliedFilters.scoreBelow as a string containing `{score}`, and Audit.json has it too.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "contract": {
+    "goal": "Audit.appliedFilters.scoreBelow exists in Audit.json and every locale file, so the score-below filter chip renders",
+    "allow": [
+     "packages/assets/src/pages/Audit/Audit.json",
+     "packages/assets/src/locale/translations/",
+     "packages/assets/src/locale/__tests__/auditScoreBelowKey.test.js"
+    ],
+    "verify": [
+     {
+      "name": "locale key tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/assets/src/locale/__tests__/auditScoreBelowKey.test.js"
+      ]
+     },
+     {
+      "name": "locale json valid",
+      "cmd": [
+       "node",
+       "-e",
+       "const fs=require('fs');const d='packages/assets/src/locale/translations/';for(const f of fs.readdirSync(d))JSON.parse(fs.readFileSync(d+f,'utf8'));JSON.parse(fs.readFileSync('packages/assets/src/pages/Audit/Audit.json','utf8'))"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/assets/src/locale/__tests__/auditScoreBelowKey.test.js"
+     ]
+    }
+   },
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45
+  },
+  {
+   "id": "lighthouse-ran",
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch is FAL-837 (shop SEO checklist redo). Brief: second-brain jobs/2026-10-08-seo-mr2270-review-fixes.md.\n\nBug: packages/functions/src/services/lightHouseService.js getAuditResultByLightHouse (~L88-155) returns `ran: !!lightHouseResult`. A PageSpeed/Lighthouse result that carries `runtimeError` (e.g. {code:'NO_FCP'}, 'FAILED_DOCUMENT_REQUEST') or has no/empty `audits` is truthy, so `ran` is true while getImagesToCompress returns [] and hreflangValid null. helpers/seoSpeed.js:478 counts `lighthouseRan` from `page.ran`, and the checklist issues imageDelivery / lcpImage / jsLongTime then PASS for an audit that never ran (the exact failure FAL-945 set out to stop).\nFix: `ran` is true only when lightHouseResult exists, has no `runtimeError` (treat any truthy runtimeError as failure — Lighthouse sets it only on failure), and `audits` is a non-empty object. When it did not run, also return imagesToCompress [] / hreflangValid null as the catch path does, and logger.warn once with shopId, url and runtimeError?.code. Do not change getLightHouseData, fetchLightHouse, the password headers or the ssrf guard.\nTest: new packages/functions/src/services/__tests__/lightHouseService.ran.test.js — mock exactly like lightHouseService.passwordHeader.test.js does (logger, storageService, config/app, @avada/core, helpers/seoSpeed, helpers/google, helpers/lighthouse/lightHouse, scriptManagerRepository; also mock helpers/lighthouse/checklistAudits if it pulls heavy deps). Cases: good result with audits → ran true; runtimeError NO_FCP → ran false; empty audits {} → ran false; null result → ran false. Drive getLightHouseData through the mocked getGooglePageSpeedScore (useGoogleApi:true, allowFallback:false).\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "contract": {
+    "goal": "getAuditResultByLightHouse reports ran:false for a Lighthouse result with runtimeError or no audits",
+    "allow": [
+     "packages/functions/src/services/lightHouseService.js",
+     "packages/functions/src/services/__tests__/lightHouseService.ran.test.js"
+    ],
+    "verify": [
+     {
+      "name": "ran tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/__tests__/lightHouseService.ran.test.js"
+      ]
+     },
+     {
+      "name": "existing lighthouse tests",
+      "preflight": true,
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/__tests__/lightHouseService.passwordHeader.test.js",
+       "packages/functions/src/services/__tests__/lightHouseService.requestGuard.test.js"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/lightHouseService.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/__tests__/lightHouseService.ran.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45
+  },
+  {
+   "id": "store-resources-sync-gate",
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch is FAL-837 (shop SEO checklist redo). Brief: second-brain jobs/2026-10-08-seo-mr2270-review-fixes.md.\n\nBug: packages/functions/src/services/audit/artifacts/storeResources.js reads whole-store checklist counts from Elasticsearch via readStoreResources (services/audit/storeScan.js:305) without checking the shop's search-index sync. A sync that failed (succeeded:false, chunks given up), is still running, or was stamped with an older checklistIndexVersion leaves a partial index that reads as the whole store, so meta/noindex items pass falsely. The FE gates on sync, but background/report scans do not. needsChecklistSync(job) in packages/functions/src/const/jobDataMigrate.js:24 is the existing predicate, and storeScan.js:516-517 refreshChecklistDocs already gates with `const {data: jobs} = await new JobDataMigrateRepository().find(shop.id, {}); if (needsChecklistSync(jobs?.[0])) return 0;` — reuse the same repository call and import path storeScan.js uses.\nFix: in storeResources({shopId}), before reading ES, load the job the same way; when needsChecklistSync(job) → logger.warn('[storeResources] search index sync incomplete, store items not checked', shopId) and return null (the artifact's documented 'notChecked' value). Keep the existing try/catch → null. Do not edit storeScan.js.\nTest: new packages/functions/src/services/audit/artifacts/__tests__/storeResources.test.js. jest.mock with factories: '@functions/services/audit/storeScan' (readStoreResources), the JobDataMigrateRepository module (find), '@functions/helpers/logger'. Do NOT jest.mock const/jobDataMigrate — use the real needsChecklistSync and CHECKLIST_INDEX_VERSION. Cases: no job → null and readStoreResources not called; job succeeded:false → null; old checklistIndexVersion → null; synced current version → returns readStoreResources' result; repository throws → null.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "contract": {
+    "goal": "storeResources returns null (notChecked) unless the shop's search-index sync finished at the current checklist version",
+    "allow": [
+     "packages/functions/src/services/audit/artifacts/storeResources.js",
+     "packages/functions/src/services/audit/artifacts/__tests__/storeResources.test.js"
+    ],
+    "verify": [
+     {
+      "name": "storeResources tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/artifacts/__tests__/storeResources.test.js"
+      ]
+     },
+     {
+      "name": "storeScan tests",
+      "preflight": true,
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/storeScan.test.js"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/audit/artifacts/storeResources.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/audit/artifacts/__tests__/storeResources.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45
+  },
+  {
+   "id": "prepare-issue-filter",
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch is FAL-837 (shop SEO checklist redo). Brief: second-brain jobs/2026-10-08-seo-mr2270-review-fixes.md.\n\nBug: packages/functions/src/services/audit/audit.js:39-41 `static prepareIssue(issues, hasPassword) { return issues.map(data => this.convertDataIssue({data, hasPassword})); }`. convertDataIssue (~L190-222) returns undefined from its catch (logs '[audit:convertDataIssue]') and for an unknown type. calcScoreDependOnIssues (~L89) then does `issues.filter(({severity}) => ...)` → TypeError on undefined → the runner's catch wipes the whole scan (score 0, empty issues). One malformed issue must not take down the checklist.\nFix: prepareIssue drops falsy results (`.filter(Boolean)`). Check every other consumer of prepareIssue's output in audit.js/runner.js for the same assumption and only fix inside audit.js. Do not change scoring math.\nTest: add packages/functions/src/services/audit/__tests__/prepareIssue.test.js (mock modules the way calcScore.test.js / runAudits.test.js do): an issue list containing one entry whose convertDataIssue throws (e.g. spy convertDataIssue to throw/return undefined for one item) → prepareIssue returns only the good ones, and calcScoreDependOnIssues(prepareIssue(...)) returns a score without throwing.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "contract": {
+    "goal": "a single issue that fails to convert is dropped instead of crashing calcScoreDependOnIssues and wiping the scan",
+    "allow": [
+     "packages/functions/src/services/audit/audit.js",
+     "packages/functions/src/services/audit/__tests__/prepareIssue.test.js"
+    ],
+    "verify": [
+     {
+      "name": "prepareIssue tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/prepareIssue.test.js"
+      ]
+     },
+     {
+      "name": "audit score tests",
+      "preflight": true,
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/calcScore.test.js",
+       "packages/functions/src/services/audit/__tests__/runAudits.test.js"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/audit/audit.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/audit/__tests__/prepareIssue.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   },
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45
+  }
+ ]
+}

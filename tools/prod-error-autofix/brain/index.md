@@ -7,13 +7,24 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1h4b1rl` · 2026-10-08 · BLOG · api · The single non-resumable `file.save()` in putContent has no retry and no ifGenerationMatch precondition, so on · — · fix_disabled
+- `yhueh6` · 2026-10-08 · SEO · mcpoauthgen2 · no verified cause · — · inconclusive
+- `49lu1m` · 2026-10-08 · BLOG · apiv2 · Duplicate of recorded fingerprint 1r6pmo2 (same app, service, shop VwAcC7QWUxrBlExv4uEX, same two log lines at · — · fix_disabled
+- `1r6pmo2` · 2026-10-08 · BLOG · apiv2 · The staged-upload POST in handleUploadFile has no retry and no timeout, so one transient TLS handshake failure · — · fix_disabled
+- `jtkpd8` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprints 6k9sr7 / 1whfb1o / 1gpn40b / l91eqz / gdw1lp / dequv9 — same app, service,  · — · fix_disabled
+- `dequv9` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprint 6k9sr7 (also re-fired as 1whfb1o, 1gpn40b, l91eqz, gdw1lp) — same app, servi · — · fix_disabled
+- `gdw1lp` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprints 6k9sr7 / 1whfb1o / 1gpn40b — same app, service, endpoint, 30-minute window  · — · fix_disabled
+- `l91eqz` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprint 6k9sr7 (also re-fired as 1whfb1o and 1gpn40b) — same app, service, endpoint, · — · fix_disabled
+- `1gpn40b` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprints 6k9sr7 and 1whfb1o — same app, service, endpoint, 30-min window and the exa · — · fix_disabled
+- `1whfb1o` · 2026-10-08 · BLOG · api · Duplicate of recorded fingerprint 6k9sr7 (same app, service, endpoint, 30-min window and the same 8 requests): · — · fix_disabled
+- `6k9sr7` · 2026-10-08 · BLOG · api · The prod revision api-00185-cal still runs the pre-db58a0392 getPostsGraphQL, which splices the raw ctx.query. · — · fix_disabled
 - `1932qke` · 2026-10-06 · SEO · apigen2 · GET /api/localStorages/bfcm-2024 500'd inside @avada/core's embed-auth middleware, not in app code: the browse · — · fix_disabled
 - `rz2smt` · 2026-10-06 · SEO · mcpgen2 · no verified cause · — · inconclusive
 - `1b8cw0y` · 2026-10-05 · SEO · handlesyncurlredirectsbatchgen2 · handleSyncUrlRedirectsBatchGen2 re-downloads and fully parses the same 74,919-line Shopify bulk JSONL on every · — · fix_disabled
 - `2b34wp` · 2026-10-06 · SEO · handlesyncurlredirectsbatchgen2 · no verified cause · — · inconclusive
 - `plgvnt` · 2026-10-05 · BLOG · embedapp · The single unretried, untimeouted node-fetch in getEmbedTemplate to https://avada-blog-app.web.app/embed-templ · — · fix_disabled
 - `15yxvhj` · 2026-10-05 · BLOG · api · The fire-and-forget `void syncShopDataFromShopify(shop.id)` in afterLoginService is the only voided call in th · — · fix_disabled
-- `tk9lv5` · 2026-10-02 · BLOG · api · no verified cause · — · inconclusive
+- `tk9lv5` · 2026-10-08 · BLOG · api · On one shop's main theme Shopify rejects the create of `templates/page.avada-articles-tags.liquid` with HTTP 4 · — · fix_disabled
 - `13qk38s` · 2026-10-01 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `1ts4gf7` · 2026-10-01 · SEO · lighthouseauditrunnergen2 · A single mobile/densen4G Lighthouse+Chrome audit of https://www.djiusa.com/collections/accessories needs more  · — · infra
 - `171glpo` · 2026-10-01 · IMG-OPT · changelogTriggers-shopInfos · Not a runtime failure: anhnt@avada.io's 2026-09-30T14:20Z prod deploy of app-plaza-image-optimizer failed its  · — · fix_disabled

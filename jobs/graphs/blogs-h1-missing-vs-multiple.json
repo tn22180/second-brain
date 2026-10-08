@@ -1,0 +1,81 @@
+{
+ "id": "blogs-h1-missing-vs-multiple",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "master",
+ "branch": "fix/h1-missing-vs-multiple",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "h1-text",
+   "prompt": "Repo: blogs (Avada Blog Shopify app; React/Polaris in packages/assets/src, jest config packages/assets/jest.config.js — run `npx jest -c packages/assets/jest.config.js <path>` from repo root; audit engine is the npm package `blog-score@0.1.0` in node_modules — do NOT edit it).\n\nRequest (Slack, support/product): the article audit's H1 issue must tell \"missing H1\" and \"multiple H1\" apart. Today Blog never reports a missing H1, and reports multiple H1 with the \"Missing H1 tag\" sentence.\n\nRoot causes:\n1. packages/assets/src/helpers/analysis/prepareAnalysisData.js:22 `h1Count: item?.seoAnalysisPage?.h1 || 1` turns a crawled 0 into 1. blog-score's SingleH1Check computes `h1Total = doc.h1Count > 0 ? doc.h1Count : bodyH1Count; passed = h1Total === 1`, so with h1Count forced >=1 a page with no H1 always passes and body H1s are never counted. Fix: `?? 1` so a real 0 reaches the engine, which then falls back to counting <h1> in the article body. This is also correct when the crawl failed: packages/functions/src/services/seoService.js getSeoAnalysisPage returns h1:0 + fetchFailed:true on fetch failure, and the body count is the best signal we have then (same as the seo app, which takes max(live, description)). Unpublished articles get h1:1 from the backend and stay unchanged. Apply the same `?? 1` change anywhere else in packages/assets/src that maps seoAnalysisPage.h1 into h1Count with `|| 1` (grep); handleAnalysis.js already uses `?? 1`.\n2. packages/assets/src/hooks/vservice/handleAnalysis.js toResult maps failed -> 'bad' with content.bad = i18n `Axyseo.singleH1.bad` (\"Missing H1 tag. Add one H1 to clearly define your page's topic.\"), used for both 0 and >=2. Fix: for check.id === 'singleH1' and not passed, derive the H1 count from check.currentValue (blog-score sets it to `${h1Total} H1 tags`) and set content.bad to the missing sentence when 0, the multiple sentence when >=2. Keep status/score/weight untouched. Use i18n keys `Axyseo.singleH1.missing` / `.multiple` with these English fallbacks: missing \"No H1 tag found. Add one H1 to clearly define your page's topic.\"; multiple \"Multiple H1 tags found. Use only one H1 tag to clearly define your page's topic.\" If currentValue cannot be parsed, keep today's content.bad.\n- Add `missing` and `multiple` to the singleH1 block of packages/assets/src/const/Axyseo.json and to `Axyseo.singleH1` in EVERY packages/assets/src/locale/translations/*.json.\nTests: packages/assets/src/hooks/__tests__/handleAnalysis.singleH1.test.js — drive handleAnalysis like handleAnalysis.excludedChecks.test.js does: body with no <h1> and attribute.h1Count 0 -> singleH1 bad with the missing sentence; body with two <h1> and h1Count 0 -> bad with the multiple sentence; h1Count 2 -> bad with multiple; h1Count 1 -> good. packages/assets/src/helpers/analysis/__tests__/prepareAnalysisData.h1.test.js — seoAnalysisPage.h1 0 -> h1Count 0; undefined -> 1; 3 -> 3 (mock heavy imports with factories if needed). packages/assets/src/locale/__tests__/singleH1Keys.test.js — every translations/*.json has string Axyseo.singleH1.missing and .multiple.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Locale files: add keys next to the existing singleH1 keys, do not reformat or reorder anything else (`yarn update-label` cannot run here — hand-edit). en.json (and origin.json if present) get the English strings verbatim; every other locale gets a proper translation in its language. Run the verify commands yourself before saying done. Final message: file:line of each change + the before-fix failure scenario (goes into the MR).",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 60,
+   "contract": {
+    "goal": "Blog article audit reports missing H1 (0) and uses distinct sentences for missing vs multiple H1",
+    "allow": [
+     "packages/assets/src/helpers/analysis/",
+     "packages/assets/src/hooks/vservice/handleAnalysis.js",
+     "packages/assets/src/hooks/__tests__/handleAnalysis.singleH1.test.js",
+     "packages/assets/src/const/Axyseo.json",
+     "packages/assets/src/locale/translations/",
+     "packages/assets/src/locale/__tests__/singleH1Keys.test.js"
+    ],
+    "verify": [
+     {
+      "name": "h1 tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "-c",
+       "packages/assets/jest.config.js",
+       "packages/assets/src/hooks/__tests__/handleAnalysis.singleH1.test.js",
+       "packages/assets/src/helpers/analysis/__tests__/prepareAnalysisData.h1.test.js",
+       "packages/assets/src/locale/__tests__/singleH1Keys.test.js"
+      ]
+     },
+     {
+      "name": "existing handleAnalysis tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "-c",
+       "packages/assets/jest.config.js",
+       "packages/assets/src/hooks/__tests__/"
+      ]
+     },
+     {
+      "name": "locale json valid",
+      "cmd": [
+       "node",
+       "-e",
+       "const fs=require('fs');const d='packages/assets/src/locale/translations/';for(const f of fs.readdirSync(d))JSON.parse(fs.readFileSync(d+f,'utf8'));JSON.parse(fs.readFileSync('packages/assets/src/const/Axyseo.json','utf8'))"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "-c",
+      "packages/assets/jest.config.js",
+      "packages/assets/src/hooks/__tests__/handleAnalysis.singleH1.test.js"
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,386 @@
+{
+ "id": "seo-mr2270-review-round2",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "FAL-837",
+ "branch": "fix/FAL-837-review-round2",
+ "maxParallel": 6,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "issues-from-index",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nMake the checklist's search-index verdict the single source of truth for 'this resource has a meta issue'. Today three places re-judge meta from the Admin API with generateBulkService.hasMetaIssue (~L341), which differs from the checklist's checklistFieldsFor (services/audit/storeScan.js ~L210: it credits custom meta found in crawled HTML via customHtmlMeta and strips the shop-name suffix; the Admin API path cannot see crawled HTML). Results: (a) the Fix link list (controllers/analysisController.js getList metaIssue branch ~L107-137) shows rows the checklist counted fine and misses rows it flagged; (b) the bulk ISSUES run (handlers/pubsub/subscribeGenFaq.js ~L280-290, isAuto path: fetchTabPage with query=null then matchesGenOption) also includes draft/archived/unpublished resources and charges 1 AI credit per item (creditPerResource, ~L324) for resources the checklist never flagged; (c) getResourceReport's issueCount (analysisController ~L300-330 via countResourcesWithFaq withMetaIssue) disagrees with the checklist number. Also the metaIssue branch runs scanForIssueNodes (storeScan.js ~L366, up to 10 sequential GraphQL pages, initShopify maxRetries 0) — a THROTTLED page yields an empty 200 — and analysisService.fetchShopifyByIds swallows errors into [] while hasNext stays true.\n\nDesign (decided, see brief): every synced resource's ES doc already carries `checklistIssues` (array of issue types: metaTitle, metaTitleLength, metaDescription, metaDescriptionLength, noindexTag) written at sync and refreshed on write; checklistDocsQuery(shopId, filters) in storeScan.js scopes to the shop, current CHECKLIST_INDEX_VERSION and published docs; listStoreIssuePages (~L398) already pages them with search_after on 'id.keyword'.\n1. storeScan.js: add an exported `listIssueResourceIds({shopId, tab, issueTypes, cursor = null, limit})` reusing checklistDocsQuery with a `terms` on 'checklistIssues.keyword', same sort/search_after as listStoreIssuePages, returning {gids, nextCursor, hasNext}; build each gid from the doc (look at what fields the ES docs carry — resourceId + resourceType/tab → `gid://shopify/Product/<id>` etc.; Article gids too). Add a helper mapping (section 'meta-title'|'meta-desc', kind from META_ISSUE_KIND or undefined) → issue types: missing→[metaTitle] / [metaDescription], length→[metaTitleLength] / [metaDescriptionLength], undefined→both. Export it (generateBulkService and the controller both need it; put it where it avoids an import cycle — storeScan already imports from generateBulkService? check and avoid a cycle).\n2. analysisController getList metaIssue branch: replace scanForIssueNodes + predicate with listIssueResourceIds (cursor = ctx.query.after, limit = min(first||10, 50)); fetch nodes with analysisService._fetchNodes (or whatever non-swallowing fetch exists — errors must reach the existing catch, not become an empty page); keep pageInfo shape {hasNext, hasPre:false, endCursor}. Shop not synced (needsChecklistSync on the JobDataMigrateRepository doc, same pattern as storeScan.refreshChecklistDocs ~L516) → return data [] with pageInfo no-next and `needsSync: true`. Drop the now-unused imports.\n3. Bulk ISSUES (subscribeGenFaq isAuto path, option === RESOURCE_GEN_OPTION.ISSUES only): page through listIssueResourceIds (cursor is the ES search_after id string instead of a GraphQL cursor — make sure the chain's cursor handling accepts it for this option) and load the batch with the existing fetchResourcesByIds({shopify, ids}); no matchesGenOption re-judging for ISSUES. Unsynced shop → zero resources, run completes normally, zero credits. ALL and WITHOUT options unchanged. Keep matchesGenOption's ISSUES branch only if something else still needs it; otherwise remove hasMetaIssue/loadAppMetaContext usages that become dead (grep packages/functions and packages/assets).\n4. issueCount for meta sections in getResourceReport: read it from the index (sum of failed counts for the section's issue types across product/collection/article — readStoreResources in storeScan.js already returns per-tab `failed` counts) instead of countResourcesWithFaq's withMetaIssue; unsynced → 0. Remove withMetaIssue from countResourcesWithFaq if it becomes unused.\nTests (mock ES service + repositories with factories): storeScan listIssueResourceIds (query has shop scope + terms + search_after, gid building, hasNext); analysisController metaIssue branch (ids from ES → nodes; unsynced → needsSync; node fetch error → error response not empty data) — extend or mirror existing controllers/__tests__/analysisController.*.test.js mocking style; subscribeGenFaq ISSUES (only ES ids generated/charged; unsynced → no generation, no credit) — mirror handlers/pubsub/__tests__/subscribeGenFaq.pricing.test.js; generateBulkService tests still green. Update docs/features/seo-audit.md where it describes the Fix link / ISSUES option judging (keep its citation style).\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "the Fix-link list, the bulk ISSUES run and issueCount all read meta issues from the checklist's search-index verdict, so they match the checklist and never charge credits for drafts or resources the checklist passed",
+    "allow": [
+     "packages/functions/src/services/audit/storeScan.js",
+     "packages/functions/src/controllers/analysisController.js",
+     "packages/functions/src/services/generateBulkService.js",
+     "packages/functions/src/handlers/pubsub/subscribeGenFaq.js",
+     "packages/functions/src/services/analysis.service.js",
+     "packages/functions/src/services/audit/__tests__/listIssueResourceIds.test.js",
+     "packages/functions/src/controllers/__tests__/analysisController.metaIssue.test.js",
+     "packages/functions/src/handlers/pubsub/__tests__/subscribeGenFaq.issues.test.js",
+     "packages/functions/src/services/__tests__/generateBulkOptions.test.js",
+     "packages/functions/src/services/__tests__/generateBulkService.metaIssue.test.js",
+     "docs/features/seo-audit.md"
+    ],
+    "verify": [
+     {
+      "name": "new tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/listIssueResourceIds.test.js",
+       "packages/functions/src/controllers/__tests__/analysisController.metaIssue.test.js",
+       "packages/functions/src/handlers/pubsub/__tests__/subscribeGenFaq.issues.test.js"
+      ]
+     },
+     {
+      "name": "existing bulk + scan tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/__tests__/generateBulkOptions.test.js",
+       "packages/functions/src/services/audit/__tests__/storeScan.test.js",
+       "packages/functions/src/handlers/pubsub/__tests__/subscribeGenFaq.pricing.test.js"
+      ],
+      "preflight": true
+     },
+     {
+      "name": "docs-gate citations",
+      "preflight": true,
+      "cmd": [
+       "node",
+       "-e",
+       "process.exit(require('./scripts/docs-gate/citations').main() === 0 ? 0 : 1)"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/audit/storeScan.js packages/functions/src/controllers/analysisController.js packages/functions/src/services/generateBulkService.js packages/functions/src/handlers/pubsub/subscribeGenFaq.js packages/functions/src/services/analysis.service.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/handlers/pubsub/__tests__/subscribeGenFaq.issues.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "clear-score-filter",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nBug: the checklist's On-page score Fix action (packages/assets/src/helpers/checklist/checklistActions.js ~L62-68, case 'onPageScore') dispatches `{scoreBelow: ONPAGE_SCORE_PASS}` via SCORE_QUERY_ACTION (SET_PRODUCT_QUERY/SET_COLLECTION_QUERY/SET_BLOG_QUERY) into the app-wide QueryContext and nothing ever clears it. AI Content (packages/assets/src/pages/BulkGenerator/GeneratorSetting.jsx) reuses the same product/collection/blog state: its lists come back filtered by score, its select-all credit estimate uses the filtered totalCount, but the server-side select-all (`searchParam: query.onPageQuery[TAB_STATE_KEY[tab]]` → functions buildBulkFilterQuery, which ignores scoreBelow) runs on ALL resources — estimate ≠ credits charged.\nFix: export from checklistActions.js a small `clearScoreFilter(setQuery)` that dispatches `{scoreBelow: ''}` (check how the reducers merge payloads and what 'no filter' value the Audit List chips/requests treat as unset — empty string, null or undefined; match it) for all three SCORE_QUERY_ACTION types; call it once on mount in GeneratorSetting.jsx (next to the existing SET_ONPAGE_TAB effect ~L216). Also make GeneratorSetting's searchParam strip any scoreBelow key defensively. The On-page list keeps the filter (that is the Fix destination; its chip is removable).\nTest: packages/assets/src/helpers/checklist/__tests__/clearScoreFilter.test.js — mocked setQuery receives the three clear actions with the right types; onPageScore case still dispatches the filter.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "opening AI Content clears the checklist's score-below filter so its lists, estimate and server select-all agree",
+    "allow": [
+     "packages/assets/src/helpers/checklist/checklistActions.js",
+     "packages/assets/src/helpers/checklist/__tests__/clearScoreFilter.test.js",
+     "packages/assets/src/pages/BulkGenerator/GeneratorSetting.jsx"
+    ],
+    "verify": [
+     {
+      "name": "clear filter test",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/assets/src/helpers/checklist/__tests__/clearScoreFilter.test.js"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/assets/src/helpers/checklist/checklistActions.js packages/assets/src/pages/BulkGenerator/GeneratorSetting.jsx"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/assets/src/helpers/checklist/__tests__/clearScoreFilter.test.js"
+     ]
+    }
+   }
+  },
+  {
+   "id": "modal-race",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 45,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nBug: packages/assets/src/hooks/modal/useModalChecklistPages.js — loadPage (~L81-95) has no request token: close modal A mid-fetch, open B, and A's late response runs setRows/setCursor/setHasNext and its finally sets loading=false while B loads; B can then page with A's cursor. openModal (~L97-102) resets rows/hasNext but not cursor; onClose (~L261) only setTarget(null). On fetch error the catch only logs, rows=[] and the body renders t('empty') — a false 'no failing pages'.\nFix: a useRef request id bumped in openModal and onClose; loadPage captures it and ignores every setState (incl. finally) when stale; openModal resets cursor; add an `error` state set in the catch and cleared on open/retry, rendered as a short Polaris message with a Retry button instead of the empty text. New strings go in packages/assets/src/hooks/modal/UseModal.json under ChecklistPages (e.g. loadError, retry) AND by hand into every packages/assets/src/locale/translations/*.json at UseModal.ChecklistPages.* (en.json/origin.json verbatim English, other locales properly translated; `yarn update-label` cannot run here). Do not reformat other keys.\nTest: extract the stale-guard into a tiny pure helper if needed and test it, plus packages/assets/src/locale/__tests__/checklistPagesErrorKeys.test.js asserting every translation file has the new keys. If the repo has @testing-library/react-hooks available you may test the hook directly; check package.json first, add no dependency.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "the checklist pages modal ignores stale responses, resets its cursor per open, and shows an error with retry instead of a false empty list",
+    "allow": [
+     "packages/assets/src/hooks/modal/useModalChecklistPages.js",
+     "packages/assets/src/hooks/modal/UseModal.json",
+     "packages/assets/src/locale/translations/",
+     "packages/assets/src/locale/__tests__/checklistPagesErrorKeys.test.js",
+     "packages/assets/src/hooks/modal/__tests__/"
+    ],
+    "verify": [
+     {
+      "name": "modal tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/assets/src/locale/__tests__/checklistPagesErrorKeys.test.js"
+      ]
+     },
+     {
+      "name": "locale json valid",
+      "cmd": [
+       "node",
+       "-e",
+       "const fs=require('fs');const d='packages/assets/src/locale/translations/';for(const f of fs.readdirSync(d))JSON.parse(fs.readFileSync(d+f,'utf8'))"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/assets/src/hooks/modal/useModalChecklistPages.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/assets/src/locale/__tests__/checklistPagesErrorKeys.test.js"
+     ]
+    }
+   }
+  },
+  {
+   "id": "recount-coalesce",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 60,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nBug: packages/functions/src/services/optimize/fileImageService.js ~L320-336 dispatches `count_optimized_images` (recursive) after every optimizeFileImage call, and controllers/seoController.js ~L1264-1280 dispatches one handleManualOptimizeImage per log, i.e. roughly one per image. Each recount (services/optimize/recountOptimizedImages.js, run via handlers/cron/subscribeRecursive.js ~L722) scans the whole completed File history. 500 images → 500 concurrent full-history scans, Firestore reads ∝ N × history; nothing dedupes. Also `void dispatchWork(...)` has no .catch → unhandled rejection when publishTopic rejects.\nFix (decided: coalesce, not timer debounce — a debounce drops the trailing batch): before dispatching, atomically (Firestore transaction or create-if-absent) set a per-shop 'recount queued' marker on the optimizeReport doc (repositories/optimizeReportRepository.js — read it; or a dedicated small doc if the report doc is written with plain set elsewhere) and dispatch only when no fresh marker exists (treat a marker older than ~15 min as stale so a lost job can't block forever; comment why). recountOptimizedImages clears the marker at the START of its run (before scanning) for that source/type, so batches finishing during a scan queue exactly one more. Key the marker by source+type ('File'+'image' vs 'alt'). Add .catch(e => logger.warn(...)) to the dispatch. Do not touch subscribeRecursive.js (another task edits it).\nTests: services/optimize/__tests__/recountCoalesce.test.js — two calls in a row dispatch once; after the recount starts (marker cleared) the next call dispatches again; stale marker → dispatch; dispatch rejection is caught. Mock Firestore/repository with factories like services/optimize/__tests__/finalizeWriteFlow.test.js.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "manual File-page optimisation queues at most one pending optimized-image recount per shop instead of one full-history scan per image",
+    "allow": [
+     "packages/functions/src/services/optimize/fileImageService.js",
+     "packages/functions/src/services/optimize/recountOptimizedImages.js",
+     "packages/functions/src/repositories/optimizeReportRepository.js",
+     "packages/functions/src/services/optimize/__tests__/recountCoalesce.test.js"
+    ],
+    "verify": [
+     {
+      "name": "coalesce tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/optimize/__tests__/recountCoalesce.test.js"
+      ]
+     },
+     {
+      "name": "existing optimize tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/optimize/__tests__/finalizeWriteFlow.test.js",
+       "packages/functions/src/services/optimize/__tests__/seedHistoryOptimizeTotals.test.js"
+      ],
+      "preflight": true
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/optimize/fileImageService.js packages/functions/src/services/optimize/recountOptimizedImages.js packages/functions/src/repositories/optimizeReportRepository.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/optimize/__tests__/recountCoalesce.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "recompute-coalesce",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 75,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nBug: packages/functions/src/services/shopifyGraphQlService.js refreshChecklistAfterWrite (~L2870-2888), awaited from upsertMetafields (~L2931) and deleteMetafields (~L2969), runs refreshChecklistDocs (per-doc ES refresh — keep) and then applyStoreResourcesResult(shop) inline — a shop-level recompute (getStorages read, ES aggregation, updateChecklist, recalc). Bulk paths call upsertMetafields per 25-metafield batch (services/bulkEditService.js ~L720-782) or per resource (repositories/analysisRepository.js, used by AI bulk generation and autofix): a 1000-product bulk edit = ~40 shop recomputes, latency inside each write request, concurrent read-modify-writes on the checklist (last write wins).\nFix (decided): keep refreshChecklistDocs inline; replace the inline applyStoreResourcesResult with a coalesced background recompute: atomically set a per-shop 'store recompute queued' marker (Firestore transaction / create-if-absent on a small doc, e.g. collection used by localStorageRepository or a new tiny doc — keep it shop-scoped; stale after ~10 min so a lost job cannot block forever) and dispatchWork('recursive', {action: <new constant>, shop}) only when not already queued; add the handler case in handlers/cron/subscribeRecursive.js that clears the marker FIRST then runs applyStoreResourcesResult(shop) (so writes landing during the run queue exactly one more). Follow how existing recursive actions are declared (constants file, switch/map in subscribeRecursive). .catch on the dispatch. Do not edit bulkEditService or analysisRepository — the coalescing makes per-call scheduling cheap.\nTests: services/__tests__/checklistRecomputeCoalesce.test.js — many upserts touching checklist keys → refreshChecklistDocs per call, one dispatch; non-checklist metafields → nothing; handler clears marker before recompute and swallows recompute errors. Mock with factories (storeScan, applyStoreResourcesResult, dispatchWork, Firestore).\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "meta writes refresh their own index docs inline but queue at most one shop-level checklist recompute per shop instead of recomputing on every write",
+    "allow": [
+     "packages/functions/src/services/shopifyGraphQlService.js",
+     "packages/functions/src/handlers/cron/subscribeRecursive.js",
+     "packages/functions/src/const/",
+     "packages/functions/src/services/__tests__/checklistRecomputeCoalesce.test.js",
+     "packages/functions/src/services/audit/scheduleStoreRecompute.js"
+    ],
+    "verify": [
+     {
+      "name": "coalesce tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/__tests__/checklistRecomputeCoalesce.test.js"
+      ]
+     },
+     {
+      "name": "recursive chain tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/handlers/cron/__tests__/subscribeRecursive.chainFork.test.js"
+      ],
+      "preflight": true
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/shopifyGraphQlService.js packages/functions/src/handlers/cron/subscribeRecursive.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/__tests__/checklistRecomputeCoalesce.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "runner-races",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 75,
+   "prompt": "Repo: seo (Avada SEO Suite Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` — jest 24 cannot resolve `node:*` imports, so a test must jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio (e.g. services/elasticsearch/elasticsearch.service, repositories/seoRepository); eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Branch FAL-837 (shop SEO checklist redo). Brief with design decisions: second-brain jobs/2026-10-08-seo-mr2270-review-round2.md — follow its Decisions.\n\nThree bugs in the checklist scan's writes:\n(A) packages/functions/src/services/audit/runner.js ~L69-73: `kept` comes from shop.issueFixed read at scan START (~L21) and is written with updateShop(shop.id, {issueFixed: kept}, true) after a multi-minute scan — a merge-set that replaces the whole array, so an 'I have fixed already' click made during the scan is lost. Fix: remove only the reopened entries atomically (FieldValue.arrayRemove(...reopened) on the shop doc — check how shopRepository/updateShop writes and whether issueFixed entries are plain strings so arrayRemove matches). Keep using `kept` for this scan's in-memory result.\n(B) services/audit/applyImageAltResult.js writes the finished missing-alt count into the stored checklist unless there is no lastScanAt; it ignores `checklist.scanning`. A scan in progress then overwrites it with the stale/pending emptyImageAlt computed earlier from imageAltReport (runner.js ~L78-87 final pushChecklist). Fix: applyImageAltResult returns early while checklist.scanning is true; in the runner, right before the final pushChecklist, re-read the optimize report (the same getter services/audit/artifacts/imageAltReport.js uses) and, when it now has a finished count, replace the emptyImageAlt issue result with EmptyImageAlt.fromCounts(...) (as applyImageAltResult does) before prepareIssue/score. A first-ever scan (no lastScanAt yet) also benefits from this re-read.\n(C) handlers/webhook/bulkOperationHook.js hookCountResourceMissingAlt (~L493-505): when bulkOp has no `url` it writes DONE with missingAltCount 0 / syncTotalImagesCount 0 — correct for a COMPLETED op with zero results, wrong for a FAILED/CANCELED/EXPIRED op, which then reports '0 missing alt' as a pass for 24h. Fix: inspect the bulk op status field the webhook payload/handler already has (read handleHook ~L280-300 to see what bulkOp contains); non-COMPLETED → write syncTotalImagesStatus FAILED and leave counts untouched; COMPLETED with no url → current behaviour.\nTests: services/audit/__tests__/runnerIssueFixed.test.js (arrayRemove used, no whole-array overwrite), services/audit/__tests__/applyImageAltResult.scanning.test.js, services/audit/__tests__/runnerAltReread.test.js (final push uses fresh count), handlers/webhook/__tests__/bulkOperationHook.missingAlt.test.js (FAILED op → FAILED status, counts untouched; COMPLETED no url → zero counts). Mock like services/audit/__tests__/runAudits.test.js.\n\nRules: touch only the files in the contract allow list. TDD: write the failing test first and watch it fail. Comments say WHY only (constraint, limit, ordering), never narrate WHAT; no step numbering, no banners. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml. Run every verify command yourself (including eslint — the repo's pre-commit hook runs eslint+prettier on each staged file, so format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`) before saying done. Final message: file:line of each change + the before-fix failure scenario.",
+   "contract": {
+    "goal": "the scan no longer drops dismissals or fresh alt counts, and a failed alt bulk op no longer reports zero missing alt",
+    "allow": [
+     "packages/functions/src/services/audit/runner.js",
+     "packages/functions/src/services/audit/applyImageAltResult.js",
+     "packages/functions/src/handlers/webhook/bulkOperationHook.js",
+     "packages/functions/src/services/audit/__tests__/runnerIssueFixed.test.js",
+     "packages/functions/src/services/audit/__tests__/applyImageAltResult.scanning.test.js",
+     "packages/functions/src/services/audit/__tests__/runnerAltReread.test.js",
+     "packages/functions/src/handlers/webhook/__tests__/bulkOperationHook.missingAlt.test.js"
+    ],
+    "verify": [
+     {
+      "name": "new tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/runnerIssueFixed.test.js",
+       "packages/functions/src/services/audit/__tests__/applyImageAltResult.scanning.test.js",
+       "packages/functions/src/services/audit/__tests__/runnerAltReread.test.js",
+       "packages/functions/src/handlers/webhook/__tests__/bulkOperationHook.missingAlt.test.js"
+      ]
+     },
+     {
+      "name": "existing audit tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/audit/__tests__/runAudits.test.js",
+       "packages/functions/src/services/audit/__tests__/recalcChecklistScore.test.js"
+      ],
+      "preflight": true
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "DISABLE_V8_COMPILE_CACHE=1 npx eslint packages/functions/src/services/audit/runner.js packages/functions/src/services/audit/applyImageAltResult.js packages/functions/src/handlers/webhook/bulkOperationHook.js"
+      ]
+     }
+    ],
+    "reproduce": {
+     "testCmd": [
+      "npx",
+      "jest",
+      "--ci",
+      "packages/functions/src/services/audit/__tests__/runnerIssueFixed.test.js"
+     ]
+    },
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}

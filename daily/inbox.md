@@ -321,3 +321,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) slack-thread-watch: thread có task Jira CS tạo sẵn thì join task đó, không tạo FAL mới (`31e332c`). Thấy task trùng thì check logic detect này trước
 - [ ] (×1) Audit fix 2026-10-07 chạy qua harness graph tách theo repo (`jobs/graphs/audit-1007-seo.json`, `audit-1007-blogs.json`), brief ở `jobs/2026-10-07-audit-fix.md`
 - [ ] (×1) SEO đã có tính năng social. Đưa vào brief services-beyond-shopify cùng ADS feed (meta/google/ChatGPT) khi tính service đo lường được
+
+### memory candidates 2026-10-08
+- [ ] (×1) seo AutoPilot (MR !2270) bỏ image optimize/compression vì Shopify CDN đã optimize ảnh — đừng thêm lại vào AutoPilot
+- [ ] (×1) seo audit checklist scan do khách bấm, không auto scan khi mở app; ES sync ảnh product chỉ chạy sau khi khách click (tiết kiệm ES)
+- [ ] (×1) seo page missing meta title đọc từ ES; ảnh product đang được thêm vào ES để bỏ call Shopify — shop báo thiếu ảnh ở audit thì check ES đã sync field ảnh chưa
+- [ ] (×1) Test UI seo chạy local `yarn dev` + `yarn emulators` trên macOS thay deploy staging, kèm Playwright `--extension` trên Chrome có sẵn

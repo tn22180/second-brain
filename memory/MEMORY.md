@@ -86,7 +86,7 @@
 - [product-feed inventory](product-feed-inventory.md) — 10-07: ChatGPT ~80% có sẵn, nguồn chỉ Shopify, identifier_exists gần như không ghi, 2 lỗ tự mở plan (renderImageLimit, devZoneGuard).
 - [share-note token ở file](share-note-token-file.md) — NOTES_API_KEY không export; đọc `~/.config/avada/notes-token` inline khi chạy bun index.ts.
 - [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.
-- [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (52/64); vá+restart 10-01 07:00Z (31a2fb0), đo lại từ 10-08 bằng harness/retro_autofix.py (nền 16% cần round 2).
+- [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (13/17); vá 10-01 (31a2fb0). Đo 10-08 n=22: matched-nothing 15,6→4,5/100. Vòng 2 10-08 (31eb13e): extractJson parse hỏng 4/6 reply hợp lệ. Đo lại cả 2 ngày 10-15.
 - [Reply thread Slack khi xong](reply-slack-thread-on-done.md) — fix bug từ thread support xong phần nào reply luôn vào thread (link MR, nguyên nhân, khách cần làm gì, deploy chưa); bot token falcon-fix-bot.
 - [seo [deploy-extensions] mất ở merge commit](seo-deploy-extensions-merge-title.md) — rule check CI_COMMIT_TITLE; merge title 'Merge branch…' → extension KHÔNG deploy; tag pipeline không có job extension. Curl storefront để verify.
 - [Team SEOOn = 6 người](seoon-team-members.md) — tuannv, tunglv, truongnn, minhpt, dungtt, tranggt; đừng lấy cả Board 1 trong roster jira.
@@ -96,3 +96,6 @@
 - [seo AGENTS.md cướp Codex](seo-agents-md-hijacks-codex.md) — master có AGENTS.md persona "morgan" (tunglv 09-03) → codex từ chối code, exit 0; dùng `-c project_doc_max_bytes=0` tới khi gỡ.
 - [Slack: reply bằng tk cá nhân](slack-reply-as-personal.md) — session Claude Code post Slack bằng PERSONAL_SLACK_TOKEN (second-brain/.env, xoxp tuannv087), không bằng bot; tool tự động vẫn bot.
 - [blogs MCP free là cố ý](blogs-mcp-tools-free-by-design.md) — 0215e3a95 bỏ charge mọi MCP tool; audit "MCP alt-text không trừ credit" = false positive; cap chi phí bằng giới hạn ảnh, không charge.
+- [Session log có symlink](session-logs-symlinked-dedupe.md) — resume.py symlink mọi session vào dir second-brain; script đếm transcript phải bỏ islink (844 thật vs 1.541 dòng).
+- [seo functions: no await import()](seo-functions-no-dynamic-import.md) — .babelrc giữ import() native → prod ERR_MODULE_NOT_FOUND, jest vẫn xanh; lazy-load bằng require. Codex hay mắc (!2381).
+- [Playwright MCP global](playwright-mcp-global.md) — user scope 10-08, `--extension` = lái Chrome có sẵn của Tuan qua extension Playwright MCP Bridge; session mới mới có tool; dùng skill shopify-testing.
