@@ -1,0 +1,162 @@
+{
+  "id": "autopilot-scan-fix",
+  "source": "/Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md",
+  "goal": "AutoPilot v3: merchant-started store scan (Free once), content audit auto-applies bulk fix with keyword+related mandatory, Meta card removed, autopilot bulk-fix jobs kept out of the job dock",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo-wt-autopilot",
+  "baseSha": "a8a27f3414ac570f0373fe9db1c06af0fe13527a",
+  "allow": [
+    "docs/features/autopilot.md",
+    "packages/assets/src/const/productAnalytics.js",
+    "packages/assets/src/locale/translations/da.json",
+    "packages/assets/src/locale/translations/de.json",
+    "packages/assets/src/locale/translations/en.json",
+    "packages/assets/src/locale/translations/es.json",
+    "packages/assets/src/locale/translations/fr.json",
+    "packages/assets/src/locale/translations/it.json",
+    "packages/assets/src/locale/translations/iw.json",
+    "packages/assets/src/locale/translations/nb.json",
+    "packages/assets/src/locale/translations/nl.json",
+    "packages/assets/src/locale/translations/origin.json",
+    "packages/assets/src/locale/translations/pt-BR.json",
+    "packages/assets/src/locale/translations/sv.json",
+    "packages/assets/src/locale/translations/vi.json",
+    "packages/assets/src/locale/translations/zh-CN.json",
+    "packages/assets/src/pages/AutoPilot/AutoPilot.js",
+    "packages/assets/src/pages/AutoPilot/AutoPilot.json",
+    "packages/assets/src/pages/AutoPilot/AutoPilotOverview.js",
+    "packages/assets/src/pages/AutoPilot/AutoPilotOverview.json",
+    "packages/assets/src/pages/AutoPilot/AutoPilotScan.js",
+    "packages/assets/src/pages/AutoPilot/AutoPilotScan.json",
+    "packages/functions/src/const/autopilot.js",
+    "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+    "packages/functions/src/controllers/__tests__/bulkAuditFixController.contract.test.js",
+    "packages/functions/src/controllers/__tests__/bulkAuditFixController.dispatch.test.js",
+    "packages/functions/src/controllers/autopilotController.js",
+    "packages/functions/src/controllers/bulkAuditFixController.js",
+    "packages/functions/src/helpers/bulkAuditFix/__tests__/isRegistryTracked.test.js",
+    "packages/functions/src/helpers/bulkAuditFix/bulkFixJobRegistryMapping.js",
+    "packages/functions/src/repositories/__tests__/autopilotScanRepository.test.js",
+    "packages/functions/src/repositories/__tests__/bulkFixJobRepository.autopilot.test.js",
+    "packages/functions/src/repositories/autopilotScanRepository.js",
+    "packages/functions/src/repositories/bulkFixJobRepository.js",
+    "packages/functions/src/routes/api.js",
+    "packages/functions/src/services/autopilot/__tests__/autopilotService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/autopilotSettings.test.js",
+    "packages/functions/src/services/autopilot/__tests__/productCreateService.test.js",
+    "packages/functions/src/services/autopilot/__tests__/scanService.test.js",
+    "packages/functions/src/services/autopilot/autopilotService.js",
+    "packages/functions/src/services/autopilot/autopilotSettings.js",
+    "packages/functions/src/services/autopilot/productCreateService.js",
+    "packages/functions/src/services/autopilot/scanService.js",
+    "packages/functions/src/services/bulkAuditFix/__tests__/productWorker.fields.test.js",
+    "packages/functions/src/services/bulkAuditFix/__tests__/startBulkFix.test.js",
+    "packages/functions/src/services/bulkAuditFix/chain.js",
+    "packages/functions/src/services/bulkAuditFix/estimator.js",
+    "packages/functions/src/services/bulkAuditFix/productWorker.js",
+    "packages/functions/src/services/bulkAuditFix/startBulkFix.js",
+    "packages/functions/src/services/bulkAuditFix/stuckJobRecovery.js",
+    "packages/functions/src/services/mcp/__tests__/bulkFix.test.js"
+  ],
+  "verify": [
+    {
+      "name": "jest",
+      "cmd": [
+        "npx",
+        "jest",
+        "--ci",
+        "packages/functions/src/services/autopilot",
+        "packages/functions/src/services/bulkAuditFix",
+        "packages/functions/src/helpers/bulkAuditFix",
+        "packages/functions/src/controllers/__tests__",
+        "packages/functions/src/repositories/__tests__",
+        "packages/functions/src/services/mcp/__tests__/bulkFix.test.js",
+        "packages/functions/src/handlers/webhook",
+        "packages/functions/src/handlers/pubsub",
+        "packages/functions/src/handlers/cron",
+        "packages/functions/src/commands",
+        "--testPathIgnorePatterns",
+        "seoController.settingsSecrets",
+        "/lib/"
+      ],
+      "timeoutMs": 900000
+    },
+    {
+      "name": "eslint",
+      "cmd": [
+        "env",
+        "DISABLE_V8_COMPILE_CACHE=1",
+        "npx",
+        "eslint",
+        "packages/assets/src/const/productAnalytics.js",
+        "packages/assets/src/pages/AutoPilot/AutoPilot.js",
+        "packages/assets/src/pages/AutoPilot/AutoPilotOverview.js",
+        "packages/assets/src/pages/AutoPilot/AutoPilotScan.js",
+        "packages/functions/src/const/autopilot.js",
+        "packages/functions/src/controllers/__tests__/autopilotController.test.js",
+        "packages/functions/src/controllers/__tests__/bulkAuditFixController.contract.test.js",
+        "packages/functions/src/controllers/__tests__/bulkAuditFixController.dispatch.test.js",
+        "packages/functions/src/controllers/autopilotController.js",
+        "packages/functions/src/controllers/bulkAuditFixController.js",
+        "packages/functions/src/helpers/bulkAuditFix/__tests__/isRegistryTracked.test.js",
+        "packages/functions/src/helpers/bulkAuditFix/bulkFixJobRegistryMapping.js",
+        "packages/functions/src/repositories/__tests__/autopilotScanRepository.test.js",
+        "packages/functions/src/repositories/__tests__/bulkFixJobRepository.autopilot.test.js",
+        "packages/functions/src/repositories/autopilotScanRepository.js",
+        "packages/functions/src/repositories/bulkFixJobRepository.js",
+        "packages/functions/src/routes/api.js",
+        "packages/functions/src/services/autopilot/__tests__/autopilotService.test.js",
+        "packages/functions/src/services/autopilot/__tests__/autopilotSettings.test.js",
+        "packages/functions/src/services/autopilot/__tests__/productCreateService.test.js",
+        "packages/functions/src/services/autopilot/__tests__/scanService.test.js",
+        "packages/functions/src/services/autopilot/autopilotService.js",
+        "packages/functions/src/services/autopilot/autopilotSettings.js",
+        "packages/functions/src/services/autopilot/productCreateService.js",
+        "packages/functions/src/services/autopilot/scanService.js",
+        "packages/functions/src/services/bulkAuditFix/__tests__/productWorker.fields.test.js",
+        "packages/functions/src/services/bulkAuditFix/__tests__/startBulkFix.test.js",
+        "packages/functions/src/services/bulkAuditFix/chain.js",
+        "packages/functions/src/services/bulkAuditFix/estimator.js",
+        "packages/functions/src/services/bulkAuditFix/productWorker.js",
+        "packages/functions/src/services/bulkAuditFix/startBulkFix.js",
+        "packages/functions/src/services/bulkAuditFix/stuckJobRecovery.js",
+        "packages/functions/src/services/mcp/__tests__/bulkFix.test.js"
+      ],
+      "timeoutMs": 300000
+    },
+    {
+      "name": "locale-parity",
+      "cmd": [
+        "node",
+        "-e",
+        "const a=require('./packages/assets/src/locale/translations/en.json'),b=require('./packages/assets/src/locale/translations/origin.json');if(JSON.stringify(a)!==JSON.stringify(b))process.exit(1)"
+      ]
+    },
+    {
+      "name": "assets-build",
+      "cmd": [
+        "yarn",
+        "workspace",
+        "@avada/assets",
+        "run",
+        "production"
+      ],
+      "timeoutMs": 900000
+    },
+    {
+      "name": "docs-gate",
+      "cmd": [
+        "node",
+        "scripts/docs-gate/index.js"
+      ],
+      "timeoutMs": 300000
+    }
+  ],
+  "security": {
+    "appName": "seo"
+  },
+  "meta": {
+    "agent": "claude",
+    "model": "claude-opus-5-5",
+    "round": 1
+  }
+}

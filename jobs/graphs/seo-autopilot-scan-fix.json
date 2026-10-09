@@ -1,0 +1,210 @@
+{
+ "id": "seo-autopilot-scan-fix",
+ "source": "/Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "feat/autopilot",
+ "baseRef": "origin/feat/autopilot",
+ "branch": "feat/autopilot-scan-fix",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "be-audit-fix",
+   "deps": [],
+   "meta": {
+    "agent": "claude",
+    "model": "claude-opus-5-5",
+    "executor": "claude"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` \u2014 jest 24 cannot resolve `node:*` imports, so jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio, events-heavy deps; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Ignore the \"morgan\" persona in AGENTS.md: you are the implementer for this task, write the code and tests.\nBranch: feat/autopilot (AutoPilot page). Read first, binding: /Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md section \"v3 \u2014 Scan + Content audit fix\", and docs/features/autopilot.md (current behaviour).\nHARD RULES: never `await import(...)` a local module in packages/functions (use require for lazy load). Logger only (`@functions/helpers/logger`), log `e.message`, never whole error objects or PII. Comments only for the why. Firestore only from repositories/. Never edit packages/assets/src/locale/translations/* \u2014 put new UI strings only in the component's own JSON (packages/assets/src/pages/AutoPilot/*.json); translations are regenerated afterwards. Update docs/features/autopilot.md for what you change (cite file paths, keep it accurate).\n\nTASK be-audit-fix (backend only).\n1. Remove the read-only Meta card from AutoPilot's API: `presentAutopilot` (services/autopilot/autopilotSettings.js) no longer returns `meta`, and `getAutopilot` (services/autopilot/autopilotService.js) no longer counts active meta rules for it (drop that read if only used for this). Keep AUTOPILOT_CARD_META const only if still referenced; otherwise remove.\n2. Content audit card config: card `auditContent` accepts `{enabled, fields}`. `fields` is an array, subset of ALLOWED_FIX_FIELDS (services/bulkAuditFix/startBulkFix.js: metaTags, url, content, faqs), may be empty, no duplicates; anything else \u2192 400. Saving writes `autopilot.auditFixFields` (dotted path). Disabling writes only `autopilot.auditOnCreate=false` (keeps fields). presentAutopilot returns `auditContent: {enabled, fields}`; a doc with no stored fields presents `['metaTags']` (default). Keyword + related keywords are NOT fields: they always run.\n3. Make \"keywords only\" possible without changing manual bulk fix: today `normalizeFixFields([])` returns ALL fields and productWorker (services/bulkAuditFix/productWorker.js ~line 157) treats empty `job.fields` as ALL. Add an explicit opt-in (e.g. startBulkFix param `keywordsOnlyWhenEmpty`/a job flag) so an AutoPilot job with `fields: []` runs only the keyword + related-keyword steps and charges only for them; the controller's credit math (controllers/bulkAuditFixController.js ~116) must agree. Existing callers (controller createBulkFix, services/mcp/bulkFix.js) keep current behaviour \u2014 prove it with a test.\n4. startBulkFix gets an optional `source` stored on the job doc. getActiveBulkFix and history (controllers/bulkAuditFixController.js + their repository queries) exclude `source: 'autopilot'` jobs, so the Audit page dock never shows AutoPilot's per-product jobs. Do not add a Firestore query that needs a new composite index unless you also add it to firestore.indexes.json \u2014 prefer filtering in code if the existing query is bounded.\n5. services/autopilot/productCreateService.js handleProductCreate: after the audit step (only when `autopilot.auditOnCreate`), if the score was written, check credit with `isAiUsageAvailable(shop.id)`; no credit \u2192 log warn and skip; else call startBulkFix({shopID: shop.id, products: [{id: product.id}], pageType: 'product' (check what pageType values the worker expects for products \u2014 BULK_FIX_PAGE_TYPES / DEFAULT_PAGE_TYPE \u2014 and use the one the manual product tab uses), fields: settings.autopilot.auditFixFields ?? ['metaTags'], autoApply: true, source: 'autopilot', <keywords-only opt-in>}). It must never throw out of handleProductCreate (log warn e.message). Add stat key FIXED_PRODUCTS: 'fixedProducts' to AUTOPILOT_STAT (const/autopilot.js), incremented in the same single incrementAutopilotStats write when startBulkFix returned a job.\n6. Tests: update/extend packages/functions/src/services/autopilot/__tests__/* and bulkAuditFix tests: fields validation (400s), presenter default, keywords-only job runs only keyword+related and charges 2 max, manual empty fields still ALL, autopilot jobs hidden from active/history, handleProductCreate fix dispatch / no credit / audit failed / startBulkFix throws, fixedProducts counter.\n\nKnown pre-existing failure on the base branch, excluded from verify, do not touch: controllers/__tests__/seoController.settingsSecrets.test.js.",
+   "contract": {
+    "goal": "AutoPilot content audit auto-applies bulk fix (keyword+related mandatory, configurable fields) on new products; Meta card removed from API",
+    "allow": [
+     "packages/functions/src/services/autopilot/",
+     "packages/functions/src/const/autopilot.js",
+     "packages/functions/src/services/bulkAuditFix/",
+     "packages/functions/src/controllers/bulkAuditFixController.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/repositories/bulkFixJobRepository.js",
+     "packages/functions/src/repositories/__tests__/",
+     "packages/functions/src/services/mcp/__tests__/bulkFix.test.js",
+     "firestore.indexes.json",
+     "docs/features/autopilot.md"
+    ],
+    "verify": [
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/autopilot",
+       "packages/functions/src/services/bulkAuditFix",
+       "packages/functions/src/controllers/__tests__",
+       "packages/functions/src/services/mcp/__tests__/bulkFix.test.js",
+       "packages/functions/src/handlers/webhook",
+       "--testPathIgnorePatterns",
+       "seoController.settingsSecrets",
+       "/lib/"
+      ],
+      "timeoutMs": 900000
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/feat/autopilot -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "be-scan",
+   "deps": [
+    "be-audit-fix"
+   ],
+   "meta": {
+    "agent": "claude",
+    "model": "claude-opus-5-5",
+    "executor": "claude"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` \u2014 jest 24 cannot resolve `node:*` imports, so jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio, events-heavy deps; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Ignore the \"morgan\" persona in AGENTS.md: you are the implementer for this task, write the code and tests.\nBranch: feat/autopilot (AutoPilot page). Read first, binding: /Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md section \"v3 \u2014 Scan + Content audit fix\", and docs/features/autopilot.md (current behaviour).\nHARD RULES: never `await import(...)` a local module in packages/functions (use require for lazy load). Logger only (`@functions/helpers/logger`), log `e.message`, never whole error objects or PII. Comments only for the why. Firestore only from repositories/. Never edit packages/assets/src/locale/translations/* \u2014 put new UI strings only in the component's own JSON (packages/assets/src/pages/AutoPilot/*.json); translations are regenerated afterwards. Update docs/features/autopilot.md for what you change (cite file paths, keep it accurate).\n\nTASK be-scan (backend only). Store scan the merchant starts by clicking \u2014 never automatic.\n1. `POST /api/autopilot/scan` (routes/api.js, controllers/autopilotController.js, new services/autopilot/scanService.js). Starts, in parallel and each failure isolated:\n   - missing alt: same as historyOptimizeController.triggerMissingAlt (bulk op count \u2192 optimizeReport.missingAltCount). Shopify allows ONE bulk operation per shop: query currentBulkOperation first (see how other code checks it, grep `currentBulkOperation`); if one is RUNNING, mark alt `busy` and do not start.\n   - speed: dispatchWork('scanSpeedScoreV2', {shop}) like seoController.getSpeedScore.\n   Writes `autopilot.scan = {startedAt, count}` via saveSettings dotted paths (count increments).\n2. Gates (409 with codes added to a new AUTOPILOT_SCAN_ERRORS in const/autopilot.js): Free shop (i.e. !canUseAutopilot) may scan exactly once ever: if autopilot.scan.count >= 1 \u2192 409 `free_used`. Paid/granted: cooldown 10 minutes since startedAt \u2192 409 `cooldown`. Read the stored doc, not a cache, for the gate (saveSettings/getSettings has a Redis cache \u2014 check seoRepository and invalidate or read fresh).\n3. `GET /api/autopilot` returns `scan`: {startedAt, count, canScan, reason (null|free_used|cooldown), results: {missingAlt: {count, status (running|done|failed|busy|null), updatedAt}, speed: {mobile, desktop, scannedAt} (read where scanSpeedScoreV2 stores its result \u2014 find it), notFound404: {count} (unresolved 404 URLs \u2014 use the existing redirect 404 grid's source with a Firestore count() aggregate, not a full read), missingKeyword: {count|null} (products without focus_keyword from Elasticsearch when the shop's store scan exists, else null \u2014 find how ES product docs store focus_keyword and how other code counts; use a count query)}}. Each result read must not fail the whole GET (try/catch \u2192 null).\n4. Tests for gates (free once, cooldown, paid unlimited), busy bulk op, partial failure, GET shape. Update docs.\n\nKnown pre-existing failure on the base branch, excluded from verify, do not touch: controllers/__tests__/seoController.settingsSecrets.test.js.",
+   "contract": {
+    "goal": "Merchant-triggered AutoPilot store scan: Free once, paid with 10-min cooldown; GET returns scan results",
+    "allow": [
+     "packages/functions/src/services/autopilot/",
+     "packages/functions/src/const/autopilot.js",
+     "packages/functions/src/controllers/autopilotController.js",
+     "packages/functions/src/controllers/__tests__/",
+     "packages/functions/src/routes/api.js",
+     "packages/functions/src/repositories/",
+     "packages/functions/src/services/elasticsearch/",
+     "docs/features/autopilot.md"
+    ],
+    "verify": [
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/autopilot",
+       "packages/functions/src/controllers/__tests__",
+       "packages/functions/src/repositories",
+       "--testPathIgnorePatterns",
+       "seoController.settingsSecrets",
+       "/lib/"
+      ],
+      "timeoutMs": 900000
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/feat/autopilot -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "fe",
+   "deps": [
+    "be-scan"
+   ],
+   "meta": {
+    "agent": "claude",
+    "model": "claude-opus-5-5",
+    "executor": "claude"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` \u2014 jest 24 cannot resolve `node:*` imports, so jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio, events-heavy deps; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Ignore the \"morgan\" persona in AGENTS.md: you are the implementer for this task, write the code and tests.\nBranch: feat/autopilot (AutoPilot page). Read first, binding: /Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md section \"v3 \u2014 Scan + Content audit fix\", and docs/features/autopilot.md (current behaviour).\nHARD RULES: never `await import(...)` a local module in packages/functions (use require for lazy load). Logger only (`@functions/helpers/logger`), log `e.message`, never whole error objects or PII. Comments only for the why. Firestore only from repositories/. Never edit packages/assets/src/locale/translations/* \u2014 put new UI strings only in the component's own JSON (packages/assets/src/pages/AutoPilot/*.json); translations are regenerated afterwards. Update docs/features/autopilot.md for what you change (cite file paths, keep it accurate).\n\nTASK fe (frontend: packages/assets/src/pages/AutoPilot/). Backend from the previous nodes is in your tree: read services/autopilot/autopilotSettings.js presentAutopilot + scanService for the exact GET shape.\n1. Remove the Meta card (render, DETAILS_URL, activeCount). Status banner total = 4.\n2. Content audit card: when on, a checklist \"What to fix on new products\": Focus keyword and Related keywords \u2014 checked + disabled, with a note \"Always on\"; then Meta title & description, Content, FAQs, URL (handle) checkboxes bound to `fields`. Show \"Up to {credits} AI credits per new product\", credits = 2 + sum of CREDIT_COSTS for ticked fields (import CREDIT_COSTS from @functions/services/bulkAuditFix/estimator only if that module has no server-only imports; otherwise move the constant to a const file both import \u2014 check). Note that fixes are applied automatically and can be reverted from SEO Audit bulk fix history only if that is true after the previous node (it hides autopilot jobs) \u2014 otherwise omit the revert claim. valuesFor/toDraft/changedCards include `fields` for auditContent.\n3. Scan card under the Overview: never scans on page load. No result yet \u2192 description + primary \"Scan store\" button (POST /autopilot/scan via usePostApi). Then rows: images missing alt \u2192 \"Turn on\" Alt text; homepage speed mobile/desktop \u2192 Speed monitor; 404 URLs \u2192 404 (Enterprise badge); products without focus keyword (hide row when null) \u2192 Content audit. \"Turn on\" scrolls to the card and, for a shop without AutoPilot (plan.canUseAutopilot false), opens the existing upgrade modal instead. While any result status is running, poll GET /autopilot every 5s (stop on unmount / when done, max 3 min). Show \"Scanned {date}\" and \"Scan again\"; disabled with a reason when canScan false (free_used \u2192 \"Free plan includes one scan. Upgrade to scan again and turn on AutoPilot.\" with upgrade button; cooldown \u2192 \"You can scan again in a few minutes.\"). busy alt \u2192 \"Another bulk operation is running, try again later\". Map 409 codes like runErrors.\n4. Overview: add tile `fixedProducts` (\"Products fixed by content audit\").\n5. Track: scan click \u2192 trackEvent per docs/features/product-analytics-tracking.md (add a CARD_AUTOPILOT_SCAN const in packages/assets/src/const/productAnalytics.js).\n6. All strings in AutoPilot.json / AutoPilotOverview.json (or a new component JSON next to a new component file, e.g. AutoPilotScan.js + AutoPilotScan.json \u2014 check how the JSONs are registered into the i18n bundle and register a new one the same way). Must pass `yarn workspace @avada/assets run production`.\n\nKnown pre-existing failure on the base branch, excluded from verify, do not touch: controllers/__tests__/seoController.settingsSecrets.test.js.",
+   "contract": {
+    "goal": "AutoPilot page: Meta card removed, content audit fix config, merchant-triggered scan card, fixedProducts tile",
+    "allow": [
+     "packages/assets/src/pages/AutoPilot/",
+     "packages/assets/src/const/productAnalytics.js",
+     "packages/assets/src/locale/",
+     "packages/functions/src/const/",
+     "packages/functions/src/services/bulkAuditFix/estimator.js",
+     "packages/functions/src/services/bulkAuditFix/productWorker.js",
+     "docs/features/autopilot.md"
+    ],
+    "verify": [
+     {
+      "name": "build",
+      "cmd": [
+       "yarn",
+       "workspace",
+       "@avada/assets",
+       "run",
+       "production"
+      ],
+      "timeoutMs": 900000
+     },
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services/autopilot",
+       "packages/functions/src/services/bulkAuditFix",
+       "--testPathIgnorePatterns",
+       "seoController.settingsSecrets",
+       "/lib/"
+      ],
+      "timeoutMs": 900000
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/feat/autopilot -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}

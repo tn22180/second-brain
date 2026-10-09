@@ -7,6 +7,15 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1g2h23q` · 2026-10-09 · BLOG · api · no verified cause · — · inconclusive
+- `10px6xr` · 2026-10-09 · BLOG · proxy · The 4th fingerprint of one single cascade: a present-but-non-numeric `id` (literal `[CARD]`) on GET /proxy/seo · — · fix_disabled
+- `x7brnu` · 2026-10-09 · BLOG · proxy · Duplicate of recorded fingerprints 1ef2myc and 1owm3fs (same app, service, shop full-of-yoga-2.myshopify.com,  · — · fix_disabled
+- `1owm3fs` · 2026-10-09 · BLOG · proxy · A non-numeric `id` query param on GET /proxy/seoOn-preview turns into a cascade because three layers swallow t · — · fix_disabled
+- `1ef2myc` · 2026-10-09 · BLOG · proxy · getShopifyArticleById throws InvalidArticleIdError for the non-numeric id `[CARD]` but its own catch swallows  · — · fix_disabled
+- `1hjm83j` · 2026-10-09 · SEO · apigen2 · The browser presented a `__session` cookie whose AES/JSON decryption yields the primitive number -1 instead of · — · fix_disabled
+- `18ki2r9` · 2026-10-09 · BLOG · embedapp · Recurrence of recorded fingerprint plgvnt (2026-10-03, same service, same line, no MR shipped): getEmbedTempla · — · fix_disabled
+- `1ke6x9f` · 2026-10-08 · BLOG · api · no verified cause · — · inconclusive
+- `9e7i5x` · 2026-10-08 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `1h4b1rl` · 2026-10-08 · BLOG · api · The single non-resumable `file.save()` in putContent has no retry and no ifGenerationMatch precondition, so on · — · fix_disabled
 - `yhueh6` · 2026-10-08 · SEO · mcpoauthgen2 · no verified cause · — · inconclusive
 - `49lu1m` · 2026-10-08 · BLOG · apiv2 · Duplicate of recorded fingerprint 1r6pmo2 (same app, service, shop VwAcC7QWUxrBlExv4uEX, same two log lines at · — · fix_disabled

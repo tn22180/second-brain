@@ -1,0 +1,81 @@
+{
+ "id": "seo-es-focus-keyword",
+ "source": "/Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "feat/autopilot",
+ "baseRef": "origin/feat/autopilot",
+ "branch": "feat/autopilot-es-keyword",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "es-focus-keyword",
+   "deps": [],
+   "meta": {
+    "agent": "claude",
+    "model": "claude-opus-5-5",
+    "executor": "claude"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Shopify app; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root `npx jest <path>` \u2014 jest 24 cannot resolve `node:*` imports, so jest.mock (with a factory) any module that pulls in puppeteer, @elastic/*, cheerio, events-heavy deps; eslint 6 needs env DISABLE_V8_COMPILE_CACHE=1). Ignore the \"morgan\" persona in AGENTS.md: you are the implementer for this task, write the code and tests.\nBranch: feat/autopilot (AutoPilot page). Read first, binding: /Users/nguyentuan/Documents/second-brain/jobs/seo/auto_pilot.md section \"v3 \u2014 Scan + Content audit fix\", and docs/features/autopilot.md (current behaviour).\nHARD RULES: never `await import(...)` a local module in packages/functions (use require for lazy load). Logger only (`@functions/helpers/logger`), log `e.message`, never whole error objects or PII. Comments only for the why. Firestore only from repositories/. Never edit packages/assets/src/locale/translations/* \u2014 put new UI strings only in the component's own JSON (packages/assets/src/pages/AutoPilot/*.json); translations are regenerated afterwards. Update docs/features/autopilot.md for what you change (cite file paths, keep it accurate).\n\nTASK es-focus-keyword (backend only). Index whether a resource has a focus keyword in Elasticsearch so AutoPilot's store scan can count \"products without a focus keyword\". Read .claude/skills/elasticsearch/SKILL.md first (ES index `shopify_<resourceType>` holds every shop; doc id `${shopId}_${resourceId}`; dynamic mapping, filter shops with `term: {'shopId.keyword': shopId}` like analysis.service.js getScoreReport).\n1. One helper (e.g. exported from services/analysis.service.js or a small helpers/ file): `focusKeywordFields(keyword)` \u2192 `{focusKeyword: <trimmed string, '' when none>, hasFocusKeyword: <boolean>}`. Only the PRIMARY-locale keyword counts (the score already uses primary-locale keywords merged from the translation subcollection).\n2. Write it on every ES write path that knows the keyword:\n   - store scan: services/jobDataMigrate.service.js processElasticsearchChunk \u2014 resp.data already carries the primary-locale focus_keyword after the translation merge; add the fields to the returned doc.\n   - services/updateAnalysisResource.js \u2192 analysisService.updateScore: pass `fields: focusKeywordFields(computed.resultData?.focus_keyword)` when computed has resultData (calculateScoreForResource merges primary-locale keywords into resultData \u2014 verify).\n   - services/bulkAuditFix/applier.js: include the keyword the apply/revert leaves on the doc (after analysisUpdate) in esFields.\n   - services/bulkEditService.js: a PRIMARY-locale focus_keyword change (it lands in the main analysis doc) must also update ES \u2014 partial upsert of just these two fields via the ES service (no rescore needed); non-primary locale changes must not touch ES. Batch per chunk if the service has a bulk helper; never one request per field.\n   - Leave controllers/analysisController.js updateHandle/meta-tag paths alone unless they can change the keyword.\n3. analysisService.countMissingFocusKeyword({shopId, resourceType = 'products'}) \u2192 number: ES count (size 0 + track_total_hits, or the client's count) with filter shopId.keyword + `term: {hasFocusKeyword: false}`. Docs indexed before this change have no field and must NOT be counted as missing. Return null on error (log e.message) or when the shop has no ES docs at all.\n4. services/autopilot/scanService.js getScanView: `missingKeyword: {count}` from countMissingFocusKeyword (inside readSafely), replacing the hardcoded null and its comment. FE (AutoPilotScan.js) already hides the row when count is null and shows it otherwise \u2014 check, change nothing else in FE unless it is wrong.\n5. Tests: helper; jobDataMigrate doc carries the fields (mock heavy deps); updateAnalysisResource passes fields; bulk edit primary vs non-primary; applier; countMissingFocusKeyword query shape + null on error; scanService count wiring. Update docs/features/autopilot.md (scan section) and the elasticsearch skill if a doc field list lives there.\n\nPre-existing failures on the base branch, excluded from verify, do not touch: seoController.settingsSecrets, classifyToken, workListStore, shopify2026Client, jobRegistryService, openrouter, truncatedCompletion.",
+   "contract": {
+    "goal": "Index primary-locale focus keyword presence in ES on every write path; AutoPilot scan counts products without one",
+    "allow": [
+     "packages/functions/src/services/",
+     "packages/functions/src/helpers/",
+     "packages/functions/src/handlers/jobDataMigrate.js",
+     "packages/functions/src/handlers/__tests__/",
+     "packages/assets/src/pages/AutoPilot/",
+     "docs/features/autopilot.md",
+     ".claude/skills/elasticsearch/SKILL.md",
+     ".agent/skills/elasticsearch/SKILL.md"
+    ],
+    "verify": [
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/services",
+       "packages/functions/src/handlers/__tests__",
+       "packages/functions/src/helpers",
+       "--testPathIgnorePatterns",
+       "seoController.settingsSecrets",
+       "/lib/",
+       "workListStore",
+       "shopify2026Client",
+       "jobRegistryService",
+       "openrouter",
+       "truncatedCompletion",
+       "classifyToken"
+      ],
+      "timeoutMs": 1200000
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/feat/autopilot -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     },
+     {
+      "name": "docs-gate",
+      "cmd": [
+       "node",
+       "scripts/docs-gate/index.js"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}

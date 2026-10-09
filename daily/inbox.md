@@ -327,3 +327,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo audit checklist scan do khách bấm, không auto scan khi mở app; ES sync ảnh product chỉ chạy sau khi khách click (tiết kiệm ES)
 - [ ] (×1) seo page missing meta title đọc từ ES; ảnh product đang được thêm vào ES để bỏ call Shopify — shop báo thiếu ảnh ở audit thì check ES đã sync field ảnh chưa
 - [ ] (×1) Test UI seo chạy local `yarn dev` + `yarn emulators` trên macOS thay deploy staging, kèm Playwright `--extension` trên Chrome có sẵn
+
+### memory candidates 2026-10-09
+- [ ] (×1) seo checklist rescan chạy theo từng template/issue (không full scan) để giảm chi phí; nút rescan ẩn khi issue đã good — nhánh `fix/FAL-837-rescan-strategy` (gộp !2383)
+- [ ] (×1) seo content audit đã bao gồm meta → không có phần meta riêng; keyword + related keyword là field bắt buộc khi config fix
+- [ ] (×1) seo Free plan chạy được scan/auto-apply 1 lần; muốn update tiếp phải có AutoPilot
+- [ ] (×1) Audit ảnh thiếu alt ở seo tách 2 nguồn — ảnh trong Shopify admin (product/collection/blog, sửa được ở admin) và ảnh trong theme/template (nhóm theo loại template) — CS trả lời khách theo đúng nguồn

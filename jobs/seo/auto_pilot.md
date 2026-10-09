@@ -373,3 +373,25 @@ Scope: toàn branch `feat/autopilot` (`git diff origin/master...HEAD`, 76 file, 
 - Bảng giá Pro → "AutoPilot: alt text and SEO score for new products, weekly speed checks". Sidekick sửa theo.
 - Verify: harness `contracts/autopilot-drop-compression.json` **pass 9/9** (35 file); jest 147/147 vùng autopilot; build OK; docs-gate PASS; locale en≡origin, key chết cắt cả 14 file. Fail còn lại (`overviewCardScore`, `workListStore`) có sẵn trên master.
 - Commit `a8a27f3414a`, push → pipeline 228776 (deploy staging 1 theo pin).
+
+## v3 — Scan + Content audit fix (2026-10-09, PO)
+
+### Decisions (binding)
+- **Bỏ card Meta.** Content audit đã chấm meta. Trang còn 4 card: Alt, Content audit, Speed, 404. Meta rule/template ở trang riêng không đổi.
+- **Content audit = audit + fix sản phẩm mới, auto-apply.** Sau khi chấm điểm, gọi `startBulkFix({products:[p], fields, autoApply: true, source: 'autopilot'})`.
+  - Keyword (1 credit, chỉ khi sp chưa có `focus_keyword`) + related keywords (1) **bắt buộc**, luôn chạy, UI khoá checkbox.
+  - Tuỳ chọn: metaTags 4 (mặc định bật), content 14, faqs 4, url 3 (mặc định tắt). Lưu `autopilot.auditFixFields` (subset của `ALLOWED_FIX_FIELDS`, có thể rỗng = chỉ keyword + related).
+  - `fields: []` phải nghĩa là "chỉ keyword + related" cho job autopilot — hiện `normalizeFixFields([])` và worker coi rỗng = ALL (27 credit). Sửa không đổi hành vi bulk fix thủ công.
+  - Gate credit trước (`isAiUsageAvailable`); hết credit → chỉ chấm điểm, không fix.
+  - Job `source: 'autopilot'` không hiện trong dock/history bulk fix thủ công.
+  - Counter mới `fixedProducts` (job fix khởi chạy được).
+- **Scan cửa hàng, merchant bấm, không auto.** Card đầu trang dưới Overview.
+  - Mục: ảnh thiếu alt (missing-alt bulk op), speed homepage (scanSpeedScoreV2), URL 404 chưa redirect (đếm), sp chưa có focus keyword (ES, null nếu chưa store scan).
+  - **Free: scan được đúng 1 lần trọn đời**, không bật được AutoPilot (bấm "Bật" → modal nâng gói). Pro/Enterprise/grant: scan không giới hạn, cooldown 10 phút/shop (PSI dùng chung key).
+  - Bulk op Shopify đang bận → mục alt báo busy, các mục khác vẫn chạy. 0 credit.
+
+### Progress v3 (2026-10-09)
+- Graph `jobs/graphs/seo-autopilot-scan-fix.json`. Codex hết quota → chạy Claude Opus 5.5. Vòng đầu node 1 fail vì verify tao viết gồm `seoController.settingsSecrets` (fail sẵn trên base) → loại khỏi verify. Node fe fail build vì `node_modules` checkout chính thiếu `react-hook-form` (lỗi môi trường) → relink sang deps seo-wt-autopilot, verify tay pass.
+- Review bắt thêm: job bulk fix của AutoPilot ghi job registry → `JobProgressDock` toàn app hiện 1 dòng / sp mới. Vá `isRegistryTracked` (startBulkFix, chain ×3, stuckJobRecovery); tracking outcome đổi sang menu autopilot.
+- `missingKeyword` luôn null: product doc ES không có `focus_keyword` → FE ẩn dòng. Muốn đếm phải index thêm field (việc riêng).
+- Verify `contracts/autopilot-scan-fix.json`: **pass 9/9**, 51 file. Commit `3a44d60de3` + locale `6d2f29ff30`, push → pipeline 229972 (staging 1).

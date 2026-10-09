@@ -91,7 +91,7 @@
 - [seo [deploy-extensions] mất ở merge commit](seo-deploy-extensions-merge-title.md) — rule check CI_COMMIT_TITLE; merge title 'Merge branch…' → extension KHÔNG deploy; tag pipeline không có job extension. Curl storefront để verify.
 - [Team SEOOn = 6 người](seoon-team-members.md) — tuannv, tunglv, truongnn, minhpt, dungtt, tranggt; đừng lấy cả Board 1 trong roster jira.
 - [Harness security gate vs Stop hook](harness-security-gate-stop-hook.md) — `review_unavailable` ngẫu nhiên trên blogs: check-docs.sh Stop hook chạy trong reviewer claude -p; cho docs/ vào diff, fix gốc ở security.ts chưa làm.
-- [Codex Astra viết code](codex-astra-codes.md) — từ 10-06 việc code giao đi chạy `codex exec -m gpt-6-astra` workspace-write; Claude chỉ plan/review/track; harness mặc định codex.
+- [Codex Astra viết code](codex-astra-codes.md) — từ 10-06 việc code giao đi chạy `codex exec -m gpt-6-astra`; hết quota → executor claude + claude-opus-5-5, không hỏi lại.
 - [Codex OTel → Grafana](codex-otel-tracking.md) — token Codex chỉ lên Grafana qua [otel] trong ~/.codex/config.toml (thêm 10-06); harness gọi codex exec thẳng, không qua cc; label tool=claude bị kế thừa.
 - [seo AGENTS.md cướp Codex](seo-agents-md-hijacks-codex.md) — master có AGENTS.md persona "morgan" (tunglv 09-03) → codex từ chối code, exit 0; dùng `-c project_doc_max_bytes=0` tới khi gỡ.
 - [Slack: reply bằng tk cá nhân](slack-reply-as-personal.md) — session Claude Code post Slack bằng PERSONAL_SLACK_TOKEN (second-brain/.env, xoxp tuannv087), không bằng bot; tool tự động vẫn bot.
