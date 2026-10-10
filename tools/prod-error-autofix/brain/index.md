@@ -7,6 +7,9 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `1hftffu` · 2026-10-10 · BLOG · api · getProductsGraphQL splices the raw `search` query param into a double-quoted GraphQL string literal, so a sear · — · fix_disabled
+- `bqejvw` · 2026-10-09 · SEO · publishbulkfaqsgen2 · no verified cause · — · inconclusive
+- `aim6ma` · 2026-10-09 · IMG-OPT · job:image-optimize-worker · no verified cause · — · inconclusive
 - `1g2h23q` · 2026-10-09 · BLOG · api · no verified cause · — · inconclusive
 - `10px6xr` · 2026-10-09 · BLOG · proxy · The 4th fingerprint of one single cascade: a present-but-non-numeric `id` (literal `[CARD]`) on GET /proxy/seo · — · fix_disabled
 - `x7brnu` · 2026-10-09 · BLOG · proxy · Duplicate of recorded fingerprints 1ef2myc and 1owm3fs (same app, service, shop full-of-yoga-2.myshopify.com,  · — · fix_disabled

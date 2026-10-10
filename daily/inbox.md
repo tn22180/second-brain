@@ -333,3 +333,7 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo content audit đã bao gồm meta → không có phần meta riêng; keyword + related keyword là field bắt buộc khi config fix
 - [ ] (×1) seo Free plan chạy được scan/auto-apply 1 lần; muốn update tiếp phải có AutoPilot
 - [ ] (×1) Audit ảnh thiếu alt ở seo tách 2 nguồn — ảnh trong Shopify admin (product/collection/blog, sửa được ở admin) và ảnh trong theme/template (nhóm theo loại template) — CS trả lời khách theo đúng nguồn
+
+### memory candidates 2026-10-10
+- [ ] (×1) `joy` bị loại khỏi phạm vi review/audit app định kỳ (2026-10-10). Audit fleet-wide chỉ tính các app SEOOn còn lại
+- [ ] (×1) Report review/audit app giờ gửi qua Telegram DM cá nhân, được tự sửa luôn khi fix rõ ràng (vẫn chỉ mở MR, không merge/deploy)
