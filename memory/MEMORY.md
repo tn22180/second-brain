@@ -99,3 +99,4 @@
 - [Session log có symlink](session-logs-symlinked-dedupe.md) — resume.py symlink mọi session vào dir second-brain; script đếm transcript phải bỏ islink (844 thật vs 1.541 dòng).
 - [seo functions: no await import()](seo-functions-no-dynamic-import.md) — .babelrc giữ import() native → prod ERR_MODULE_NOT_FOUND, jest vẫn xanh; lazy-load bằng require. Codex hay mắc (!2381).
 - [Playwright MCP global](playwright-mcp-global.md) — user scope 10-08, `--extension` = lái Chrome có sẵn của Tuan qua extension Playwright MCP Bridge; session mới mới có tool; dùng skill shopify-testing.
+- [secret.avada.net token + share shop token](secret-avada-token-file.md) — sat_ ở ~/.config/avada/secret-token; getShopToken → /api/secrets private 1h/1 view, chỉ in url.

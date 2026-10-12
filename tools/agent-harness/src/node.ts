@@ -10,6 +10,10 @@ const MAX_NUDGES = 3;
 const POLL_MS = 60_000;
 const DEFAULT_WALL_MIN = 45;
 export const DEFAULT_CODEX_MODEL = 'gpt-6-astra';
+/** Where a node goes when Codex runs out of quota mid-task (Tuan's standing rule since 2026-10-06). */
+export const FALLBACK_CLAUDE_MODEL = 'claude-opus-5-5';
+// Only on Codex's own error events: the agent's tool output (e.g. app code about AI credit limits) must not trip it.
+const CODEX_QUOTA = /(?:"type":"(?:error|turn\.failed)"[^\n]*|^ERROR:[^\n]*)(?:usage limit|usage_limit_reached|insufficient_quota|exceeded your current quota)/im;
 
 export interface Proc {
   exited(): boolean;
@@ -99,7 +103,8 @@ export function argvFor(node: GraphNode, sid: string, text: string, resume: bool
   }
   // Called directly, not via `cc codex`: that wrapper path dies on BSD `date +%N` and self-upgrades
   // over local edits. workspace-write keeps writes inside the worktree; `exec` never asks for approval.
-  const opts = ['--json', '-m', model?.startsWith('gpt-') ? model : DEFAULT_CODEX_MODEL, '-c', 'sandbox_mode="workspace-write"'];
+  // project_doc_max_bytes=0: a repo AGENTS.md persona (seo's "morgan") makes Codex refuse and exit 0.
+  const opts = ['--json', '-m', model?.startsWith('gpt-') ? model : DEFAULT_CODEX_MODEL, '-c', 'sandbox_mode="workspace-write"', '-c', 'project_doc_max_bytes=0'];
   return resume && threadId ? ['codex', 'exec', 'resume', ...opts, threadId, text] : ['codex', 'exec', ...opts, text];
 }
 
@@ -111,14 +116,15 @@ export function argvFor(node: GraphNode, sid: string, text: string, resume: bool
 export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps): Promise<NodeResult> {
   const {path, baseSha, fresh} = await deps.worktree();
   const sid = deps.newSessionId();
-  const codex = node.meta?.executor !== 'claude';
+  let current = node;
+  let codex = node.meta?.executor !== 'claude';
   let threadId: string | undefined;
   let proc: Proc | undefined;
   const launch = (text: string, resume: boolean): Proc => {
     threadId = proc?.threadId?.() ?? threadId;
     // Codex without a thread id to resume (it died before printing one) starts over with the full task.
     const lost = codex && resume && !threadId;
-    proc = deps.start(argvFor(node, sid, lost ? `${buildPrompt(node)}\n\n${text}` : text, resume && !lost, threadId), path);
+    proc = deps.start(argvFor(current, sid, lost ? `${buildPrompt(node)}\n\n${text}` : text, resume && !lost, threadId), path);
     return proc;
   };
   const runIds: string[] = [];
@@ -195,6 +201,17 @@ export async function runNode(graph: GraphInfo, node: GraphNode, deps: NodeDeps)
         p.kill();
         p = launch(a.message ?? a.answer ?? a.reason ?? 'continue', true);
       }
+    }
+
+    // Out of quota is not a failed attempt: hand the half-done worktree to Claude, same round.
+    if (codex && CODEX_QUOTA.test(p.tail())) {
+      current = {...node, meta: {...node.meta, executor: 'claude', model: FALLBACK_CLAUDE_MODEL}};
+      codex = false;
+      resume = false;
+      await deps.notify(`↪ ${node.id}: Codex out of quota, continuing on ${FALLBACK_CLAUDE_MODEL}`);
+      message = `${buildPrompt(node)}\n\n## Codex ran out of quota mid-task\nIts partial work is already in this worktree; continue from it, do not start over.`;
+      round--;
+      continue;
     }
 
     const v = await deps.verify(contractFor(round));

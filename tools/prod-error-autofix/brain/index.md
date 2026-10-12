@@ -7,6 +7,7 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `dfk1g9` · 2026-10-12 · IMG-OPT · auth · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — anhnt@avada.io's  · — · infra
 - `1hftffu` · 2026-10-10 · BLOG · api · getProductsGraphQL splices the raw `search` query param into a double-quoted GraphQL string literal, so a sear · — · fix_disabled
 - `bqejvw` · 2026-10-09 · SEO · publishbulkfaqsgen2 · no verified cause · — · inconclusive
 - `aim6ma` · 2026-10-09 · IMG-OPT · job:image-optimize-worker · no verified cause · — · inconclusive

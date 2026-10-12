@@ -21,7 +21,7 @@ prod-error-autofix lưu thẳng evidence đó vào `brain/incidents/*.md` và
 (`de6f62b`): `compact()` trong `src/gcloud/logs.ts` redact message/stack/url,
 `logs.json` ghi bản đã redact, `redactSecret` thêm rule password trong URI.
 
-Chưa làm: bỏ log token ở `shopifyService.js` (và grep 4 app còn lại), rotate
+Check 2026-10-12: `initShopify` ở origin/master + tag v1.86.73 KHÔNG còn log token (catch chỉ log keyLen). Chưa làm: grep 4 app còn lại, rotate
 credential đã dính. Secret KHÔNG lên GitHub — push protection chặn từ đầu.
 
 **Why:** redact chỉ chạy ở nhánh audit-findings; nhánh evidence không ai chặn.

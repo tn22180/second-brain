@@ -337,3 +337,10 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 ### memory candidates 2026-10-10
 - [ ] (×1) `joy` bị loại khỏi phạm vi review/audit app định kỳ (2026-10-10). Audit fleet-wide chỉ tính các app SEOOn còn lại
 - [ ] (×1) Report review/audit app giờ gửi qua Telegram DM cá nhân, được tự sửa luôn khi fix rõ ràng (vẫn chỉ mở MR, không merge/deploy)
+
+### memory candidates 2026-10-12
+- [ ] (×1) seo Onpage SEO score pass = ≥80 (chốt 2026-10-12); checklist → onpage preselect mọi sp <80, chỉ áp luồng từ checklist (!2383)
+- [ ] (×1) seo checklist alt image: fix theo đúng nguồn click (product/collection/blog), không fix chung mọi section
+- [ ] (×1) seo checklist shop mới cài không auto scan — kết quả làm mờ, khách phải bấm sync/scan (nút ở circle Overall score)
+- [ ] (×1) seo staging 3 OpenRouter config hỏng 2026-10-12, đã copy từ stg1 — lỗi AI ở stg3 thì so env với stg1 trước
+- [ ] (×1) Mac dev đã tắt FileVault (`fdesetup disable`) để auto-restart sau mất điện bật lại Orca + Tailscale — liên quan liveness-53b (host always-on)

@@ -8,7 +8,7 @@ const graph = {id: 'gq', source: 'tony-wf', repoPath: '/r', base: 'master', bran
 const verdict = (pass: boolean, detail = 'x'): Verdict => ({contractId: 'gq-t1', runId: `r${Math.random()}`, at: 0, pass, diffSha: 'tree1',
   changed: ['src/foo.js'], checks: [{name: 'jest', ok: pass, ...(pass ? {} : {detail})}], costUsd: 0});
 
-function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: number; thread?: string}) {
+function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: number; thread?: string; tails?: string[]}) {
   const calls = {starts: [] as string[][], kills: 0, commits: 0, merges: 0, verifyRounds: [] as number[], events: [] as string[]};
   const actions = [...(opts.actions ?? [])];
   const verdicts = [...opts.verdicts];
@@ -17,9 +17,10 @@ function fakes(opts: {verdicts: Verdict[]; actions?: SuperviseAction[]; runs?: n
     preflight: async () => [],
     start: (argv): Proc => {
       calls.starts.push(argv);
+      const tail = opts.tails?.[calls.starts.length - 1] ?? 'working…';
       // Each process "runs" for as many polls as there are queued supervise actions, then exits.
       let exited = actions.length === 0;
-      return {exited: () => exited, exitCode: () => (exited ? 0 : null), kill: () => { calls.kills++; exited = true; }, tail: () => 'working…',
+      return {exited: () => exited, exitCode: () => (exited ? 0 : null), kill: () => { calls.kills++; exited = true; }, tail: () => tail,
         threadId: () => opts.thread, _finish: () => { exited = true; }} as Proc;
     },
     supervise: async () => {
@@ -207,5 +208,27 @@ describe('runNode on codex (the default executor)', () => {
     expect(second.slice(0, 3)).toEqual(['codex', 'exec', '--json']);
     expect(second.at(-1)).toContain('add foo');
     expect(second.at(-1)).toContain('Tests: 2 failed');
+  });
+
+  test('codex out of quota → same round continues on Claude opus over the partial work', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(true)], thread: 'th-1',
+      tails: ['{"type":"turn.failed","error":{"message":"You\'ve hit your usage limit. Upgrade or try again later."}}']});
+    const r = await runNode(graph, cnode, deps);
+    expect(r).toMatchObject({outcome: 'done', rounds: 1});
+    expect(calls.starts[0]!.slice(0, 2)).toEqual(['codex', 'exec']);
+    const second = calls.starts[1]!.join(' ');
+    expect(second).toContain('--model claude-opus-5-5');
+    expect(second).toContain('--session-id');
+    expect(calls.starts[1]!.at(-1)).toContain('add foo');
+    expect(calls.starts[1]!.at(-1)).toContain('ran out of quota');
+    expect(calls.verifyRounds).toEqual([1]);
+    expect(calls.events.some(e => e.includes('out of quota'))).toBe(true);
+  });
+
+  test('an ordinary codex failure is not mistaken for quota', async () => {
+    const {deps, calls} = fakes({verdicts: [verdict(false), verdict(true)], thread: 'th-1',
+      tails: ['{"type":"item.completed","item":{"text":"isAiUsageAvailable: AI usage limit reached for shop"}}\nTests: 1 failed']});
+    await runNode(graph, cnode, deps);
+    expect(calls.starts[1]!.slice(0, 3)).toEqual(['codex', 'exec', 'resume']);
   });
 });
