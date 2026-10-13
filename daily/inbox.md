@@ -344,3 +344,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo checklist shop mới cài không auto scan — kết quả làm mờ, khách phải bấm sync/scan (nút ở circle Overall score)
 - [ ] (×1) seo staging 3 OpenRouter config hỏng 2026-10-12, đã copy từ stg1 — lỗi AI ở stg3 thì so env với stg1 trước
 - [ ] (×1) Mac dev đã tắt FileVault (`fdesetup disable`) để auto-restart sau mất điện bật lại Orca + Tailscale — liên quan liveness-53b (host always-on)
+
+### memory candidates 2026-10-13
+- [ ] (×1) seo checklist resync meta title/description đi qua ES. Shop nhiều sản phẩm tốn nhiều chi phí, đang tách thành incremental/progressive resync + rescan theo từng item (briefs `jobs/2026-10-13-seo-checklist-*`)
+- [ ] (×1) Đo hiệu quả feature checklist bằng track event SEO sync vào `falcon-ecb55`, card `new-checklist`/`checklist-v2` trên falcon.avada.net/features. Feedback review/CS hỏi trực tiếp CS, không track
+- [ ] (×1) Bug nút rescan issue list (seo checklist) phản hồi chậm chốt fix FE, không khôi phục data

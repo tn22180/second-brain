@@ -1,0 +1,442 @@
+<style>
+  .ca { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); }
+  .ca-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+  .ca-head p { margin: var(--cds-gap-xs) 0 0; color: var(--color-fg-muted); max-width: 70ch; }
+  .ca-section h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+  .ca-section > p { margin: 0 0 var(--cds-gap-md); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); max-width: 80ch; }
+  .ca-tiles { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+  .ca-tile, .ca-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .ca-tile .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ca-tile .big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-xs); }
+  .ca-tile .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; margin-top: var(--cds-gap-xs); }
+  .ca-up { color: var(--color-ok); } .ca-down { color: var(--color-bad); }
+  .ca-grid { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+  .ca-card h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .ca-card .note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: var(--cds-gap-xs) 0 var(--cds-gap-md); }
+  .ca-chart { position: relative; min-height: 220px; }
+  .ca-empty { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: var(--cds-pad-md) 0; }
+  .ca-tablebox { max-height: 26rem; overflow: auto; }
+  .ca table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .ca th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .ca td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+  .ca td.n, .ca th.n { text-align: right; }
+  .ca td.q { min-width: 16rem; }
+  .ca-search { width: 100%; max-width: 20rem; padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); margin-bottom: var(--cds-gap-sm); }
+  .ca-pill { display: inline-block; padding: 0 var(--cds-pad-xs); border-radius: 999px; border: 1px solid var(--color-border-line); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+  .ca-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+  .ca-tip .d { color: var(--cds-text-secondary); }
+  [data-dash-source-state=empty] { color: transparent; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="ca">
+  <header class="ca-head" id="top">
+    <h1>SEO Checklist Adoption</h1>
+    <p class="ca-takeaway" data-source="usage_summary" data-row="0" data-field="takeaway">—</p>
+  </header>
+
+  <section class="ca-section" id="usage">
+    <h2>Usage</h2>
+    <p>Last full week (Mon–Sun) against the week before. A shop counts once per week. "Active shops" opened any page of the app.</p>
+    <div class="ca-tiles">
+      <div class="ca-tile"><div class="lbl">Shops that opened the checklist</div><div class="big" data-source="usage_summary" data-row="0" data-field="checklist_shops">—</div><div class="sub" data-source="usage_summary" data-row="0" data-field="checklist_delta">—</div></div>
+      <div class="ca-tile"><div class="lbl">Share of active shops</div><div class="big" data-source="usage_summary" data-row="0" data-field="checklist_share">—</div><div class="sub" data-source="usage_summary" data-row="0" data-field="active_shops_text">—</div></div>
+      <div class="ca-tile"><div class="lbl">Shops that pressed Fix or Enable</div><div class="big" data-source="usage_summary" data-row="0" data-field="fixing_shops">—</div><div class="sub" data-source="usage_summary" data-row="0" data-field="fixing_delta">—</div></div>
+      <div class="ca-tile"><div class="lbl">Shops that rescanned</div><div class="big" data-source="usage_summary" data-row="0" data-field="rescan_shops">—</div><div class="sub" data-source="usage_summary" data-row="0" data-field="rescan_delta">—</div></div>
+    </div>
+    <div class="ca-grid" style="margin-top: var(--cds-gap-md)">
+      <div class="ca-card" id="usage-trend">
+        <h3>Shops per week</h3>
+        <div class="note">Opened the checklist, pressed Fix/Enable, rescanned. The dashed line is the release.</div>
+        <div class="ca-chart" data-source="usage_weekly"></div>
+      </div>
+      <div class="ca-card" id="fix-items">
+        <h3>What merchants fix</h3>
+        <div class="note">Fix / Enable presses per checklist item, last 30 days, against the 30 days before.</div>
+        <div class="ca-tablebox">
+          <table data-source="fixes_by_item" data-row-key="item">
+            <thead><tr><th data-field="item">Item</th><th class="n" data-field="clicks_30d">Presses</th><th class="n" data-field="shops_30d">Shops</th><th class="n" data-field="clicks_prev_30d">Previous 30 days</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ca-section" id="value">
+    <h2>Value for merchants</h2>
+    <p>From the score the app stores after every checklist scan (released with the redesigned checklist). Empty until it is live in production.</p>
+    <div class="ca-grid">
+      <div class="ca-card" id="score-trend">
+        <h3>Average SEO score</h3>
+        <div class="note">Mean checklist score of the shops scanned each day.</div>
+        <div class="ca-chart" data-source="score_daily"></div>
+      </div>
+      <div class="ca-card" id="items-fixed">
+        <h3>Items fixed after the first scan</h3>
+        <div class="note">Shops failing an item at their first recorded scan, and how many pass it at their latest. Shops with one scan are left out.</div>
+        <div class="ca-tablebox">
+          <table data-source="score_change" data-row-key="item">
+            <thead><tr><th data-field="item">Item</th><th class="n" data-field="shops_failing_first">Failing at first scan</th><th class="n" data-field="shops_fixed">Fixed since</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="ca-empty" hidden>No scans recorded yet.</div>
+      </div>
+      <div class="ca-card" id="new-actions">
+        <h3>New checklist actions</h3>
+        <div class="note">Item Rescan, Sync, inline Enable and the "SEO checklist updated" banner, per week.</div>
+        <div class="ca-tablebox">
+          <table data-source="new_actions" data-row-key="week,action">
+            <thead><tr><th data-field="week">Week</th><th data-field="action">Action</th><th class="n" data-field="events">Presses</th><th class="n" data-field="shops">Shops</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="ca-empty" hidden>No presses recorded yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ca-section" id="support">
+    <h2>Support conversations</h2>
+    <p>Crisp conversations tagged for SEO Suite where the merchant wrote "checklist", "SEO score" or "SEO audit". Quick-reply buttons (the same text sent by 5+ merchants) are counted apart from merchants' own words. Emails, links and phone numbers are removed.</p>
+    <div class="ca-grid">
+      <div class="ca-card" id="cs-trend">
+        <h3>Conversations per week</h3>
+        <div class="note">Merchant's own words, with quick-reply presses in grey.</div>
+        <div class="ca-chart" data-source="cs_weekly"></div>
+      </div>
+      <div class="ca-card" id="cs-quotes">
+        <h3>What merchants said</h3>
+        <div class="note">Their own words only, newest first.</div>
+        <input class="ca-search" id="cs-search" type="search" placeholder="Search messages" aria-label="Search messages">
+        <div class="ca-tablebox">
+          <table data-source="cs_quotes" data-row-key="id">
+            <thead><tr><th data-field="day">Date</th><th data-field="quote">Message</th><th data-field="id">Conversation</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ca-section" id="reviews">
+    <h2>App Store reviews</h2>
+    <p>Public Shopify App Store reviews of Avada SEO Suite, last 120 days.</p>
+    <div class="ca-grid">
+      <div class="ca-card" id="review-trend">
+        <h3>Reviews per week</h3>
+        <div class="note">Bars are reviews; red marks reviews of 1–2 stars. The line is the week's average rating (right axis).</div>
+        <div class="ca-chart" data-source="reviews_weekly"></div>
+      </div>
+      <div class="ca-card" id="review-list">
+        <h3>Reviews that mention the checklist, score or audit</h3>
+        <div class="note">Plus every review of 3 stars or fewer.</div>
+        <div class="ca-tablebox">
+          <table data-source="reviews" data-row-key="id">
+            <thead><tr><th data-field="day">Date</th><th class="n" data-field="rating">Stars</th><th data-field="store">Store</th><th data-field="text">Review</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="ca-empty" hidden>No matching reviews in this period.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Prod release of the redesigned checklist (CHECKLIST_REDO_RELEASED_AT). Move it with the tag.
+  window.CA_RELEASE = '2026-10-12';
+  const fmt = d3.format(',');
+  const pct = d3.format('.1%');
+  const dayFmt = d3.utcFormat('%b %-d');
+  window.CA = {fmt, pct, dayFmt};
+
+  dash.calc('usage_summary', {
+    inputs: ['usage_weekly'],
+    title: 'Last full week vs week before',
+    description: 'Picks the last complete Monday week and the one before it, and the checklist share of active shops.',
+    fn: (usage_weekly) => {
+      const thisMonday = d3.utcMonday.floor(new Date()).toISOString().slice(0, 10);
+      const full = usage_weekly.filter((r) => r.week < thisMonday);
+      const cur = full[full.length - 1];
+      const prev = full[full.length - 2];
+      if (!cur) return [];
+      const delta = (a, b) => (b ? (a - b >= 0 ? '+' : '') + d3.format(',')(a - b) + ' vs week before' : 'no week before');
+      const share = cur.checklist_shops / cur.active_shops;
+      return [{
+        week: cur.week,
+        checklist_shops: d3.format(',')(cur.checklist_shops),
+        checklist_delta: delta(cur.checklist_shops, prev && prev.checklist_shops),
+        checklist_share: d3.format('.1%')(share),
+        active_shops_text: 'of ' + d3.format(',')(cur.active_shops) + ' active shops',
+        fixing_shops: d3.format(',')(cur.fixing_shops),
+        fixing_delta: delta(cur.fixing_shops, prev && prev.fixing_shops),
+        rescan_shops: d3.format(',')(cur.rescan_shops),
+        rescan_delta: delta(cur.rescan_shops, prev && prev.rescan_shops),
+        takeaway: 'Week of ' + d3.utcFormat('%b %-d')(new Date(cur.week)) + ': ' + d3.format('.0%')(share) +
+          ' of active shops opened the checklist and ' + d3.format('.0%')(cur.fixing_shops / cur.checklist_shops) +
+          ' of those pressed Fix or Enable.'
+      }];
+    }
+  });
+</script>
+
+<script>
+  // Shared chart helpers; every chart reads its rows from dash.data inside onData.
+  window.caTip = (box) => {
+    let tip = box.querySelector('.ca-tip');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'ca-tip'; tip.hidden = true; box.appendChild(tip); }
+    return {
+      show(event, lines) {
+        tip.replaceChildren(...lines.map((l, i) => { const d = document.createElement('div'); if (i === 0) d.className = 'd'; d.textContent = l; return d; }));
+        tip.hidden = false;
+        const b = box.getBoundingClientRect();
+        const x = event.clientX - b.left, y = event.clientY - b.top;
+        const w = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(b.width - w, x + 12)) + 'px';
+        tip.style.top = Math.max(0, y - 40) + 'px';
+      },
+      hide() { tip.hidden = true; }
+    };
+  };
+
+  window.caFrame = (box, height, yMax, yRight) => {
+    box.querySelectorAll('svg').forEach((s) => s.remove());
+    const width = Math.max(280, box.clientWidth);
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).attr('height', height);
+    const probe = svg.append('text').attr('font-size', 11).text(d3.format(',')(Math.round(yMax)));
+    const left = Math.ceil(probe.node().getComputedTextLength()) + 10;
+    probe.remove();
+    return {svg, width, height, m: {top: 10, right: yRight ? 34 : 12, bottom: 24, left}};
+  };
+
+  window.caAxes = (svg, x, y, m, height, width, xTicks) => {
+    const gy = svg.append('g').attr('transform', `translate(${m.left},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(width - m.left - m.right)).tickFormat(d3.format(',')));
+    gy.attr('font-size', null).attr('font-family', null);
+    gy.select('.domain').remove();
+    gy.selectAll('line').attr('stroke', 'var(--cds-chart-grid)');
+    gy.selectAll('text').attr('fill', 'var(--color-fg-muted)').attr('font-size', 11);
+    const gx = svg.append('g').attr('transform', `translate(0,${height - m.bottom})`).call(xTicks);
+    gx.attr('font-size', null).attr('font-family', null);
+    gx.select('.domain').attr('stroke', 'var(--cds-chart-axis)');
+    gx.selectAll('line').remove();
+    gx.selectAll('text').attr('fill', 'var(--color-fg-muted)').attr('font-size', 11);
+  };
+
+  window.caRelease = (svg, x, m, height) => {
+    const r = new Date(window.CA_RELEASE);
+    const [a, b] = x.domain();
+    if (r < a || r > b) return;
+    svg.append('line').attr('x1', x(r)).attr('x2', x(r)).attr('y1', m.top).attr('y2', height - m.bottom)
+      .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+    svg.append('text').attr('x', x(r) + 4).attr('y', m.top + 10).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text('Release');
+  };
+
+  window.caEmpty = (card, show) => {
+    const e = card.querySelector('.ca-empty');
+    if (e) e.hidden = !show;
+  };
+</script>
+
+<script>
+  dash.onData(() => {
+    const s = dash.data('usage_summary');
+    const row = s.status === 'ok' && s.data[0];
+    document.querySelectorAll('[data-source="usage_summary"]').forEach((el) => {
+      el.textContent = row ? row[el.dataset.field] : '—';
+      el.classList.toggle('dash-skeleton', s.status === 'loading');
+      if (el.dataset.field.endsWith('_delta')) {
+        el.classList.toggle('ca-up', !!row && row[el.dataset.field].startsWith('+') && !row[el.dataset.field].startsWith('+0 '));
+        el.classList.toggle('ca-down', !!row && row[el.dataset.field].startsWith('-'));
+      }
+    });
+  });
+
+  // Weekly shops: three lines over Monday weeks.
+  dash.onData(() => {
+    const box = document.querySelector('#usage-trend .ca-chart');
+    const d = dash.data('usage_weekly');
+    box.classList.toggle('dash-skeleton', d.status === 'loading');
+    if (d.status !== 'ok' || !d.data.length) { box.querySelectorAll('svg').forEach((n) => n.remove()); return; }
+    const rows = d.data.map((r) => ({...r, date: new Date(r.week)}));
+    const series = [
+      {key: 'checklist_shops', name: 'Opened checklist'},
+      {key: 'fixing_shops', name: 'Pressed Fix/Enable'},
+      {key: 'rescan_shops', name: 'Rescanned'}
+    ];
+    const yMax = d3.max(rows, (r) => r.checklist_shops) || 1;
+    const {svg, width, height, m} = caFrame(box, 220, yMax);
+    const endLabel = 118;
+    const x = d3.scaleUtc(d3.extent(rows, (r) => r.date), [m.left, width - m.right - endLabel]);
+    const y = d3.scaleLinear([0, yMax], [height - m.bottom, m.top]).nice();
+    caAxes(svg, x, y, m, height, width - endLabel, d3.axisBottom(x).ticks(Math.min(rows.length, Math.floor(width / 90))).tickFormat(d3.utcFormat('%b %-d')));
+    caRelease(svg, x, m, height);
+    const placed = [];
+    series.forEach((s, i) => {
+      svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', dash.colors[i]).attr('stroke-width', 2)
+        .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+        .attr('d', d3.line().x((r) => x(r.date)).y((r) => y(r[s.key])));
+      const last = rows[rows.length - 1];
+      let ly = y(last[s.key]);
+      placed.forEach((p) => { if (Math.abs(p - ly) < 13) ly = p + 13; });
+      placed.push(ly);
+      svg.append('text').attr('x', x(last.date) + 6).attr('y', ly + 4).attr('font-size', 11).attr('fill', dash.colors[i])
+        .text(s.name + ' ' + d3.format(',')(last[s.key]));
+    });
+    const tip = caTip(box);
+    const near = d3.bisector((r) => r.date).center;
+    svg.append('rect').attr('x', m.left).attr('y', m.top).attr('width', Math.max(0, width - endLabel - m.left - m.right)).attr('height', height - m.top - m.bottom).attr('fill', 'transparent')
+      .on('mousemove', (event) => {
+        const r = rows[near(rows, x.invert(d3.pointer(event)[0]))];
+        tip.show(event, ['Week of ' + d3.utcFormat('%b %-d')(r.date) + (r.week >= d3.utcMonday.floor(new Date()).toISOString().slice(0, 10) ? ' (so far)' : ''),
+          ...series.map((s) => s.name + ': ' + d3.format(',')(r[s.key])), 'Active shops: ' + d3.format(',')(r.active_shops)]);
+      })
+      .on('mouseleave', () => tip.hide());
+  });
+
+  // Generic sortable-free table filler for a dataset.
+  window.caTable = (sel, id, cols, filter) => {
+    const table = document.querySelector(sel);
+    const card = table.closest('.ca-card');
+    const d = dash.data(id);
+    const tbody = table.querySelector('tbody');
+    table.classList.toggle('dash-skeleton', d.status === 'loading');
+    const rows = d.status === 'ok' ? (filter ? d.data.filter(filter) : d.data) : [];
+    tbody.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr');
+      cols.forEach((c) => {
+        const td = document.createElement('td');
+        if (c.cls) td.className = c.cls;
+        td.textContent = c.show ? c.show(r) : r[c.key];
+        tr.appendChild(td);
+      });
+      return tr;
+    }));
+    caEmpty(card, d.status === 'ok' && !rows.length);
+    return rows;
+  };
+
+  dash.onData(() => {
+    caTable('#fix-items table', 'fixes_by_item', [
+      {key: 'item'},
+      {key: 'clicks_30d', cls: 'n', show: (r) => d3.format(',')(r.clicks_30d)},
+      {key: 'shops_30d', cls: 'n', show: (r) => d3.format(',')(r.shops_30d)},
+      {key: 'clicks_prev_30d', cls: 'n', show: (r) => d3.format(',')(r.clicks_prev_30d)}
+    ]);
+    caTable('#items-fixed table', 'score_change', [
+      {key: 'item'},
+      {key: 'shops_failing_first', cls: 'n', show: (r) => d3.format(',')(r.shops_failing_first)},
+      {key: 'shops_fixed', cls: 'n', show: (r) => d3.format(',')(r.shops_fixed)}
+    ]);
+    caTable('#new-actions table', 'new_actions', [
+      {key: 'week'}, {key: 'action'},
+      {key: 'events', cls: 'n', show: (r) => d3.format(',')(r.events)},
+      {key: 'shops', cls: 'n', show: (r) => d3.format(',')(r.shops)}
+    ]);
+  });
+
+  // Average score per day.
+  dash.onData(() => {
+    const card = document.querySelector('#score-trend');
+    const box = card.querySelector('.ca-chart');
+    const d = dash.data('score_daily');
+    box.classList.toggle('dash-skeleton', d.status === 'loading');
+    box.querySelectorAll('svg, .ca-empty').forEach((n) => n.remove());
+    if (d.status !== 'ok') return;
+    if (!d.data.length) {
+      const e = document.createElement('div'); e.className = 'ca-empty'; e.textContent = 'No scans recorded yet. Fills in once the release is live.'; box.appendChild(e); return;
+    }
+    const rows = d.data.map((r) => ({...r, date: new Date(r.day), avg_score: Number(r.avg_score)}));
+    const {svg, width, height, m} = caFrame(box, 220, 100);
+    const x = d3.scaleUtc(d3.extent(rows, (r) => r.date), [m.left, width - m.right - 40]);
+    const y = d3.scaleLinear([0, 100], [height - m.bottom, m.top]);
+    caAxes(svg, x, y, m, height, width - 40, d3.axisBottom(x).ticks(Math.max(2, Math.floor(width / 90))).tickFormat(d3.utcFormat('%b %-d')));
+    caRelease(svg, x, m, height);
+    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+      .attr('d', d3.line().x((r) => x(r.date)).y((r) => y(r.avg_score)));
+    const last = rows[rows.length - 1];
+    svg.append('circle').attr('cx', x(last.date)).attr('cy', y(last.avg_score)).attr('r', 3.5).attr('fill', dash.colors[0]);
+    svg.append('text').attr('x', x(last.date) + 6).attr('y', y(last.avg_score) + 4).attr('font-size', 11).attr('fill', dash.colors[0]).text(d3.format('.1f')(last.avg_score));
+    const tip = caTip(box);
+    const near = d3.bisector((r) => r.date).center;
+    svg.append('rect').attr('x', m.left).attr('y', m.top).attr('width', Math.max(0, width - 40 - m.left - m.right)).attr('height', height - m.top - m.bottom).attr('fill', 'transparent')
+      .on('mousemove', (event) => { const r = rows[near(rows, x.invert(d3.pointer(event)[0]))]; tip.show(event, [d3.utcFormat('%b %-d')(r.date), 'Average score: ' + d3.format('.1f')(r.avg_score), 'Shops scanned: ' + d3.format(',')(r.shops)]); })
+      .on('mouseleave', () => tip.hide());
+  });
+
+  // Stacked weekly bars: own words over quick replies.
+  dash.onData(() => {
+    const box = document.querySelector('#cs-trend .ca-chart');
+    const d = dash.data('cs_weekly');
+    box.classList.toggle('dash-skeleton', d.status === 'loading');
+    if (d.status !== 'ok' || !d.data.length) { box.querySelectorAll('svg').forEach((n) => n.remove()); return; }
+    const rows = d.data;
+    const yMax = d3.max(rows, (r) => r.own_words + r.quick_reply) || 1;
+    const {svg, width, height, m} = caFrame(box, 220, yMax);
+    const x = d3.scaleBand(rows.map((r) => r.week), [m.left, width - m.right]).padding(0.3);
+    const y = d3.scaleLinear([0, yMax], [height - m.bottom, m.top]).nice();
+    const every = Math.ceil(rows.length / Math.max(1, Math.floor(width / 70)));
+    caAxes(svg, x, y, m, height, width, d3.axisBottom(x).tickValues(rows.map((r) => r.week).filter((_, i) => i % every === 0)).tickFormat((w) => d3.utcFormat('%b %-d')(new Date(w))));
+    const bw = Math.min(32, x.bandwidth());
+    const off = (x.bandwidth() - bw) / 2;
+    const tip = caTip(box);
+    const g = svg.append('g').selectAll('g').data(rows).join('g')
+      .on('mousemove', (event, r) => tip.show(event, ['Week of ' + d3.utcFormat('%b %-d')(new Date(r.week)), 'Own words: ' + d3.format(',')(r.own_words), 'Quick replies: ' + d3.format(',')(r.quick_reply)]))
+      .on('mouseleave', () => tip.hide());
+    g.append('rect').attr('x', (r) => x(r.week) + off).attr('width', bw).attr('y', (r) => y(r.own_words + r.quick_reply)).attr('height', (r) => y(r.own_words) - y(r.own_words + r.quick_reply)).attr('rx', 3).attr('fill', 'var(--cds-chart-muted)');
+    g.append('rect').attr('x', (r) => x(r.week) + off).attr('width', bw).attr('y', (r) => y(r.own_words)).attr('height', (r) => y(0) - y(r.own_words)).attr('rx', 3).attr('fill', dash.colors[0]);
+  });
+
+  // Quotes table with a text search.
+  const csSearch = document.getElementById('cs-search');
+  const drawQuotes = () => {
+    const q = csSearch.value.trim().toLowerCase();
+    caTable('#cs-quotes table', 'cs_quotes', [
+      {key: 'day', show: (r) => d3.utcFormat('%b %-d')(new Date(r.day))},
+      {key: 'quote', cls: 'q'},
+      {key: 'id'}
+    ], (r) => r.kind === 'own_words' && (!q || r.quote.toLowerCase().includes(q)));
+  };
+  csSearch.addEventListener('input', drawQuotes);
+  dash.onData(drawQuotes);
+
+  // Weekly reviews: bars with the low-star share, average rating as a line on the right axis.
+  dash.onData(() => {
+    const box = document.querySelector('#review-trend .ca-chart');
+    const d = dash.data('reviews_weekly');
+    box.classList.toggle('dash-skeleton', d.status === 'loading');
+    if (d.status !== 'ok' || !d.data.length) { box.querySelectorAll('svg').forEach((n) => n.remove()); return; }
+    const rows = d.data;
+    const yMax = d3.max(rows, (r) => r.reviews) || 1;
+    const {svg, width, height, m} = caFrame(box, 220, yMax, true);
+    const x = d3.scaleBand(rows.map((r) => r.week), [m.left, width - m.right]).padding(0.3);
+    const y = d3.scaleLinear([0, yMax], [height - m.bottom, m.top]).nice();
+    const yr = d3.scaleLinear([1, 5], [height - m.bottom, m.top]);
+    const every = Math.ceil(rows.length / Math.max(1, Math.floor(width / 70)));
+    caAxes(svg, x, y, m, height, width, d3.axisBottom(x).tickValues(rows.map((r) => r.week).filter((_, i) => i % every === 0)).tickFormat((w) => d3.utcFormat('%b %-d')(new Date(w))));
+    const gr = svg.append('g').attr('transform', `translate(${width - m.right},0)`).call(d3.axisRight(yr).ticks(4).tickFormat(d3.format('.0f')));
+    gr.attr('font-size', null).attr('font-family', null);
+    gr.select('.domain').remove(); gr.selectAll('line').remove();
+    gr.selectAll('text').attr('fill', 'var(--color-fg-muted)').attr('font-size', 11);
+    const bw = Math.min(32, x.bandwidth());
+    const off = (x.bandwidth() - bw) / 2;
+    const tip = caTip(box);
+    const g = svg.append('g').selectAll('g').data(rows).join('g')
+      .on('mousemove', (event, r) => tip.show(event, ['Week of ' + d3.utcFormat('%b %-d')(new Date(r.week)), 'Reviews: ' + d3.format(',')(r.reviews), '1–2 stars: ' + d3.format(',')(r.low), 'Mention checklist/score: ' + d3.format(',')(r.checklist), 'Average: ' + d3.format('.2f')(r.avg_rating)]))
+      .on('mouseleave', () => tip.hide());
+    g.append('rect').attr('x', (r) => x(r.week) + off).attr('width', bw).attr('y', (r) => y(r.reviews)).attr('height', (r) => y(0) - y(r.reviews)).attr('rx', 3).attr('fill', dash.colors[1]);
+    g.filter((r) => r.low > 0).append('rect').attr('x', (r) => x(r.week) + off).attr('width', bw).attr('y', (r) => y(r.low)).attr('height', (r) => y(0) - y(r.low)).attr('rx', 3).attr('fill', 'var(--cds-chart-status-critical)');
+    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+      .attr('d', d3.line().x((r) => x(r.week) + x.bandwidth() / 2).y((r) => yr(r.avg_rating)));
+  });
+
+  dash.onData(() => {
+    caTable('#review-list table', 'reviews', [
+      {key: 'day', show: (r) => d3.utcFormat('%b %-d')(new Date(r.day))},
+      {key: 'rating', cls: 'n'},
+      {key: 'store'},
+      {key: 'text', cls: 'q'}
+    ], (r) => r.mentions_checklist || r.rating <= 3);
+  });
+</script>

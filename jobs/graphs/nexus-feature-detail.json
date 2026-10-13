@@ -1,0 +1,63 @@
+{
+ "id": "nexus-feature-detail",
+ "source": "tony-wf",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/falcon-event-tracking",
+ "base": "main",
+ "branch": "feat/feature-detail",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "apps/dashboard/node_modules",
+  "packages/event-tracker/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "feature-detail",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 180,
+   "prompt": "Repo: falcon-event-tracking (Falcon Nexus: Next.js 16 dashboard in apps/dashboard over the shared BigQuery event table falcon-ecb55.product_analytics.events; pnpm workspace; vitest). Read first, in order: /Users/nguyentuan/Documents/second-brain/jobs/2026-10-13-nexus-feature-detail.md (Why + Decisions are binding), CLAUDE.md, apps/dashboard/AGENTS.md (Next 16 differs from your training data - check node_modules/next docs/types before using an API), apps/dashboard/src/app/(dashboard)/features/page.tsx and loading.tsx, apps/dashboard/src/lib/bigquery/queries.ts (getFeaturesData, appFilter, runQuery), src/lib/bigquery/events-query.test.ts (how runQuery is mocked), src/lib/i18n.ts, src/lib/docs-content.ts.\n\nTASK feature-detail - the whole brief.\n- Decision 1: a shared SQL fragment excluding payload.system rows, used by every usage query (features funnel + adoption, overview, MCP usage tools - grep for queries that count shops/events as usage); docs item updated.\n- Decision 2: /features/[menu]/[card] page + getFeatureDetailData(appId, range, menu, card) with parameterised SQL; adoption table rows link to it carrying the current app/range; header numbers match the adoption row definitions; weekly trend; breakdown by action; failures; outcome section from system rows with payload.score (avg score per day; per failing_types item: shops failing at first scan in range vs no longer failing at latest, shops with >= 2 scans) with an empty state.\n- Decision 3/4: follow existing patterns, en + vi strings, docs items, vitest tests with mocked runQuery, TDD.\n\nRules: touch only files in the contract allow list. TDD: failing test first, watch it fail. Comments say WHY only, never narrate WHAT. No new dependencies, do not touch lockfiles, .env*, CI config, Dockerfile, firebase.json. No secrets. Run every verify command yourself (from apps/dashboard: npx vitest run; npx tsc --noEmit -p .; npx eslint <changed files>). Final message: file:line per change and anything in the brief you could not do and why.\nKnown pre-existing failure on the base, not yours, excluded from verify: src/lib/mcp/tools/bugs.test.ts.",
+   "contract": {
+    "goal": "Nexus excludes payload.system rows from usage and has a per-card feature detail page with breakdown, trend, failures and score outcome",
+    "allow": [
+     "apps/dashboard/src/",
+     "apps/dashboard/content/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "vitest",
+      "cmd": [
+       "sh",
+       "-c",
+       "cd apps/dashboard && npx vitest run --exclude \"src/lib/mcp/tools/bugs.test.ts\""
+      ]
+     },
+     {
+      "name": "tsc",
+      "cmd": [
+       "sh",
+       "-c",
+       "cd apps/dashboard && npx tsc --noEmit -p ."
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/main -- \"apps/dashboard/*.ts\" \"apps/dashboard/*.tsx\"; git ls-files --others --exclude-standard -- \"apps/dashboard/*.ts\" \"apps/dashboard/*.tsx\"; } | sed \"s#^apps/dashboard/##\" | sort -u); [ -z \"$F\" ] || (cd apps/dashboard && npx eslint $F)"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "falcon-event-tracking"
+    }
+   }
+  }
+ ]
+}

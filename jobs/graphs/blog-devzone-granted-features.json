@@ -1,0 +1,60 @@
+{
+ "id": "blog-devzone-granted-features",
+ "source": "session",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "master",
+ "branch": "feat/devzone-granted-features",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules",
+  "packages/avadaseo/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "granted-features",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest from repo root `npx jest <path>`). Read the brief first: /Users/nguyentuan/Documents/second-brain/jobs/2026-10-13-blog-devzone-granted-features.md (Why + Decisions are binding). Also read the repo CLAUDE.md, packages/functions CLAUDE.md if present, docs/features/mcp.md.\nReference implementation (other repo, read-only, do NOT edit): /Users/nguyentuan/Documents/second-brain/projects/Falcon/seo/packages/functions/src/config/subscription/grantedFeatures.js and /Users/nguyentuan/Documents/second-brain/projects/Falcon/seo/packages/assets/src/pages/DevZone/containers/GrantedFeaturesContainer.js - port the pattern, adapted to blog's DevZone (packages/assets/src/pages/DevZone/index.jsx, components/*, and its API call helper for PUT /api/dev_zone?type=...).\nHARD RULE for packages/functions: never write `await import(...)` of a local module (prod ERR_MODULE_NOT_FOUND); use static import or require().\n\nTASK granted-features:\n- packages/functions/src/config/subscription/grantedFeatures.js: GRANTABLE_FEATURES (mcp), hasGrantedFeature, sanitizeGrantedFeatures + unit tests (unknown key, prototype key like 'constructor', non-array).\n- One MCP eligibility helper used by both mcp.admin.controller.js eligibility() and mcp.middleware.js:58: pro plan OR granted 'mcp'. Tests: free+granted passes both gates, free without grant blocked, pro unchanged, revoked grant blocked again. Extend existing mcp/__tests__/mcp.middleware.test.js.\n- devZoneController.update new case 'granted-features': persist sanitized array via updateShopData, return {data, status:200}; errors logged via @functions/helpers/logger with [update:granted-features] + shopId. Test that unknown keys are stripped.\n- Make sure the shop object the DevZone page receives includes grantedFeatures (check any pickFields/shop serializer the FE shop comes through); FE section 'Granted features' with checkbox per key + Save, toast on result.\n- Docs: docs/features/mcp.md plan-gate section mentions CS grant via DevZone.\nRules: touch only files in the contract allow list. TDD: failing test first. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No console.*. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, locale translation files (DevZone is internal, plain English strings are fine if the existing DevZone uses them - check). Run every verify command yourself and format changed files with `npx eslint --fix <files>`. Final message: file:line per change and anything you could not do and why.",
+   "contract": {
+    "goal": "CS can grant the Pro-only MCP connection per shop from Blog DevZone via an allow-listed grantedFeatures registry",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/features/"
+    ],
+    "verify": [
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/mcp",
+       "packages/functions/src/config",
+       "packages/functions/src/controllers",
+       "packages/functions/src/helpers/devZoneAccess.test.js"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  }
+ ]
+}

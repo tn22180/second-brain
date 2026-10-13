@@ -59,7 +59,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1syz298` · 2026-09-28 · BLOG · api · The single staged-upload POST in handleUploadFile to Shopify's staged target (Google Cloud Storage) answered n · — · fix_disabled
 - `1e7h4we` · 2026-09-28 · BLOG · api · The single staged-upload POST from handleUploadFile to Shopify's staged target (Google Cloud Storage) came bac · — · fix_disabled
 - `1tyfxwg` · 2026-09-27 · BLOG · proxy · Duplicate of recorded fingerprint zfa04j (same app, service, shop, window and the same two requests — fingerpr · — · fix_disabled
-- `1xb20gb` · 2026-09-27 · BLOG · proxy · no verified cause · — · inconclusive
+- `1xb20gb` · 2026-10-12 · BLOG · proxy · getShopifyArticleById swallows its own InvalidArticleIdError and returns `{}`, so getPreview treats a non-reso · — · fix_disabled
 - `zfa04j` · 2026-09-27 · BLOG · proxy · GET /proxy/seoOn-preview was called twice with an `id` that is neither a bare numeric id nor an Article gid, s · — · fix_disabled
 - `1rv4tdz` · 2026-09-27 · BLOG · apiv2 · Not a request failure: OpenRouter's meta/muse-image provider rejected this shop's image prompts with HTTP 400  · — · fix_disabled
 - `4kle0f` · 2026-09-26 · SEO · mcpgen2 · audit_resource runs its whole 10-resource batch inline on the MCP HTTP request with no deadline on an in-fligh · — · fix_disabled
