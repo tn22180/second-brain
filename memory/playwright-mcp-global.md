@@ -1,20 +1,22 @@
 ---
 name: playwright-mcp-global
-description: Playwright MCP at user scope (2026-10-08), --extension mode drives Tuan's own Chrome via the Playwright MCP Bridge extension
+description: "Playwright MCP user scope: `playwright` = Chrome riêng isolated + storage-state Shopify; `playwright-ext` = lái Chrome của Tuan qua extension (token từ .env)."
 metadata:
   node_type: memory
   type: reference
-  originSessionId: d9f700f9-18f8-43eb-8852-b9f16cc1d3b7
-  modified: 2026-10-08T04:16:36.912Z
+  originSessionId: 5ab8c006-452d-488f-95cc-d8b18967f355
+  modified: 2026-10-14T10:56:02.441Z
 ---
 
-Playwright MCP is at user scope (2026-10-08), in **extension mode**:
-`claude mcp add playwright -s user -- npx -y @playwright/mcp@0.0.82 --extension`
-It drives Tuan's own running Google Chrome (his logins) through the Chrome extension "Playwright MCP Bridge". He chose this over a separate browser. The extension asks him to approve each connection/tab.
+Từ 2026-10-14 có 2 server Playwright MCP ở user scope (`~/.claude.json`), backup cũ ở `~/.config/playwright/claude.json.bak`:
 
-- `mcp__playwright` is allowed in `~/.claude/settings.json`.
-- If the extension mode is dropped, the standalone mode needs `chromium-1246`, which is installed. Its profile was `~/.cache/claude-playwright-profile`.
-- The tools only appear in sessions started after the install, so a session that was running at install time needs `/resume`.
-- The workflow is the `shopify-testing` skill (embedded app URL pattern `admin.shopify.com/store/{store}/apps/{handle}`). Store and app handle come from `shopify.app.*.toml`; seo has a per-dev toml for each person, see [[seo-shopify-toml-per-dev]].
+- `playwright` (mặc định): `@playwright/mcp@0.0.82 --browser chrome --isolated --storage-state ~/.config/playwright/shopify-state.json`. Mỗi session tự mở Chrome riêng, đã login Shopify admin sẵn bằng cookie.
+- `playwright-ext`: `~/.config/playwright/mcp-ext.sh` đọc `PLAYWRIGHT_MCP_EXTENSION_TOKEN` từ `second-brain/.env` rồi chạy `--extension`, lái Chrome thật của Tuan qua extension Playwright MCP Bridge mà không cần bấm duyệt.
 
-Tuan wants Claude to test UI/UX itself with this, not just read diffs.
+**Why:** extension bridge chỉ nối được 1 server một lúc. 10-14 có 13 server `--extension` từ nhiều session tranh nhau, `browser_tabs` treo hơn 120s. Token chỉ bỏ được bước bấm duyệt, không chữa được việc tranh nhau đó.
+
+**How to apply:**
+- Test app Shopify thì dùng `playwright`, skill shopify-testing.
+- Cookie hết hạn (bị đá ra trang login): chạy `PW_CORE=<npx dir>/node_modules/playwright-core node ~/.config/playwright/save-shopify-state.js [store]`, Tuan login trong Chrome hiện ra.
+- Không chờ MCP được thì chạy playwright-core thẳng: `chromium.launch({channel:'chrome'})` + `newContext({storageState})`.
+- Session mới hoặc `/mcp` reconnect thì đổi config mới có hiệu lực.

@@ -1,0 +1,55 @@
+{
+ "id": "aeo-sec-shopinfos-allowlist",
+ "source": "security-audit-2026-10-13",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/llm-ai-search-seo",
+ "base": "main",
+ "branch": "fix/sec-shopinfos-allowlist",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "shopinfos-allowlist",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 90,
+   "prompt": "Repo: llm-ai-search-seo (AEO Shopify app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read the repo CLAUDE.md first.\nSECURITY FINDING (daily audit 2026-10-13): packages/functions/src/controllers/shopController.js updateShop: when the body has a `domain` key it calls updateShopInfosData(shopID, postData) (repositories/shopInfoRepository.js:33) which does shopInfosRef.doc(idShopInfo).update(formatDateFields(postData)) with the RAW request body. shopInfos docs are looked up by `.where('shopId','==',id).limit(1)`, so a merchant can PUT {domain:'x', shopId:'<victim shopId>'} and rebind their shopInfos doc to another shop (cross-tenant: the victim's lookup may then return the attacker's doc), or overwrite any other field (plan/billing/installation data in shopInfos).\nFIX: allow-list. Grep packages/assets/src for every request to the shop update endpoint (PUT /shop, api('/shop'...), fetchAuthenticatedApi('/shop'...)) that sends `domain`, and every internal caller, to find the fields legitimately written to shopInfos through this branch. Pick only those keys before calling updateShopInfosData (do the pick inside updateShopInfosData so every caller is covered). shopId, id, idShopInfo, and any plan/billing/install/token field must never be writable from the request. Also check the updateShopData branch: it takes isTrustedWriter(ctx) \u2014 confirm it already strips protected fields for untrusted callers; if it does not, report it in the final message (do not widen scope beyond a pick for the same protected keys).\nTests: PUT body {domain, shopId:'other', plan:'x'} updates shopInfos with domain only (no shopId/plan); legit FE payload still saved.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger, never console.*. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change and anything you could not do and why.",
+   "contract": {
+    "goal": "PUT /api/shop shopInfos branch writes only allow-listed fields; shopId never writable",
+    "allow": [
+     "packages/functions/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/main -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "llm-ai-search-seo"
+    }
+   }
+  }
+ ]
+}

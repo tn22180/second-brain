@@ -101,3 +101,4 @@
 - [Playwright MCP global](playwright-mcp-global.md) — user scope 10-08, `--extension` = lái Chrome có sẵn của Tuan qua extension Playwright MCP Bridge; session mới mới có tool; dùng skill shopify-testing.
 - [secret.avada.net token + share shop token](secret-avada-token-file.md) — sat_ ở ~/.config/avada/secret-token; getShopToken → /api/secrets private 1h/1 view, chỉ in url.
 - [SEO checklist adoption dashboard](seo-checklist-adoption-dashboard.md) — artifact 8hzEayipNeZMtvnswjiBF4; collect.py → upload JSON; events ở falcon-ecb55 (không phải plaza-staging-3), staging không bắn vì CI var protected.
+- [Rich Results Test tự động](rich-results-test-automation.md) — code mode qua Playwright: tab CODE phải dùng phím, CodeMirror.setValue; Product cần offers|review|aggregateRating.

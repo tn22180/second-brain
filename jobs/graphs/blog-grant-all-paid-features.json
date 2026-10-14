@@ -1,0 +1,67 @@
+{
+ "id": "blog-grant-all-paid-features",
+ "source": "session",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "feat/devzone-granted-features",
+ "branch": "feat/devzone-grant-all-paid",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules",
+  "packages/avadaseo/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "grant-all",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 180,
+   "prompt": "Repo: blogs (Avada Blog Shopify app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest from repo root `npx jest <path>`; eslint needs env DISABLE_V8_COMPILE_CACHE=1 - do NOT add any eslint shim/config file). You are on branch feat/devzone-granted-features which already has the grantedFeatures registry with key `mcp` (packages/functions/src/config/subscription/grantedFeatures.js, mcp/mcp.eligibility.js, DevZone components/GrantedFeatures.jsx, devZoneController 'granted-features' case). Read the brief first: /Users/nguyentuan/Documents/second-brain/jobs/2026-10-13-blog-devzone-granted-features.md - the whole file, and 'Phase 2' Decisions 8-12 are binding; the file:line list there is your map (paths relative to packages/).\nReference for legacyFlag + hasFeature pattern (other repo, read-only): /Users/nguyentuan/Documents/second-brain/projects/Falcon/seo/packages/functions/src/config/subscription/grantedFeatures.js.\nHARD RULE for packages/functions: never write `await import(...)` of a local module; use static import or require().\n\nTASK grant-all-paid-features:\n- Extend GRANTABLE_FEATURES with the Decision 8 keys (label + legacyFlag where named), add `hasFeature(shop, key)` = registered key AND (grant OR truthy legacyFlag). Keep hasGrantedFeature/sanitize semantics. mcp keeps proPlans OR grant (no legacyFlag).\n- Wire every listed gate: original predicate OR hasFeature(shop, key). BE sites first (validatePlan, articleController, publishArticle, subscribeHandleSummaryNewPublishedArticle, allowedTextModel), with jest tests per site: free+grant passes, free without grant still blocked, paid unchanged, legacyFlag still works.\n- FE: expose hasFeature through PricingModalContext; fix advancedElements at the source (isLimitAdvancedFeatures), and the other keys at their sites. Unit-test the pure FE helpers you touch where the repo already has a pattern (jest has no JSX transform for assets components unless an existing test shows how; test helpers/context math instead).\n- DevZone GrantedFeatures: add Grant all / Clear all buttons.\n- docs/features/: update the MCP doc grant section and add/extend a doc describing granted features (keys, gate sites, legacy flags, what is out of scope per Decision 10). Link it from docs/features/mcp.md.\nRules: touch only files in the contract allow list. TDD for BE. Comments say WHY only, never narrate WHAT; no step numbering, no banners. No console.*; backend logging via @functions/helpers/logger. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, locale translation json files, or any test file unrelated to this change. Run every verify command yourself; format changed files with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <files>`. Final message: per key, the file:line sites you changed, and any listed site you deliberately left and why.",
+   "contract": {
+    "goal": "every Pro/Advanced feature gate in Blog can be unlocked per shop by a CS grant from DevZone, without changing behaviour for shops without a grant",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/features/"
+    ],
+    "verify": [
+     {
+      "name": "suite",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src",
+       "packages/assets/src",
+       "--testPathIgnorePatterns=articleController\\.recentOpenedArticles|articleController\\.versionContent|genAIBlogController\\.genSuggestedTruncation|ellisAttack|shopifyGraphQlService\\.|recipeParser\\.labels|redis\\.service|removeRecipeMetafields|seoService\\.endpoints|/lib/"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/feat/devzone-granted-features -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     },
+     {
+      "name": "fe-build",
+      "cmd": [
+       "sh",
+       "-c",
+       "cd packages/assets && NODE_ENV=production ENVIRONMENT=production IS_EMBEDDED_APP=yes ../../node_modules/.bin/vite build --outDir /tmp/blog-grant-fe-build --emptyOutDir >/tmp/blog-grant-fe-build.log 2>&1 || (tail -40 /tmp/blog-grant-fe-build.log; exit 1)"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  }
+ ]
+}

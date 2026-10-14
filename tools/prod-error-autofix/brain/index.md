@@ -7,6 +7,16 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `16ty774` · 2026-10-14 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `yvh3x3` · 2026-10-14 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `1afa4it` · 2026-10-14 · SEO · apisagen2 · Shop 69HG5FXtAUIuSwgCjOL4 (xprstls.myshopify.com) holds a dead Shopify Admin token — every Admin API call for  · — · fix_disabled
+- `h8gdku` · 2026-10-14 · SEO · mcpgen2 · The `analysis` docs for levitatious.myshopify.com's products store `faqs: null`, and `updateByType` only defau · — · fix_disabled
+- `obklqt` · 2026-10-14 · BLOG · api · The `shopLocalesGraphQL(shopify)` call in articleController.update goes through shopify-api-node's got client, · — · fix_disabled
+- `13r3cvt` · 2026-10-13 · BLOG · apiv2 · Duplicate of recorded fingerprint 4zzfhs (also re-fired as s2kwos and 8n4f7b) — same app, service, shop NMiT2Y · — · fix_disabled
+- `1a65mer` · 2026-10-13 · BLOG · apiv2 · no verified cause · — · inconclusive
+- `8n4f7b` · 2026-10-13 · BLOG · apiv2 · Duplicate of recorded fingerprint 4zzfhs (and its re-fire s2kwos) — same app, service, shop NMiT2Y1z9EjJkzICo4 · — · fix_disabled
+- `s2kwos` · 2026-10-13 · BLOG · apiv2 · Duplicate of recorded fingerprint 4zzfhs (same app, service, shop NMiT2Y1z9EjJkzICo4te, same 18:23:35–18:23:52 · — · fix_disabled
+- `4zzfhs` · 2026-10-13 · BLOG · apiv2 · Shop NMiT2Y1z9EjJkzICo4te's Shopify Admin access token was invalid during one langgraph blog run, and the apiv · — · fix_disabled
 - `dfk1g9` · 2026-10-12 · IMG-OPT · auth · Not a runtime failure: the single alerted ERROR is a Cloud Functions gen1 deploy audit log — anhnt@avada.io's  · — · infra
 - `1hftffu` · 2026-10-10 · BLOG · api · getProductsGraphQL splices the raw `search` query param into a double-quoted GraphQL string literal, so a sear · — · fix_disabled
 - `bqejvw` · 2026-10-09 · SEO · publishbulkfaqsgen2 · no verified cause · — · inconclusive
@@ -283,7 +293,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `o3dxv8` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs both of its expected "this article does not exist" outcomes  · — · fix_disabled
 - `1dosxzi` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs its two expected "article does not exist" outcomes — Invalid · — · fix_disabled
 - `1bhevcs` · 2026-08-25 · BLOG · api · no verified cause · — · inconclusive
-- `1q9n03` · 2026-08-25 · BLOG · api · no verified cause · — · inconclusive
+- `1q9n03` · 2026-10-14 · BLOG · api · shopifyRetryApi's retry classifier only recognises HTTP status codes embedded in the error message, so a socke · — · fix_disabled
 - `16vcpso` · 2026-08-24 · SEO · apisagen2 · POST /apiSa/genFaqBulk returned 500 because a Shopify Admin GraphQL THROTTLED error reached generateBulkContro · — · fix_disabled
 - `4zowc` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
 - `1dfzetm` · 2026-08-28 · SEO · proxygen2 · GET /proxy/html-sitemap/index for e129a4.myshopify.com returned 500 because trace-redirect@1.0.6, invoked via  · — · fix_disabled

@@ -349,3 +349,9 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) seo checklist resync meta title/description đi qua ES. Shop nhiều sản phẩm tốn nhiều chi phí, đang tách thành incremental/progressive resync + rescan theo từng item (briefs `jobs/2026-10-13-seo-checklist-*`)
 - [ ] (×1) Đo hiệu quả feature checklist bằng track event SEO sync vào `falcon-ecb55`, card `new-checklist`/`checklist-v2` trên falcon.avada.net/features. Feedback review/CS hỏi trực tiếp CS, không track
 - [ ] (×1) Bug nút rescan issue list (seo checklist) phản hồi chậm chốt fix FE, không khôi phục data
+
+### memory candidates 2026-10-14
+- [ ] (×1) seo alt-text revert theo batch có thể revert vượt scope (yêu cầu 130 ảnh, job chạy 6540) — check filter batch/ngày của job revert trước khi bấm cho khách
+- [ ] (×1) Granted features dev-zone ở blogs giờ cover mọi tính năng Pro + Advanced, gồm MCP — CS unlock không cần nâng plan
+- [ ] (×1) Playwright API key lưu ở `second-brain/.env` — check file này trước khi bảo thiếu key test browser
+- [ ] (×1) Security scan hằng ngày (report Telegram) có fix theo graph harness theo app (`jobs/graphs/*-sec-*.json`)

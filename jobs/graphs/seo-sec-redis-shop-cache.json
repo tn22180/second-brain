@@ -1,0 +1,99 @@
+{
+ "id": "seo-sec-redis-shop-cache",
+ "source": "security-audit-2026-10-13",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "master",
+ "branch": "fix/sec-redis-shop-cache",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "cacheset-no-value-log",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 60,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions in packages/functions/src; jest 24 from repo root `npx jest <path>`, must jest.mock with factory any module pulling puppeteer/@elastic/*/cheerio/@google-cloud/*; eslint needs DISABLE_V8_COMPILE_CACHE=1).\nSECURITY FINDING (daily audit 2026-10-13): packages/functions/src/helpers/redisCache.js cacheSet does `logger.info('[redisCache]', 'set cache', key, value, ttl)` \u2014 it logs the whole cached value. Callers cache full shop docs (proxyshop:<domain>, shopdomain:<domain>) which carry Shopify access-token material, plus settings and API responses, so they land in prod logs, which are forwarded to Slack/Firestore errorAlerts.\nFIX: cacheSet must never log the value. Log at most key and ttl (or drop the info log entirely if it is pure noise \u2014 the set runs on ~22 req/s hot paths). Check every other logger call in helpers/redisCache.js (cacheGet, mget/mset helpers, the ctx.body cache middleware around line 567, logCacheFailure) and remove any that print cached values or payloads; keys are fine.\nTest: helpers test asserting cacheSet with a value containing a sentinel like 'shpat_SENTINEL' never passes that sentinel to any logger method (mock ioredis client/getClient and @functions/helpers/logger).\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger, never console.*. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change and anything you could not do and why.",
+   "contract": {
+    "goal": "redisCache never logs cached values",
+    "allow": [
+     "packages/functions/src/helpers/",
+     "docs/features/"
+    ],
+    "verify": [
+     {
+      "name": "tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/helpers"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "proxy-shop-cache-projection",
+   "deps": [
+    "cacheset-no-value-log"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (same conventions: jest 24 from repo root, DISABLE_V8_COMPILE_CACHE=1 for eslint).\nSECURITY FINDING (daily audit 2026-10-13): packages/functions/src/repositories/shopRepository.js getShopByDomainCached (~line 646) stores the WHOLE shop doc from getShopByField in shared Redis under proxyshop:<domain> for PROXY_SHOP_TTL \u2014 including Shopify access-token material (accessToken / accessTokenHash and any other credential-ish fields). Redis is shared with other workloads and has no per-tenant ACL.\nFIX: cache only a minimal allow-listed projection. Callers: handlers/proxy/controllers/fileController.js, redirectController.js (uses shop.id, shop.specific404Locations-ish, shop.excluded404Urls-ish \u2014 read the exact fields), sitemapController.js (lines ~43 and ~294: uses shop.id, shop.isAddSlashSiteMapUrl, and passes `shop` into getShopLocalesHelper, cleanUrl and getAllHandleOfType which may call Shopify Admin and therefore need the token). Read every caller and every helper they pass `shop` into, list the fields actually read, and cache exactly those that are NOT credentials (id, shopifyDomain, domain-ish fields, the 404 settings, isAddSlashSiteMapUrl, locale fields, etc). Where a caller needs Shopify Admin access (token), fetch the full shop by id (existing getShopById or equivalent) in that branch only \u2014 sitemap is low-traffic, save404 is 98% of proxy traffic and must keep its zero-Firestore-read hit path. Keep the PROXY_SHOP_MISS negative cache and the cacheDel invalidation in updateShop/updateShopData unchanged. Old cache entries (full docs) expire within PROXY_SHOP_TTL; bump the key prefix (e.g. proxyshop2:) so no stale full doc is served after deploy, and update both cacheDel sites to the new key.\nTests: getShopByDomainCached caches an object with no accessToken/accessTokenHash/other credential fields even when the Firestore doc has them; returns the projected fields callers need; sitemap path that calls Shopify gets a full shop. Update any doc in docs/features/ that describes this cache.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only, never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger, never console.*. No secrets, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change and anything you could not do and why.",
+   "contract": {
+    "goal": "proxy shop Redis cache holds no credential fields; proxy hot path unchanged",
+    "allow": [
+     "packages/functions/src/",
+     "docs/features/"
+    ],
+    "verify": [
+     {
+      "name": "tests",
+      "cmd": [
+       "npx",
+       "jest",
+       "--ci",
+       "packages/functions/src/repositories",
+       "packages/functions/src/handlers/proxy",
+       "packages/functions/src/helpers"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}
