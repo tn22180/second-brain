@@ -46,7 +46,8 @@ class DailyTests(unittest.TestCase):
             self.assertIn(text, main)
         self.assertNotIn('Thiếu ngữ cảnh', main)
         for text in ['Level *4.5* (tin cậy vừa)', '4a: kiểm chứng', ':warning: Thiếu ngữ cảnh',
-                     ':bulb: Ghi tiêu chí.', 'Kéo: FAL-1 To Do→Doing | Đang mở: To Do 3 · Doing 2',
+                     ':bulb: Ghi tiêu chí.', ':ticket: Kéo 1 task · Đang mở: To Do 3 · Doing 2',
+                     '• <https://space.avada.net/browse/FAL-1|FAL-1>  _To Do→Doing_',
                      ':memo: Commit 12 (+3 merge)']:
             self.assertIn(text, replies[0])
         self.assertEqual(report['collected_at'], NOW.isoformat())
@@ -193,24 +194,30 @@ class DailyTests(unittest.TestCase):
         self.assertNotIn('posted', daily.load(DAY, self.cache))
 
     def test_commit_titles_grouped_and_capped(self):
-        items = ([{'repo': 'avada/seo', 'sha': f'{i:08x}', 'title': f'fix {i} <b>', 'merge': False}
+        items = ([{'repo': 'avada/seo', 'sha': f'{i:08x}', 'title': f'fix {i} <b>', 'merge': False,
+                   'url': f'https://git.avada.net/avada/seo/-/commit/{i}'}
                   for i in range(22)] +
                  [{'repo': 'avada/seo', 'sha': 'm0000000', 'title': 'Merge branch x', 'merge': True}])
         report = self.collect(gitlab_collect=lambda *a: {'tuannv': {
             'commits': 22, 'merges': 1, 'by_repo': {'avada/seo': 23}, 'items': items}})
         reply = daily.render(report)[1][0]
         self.assertIn(':memo: Commit 22 (+1 merge):', reply)
-        self.assertIn('• _seo_ fix 0 &lt;b&gt;', reply)
-        self.assertEqual(reply.count('• _seo_'), 10)
+        self.assertIn('• <https://git.avada.net/avada/seo/-/commit/0|SEO> fix 0 &lt;b&gt;', reply)
+        self.assertEqual(reply.count('|SEO>'), 10)
         self.assertIn('+12 commit nữa', reply)
         self.assertNotIn('Merge branch', reply)
 
     def test_transition_limit(self):
         report = self.collect()
-        report['jira']['tuannv']['moved'] *= 17
+        report['jira']['tuannv']['moved'] = [
+            {'key': f'FAL-{i}', 'summary': f'Task {i}', 'from': 'To Do', 'to': 'Doing', 'at': f'2026-10-14T0{i % 10}'}
+            for i in range(17)] + [
+            {'key': 'FAL-0', 'summary': 'Task 0', 'from': 'Doing', 'to': 'Waiting To Test', 'at': '2026-10-14T23'}]
         reply = daily.render(report)[1][0]
-        self.assertEqual(reply.count('FAL-1 To Do→Doing'), 8)
-        self.assertIn('+9', reply)
+        self.assertIn('Kéo 17 task', reply)
+        self.assertEqual(reply.count('|FAL-'), 8)
+        self.assertIn('_To Do→Doing→Waiting To Test_', reply)
+        self.assertIn('+9 task nữa', reply)
 
 
 if __name__ == '__main__':

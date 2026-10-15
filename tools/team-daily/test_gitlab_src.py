@@ -51,7 +51,7 @@ class GitLabTests(unittest.TestCase):
 
         def commit(sha, email, parents, name='Unrelated Display Name'):
             return {'id': sha, 'author_email': email, 'parent_ids': parents,
-                    'author_name': name, 'title': f'title {sha}'}
+                    'author_name': name, 'title': f'title {sha}', 'web_url': f'https://g/{sha}'}
 
         commits = {
             'projects/1/repository/commits': [
@@ -90,13 +90,13 @@ class GitLabTests(unittest.TestCase):
             'commits': 2, 'merges': 1,
             'by_repo': {'avada/one': 2, 'avada/two': 1},
             'items': [
-                {'repo': 'avada/one', 'sha': 'a', 'title': 'title a', 'merge': False},
-                {'repo': 'avada/one', 'sha': 'b', 'title': 'title b', 'merge': True},
-                {'repo': 'avada/two', 'sha': 'd', 'title': 'title d', 'merge': False},
+                {'repo': 'avada/one', 'sha': 'a', 'title': 'title a', 'merge': False, 'url': 'https://g/a'},
+                {'repo': 'avada/one', 'sha': 'b', 'title': 'title b', 'merge': True, 'url': 'https://g/b'},
+                {'repo': 'avada/two', 'sha': 'd', 'title': 'title d', 'merge': False, 'url': 'https://g/d'},
             ],
         })
         self.assertEqual(result['tunglv']['items'],
-                         [{'repo': 'avada/one', 'sha': 'c', 'title': 'title c', 'merge': False}])
+                         [{'repo': 'avada/one', 'sha': 'c', 'title': 'title c', 'merge': False, 'url': 'https://g/c'}])
         for member in members[2:]:
             self.assertEqual(result[member], {'commits': 0, 'merges': 0, 'by_repo': {}, 'items': []})
 

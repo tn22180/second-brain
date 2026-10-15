@@ -141,12 +141,22 @@ def member_source(report, source, identity):
     return value if failed(value) else value[identity]
 
 
+JIRA_BROWSE = 'https://space.avada.net/browse/'
+APPS = {'seo': 'SEO', 'blogs': 'Blog', 'llm-ai-search-seo': 'AEO', 'ai-product-copy': 'APC',
+        'avada-image-optimizer': 'Image', 'product-feed': 'Feed', 'avachat': 'Avachat', 'joy': 'Joy'}
 MAX_COMMIT_TITLES = 10
 MAX_MOVES = 8
 MAX_ITEMS = 3
 
 
 LABELS = {'OFF-PURPOSE': 'Sai mục đích', 'WASTEFUL': 'Lãng phí'}
+
+
+def link(url, label):
+    # Slack mrkdwn link; the label is escaped, the url only needs its '|' and '>' kept out.
+    if not url:
+        return escape(label)
+    return f"<{url.replace('|', '%7C').replace('>', '%3E')}|{escape(label)}>"
 
 
 def clip(text, limit):
@@ -214,12 +224,17 @@ def render_member(report, member):
     if failed(jira):
         lines.append(error_line('Jira', jira))
     else:
-        moves = jira['moved']
-        moved = ', '.join(f"{m['key']} {m['from']}→{m['to']}" for m in moves[:MAX_MOVES])
-        if len(moves) > MAX_MOVES:
-            moved += f' +{len(moves) - MAX_MOVES}'
+        tasks = {}
+        for m in sorted(jira['moved'], key=lambda m: m.get('at') or ''):
+            task = tasks.setdefault(m['key'], {'summary': m.get('summary') or '', 'path': [m['from']]})
+            task['path'].append(m['to'])
         board = ' · '.join(f'{status} {count}' for status, count in jira['board'].items()) or '0'
-        lines.append(f":ticket: Kéo: {escape(moved) if moves else '0'} | Đang mở: {escape(board)}")
+        lines.append(f":ticket: Kéo {len(tasks)} task · Đang mở: {escape(board)}")
+        for key, task in list(tasks.items())[:MAX_MOVES]:
+            lines.append(f"• {link(JIRA_BROWSE + key, key)} {escape(clip(task['summary'], 60))}"
+                         f" _{escape('→'.join(task['path']))}_")
+        if len(tasks) > MAX_MOVES:
+            lines.append(f'+{len(tasks) - MAX_MOVES} task nữa')
     if failed(gitlab):
         lines.append(error_line('GitLab', gitlab))
     else:
@@ -234,7 +249,7 @@ def commit_lines(gitlab):
     lines = [f":memo: Commit {gitlab['commits']}{merges}" + (':' if commits else '')]
     for c in commits[:MAX_COMMIT_TITLES]:
         repo = c['repo'].rsplit('/', 1)[-1]
-        lines.append(f"• _{escape(repo)}_ {escape(clip(c['title'], 80))}")
+        lines.append(f"• {link(c.get('url'), APPS.get(repo, repo))} {escape(clip(c['title'], 70))}")
     if len(commits) > MAX_COMMIT_TITLES:
         lines.append(f'+{len(commits) - MAX_COMMIT_TITLES} commit nữa')
     return lines

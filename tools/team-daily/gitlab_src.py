@@ -67,5 +67,5 @@ def collect(day: datetime.date, members: list[str], api=None) -> dict[str, dict]
             repo = project['path_with_namespace']
             counts['by_repo'][repo] = counts['by_repo'].get(repo, 0) + 1
             counts['items'].append({'repo': repo, 'sha': sha[:8], 'title': commit.get('title', ''),
-                                    'merge': kind == 'merges'})
+                                    'merge': kind == 'merges', 'url': commit.get('web_url', '')})
     return result
