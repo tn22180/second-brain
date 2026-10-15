@@ -140,5 +140,23 @@ class ToolNameTest(unittest.TestCase):
         self.assertEqual(seen, ['team_usage', 'member_prompts'])
 
 
+class RetryTest(unittest.TestCase):
+    def test_retries_connection_reset_then_succeeds(self):
+        calls = []
+        def opener(request, timeout):
+            calls.append(1)
+            if len(calls) < 3:
+                raise ConnectionResetError(54, 'reset')
+            return io.BytesIO(b'ok')
+        self.assertEqual(audit_src._read_with_retry(opener, None, sleep=lambda s: None), 'ok')
+        self.assertEqual(len(calls), 3)
+
+    def test_gives_up_after_retries(self):
+        def opener(request, timeout):
+            raise ConnectionResetError(54, 'reset')
+        with self.assertRaises(ConnectionResetError):
+            audit_src._read_with_retry(opener, None, sleep=lambda s: None)
+
+
 if __name__ == '__main__':
     unittest.main()

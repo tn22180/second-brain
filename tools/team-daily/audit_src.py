@@ -2,6 +2,8 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
+import time
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
@@ -13,6 +15,22 @@ _ENTRY = re.compile(
     r'^\[\d+\]\s+(\S+)\s+\|\s+session=(\S+)\s+\|\s+len=(\d+)\s*$'
 )
 _UNITS = {'': 1, 'K': 1000, 'M': 1000000, 'B': 1000000000}
+
+
+RETRIES = 3
+
+
+def _read_with_retry(opener, request, sleep=time.sleep):
+    # audit.avada.net sits behind Cloudflare and drops a connection now and then
+    # (ConnectionResetError seen 2026-10-15); one drop must not cost a member's grade.
+    for attempt in range(RETRIES):
+        try:
+            with opener(request, timeout=60) as response:
+                return response.read().decode('utf-8')
+        except (ConnectionError, TimeoutError, URLError) as exc:
+            if isinstance(exc, HTTPError) or attempt == RETRIES - 1:
+                raise
+            sleep(2 * (attempt + 1))
 
 
 def call(tool: str, args: dict, *, urlopen=None) -> str:
@@ -28,8 +46,7 @@ def call(tool: str, args: dict, *, urlopen=None) -> str:
         'params': {'name': tool, 'arguments': args},
     }).encode('utf-8'))
     opener = urlopen if urlopen is not None else globals()['urlopen']
-    with opener(request, timeout=60) as response:
-        body = response.read().decode('utf-8')
+    body = _read_with_retry(opener, request)
     if body.lstrip().startswith('{'):
         payload = json.loads(body)
     else:
