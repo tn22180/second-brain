@@ -49,7 +49,7 @@ class DailyTests(unittest.TestCase):
         self.assertNotIn(':git:', main)
         self.assertNotIn(':jira:', main)
         for text in ['vừa', '4a: kiểm chứng', 'Thiếu ngữ cảnh', 'Ghi tiêu chí.',
-                     'FAL-1 To Do→Doing', 'avada/app: 15']:
+                     'FAL-1 To Do→Doing', ':memo: Commit (12, +3 merge):']:
             self.assertIn(text, replies[0])
         self.assertEqual(report['collected_at'], NOW.isoformat())
         self.assertTrue((self.cache / '2026-10-14.json').exists())
@@ -60,17 +60,33 @@ class DailyTests(unittest.TestCase):
 
     def test_isolation_and_safe_error(self):
         def fail(*args):
-            raise RuntimeError('secret-token-do-not-print')
+            raise RuntimeError('401 for Bearer pau_abc123 xoxb-1-2-secret')
         for failing in ['jira_collect', 'gitlab_collect', 'audit_usage', 'audit_prompts', 'grader']:
             with self.subTest(failing=failing):
                 report = self.collect(**{failing: fail})
                 main, replies = daily.render(report)
                 self.assertIn(':x:', main)
-                self.assertNotIn('secret-token', json.dumps(report) + main + str(replies))
+                text = json.dumps(report, ensure_ascii=False) + main + str(replies)
+                self.assertNotIn('pau_abc123', text)
+                self.assertNotIn('xoxb-1-2-secret', text)
+                self.assertIn('RuntimeError: 401 for', text)
                 if failing != 'gitlab_collect':
                     self.assertIn('12 commit', main)
                 if failing != 'jira_collect':
                     self.assertIn('kéo 1 task', main)
+
+    def test_redacted_prompts_not_graded(self):
+        called = []
+        report = self.collect(audit_prompts=lambda *a: [{'text': '<REDACTED>'}] * 3,
+                              grader=lambda *a: called.append(a) or copy.deepcopy(GRADE))
+        self.assertEqual(called, [])
+        self.assertIn('Level — (prompt-audit ẩn nội dung prompt)', daily.render(report)[0])
+
+    def test_task_notifications_not_graded(self):
+        seen = []
+        self.collect(audit_prompts=lambda *a: [{'text': '<task-notification>x'}, {'text': 'fix bug'}],
+                     grader=lambda name, prompts, tokens: seen.append(prompts) or copy.deepcopy(GRADE))
+        self.assertEqual(seen[0], [{'text': 'fix bug'}])
 
     def test_tokens(self):
         for value, expected in [(1200000000, '1.2B'), (428000000, '428M'),
@@ -164,6 +180,20 @@ class DailyTests(unittest.TestCase):
             daily.post(DAY, cache_dir=self.cache, read_token=lambda p: 'fake',
                        send=lambda *a: {'ok': False, 'error': 'secret'})
         self.assertNotIn('posted', daily.load(DAY, self.cache))
+
+    def test_commit_titles_grouped_and_capped(self):
+        items = ([{'repo': 'avada/seo', 'sha': f'{i:08x}', 'title': f'fix {i} <b>', 'merge': False}
+                  for i in range(22)] +
+                 [{'repo': 'avada/seo', 'sha': 'm0000000', 'title': 'Merge branch x', 'merge': True}])
+        report = self.collect(gitlab_collect=lambda *a: {'tuannv': {
+            'commits': 22, 'merges': 1, 'by_repo': {'avada/seo': 23}, 'items': items}})
+        reply = daily.render(report)[1][0]
+        self.assertIn(':memo: Commit (22, +1 merge):', reply)
+        self.assertIn('_avada/seo_', reply)
+        self.assertIn('• `00000000` fix 0 &lt;b&gt;', reply)
+        self.assertEqual(reply.count('• `'), 20)
+        self.assertIn('+2 commit nữa', reply)
+        self.assertNotIn('Merge branch', reply)
 
     def test_transition_limit(self):
         report = self.collect()

@@ -49,13 +49,14 @@ def call(tool: str, args: dict, *, urlopen=None) -> str:
     if 'PERMISSION DENIED' in text:
         raise PermissionError('Audit permission denied')
     if result.get('isError'):
-        raise RuntimeError('Audit tool error')
+        # The server reports tool failures as text, e.g. "MCP error -32602: Tool x not found".
+        raise RuntimeError('Audit tool error: ' + text[:120])
     return text
 
 
 def usage(window='24h', call=None) -> dict[str, int]:
     invoke = call if call is not None else globals()['call']
-    text = invoke('usage', {'window': window})
+    text = invoke('team_usage', {'window': window})
     if 'PERMISSION DENIED' in text:
         raise PermissionError('Audit permission denied')
     # The server's daily average always divides by five, regardless of window.
@@ -73,7 +74,7 @@ def _limit(limit):
 def prompts(email, window='24h', limit=200, call=None) -> list[dict] | None:
     invoke = call if call is not None else globals()['call']
     try:
-        text = invoke('prompts', {'email': email, 'window': window, 'limit': _limit(limit)})
+        text = invoke('member_prompts', {'email': email, 'window': window, 'limit': _limit(limit)})
     except PermissionError:
         return None
     if 'PERMISSION DENIED' in text:

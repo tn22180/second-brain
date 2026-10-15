@@ -3,8 +3,10 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
+import traceback
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -49,16 +51,32 @@ def load(day, cache_dir=None):
     return json.loads(day_path(day, cache_dir).read_text(encoding='utf-8'))
 
 
+_SECRET = re.compile(r'(Bearer\s+\S+|xox[a-z]-[\w-]+|pau_\w+|glpat-[\w-]+|sk-[\w-]+)')
+
+
+def short_error(exc):
+    # Upstream exception text can contain credentials; the report is posted to Slack.
+    return f'{type(exc).__name__}: {_SECRET.sub("<redacted>", str(exc))}'[:160]
+
+
 def attempt(function, *args):
     try:
         return function(*args)
     except Exception as exc:
-        # Upstream exception text can contain credentials or subprocess input.
-        return {'error': type(exc).__name__}
+        traceback.print_exc(file=sys.stderr)
+        return {'error': short_error(exc)}
 
 
 def failed(value):
     return isinstance(value, dict) and 'error' in value
+
+
+REDACTED = '<REDACTED>'
+
+
+def human_prompts(prompts):
+    # Background-task results are injected as user turns; they are not what the member typed.
+    return [p for p in prompts if not p.get('text', '').lstrip().startswith('<task-notification>')]
 
 
 def collect(day, *, cache_dir=None, members=None, now=None, jira_collect=None,
@@ -79,8 +97,15 @@ def collect(day, *, cache_dir=None, members=None, now=None, jira_collect=None,
         tokens = None if failed(report['usage']) else report['usage'].get(email)
         report['prompts'][name] = (prompts if prompts is None or failed(prompts) else
                                    {'count': len(prompts), 'capped': audit_src.is_capped(prompts)})
-        report['grades'][name] = (prompts if failed(prompts) else
-                                  attempt(grader or grade.grade, name, prompts, tokens))
+        if failed(prompts) or prompts is None:
+            report['grades'][name] = prompts if failed(prompts) else {}
+            continue
+        typed = human_prompts(prompts)
+        # prompt-audit hides some members' text server-side; grading lengths alone is guesswork.
+        if typed and all(p.get('text', '').strip() == REDACTED for p in typed):
+            report['grades'][name] = {'redacted': True}
+            continue
+        report['grades'][name] = attempt(grader or grade.grade, name, typed, tokens)
     try:
         previous = load(day, cache_dir)
     except FileNotFoundError:
@@ -123,6 +148,8 @@ def render_member(report, member):
         level = 'Level —  (ngoài scope prompt-audit)'
     elif failed(result):
         level = error_line('prompt-audit' if failed(prompts) else 'grade', result)
+    elif result.get('redacted'):
+        level = 'Level — (prompt-audit ẩn nội dung prompt)'
     else:
         value = result.get('level')
         level = f'Level *{value:g}*' if value is not None else 'Level — (chưa có prompt)'
@@ -160,11 +187,33 @@ def render_member(report, member):
     if failed(gitlab):
         detail.append(error_line('GitLab', gitlab))
     else:
-        detail.append(':memo: Commit theo repo:')
-        detail.extend(f'{escape(repo)}: {count}' for repo, count in gitlab['by_repo'].items())
-        if not gitlab['by_repo']:
-            detail.append('0')
+        detail.extend(commit_lines(gitlab))
     return '\n'.join(summary), '\n'.join(detail)
+
+
+MAX_COMMIT_TITLES = 20
+
+
+def commit_lines(gitlab):
+    # Merge titles are all "Merge branch ...": count them, list only real commits.
+    commits = [c for c in gitlab.get('items', []) if not c['merge']]
+    lines = [f":memo: Commit ({gitlab['commits']}, +{gitlab['merges']} merge):"]
+    if not commits:
+        return lines + ['0']
+    by_repo = {}
+    for c in commits:
+        by_repo.setdefault(c['repo'], []).append(c)
+    shown = 0
+    for repo, items in by_repo.items():
+        lines.append(f'_{escape(repo)}_')
+        for c in items:
+            if shown == MAX_COMMIT_TITLES:
+                break
+            lines.append(f"• `{c['sha']}` {escape(c['title'][:90])}")
+            shown += 1
+    if len(commits) > shown:
+        lines.append(f'+{len(commits) - shown} commit nữa')
+    return lines
 
 
 def render(report):
@@ -268,7 +317,8 @@ def main(argv=None):
         if args.command in ('post', 'run'):
             post(day, dry_run=args.dry_run, force=args.force)
     except Exception as exc:
-        print('team-daily lỗi: ' + type(exc).__name__, file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        print('team-daily lỗi: ' + short_error(exc), file=sys.stderr)
         return 1
     return 0
 

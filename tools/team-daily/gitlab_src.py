@@ -37,7 +37,7 @@ _default_api = api
 def collect(day: datetime.date, members: list[str], api=None) -> dict[str, dict]:
     if api is None:
         api = _default_api
-    result = {member: {'commits': 0, 'merges': 0, 'by_repo': {}}
+    result = {member: {'commits': 0, 'merges': 0, 'by_repo': {}, 'items': []}
               for member in members}
     identities = {member.lower(): member for member in members}
     date = day.isoformat()
@@ -66,4 +66,6 @@ def collect(day: datetime.date, members: list[str], api=None) -> dict[str, dict]
             counts[kind] += 1
             repo = project['path_with_namespace']
             counts['by_repo'][repo] = counts['by_repo'].get(repo, 0) + 1
+            counts['items'].append({'repo': repo, 'sha': sha[:8], 'title': commit.get('title', ''),
+                                    'merge': kind == 'merges'})
     return result

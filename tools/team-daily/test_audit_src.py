@@ -132,5 +132,13 @@ class TransportTests(unittest.TestCase):
                 audit_src.prompts('a@b.com')
 
 
+class ToolNameTest(unittest.TestCase):
+    def test_server_tool_names(self):
+        seen = []
+        audit_src.usage('24h', call=lambda tool, args: seen.append(tool) or '')
+        audit_src.prompts('a@b.c', '24h', 200, call=lambda tool, args: seen.append(tool) or 'title\n')
+        self.assertEqual(seen, ['team_usage', 'member_prompts'])
+
+
 if __name__ == '__main__':
     unittest.main()
