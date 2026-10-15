@@ -1,0 +1,55 @@
+{
+ "id": "aeo-sec-review-1015b",
+ "source": "security-review-2026-10-15",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/llm-ai-search-seo",
+ "base": "main",
+ "branch": "fix/sec-shop-identity-fields",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "aeo-shop-blockfields",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 90,
+   "prompt": "Repo: llm-ai-search-seo (AEO Shopify app; Firebase Functions packages/functions/src). Read the repo CLAUDE.md. Base: main (MR !153 shopInfos allow-list already merged).\nHIGH (pre-existing, same MR because same endpoint): PUT/POST /api/shop non-domain branch \u2192 updateShopData (repositories/shopRepository.js:~108-111) strips only blockFields (plan, isDevZone, installedAt, aeoLimits, aeoUsage, limitsEnabled, limitsAppliedAt, isEnableLimitedUrls) for untrusted callers. shopifyDomain, accessToken, accessTokenHash, crispSessionToken, passwordStore, email stay merchant-writable. Writing another shop's shopifyDomain makes storefront lookups getShopByField(shopDomain).limit(1) (additionalTxtFileController.js:~286, aiReferralController.js:~79, webhookLogRepository.js:~10) resolve to the attacker's doc. Fix: add shopifyDomain, accessToken, accessTokenHash, crispSessionToken, email, and any other credential/identity field you find on the shop doc to the untrusted strip (keep trusted writers working). Grep packages/assets/src: confirm no merchant screen sends them (passwordStore IS sent by DevZone \u2014 check whether DevZone is trusted; if merchants legitimately set passwordStore from a non-DevZone screen keep it writable). Also gate the `domain` (shopInfos) branch on isTrustedWriter(ctx) only if the only FE sender is DevZone (DevZone.js:~262).\nTests: untrusted PUT {shopifyDomain:'b.myshopify.com', accessToken:'x'} persists neither; trusted path still can.\nRules: TDD \u2014 failing test first. Comments say WHY only, never narrate WHAT. Use the repo logger, never add console.*. No secrets, no new deps; do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE packages/functions: never `await import(...)` a local module; lazy-load with require(). DO NOT modify, rewrite or delete any test or file unrelated to the items below, even if it fails \u2014 pre-existing failures are listed and excluded. Your sandbox cannot open sockets: never rewrite a test to avoid sockets; if a test you must run needs a socket, say so in the final message. Update docs/features/*.md (and the matching .claude/skills doc if it cites changed lines) for behaviour you change. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change + anything not done and why.",
+   "contract": {
+    "goal": "merchant cannot write identity/credential shop fields",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/main -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"/lib/\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/main -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint  $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "llm-ai-search-seo"
+    }
+   }
+  }
+ ]
+}

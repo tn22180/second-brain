@@ -1,0 +1,56 @@
+{
+ "id": "blog-sec-review-1015",
+ "source": "security-review-2026-10-15",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "fix/sec-audit-1014",
+ "branch": "fix/sec-audit-1014-review",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules",
+  "packages/avadaseo/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "blog-review-fixes",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: blogs (Avada Blog app; Firebase Functions packages/functions/src, React/Polaris packages/assets/src; jest 24 from root; eslint DISABLE_V8_COMPILE_CACHE=1). Read the repo CLAUDE.md. You are on branch fix/sec-audit-1014 (MR !928, security fixes); a review found bugs; fix exactly these. Pre-existing failing suites (excluded): ellisAttack.getCustomPricing, shopifyGraphQlService.*, redis.service, removeRecipeMetafields.\n1. BLOCKER: packages/assets/src/components/AISummary/SummaryManager/EditSummaryModal.js:~202 calls isFirstTimeGenerate(article) but the branch removed its import \u2192 ReferenceError, modal crashes. Previews in this modal now always cost a credit, so always render the generateAgain {count:1} label and drop the call. Then grep the whole diff vs origin/master for any other removed import still referenced (run eslint with --rule 'no-undef: error' on every changed FE file).\n2. MEDIUM: blogAssist legacy docs (no shopId): first writer claims them (services/blogAssist.service.js:~30-34, repositories/blogAssist.repository.js:~24-31) so another shop can take shop A's history. blogId comes from the article route param (AIAssistantModal.jsx:46 \u2192 useParams id). Find how articles are stored (Firestore articles collection with shopId? or Shopify article id): if the article for blogId can be checked for ownership cheaply (a repo read by id with shopId), only stamp shopId on a legacy doc / return it when the article belongs to the current shop; otherwise never claim a legacy doc \u2014 treat it as not found for writes (create a fresh doc for this shop) and for reads. Also move the ownership check BEFORE the AI completion so a refused request does not run a free LLM call.\n3. LOW: findOneFieldByBlogId lost .select(select): restore `.select(select, 'shopId')`.\n4. LOW: controllers/settingsController.js getPublicSettings: filter null/non-object entries from dataActive before mapping.\n5. LOW: packages/assets/src/pages/DevZone/index.jsx ~:703 RedisTool renders in prod but backend 403s redis-* there: render it only outside production (use the FE's existing staging/production flag).\n6. LOW: add 'googleAnalytics' to blockFields (config/pickFields.js) so POST /shop can't skip testGoogleAnalyticsConnection; confirm the GA save path (googleController updateGoogleAnalyticsConfig / updateShopById) is not affected. Also check shopifyDomain, accessToken, accessTokenHash, email: if a merchant can still write them via POST /shop after blockFields, add them (shopifyDomain lets a merchant hijack storefront lookups); grep FE that no merchant screen sends them.\n7. Docs: helpers/devZoneAccess.js canInternalUseDevZone JSDoc (redis-* now prod-blocked); packages/functions/src/docs/shops.yaml entries for updateShopByFieldNumber and getBlogCustomer (line refs + allow-list + 403).\nTests for 1-6.\nRules: TDD \u2014 failing test first. Comments say WHY only, never narrate WHAT. Use the repo logger, never add console.*. No secrets, no new deps; do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE packages/functions: never `await import(...)` a local module; lazy-load with require(). DO NOT modify, rewrite or delete any test or file unrelated to the items below, even if it fails \u2014 pre-existing failures are listed and excluded. Your sandbox cannot open sockets: never rewrite a test to avoid sockets; if a test you must run needs a socket, say so in the final message. Update docs/features/*.md (and the matching .claude/skills doc if it cites changed lines) for behaviour you change. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change + anything not done and why.",
+   "contract": {
+    "goal": "summary modal works; blogAssist legacy docs unclaimable; small hardening",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014 -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"ellisAttack\\.getCustomPricing|shopifyGraphQlService\\.|redis\\.service|removeRecipeMetafields\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014 -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint --rule 'no-undef: error' $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  }
+ ]
+}

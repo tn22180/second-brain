@@ -9,4 +9,4 @@ Telegram DM chỉ một chiều (báo). Không build đường reply → session
 
 **Why:** Tuan có Orca trên điện thoại, điều khiển session trực tiếp ở đó.
 
-**How to apply:** Đừng đề xuất lại reply-to-resume/Channels. Format tin theo [[telegram-dm-format]].
+**How to apply:** Đừng đề xuất lại reply-to-resume/Channels chung. Ngoại lệ Tuan tự yêu cầu 2026-10-15: lệnh `/cc` qua Hermes cho session dở ([[cc-pending]]) — lệnh tất định, không phải reply tự do. Format tin theo [[telegram-dm-format]].

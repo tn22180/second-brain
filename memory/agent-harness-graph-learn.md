@@ -13,3 +13,5 @@ metadata:
 
 **Why:** Tuan muốn lên bậc 6 (graph) và 7 (self-improve) sau khi harness vững.
 **How to apply:** từ 2026-10-01 graph là MẶC ĐỊNH cho 2+ task code giao được (tony-wf + ~/.claude/CLAUDE.md); tuần tự chỉ khi cần hỏi giữa chừng/phụ thuộc chặt, ghi lý do vào Decisions. Debug/hỏi/sửa 1 file làm trực tiếp. Check suite-wide đánh `preflight: true`; second-brain cần `linkPaths` (node_modules của tool + projects/Falcon). Pilot đầu: `jobs/graphs/harness-minors.json`. Liên quan [[agent-autonomy-mr-not-merge]], [[telegram-dm-format]].
+
+Duyệt learn 10-12 ngày 2026-10-15: false-done học được bị thổi — 19 empty diff seo = AGENTS.md hijack (runner vá 10-12, tony-wf in-session vá 10-15), 16 security `unknown` = review_unavailable (bug harness). Đã vá tony-wf §4/§6/§7.3; đo lại ở learn 10-19. Xem [[seo-agents-md-hijacks-codex]], [[harness-security-gate-stop-hook]].

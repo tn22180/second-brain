@@ -32,16 +32,19 @@ loops:
       - {kind: git_ref, repo: ~/Documents/second-brain, ref: origin/main, max_age: 26h}
 
 
-  - name: prod-error-autofix
+  - name: cc-pending
     checks:
-      - {kind: launchd, label: com.tn22180.prod-error-autofix, running: true}
-      - {kind: file_fresh, path: ~/.cache/prod-autofix/daemon.log, max_age: 12h}
+      # Hermes cron ea65987a9126 at 09:00 rewrites this even when nothing is pending; /cc does too.
+      - {kind: file_fresh, path: ~/.cache/cc-pending/state.json, max_age: 26h}
 
-  - name: prod-error-autofix audit
+  - name: team-daily
     checks:
-      - {kind: launchd, label: com.tn22180.prod-error-autofix-audit}
-      # audit.log is touched even when every lane fails; the report is the output.
-      - {kind: dated_file, path: ~/.cache/prod-autofix/audit-*.md, max_lag_days: 2}
+      - {kind: launchd, label: com.tn22180.team-daily-collect}
+      - {kind: launchd, label: com.tn22180.team-daily-post}
+      # collect 00:10 writes <yesterday>.json; post 09:00 adds "posted" to that same file.
+      - {kind: file_fresh, path: ~/.cache/team-daily/*.json, max_age: 26h}
+
+# prod-error-autofix retired 2026-10-15: falcon-debug-production-logs now goes through slack-thread-watch.
 
   - name: billing report
     checks:

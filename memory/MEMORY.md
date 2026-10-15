@@ -1,5 +1,5 @@
 - [No file dumps in reply](no-file-dumps-in-reply.md) — đã Write file rồi thì báo path + output test, đừng dán lại nội dung HTML/MD; rate limit là tài nguyên thật.
-- [slack-thread-watch](slack-thread-watch.md) — thread support mới → Orca worktree + claude "/falcon:support-handoff <link>" (auto mode); launchd 2 phút, 3 kênh, thay falcon-fix-bot.
+- [slack-thread-watch](slack-thread-watch.md) — thread mới → Orca worktree + claude "/falcon:support-handoff <link>" (auto mode); launchd 2 phút, 4 kênh (thêm prod-logs 10-15, thay prod-error-autofix), thay falcon-fix-bot.
 - [Kiểm rồi mới báo, không đoán](check-before-reporting-no-guessing.md) — trạng thái deploy/box/credential phải chạy lệnh kiểm trước khi nói; memory chỉ là gợi ý (sai 2 lần 10-06).
 - [Ask rule là prefix: git -C lọt](ask-rule-prefix-git-c.md) — (push đã chuyển sang git_guard hook 2026-09-30, không còn ask rule git push) rule prefix không khớp `git -C … push`/for-loop.
 - [Check master before building](check-master-before-building.md) — grep master cho feature TRƯỚC khi code; team chạy song song cùng 1 brief qua Claude, MR 2229 build xong mới biết master đã có.
@@ -45,7 +45,7 @@
 - [seo central box access](seo-central-box-access.md) — box thật `avada@100.87.235.36`, fleet-control ở `/home/avada/fleet-control`; deploy.sh commit sẵn 2 default sai, sudo cần password.
 - [seo worker box credential surface](seo-worker-box-credential-surface.md) — key `e2049477` = 11 role admin prod, nằm **0644 trên box2** → coi như đã lộ; đếm đủ 10/9 là 8 file SA (không phải 4); box2 cả cây `Projects/seo` 0777.
 - [Bull Board vs fleet-control](seo-bullboard-grafana-vs-fleet-control.md) — cùng Redis/BullMQ (Bull Board có quyền ghi, không redact); Grafana chỉ đọc Loki. Đã khoá về 127.0.0.1 24/08.
-- [integrationKeys không bind shop — cả 5 app](integration-key-unbound-fleetwide.md) — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới vá APC (MR !191-193 Draft), 4 app kia chưa có ticket.
+- [integrationKeys không bind shop](integration-key-unbound-fleetwide.md) — cross-tenant qua /proxy/swagger-token; APC + seo (FAL-746, verify 10-15) đã vá; blogs/AEO/img-opt chưa check lại.
 - [seo eslint-fix crash](seo-eslint-v8-compile-cache.md) — 2 bugs: yarn4 hoist (bin không nằm trong packages/*) + eslint6 v8-compile-cache vs Node22 require(esm). Fix: bare `eslint` + DISABLE_V8_COMPILE_CACHE=1.
 - [TS AI internal support key](ts-ai-internal-support-key.md) — bind-shop giết 64 tool TS AI; thay bằng /proxy/internal-token: collection riêng, hash-only, actor+ticket, JWT 15m, audit mọi write.
 - [falcon-fix-bot trên máy này](falcon-fix-bot-mac-runtime.md) — TẮT 2026-10-06 (disable+bootout), thay bằng slack-thread-watch; code/state + MR !10 giữ để rollback.
@@ -80,13 +80,15 @@
 - [Agent tự quyết, MR không merge](agent-autonomy-mr-not-merge.md) — tony-wf/harness: tự quyết + mở MR feature branch; cấm merge, push master, tag, deploy; hỏi gộp 1 tin chỉ khi đổi thứ được build.
 - [Tooling cá nhân không cần Jira](no-jira-for-own-tooling.md) — harness/hook/skill/loop không tạo FAL; pilot harness qua tony-wf, không chờ ticket.
 - [Telegram DM format](telegram-dm-format.md) — ngắn, dòng đầu <b>title session</b> (HTML parse_mode); mr_notify/harness/loop-health đã theo.
-- [Telegram chỉ báo](telegram-notify-only.md) — không xử lý reply; Tuan dùng Orca trên điện thoại để lái session.
+- [Telegram chỉ báo](telegram-notify-only.md) — không xử lý reply; Tuan dùng Orca trên điện thoại để lái session. Ngoại lệ: `/cc` của cc-pending.
+- [cc-pending](cc-pending.md) — Hermes cron 09:00 báo session CC dở; `/cc tiep|don|bo N` → Orca resume / session dọn worktree (không --force).
+- [team-daily report](team-daily-report.md) — #system-alert 09:00 qua falcon_bot, 10 dev Falcon (Tuan chốt), Jira FAL, commit+title, token+7-level từ prompt-audit; không Grafana, truongnn bị REDACTED.
 - [AEO llms.txt đè Shopify: 82% chưa đè](aeo-llms-txt-override-coverage.md) — app ghi `templates/llms.txt.liquid` vào main theme, opt-in; probe 10-01: 1454 shop live, 82% vẫn template Shopify, 6% chữ ký app.
 - [APC review giả + AEO làm tròn giá USD](apc-fake-testimonial-aeo-usd-round.md) — 2 bug prod tìm ra 10-01: templates.js:51 slot testimonial bịa 7/10; formatCurrency USD maxFraction 0.
 - [product-feed inventory](product-feed-inventory.md) — 10-07: ChatGPT ~80% có sẵn, nguồn chỉ Shopify, identifier_exists gần như không ghi, 2 lỗ tự mở plan (renderImageLimit, devZoneGuard).
 - [share-note token ở file](share-note-token-file.md) — NOTES_API_KEY không export; đọc `~/.config/avada/notes-token` inline khi chạy bun index.ts.
 - [Harness graph + learn](agent-harness-graph-learn.md) — B6 graph runner (cc -p/jev/verify, không push, integration verify cho git_guard) + B7 learn thứ Hai 09:00, ngưỡng 10 task.
-- [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (13/17); vá 10-01 (31a2fb0). Đo 10-08 n=22: matched-nothing 15,6→4,5/100. Vòng 2 10-08 (31eb13e): extractJson parse hỏng 4/6 reply hợp lệ. Đo lại cả 2 ngày 10-15.
+- [Autofix absence-evidence retro](autofix-absence-evidence-retro.md) — vòng L7 đầu: verify loại nhầm matched:0 (13/17); vá 10-01 (31a2fb0). Đo 10-08 n=22: matched-nothing 15,6→4,5/100. Vòng 2 10-08 (31eb13e): extractJson parse hỏng 4/6 reply hợp lệ. Đo 10-15 n=54: round-2 16→4%.
 - [Reply thread Slack khi xong](reply-slack-thread-on-done.md) — fix bug từ thread support xong phần nào reply luôn vào thread (link MR, nguyên nhân, khách cần làm gì, deploy chưa); bot token falcon-fix-bot.
 - [seo [deploy-extensions] mất ở merge commit](seo-deploy-extensions-merge-title.md) — rule check CI_COMMIT_TITLE; merge title 'Merge branch…' → extension KHÔNG deploy; tag pipeline không có job extension. Curl storefront để verify.
 - [Team SEOOn = 6 người](seoon-team-members.md) — tuannv, tunglv, truongnn, minhpt, dungtt, tranggt; đừng lấy cả Board 1 trong roster jira.
@@ -102,3 +104,7 @@
 - [secret.avada.net token + share shop token](secret-avada-token-file.md) — sat_ ở ~/.config/avada/secret-token; getShopToken → /api/secrets private 1h/1 view, chỉ in url.
 - [SEO checklist adoption dashboard](seo-checklist-adoption-dashboard.md) — artifact 8hzEayipNeZMtvnswjiBF4; collect.py → upload JSON; events ở falcon-ecb55 (không phải plaza-staging-3), staging không bắn vì CI var protected.
 - [Rich Results Test tự động](rich-results-test-automation.md) — code mode qua Playwright: tab CODE phải dùng phím, CodeMirror.setValue; Product cần offers|review|aggregateRating.
+- [seo recursive cost profile](seo-recursive-cost-profile.md) — $84/30d, CPU 82%; tách theo memory ≤$5/tháng + vỡ Gate 2; FILE_PAGE legacy đọc lại JSONL mỗi batch mới là chỗ đốt.
+- [seo minify revert vẫn sống](seo-minify-revert-path-live.md) — sunset chỉ ép enabled:false; action minify là đường revert .aio.min. cho 35.851 shop; chỉ xoá phần sinh.
+- [Graph verify pitfalls](harness-graph-verify-pitfalls.md) — không dùng jest --findRelatedTests (seo chết config); Codex viết lại test socket + test đỏ sẵn master → revert ngoài scope.
+- [Dep prune 5 app 10-15](dep-prune-1015.md) — MR seo!2424 blogs!931 APC!216 img!300 AEO!155; verifier jobs/graphs/dep-prune; pathspec `:!**/` không loại root, AEO commit install-state + symlink node_modules.

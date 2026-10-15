@@ -1,0 +1,157 @@
+{
+  "id": "team-daily-1015",
+  "source": "tuan-request-2026-10-15",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain",
+  "base": "main",
+  "branch": "feat/team-daily-report",
+  "maxParallel": 4,
+  "nodes": [
+    {
+      "id": "jira-src",
+      "deps": [],
+      "wallMinutes": 45,
+      "prompt": "Repo: second-brain (personal tooling). New tool dir tools/team-daily/: a daily report for team SEOOn (members tuannv, tunglv, truongnn, minhpt, dungtt, tranggt) posted to Slack. Python 3.11 STDLIB ONLY (no pip deps), tests with unittest (`python3 -m unittest discover -s tools/team-daily -p 'test_*.py'`). No network in tests: every network/subprocess call goes through an injectable function parameter so tests pass fakes. Never print or log a token. Comments only for the WHY (constraints, API quirks, units), never narrate the what; no banners. Keep each module small and plain. Write tests first. Do not touch files outside your allow list.\n\nWrite tools/team-daily/jira_src.py + tools/team-daily/test_jira_src.py.\n\nJira Server at https://space.avada.net, project FAL. Auth header `Authorization: Bearer <PAT>`. Token: env JIRA_TOKEN, else parse `JIRA_TOKEN=...` from ~/.claude/skills/jira-create/.env (strip quotes). MUST send a browser-like User-Agent (e.g. 'Mozilla/5.0 (Macintosh) team-daily'): Jira 403s Python-urllib's default UA. People are identified by Jira username (`author.name`). The task owner field is customfield_10700 (a LIST of users, each has `name`) — NOT `assignee`; in JQL it is `cf[10700]`. Timezone of the day: Asia/Ho_Chi_Minh (+07:00). Changelog timestamps look like '2026-10-14T15:03:11.000+0700'.\n\nBoard column order (status names exact, note the space in 'QA/ QC'):\nSTATUS_ORDER = ['To Do','Doing','Waiting To Test','Test Staging','Waiting For Review','Reviewing','Review Done','QA/ QC','Waiting To Live','Testing Production','Done']\n\nAPI:\n- `fetch(path: str) -> dict` default implementation: GET https://space.avada.net + path, JSON. Injectable.\n- `collect(day: datetime.date, members: list[str], fetch=None) -> dict[str, dict]` returns for EVERY member (zeros when nothing):\n  {\"moved\": [{\"key\",\"summary\",\"from\",\"to\",\"at\"}],   # status transitions the member PERFORMED (history author) on `day` in +07, any FAL issue\n   \"owned_moved\": [{\"key\",\"summary\",\"from\",\"to\",\"at\",\"by\"}],  # transitions on `day` of issues whose customfield_10700 contains the member, by anyone\n   \"board\": {status: count}}  # open snapshot: issues with cf[10700] = member and status in STATUS_ORDER[:-1] (To Do..Testing Production); keys only for non-zero, ordered per STATUS_ORDER\n- Queries: transitions via `/rest/api/2/search?jql=project = FAL AND status changed DURING (\"YYYY-MM-DD 00:00\",\"YYYY-MM-DD 23:59\")&expand=changelog&fields=summary,status,customfield_10700&maxResults=100&startAt=N` (paginate on total). Filter histories whose `created` falls on `day` (+07) and items with field=='status' (use fromString/toString). Board via `/rest/api/2/search?jql=project = FAL AND cf[10700] in (<members>) AND status in (<quoted statuses>)&fields=status,customfield_10700&maxResults=100` paginated, count per member per status.\n- Note: a changelog over 100 histories may be truncated in search results (changelog.total > changelog.maxResults); in that case fetch `/rest/api/2/issue/<key>?expand=changelog&fields=summary` for that issue.\nTests with fake fetch returning realistic JSON: transitions outside the day ignored, non-status items ignored, owner matching via customfield_10700 list, board counts and ordering, pagination (2 pages), truncated changelog triggers per-issue fetch, URL-encoding of JQL, and that the UA + Bearer headers are set in the default fetch (patch urllib.request.urlopen).",
+      "contract": {
+        "goal": "jira_src.collect returns per-member transitions performed, transitions on owned issues, and open board counts for a +07 day",
+        "allow": [
+          "tools/team-daily/jira_src.py",
+          "tools/team-daily/test_jira_src.py"
+        ],
+        "verify": [
+          {
+            "name": "unittest",
+            "cmd": [
+              "bash",
+              "-c",
+              "cd tools/team-daily && python3 -m unittest -v test_jira_src"
+            ]
+          }
+        ]
+      },
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      }
+    },
+    {
+      "id": "gitlab-src",
+      "deps": [],
+      "wallMinutes": 45,
+      "prompt": "Repo: second-brain (personal tooling). New tool dir tools/team-daily/: a daily report for team SEOOn (members tuannv, tunglv, truongnn, minhpt, dungtt, tranggt) posted to Slack. Python 3.11 STDLIB ONLY (no pip deps), tests with unittest (`python3 -m unittest discover -s tools/team-daily -p 'test_*.py'`). No network in tests: every network/subprocess call goes through an injectable function parameter so tests pass fakes. Never print or log a token. Comments only for the WHY (constraints, API quirks, units), never narrate the what; no banners. Keep each module small and plain. Write tests first. Do not touch files outside your allow list.\n\nWrite tools/team-daily/gitlab_src.py + tools/team-daily/test_gitlab_src.py.\n\nSelf-hosted GitLab git.avada.net. Call the API ONLY through the glab CLI (it holds the token): `glab api --hostname git.avada.net --paginate <path>`; with --paginate, glab concatenates JSON arrays as `[...][...]`, so join them (handle `][` and `]\n[` boundaries) before json.loads.\nAPI:\n- `api(path: str) -> list` default implementation via subprocess as above (raise RuntimeError with stderr on non-zero). Injectable.\n- `collect(day: datetime.date, members: list[str], api=None) -> dict[str, dict]` returns for EVERY member: {\"commits\": int, \"merges\": int, \"by_repo\": {path_with_namespace: int}} where by_repo counts commits+merges.\n- Steps: projects = api('groups/avada/projects?per_page=100&include_subgroups=true&archived=false'), keep those with last_activity_at >= day (ISO string compare on the date prefix is fine). For each: api(f\"projects/{id}/repository/commits?since=<day>T00:00:00+07:00&until=<day>T23:59:59+07:00&all=true&per_page=100\") (urlencode the query). Dedupe by commit `id` across projects (forks/mirrors share shas). A merge = len(parent_ids) > 1.\n- Member identity = local part (before '@') of author_email, lowercased, matched against members. Members commit under several emails/names (tuannv as tuannv@avada.email AND tuannv@avadagroup.com; display names vary), so NEVER match on author_name. Ignore everything else (other teams, ci@avada.io bot).\nTests with fake api: dedupe across two projects, merge vs commit, two emails same local part counted once per sha, non-members ignored, inactive projects not queried, the paginate join helper on '[1][2]' and '[1]\\n[2]' and '[]'.",
+      "contract": {
+        "goal": "gitlab_src.collect counts commits and merges per member for a +07 day across the avada group",
+        "allow": [
+          "tools/team-daily/gitlab_src.py",
+          "tools/team-daily/test_gitlab_src.py"
+        ],
+        "verify": [
+          {
+            "name": "unittest",
+            "cmd": [
+              "bash",
+              "-c",
+              "cd tools/team-daily && python3 -m unittest -v test_gitlab_src"
+            ]
+          }
+        ]
+      },
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      }
+    },
+    {
+      "id": "audit-src",
+      "deps": [],
+      "wallMinutes": 45,
+      "prompt": "Repo: second-brain (personal tooling). New tool dir tools/team-daily/: a daily report for team SEOOn (members tuannv, tunglv, truongnn, minhpt, dungtt, tranggt) posted to Slack. Python 3.11 STDLIB ONLY (no pip deps), tests with unittest (`python3 -m unittest discover -s tools/team-daily -p 'test_*.py'`). No network in tests: every network/subprocess call goes through an injectable function parameter so tests pass fakes. Never print or log a token. Comments only for the WHY (constraints, API quirks, units), never narrate the what; no banners. Keep each module small and plain. Write tests first. Do not touch files outside your allow list.\n\nWrite tools/team-daily/audit_src.py + tools/team-daily/test_audit_src.py.\n\nSource: the team's `prompt-audit` MCP server over HTTP, JSON-RPC, no initialize needed:\nPOST https://audit.avada.net/mcp, headers: Authorization: <value as stored>, Content-Type: application/json, Accept: 'application/json, text/event-stream', User-Agent: 'claude-code/2'. Body {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":<tool>,\"arguments\":{...}}}. The response is either plain JSON or SSE (lines; the JSON is on a line starting with 'data:'). Result text at result.content[0].text. An error may come as result.isError true or text containing 'PERMISSION DENIED'.\nAuthorization value: read ~/.claude.json -> mcpServers['prompt-audit'].headers.Authorization (already includes 'Bearer ').\n\nAPI:\n- `call(tool: str, args: dict) -> str` default impl as above. Injectable.\n- `usage(window='24h', call=None) -> dict[str, int]` email -> total tokens. Parse lines like\n  `  [OK] tunglv@avadagroup.com — avg 85.66M/day, total 428.29M` and `  [ZERO] hieulm@avadagroup.com — avg 0/day, total 0`. Use ONLY `total` (the server's avg/day is wrong: always total/5). Units: K=1e3, M=1e6, B=1e9; return int.\n  Sample full text:\n  Team: Falcon | Window: 24h | Threshold: 20.00M/working_day\n  Summary: ZERO=2, WEAK=3, OK=13 / total=18\n\n  Members (sort avg/day ASC):\n    [ZERO] hieulm@avadagroup.com — avg 0/day, total 0\n    [WEAK] nghiavt@avada.email — avg 17.39M/day, total 86.94M\n    [OK] truongnn@avadagroup.com — avg 153.27M/day, total 766.36M\n- `prompts(email, window='24h', limit=200, call=None) -> list[dict] | None` None when permission denied (member outside the token's team scope). Each dict {\"ts\": str ISO, \"session\": str, \"len\": int, \"text\": str}. Format: a first title line, blank line, then entries:\n  [1] 2026-10-15T07:55:27.123Z | session=418fc7c3… | len=22\n      first line of prompt\n      more lines of the same prompt (each indented 4 spaces)\n  [2] 2026-10-15T07:51:41.867Z | session=418fc7c3… | len=29\n      ...\n  Strip the 4-space indent, keep internal newlines, strip the trailing '…' from session. limit max is 200 (server cap, no pagination) — expose `capped = len(result) >= limit` via a helper `is_capped(prompts, limit=200)`.\nTests: usage parsing incl. units/zero/avada.email, prompts parsing multi-line + session ellipsis, SSE vs JSON response handling in default call (patch urlopen), permission denied -> None, Authorization read from a temp ~/.claude.json (patch Path.home or pass path param).",
+      "contract": {
+        "goal": "audit_src reads per-member token totals and prompts from prompt-audit",
+        "allow": [
+          "tools/team-daily/audit_src.py",
+          "tools/team-daily/test_audit_src.py"
+        ],
+        "verify": [
+          {
+            "name": "unittest",
+            "cmd": [
+              "bash",
+              "-c",
+              "cd tools/team-daily && python3 -m unittest -v test_audit_src"
+            ]
+          }
+        ]
+      },
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      }
+    },
+    {
+      "id": "grader",
+      "deps": [],
+      "wallMinutes": 45,
+      "prompt": "Repo: second-brain (personal tooling). New tool dir tools/team-daily/: a daily report for team SEOOn (members tuannv, tunglv, truongnn, minhpt, dungtt, tranggt) posted to Slack. Python 3.11 STDLIB ONLY (no pip deps), tests with unittest (`python3 -m unittest discover -s tools/team-daily -p 'test_*.py'`). No network in tests: every network/subprocess call goes through an injectable function parameter so tests pass fakes. Never print or log a token. Comments only for the WHY (constraints, API quirks, units), never narrate the what; no banners. Keep each module small and plain. Write tests first. Do not touch files outside your allow list.\n\nWrite tools/team-daily/grade.py + tools/team-daily/test_grade.py.\n\nGrades ONE member's prompts from yesterday on the rubric below using the local Claude Code CLI, and flags misuse.\n7-level AI usage rubric (Avada). Score by BEHAVIOUR, not token volume. Level N needs >=2 evidence types of N and N-1 reached; x.5 when >=1 evidence of the next level.\n1 Prompt: 1a short sessions with almost no tool use; 1b pasting raw data into chat.\n2 Context: 2a reads CLAUDE.md/brief at session start; 2b uses skills/slash commands; 2c points at files instead of pasting.\n3 Agent: 3a many tool calls per turn; 3b plan mode / subagents; 3c prompt states goal + done criteria.\n4 Harness: 4a runs verification before claiming done; 4b hooks/gates/allowlists; 4c a second agent reviews; 4d reports with real output.\n5 Loop: 5a fan-out >=2 subagents/worktrees; 5b background/cron/loop; 5c sessions started by jobs; 5d automated review before push.\n6 Graph: 6a consults memory before re-asking; 6b decisions recorded structurally; 6c links notes/MEMORY.md.\n7 Self-improve: 7a audits/retros; 7b edits skills/CLAUDE.md/hooks after an audit; 7c before/after measurements.\n\nData limit (must be stated in the grading prompt): we only have the member's PROMPT TEXT (no tool-call logs), so levels 1-3 are judged from prompt evidence (1b pasted data, 2b slash commands/skills, 2c file paths, 3c goal+done criteria); 4+ only when the prompt text itself shows it (e.g. asks for verification, /loop, cron, subagents/worktrees, graph run, retro). Say so in the output via a `confidence` field.\n\nAPI:\n- `build_prompt(member: str, prompts: list[dict], tokens: int|None) -> str` prompts are dicts {\"ts\",\"session\",\"len\",\"text\"}. Truncate each prompt to 600 chars; if total > 60000 chars, keep an even sample across the day and say how many were sampled. Include count of prompts, distinct sessions, token total (human readable) — high tokens with few/vague prompts is a waste signal.\n  Instructions to the model (write in Vietnamese, output Vietnamese): level (float, 1..7, step 0.5), evidence (list of short strings naming evidence codes like '2b: dùng /tony-wf'), warnings (list): (a) OFF-PURPOSE use — non-work/personal/unrelated to Avada products; (b) WASTEFUL — same prompt repeated, many vague one-liners ('tiếp', 'ok', 'fix đi') steering long sessions, pasting huge logs/data instead of pointing to files, asking the AI to do what a script/command does trivially, re-asking the same question across sessions; each warning short and concrete with a count. advice: one actionable sentence. confidence: 'thấp'|'vừa'|'cao'. Rules for the model: never quote more than 40 chars of any prompt, never reproduce tokens/keys/passwords/emails/customer shop data, empty warnings list if none.\n- JSON_SCHEMA constant: object with required level(number), evidence(array of string), warnings(array of string), advice(string), confidence(string enum).\n- `grade(member, prompts, tokens, run=None) -> dict` returns the parsed object plus \"sample_size\": int. When prompts is empty: return {\"level\": None, \"evidence\": [], \"warnings\": [], \"advice\": \"\", \"confidence\": \"\", \"sample_size\": 0} WITHOUT calling the model. Default `run(argv, input_text, cwd) -> str` = subprocess.run(argv, input=..., capture_output, text, timeout=600, check=True).stdout.\n  argv = ['claude','-p','--model','sonnet','--output-format','json','--tools','','--max-turns','2','--json-schema', json.dumps(JSON_SCHEMA)] with the prompt on STDIN (prompts can be huge; never on argv). cwd = ~/.cache/team-daily/grader (create it): an empty dir so no project CLAUDE.md/hooks load. Do NOT use --bare (it skips keychain → OAuth login breaks).\n  Parse: stdout is a JSON object; take `structured_output` if present else `result` (a string that contains the JSON object, possibly inside ```json fences — extract the first {...} block). Validate level within 1..7 (clamp) and types; on parse failure raise ValueError with the first 200 chars.\nTests: build_prompt truncation + sampling + no prompt text over 600 chars, empty prompts short-circuit (run not called), argv contains --tools '' and --json-schema and input goes via stdin, parsing of structured_output, of result with fences, clamp, bad output -> ValueError.",
+      "contract": {
+        "goal": "grade.grade scores one member's prompts on the 7-level rubric via claude -p with structured JSON and flags misuse",
+        "allow": [
+          "tools/team-daily/grade.py",
+          "tools/team-daily/test_grade.py"
+        ],
+        "verify": [
+          {
+            "name": "unittest",
+            "cmd": [
+              "bash",
+              "-c",
+              "cd tools/team-daily && python3 -m unittest -v test_grade"
+            ]
+          }
+        ]
+      },
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      }
+    },
+    {
+      "id": "report-cli",
+      "deps": [
+        "jira-src",
+        "gitlab-src",
+        "audit-src",
+        "grader"
+      ],
+      "wallMinutes": 60,
+      "prompt": "Repo: second-brain (personal tooling). New tool dir tools/team-daily/: a daily report for team SEOOn (members tuannv, tunglv, truongnn, minhpt, dungtt, tranggt) posted to Slack. Python 3.11 STDLIB ONLY (no pip deps), tests with unittest (`python3 -m unittest discover -s tools/team-daily -p 'test_*.py'`). No network in tests: every network/subprocess call goes through an injectable function parameter so tests pass fakes. Never print or log a token. Comments only for the WHY (constraints, API quirks, units), never narrate the what; no banners. Keep each module small and plain. Write tests first. Do not touch files outside your allow list.\n\nWrite tools/team-daily/team_daily.py (CLI + render + Slack post), tools/team-daily/members.json, tools/team-daily/test_team_daily.py, tools/team-daily/README.md (short: what, schedule, data sources, known gaps). The sibling modules already exist in this dir — read them first and use their real signatures: jira_src.collect(day, members, fetch=None), gitlab_src.collect(day, members, api=None), audit_src.usage(window, call=None) / audit_src.prompts(email, window, limit, call=None) / audit_src.is_capped, grade.grade(member, prompts, tokens, run=None).\n\nmembers.json: [{\"name\":\"tuannv\",\"jira\":\"tuannv\",\"gitlab\":\"tuannv\",\"email\":\"tuannv@avadagroup.com\"}, ... same pattern for tunglv, truongnn, minhpt, dungtt, tranggt].\n\nCLI: `python3 team_daily.py collect [--date YYYY-MM-DD]` default date = yesterday in Asia/Ho_Chi_Minh (use zoneinfo). Collect all sources for that day, grade each member, write ~/.cache/team-daily/<date>.json atomically (tmp + replace). It records `collected_at` and the prompt-audit window note: prompt-audit only has a ROLLING window ending now, so collect is scheduled at 00:10 +07 and the `24h` window ≈ yesterday; store window_start/window_end (now-24h, now) to show in the report. Each source is independent: one source failing (exception) must not lose the others — store {\"error\": \"<short message>\"} for that source and continue.\n`python3 team_daily.py post [--date D] [--dry-run]`: load the day file (if missing: run collect now first and mark it 'thu thập muộn'), render, then post to Slack channel C0BGRTWUE8Y with chat.postMessage using the BOT token file ~/Projects/falcon-fix-bot/secrets/slack-bot.token. MUST be the bot token: the channel is watched by slack-thread-watch which ignores only the bot's own posts — posting with any personal token would spawn a support session per report (put that as the WHY comment). Main message, then ONE thread reply per member (thread_ts = main ts) with grading detail. --dry-run prints to stdout instead. Mark posted in the day file to avoid double posting (re-run without --force is a no-op).\n`run` = collect + post.\n\nRender (Slack mrkdwn, Vietnamese, compact, readable on phone):\nMain message:\n:bar_chart: *SEOOn — báo cáo ngày DD/MM*\nthen one block per member:\n*<name>* · Level *4.5* · :zap: 428M token · :git: 12 commit (+3 merge) · :jira: kéo 5 task\n  ↳ board: To Do 3 · Doing 2 · Test Staging 1 ...\n  :warning: <first warning> (only if warnings)\nMembers with no audit data: 'Level —  (ngoài scope prompt-audit)'. Token formatting 1.2B / 428M / 950K. Use plain emoji that exist in Slack (:bar_chart: :zap: :memo: :ticket: :warning: :white_check_mark:), not invented ones.\nFooter: data window + sources + gaps (e.g. 'prompt-audit 24h: 00:10 14/10 → 00:10 15/10 · dungtt, tranggt ngoài scope prompt-audit · prompt bị cắt ở 200/người: <names>').\nThread reply per member: level + confidence + evidence list + all warnings + advice; Jira transitions performed (key from→to, max 15 then '+N'); commits by repo.\nA source error renders as ':x: <source> lỗi: <msg>' instead of numbers.\nTests: render with full data, with source errors, with missing audit (None prompts), token formatting, yesterday computation in +07 at 00:10 and 23:50, collect isolates a failing source (inject fakes for all four modules via function params or monkeypatch), post uses bot token file + thread_ts, dry-run posts nothing, double post guard.",
+      "contract": {
+        "goal": "team_daily.py collect/post/run produce and post the SEOOn daily report to #system-alert with the bot token, isolating source failures",
+        "allow": [
+          "tools/team-daily/team_daily.py",
+          "tools/team-daily/members.json",
+          "tools/team-daily/test_team_daily.py",
+          "tools/team-daily/README.md"
+        ],
+        "verify": [
+          {
+            "name": "all-tests",
+            "cmd": [
+              "bash",
+              "-c",
+              "cd tools/team-daily && python3 -m unittest discover -v -p 'test_*.py'"
+            ]
+          }
+        ]
+      },
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      }
+    }
+  ]
+}

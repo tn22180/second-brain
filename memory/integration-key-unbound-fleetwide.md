@@ -1,6 +1,6 @@
 ---
 name: integration-key-unbound-fleetwide
-description: integrationKeys không bind shop ở CẢ 5 app — cross-tenant takeover qua /proxy/swagger-token; FAL-720 mới chỉ vá APC.
+description: integrationKeys không bind shop — cross-tenant takeover qua /proxy/swagger-token; APC + seo (FAL-746) đã vá, 3 app kia chưa verify lại.
 metadata:
   type: project
 ---
@@ -29,6 +29,10 @@ Hai điểm phát hiện thêm ngày 2026-08-26, không có ở bản đọc 08-
   không cần credential nào để bắt đầu → Blog nặng nhất trong 5 app.
 - `llm-ai-search-seo` nhận `accessToken` qua **`ctx.query`** (swaggerAuth.js:13-14) → token đã nằm
   trong access log và header `Referer`. Coi như đã lộ, phải rotate chứ không chỉ vá bind.
+
+**Cập nhật 2026-10-15:** seo đã bind — `swaggerAuth.js:51` reject key thiếu/khác `shopId` (FAL-746),
+verify trên origin/master 7152438ee2. `?accessToken=` query fallback vẫn còn (cố ý cho integration
+ngoài) → chỉ còn rủi ro token nằm trong log. blogs/AEO/img-opt chưa check lại — grep trước khi coi là còn mở.
 
 Xem [[avada-gitlab-selfhost]] cho remote đúng khi mở MR.
 

@@ -1,0 +1,53 @@
+{
+  "id": "seo-dep-prune-1015",
+  "source": "dep-prune-2026-10-15",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "chore/prune-unused-deps",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "prune",
+      "deps": [],
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      },
+      "wallMinutes": 90,
+      "prompt": "Repo: seo (yarn 4 workspace). Task: remove npm dependencies that nothing uses, so installs and deploys get lighter. You edit ONLY package.json files and yarn.lock. Never edit source code, configs, or delete source files unless this prompt explicitly says so.\n\nRules for deciding a dependency is unused (be conservative — a wrong removal breaks prod deploy; a missed one costs nothing):\n- grep the whole repo (exclude node_modules, build/lib/dist/coverage output) for the package name as a module specifier: import/require/dynamic import()/require.resolve/CSS @import '~pkg', with subpaths (pkg/x).\n- also check: babel configs (presets/plugins by short name, e.g. @babel/preset-env == \"@babel/env\", babel-plugin-x == \"x\"), webpack/vite/rollup configs, jest config, eslint configs (parser/extends/plugins short names), postcss, package.json scripts (CLI binaries — check node_modules/<pkg>/package.json \"bin\"), .gitlab-ci.yml, Makefile, Dockerfile*, scripts/.\n- a package that is a (non-optional) peerDependency of a package that stays is USED. Read peers from /Users/nguyentuan/Documents/second-brain/projects/Falcon/seo/node_modules/<pkg>/package.json (the main checkout; your worktree has no node_modules).\n- anything loaded by a computed name (e.g. import(variable), plugin lists in config strings) — trace it; if unsure, KEEP it.\n- @types/x goes only if x goes.\n- If code imports a package that is NOT declared but resolves via hoisting from a dep you remove, ADD the real package to that workspace with the version range already in yarn.lock.\n- If a whole workspace package looks dead, do NOT delete it — list it in your final message.\n\nAfter editing manifests, update the lockfile OFFLINE (no network in your sandbox; yarn's global cache is readable):\n  YARN_ENABLE_NETWORK=0 yarn install --mode=update-lockfile\nNever hand-edit yarn.lock. If that command fails, restore the removal that needs a fetch and say so.\n\nFinal message: table of removed deps (workspace | name | dep/dev | evidence of 0 refs), table of deps you considered but KEPT and why, and any dead workspace you noticed. Terse.\n\nThis repo was already audited (read-only, 2026-10-15, on master 5294d6c2f1; master has moved since — re-check each name with the rules above before removing; skip any that gained a reference).\nRemove:\n- root package.json: @avada/shopify-app (dep), swiper (dep; assets declares its own), delay-cli (dev) AND the root script \"timeout\" plus the \"npm run timeout && \" prefix inside \"start-dev-embed\" (only user of delay-cli), and the duplicate cross-env in \"dependencies\" (keep the devDependencies one).\n- packages/assets: @avada/yoastseo, @ckeditor/ckeditor5-build-classic, @shopify/performance, chartjs-adapter-date-fns, chartjs-plugin-annotation, crypto-browserify, crypto-js, jed, lucide-react, react-flip-move, react-gtm-module, react-html-parser, react-lottie, react-markdown, react-medium-image-zoom, react-step-wizard, react-stepper-horizontal, react-syntax-highlighter, rehype-raw, remark-gfm, request, uuidv4, vite-plugin-commonjs, vite-plugin-entry-inject; dev: @babel/eslint-parser, @babel/runtime, babel-loader, babel-plugin-transform-imports, css-loader, favicons, file-loader, react-refresh, sass-loader, style-loader, svg-inline-loader. KEEP babel-plugin-module-resolver. Assets imports 'uuid' undeclared (resolves via uuidv4) → add \"uuid\": \"^8.3.2\" to assets dependencies.\n- packages/functions: @avada/crm-sql, @grpc/grpc-js, @perplexity-ai/perplexity_ai, chrome-launcher, dompurify, langsmith, openai, xml2js, chromadb; dev: @babel/preset-react. chromadb is used only by src/commands/chromadb.js, a manual in-memory test script — delete that file too (explicitly allowed). KEEP lighthouse (prod loads it via import(library) in lightHouseService.js).\n- packages/scripttag: dead workspace (never built by CI/scripts, webpack entry src/Index.js does not exist on case-sensitive fs, dotenv-webpack undeclared, src has zero bare imports). Delete the whole packages/scripttag directory (explicitly allowed). First grep the repo (firebase.json, .gitlab-ci.yml, scripts/, Makefile, packages/functions) for \"scripttag\" and report every reference; if anything serves or builds packages/scripttag output, do NOT delete it and say why.\n- extensions/package.json: orphan stub with no deps and not a workspace member — delete it (explicitly allowed) unless something references it.\nDo not touch @shopify/cli, firebase-tools, jest, eslint* at root.",
+      "contract": {
+        "goal": "Remove unused npm dependencies from seo manifests with a consistent yarn.lock",
+        "allow": [
+          "package.json",
+          "yarn.lock",
+          "packages/assets/package.json",
+          "packages/functions/package.json",
+          "packages/functions/src/commands/chromadb.js",
+          "packages/scripttag/",
+          "extensions/package.json",
+          "extensions/optimize-product-images/package.json",
+          "extensions/seo-tools/package.json"
+        ],
+        "verify": [
+          {
+            "name": "removed-unreferenced",
+            "cmd": [
+              "node",
+              "/Users/nguyentuan/Documents/second-brain/jobs/graphs/dep-prune/check-removed.mjs",
+              "origin/master"
+            ]
+          },
+          {
+            "name": "lockfile-consistent",
+            "cmd": [
+              "bash",
+              "/Users/nguyentuan/Documents/second-brain/jobs/graphs/dep-prune/check-lockfile.sh"
+            ],
+            "timeoutMs": 600000
+          }
+        ]
+      }
+    }
+  ]
+}

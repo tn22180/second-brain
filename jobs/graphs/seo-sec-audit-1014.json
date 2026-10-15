@@ -1,0 +1,181 @@
+{
+ "id": "seo-sec-audit-1014-r2",
+ "source": "security-audit-2026-10-14",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "master",
+ "branch": "fix/sec-audit-1014-seo",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "seo-secrets-logging",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root, a test must jest.mock with a factory any module pulling puppeteer/@elastic/*/cheerio/@google-cloud/*; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md and relevant .claude/skills first. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master 7152438ee2).\n1. packages/functions/src/helpers/trello/addCardToTrello.js:4-8 hardcodes TRELLO_API_KEY / TRELLO_API_TOKEN (and list id) and builds them into the URL query (:17). Called from services/subscriptionService.js:857 on every US plan change. Read them from env (process.env.TRELLO_API_KEY, TRELLO_API_TOKEN, TRELLO_LIST_ID \u2014 follow how other env config is read in config/*.js); when missing, log a warn and return without throwing (plan change must never fail because of Trello). Pass params via axios `params` so name/desc are encoded. Remove the literals entirely.\n2. Delete packages/functions/src/commands/testAuth.js (unused dev example; hardcodes a Google OAuth client secret). Confirm with git grep it's imported nowhere.\n3. packages/functions/src/controllers/googleController.js:64,114,215,267 and helpers/google.js:51 log the whole googleapis/gaxios error object (`logger.error(..., e.message, e)`). gaxios 4.3.3 keeps config.headers.Authorization and, on token refresh, config.data with refresh_token/client_secret. Log only e.message, e.code and e.response?.status. Grep packages/functions/src for other `logger.*(\u2026, e)` where e can be a GaxiosError from googleapis calls and fix those too.\nTests: addCardToTrello with env unset returns without calling axios; with env set, the key/token are not in the URL path string literal and come from env. Google error logging: logger receives no object containing 'refresh_token' / 'Authorization'.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.\nKnown pre-existing failures on master, not yours, excluded from verify: workListStore, getLimit.timestamp (flaky), onPageListQuery.helpers, shopify2026Client, overviewCardScore. Verify runs jest on every directory containing a changed file, so keep the whole directory green.",
+   "contract": {
+    "goal": "no hardcoded Trello creds, no dev script with OAuth secret, gaxios errors never logged whole",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "seo-credit-server-side",
+   "deps": [
+    "seo-secrets-logging"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root, a test must jest.mock with a factory any module pulling puppeteer/@elastic/*/cheerio/@google-cloud/*; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md and relevant .claude/skills first. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master 7152438ee2).\n1. AI alt text on product images is never charged server-side. seoController.js:1241-1253 gates only when `types === TYPE_ALT` exactly and mode AUTO, using the client's `length`. The worker manual path (services/productService.js:327 inside handle(), via optimizeProductImage ~:673) calls optimizeAltImageByAI (helpers/optimizeImg.js:779) with no credit check or deduction. Collections DO charge (collectionService.js:677) and files do (fileImageService.js:268 incrementImageOptimizeAIUsage). Make products charge the same way as collections/files: deduct per AI alt generated, skip (and record why) when the deduction fails. In the controller use `typesToOptimize.includes(TYPE_ALT)` and dataLog.length instead of the client's types string and length. Also change the image-limit check at :1235 to `typesToOptimize.includes(TYPE_IMAGE)`.\n2. On-page AI fix is charged only if the browser calls POST /shop/reduce-credit (shopController.js:281). /audit-agent/fix-issue (routes/api.js:531 \u2192 controllers/auditAgentController.js:64) only checks isLimitOrOutOfCredit and its chains.js generators never deduct. Move the charge server-side: after a successful generation in fixAuditIssue, deduct the same amount the FE currently sends (read packages/assets/src hooks/useAiCredit.js and its callers AIFixButton.js:197,267, Result.js:387 to build a per-issueType cost table) using the existing credit increment helper (incrementAIUsage or whatever reduceCredit uses). Refuse with the existing out-of-credit response when balance < cost. Then stop the FE from double-charging: remove those FE reduce-credit calls for fixes now charged server-side. Keep the /shop/reduce-credit endpoint only if other callers remain (list them in the final message); otherwise restrict it to DevZone/internal.\nTests: product manual AI alt deducts credits and skips when out of credit; fix-issue deducts server-side by issueType and refuses below cost; FE no longer calls reduce-credit after a fix.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.\nKnown pre-existing failures on master, not yours, excluded from verify: workListStore, getLimit.timestamp (flaky), onPageListQuery.helpers, shopify2026Client, overviewCardScore. Verify runs jest on every directory containing a changed file, so keep the whole directory green.",
+   "contract": {
+    "goal": "AI alt text on products and on-page AI fixes are charged server-side",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "seo-shop-settings-dev-gate",
+   "deps": [
+    "seo-credit-server-side"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root, a test must jest.mock with a factory any module pulling puppeteer/@elastic/*/cheerio/@google-cloud/*; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md and relevant .claude/skills first. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master 7152438ee2).\n1. POST /api/shop (shopController.js:263-265 \u2192 repositories/shopRepository.js updateShopData) uses a denylist; these fields are merchant-writable and grant entitlements: installedAtTest (plans.js:630 isShopUpgradable \u2192 isShopLimit false \u2192 unlimited image/product optimize), directUpgrade, trialEndsAt, usedTrialDays, trialDaysExtend, isLimitImage, maxBrokenLinksToFix, workerJobs, planDiscountCode, isTestDiscount, altTextModel, batchSizeAlt, batchSizeCompress, useOptImageV25, optimizeAPIType, bfcmBundle, proLegacy, enterpriseLegacy. DO NOT add them to privilegedFields \u2014 server code writes trialDaysExtend and planDiscountCode through non-privileged updateShopData (subscriptionController.js:243,256). Instead strip them on the REQUEST path only: in the shop controller(s) that take a merchant body (POST /shop and any sibling like PUT /shop), drop these keys (and dotted paths starting with them) unless the caller is privileged/DevZone (reuse the existing privileged/isTrustedWriter mechanism). Put the list in config/pickFields.js next to blockFields with a one-line why. First grep packages/assets/src for any FE code that legitimately POSTs one of these keys from a merchant (non-DevZone) screen; if one exists, keep it working via the DevZone/privileged path or report it.\n2. POST /api/settings (seoController.js:289,296,344, getSettingsToSave in syncStructuredSetting.js:324-327) persists *.isDevZoneEnabled from the body. Strip any `isDevZoneEnabled` key at any depth unless canAccessDevZone(ctx.state.user) (find the existing helper). Same handler writes ?appStatus= / ?isSubscribed= query params onto the shop doc (:331-335) \u2014 check what legit caller sends them; if none from merchant UI, restrict to DevZone.\n3. /api/dev/* has no router-level gate (routes/api.js:75; handlers/api.js:69). devChecklistTimelineController (getStuck returns other tenants' shopIds), devOptimizeTimelineController (?historyId read across shops, :52,62 \u2192 historyOptimizeRepository.js:206), devOptimizeJobController, gsdAutoFillController have no DevZone check. Add one router-level middleware for /dev that calls the existing DevZone access check (same one devController uses) and 403s otherwise; before adding, confirm every /dev route's legit caller is DevZone/internal (grep FE). Also check history.shopId === current shop in the optimize-timeline handler.\nTests: POST /shop with installedAtTest/directUpgrade/workerJobs from a merchant session does not persist them; privileged path still can; settings isDevZoneEnabled stripped for merchants; /dev route 403 for non-DevZone, 200 for DevZone; historyId of another shop 404/403.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.\nKnown pre-existing failures on master, not yours, excluded from verify: workListStore, getLimit.timestamp (flaky), onPageListQuery.helpers, shopify2026Client, overviewCardScore. Verify runs jest on every directory containing a changed file, so keep the whole directory green.",
+   "contract": {
+    "goal": "merchant cannot write entitlement/trial/routing shop fields, DevZone settings flags, or reach /dev routes",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "seo-unauth-endpoints",
+   "deps": [
+    "seo-shop-settings-dev-gate"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions in packages/functions/src, React/Polaris v13 in packages/assets/src; jest 24 from repo root, a test must jest.mock with a factory any module pulling puppeteer/@elastic/*/cheerio/@google-cloud/*; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md and relevant .claude/skills first. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master 7152438ee2).\n1. lighthouseauditrunnerGen2 (httpFunctions.js:71-81: invoker public, 4GiB, 540s, concurrency 1, no maxInstances) serves GET /lighthouse/auditNew (handlers/lightHouseAuditHandler.js:14) with no auth; shopId/uploadResult come from the query and uploads go public under pageSpeed/${shopId}/. Add the existing internal-key middleware (grep requireInternalKey / internalAuthHeader) to that router, send the header from fetchLightHouse (services/lightHouseService.js:66-70) and from EVERY other caller (grep the repo incl. worker code for auditNew / the function url). Set maxInstances: 10 on that function. Keep assertSafeUrl.\n2. Delete the unauthenticated temp route at routes/proxy.js:137-138 (/proxy/temp/seo-tool/image); FE moved to /api/seo-tool/image in 715f794cba and the comment says remove after next tag. Remove its now-dead controller code only if nothing else uses it.\n3. /proxy/save404 rate limit (middleware save404RateLimit.js and handlers/proxy/controllers/redirectController.js:17) trusts the FIRST X-Forwarded-For value, which the client sets; the same IP goes unvalidated into http://ip-api.com/json/${ip} (:35). Use the trusted client IP (ctx.ip with the app's proxy setting, or the hop appended by Google's front end \u2014 check how other rate limiters in this repo derive IP and match that), validate it's an IP before calling ip-api. Do NOT add HMAC (the beacon is called directly from storefront browsers by design).\nTests: auditNew without internal key 401/403, with key passes; fetchLightHouse sends the header; temp route 404; save404 limiter ignores a spoofed leading XFF; invalid ip never reaches ip-api.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.\nKnown pre-existing failures on master, not yours, excluded from verify: workListStore, getLimit.timestamp (flaky), onPageListQuery.helpers, shopify2026Client, overviewCardScore. Verify runs jest on every directory containing a changed file, so keep the whole directory green.",
+   "contract": {
+    "goal": "lighthouse runner requires internal key + maxInstances; temp seo-tool proxy route gone; save404 uses trusted IP",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}

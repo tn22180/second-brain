@@ -7,6 +7,21 @@ near miss.
 Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdict>`
 
 <!-- LEARN appends below this line -->
+- `19khcex` · 2026-10-15 · BLOG · api · Recurrence of recorded fingerprint 1q9n03 / 1bhevcs (same defect, same lines, no MR shipped) on a new caller:  · — · fix_disabled
+- `fu73qv` · 2026-10-15 · BLOG · api · Duplicate of recorded fingerprint 3dcha9 — same app, service, revision api-00190-lub and the SAME execution (e · — · fix_disabled
+- `3dcha9` · 2026-10-15 · BLOG · api · A transient mid-body TLS reset from openrouter.ai (FetchError: read ECONNRESET raised inside node-fetch's Gunz · — · fix_disabled
+- `1mvw94w` · 2026-10-15 · BLOG · api · A single transient mid-body TLS reset from openrouter.ai (read ECONNRESET inside node-fetch's Gunzip, i.e. aft · — · fix_disabled
+- `19ycxiv` · 2026-10-15 · BLOG · api · A Shopify Admin GraphQL POST issued by retryGetImageUpload → getMediaImageById died on a single TLS socket res · — · fix_disabled
+- `1x8e6le` · 2026-10-15 · BLOG · api · The merchant origin checkout.swaddlean.com reset the TLS socket mid-gzip-body on 2 of the ~10 concurrent store · — · fix_disabled
+- `t3gwgd` · 2026-10-15 · BLOG · api · Recurrence of recorded fingerprint gmmkec (2026-10-14, same defect, same lines, no MR shipped): shopifyRetryGr · — · fix_disabled
+- `1vkqjp1` · 2026-10-15 · BLOG · api · The Shopify Admin client from initShopify is built with autoLimit:true and no maxRetries, which forces got's r · — · fix_disabled
+- `44tz7t` · 2026-10-15 · BLOG · mcp · A transient TLS/socket reset from openrouter.ai mid-response-body (read ECONNRESET during gunzip) aborted the  · — · fix_disabled
+- `1gv9zvj` · 2026-10-14 · BLOG · proxy · The storefront render fetch in fetchRenderedArticleHtml (appProxyController.js:65) is a bare axios.get with no · — · fix_disabled
+- `1pv1204` · 2026-10-14 · BLOG · api · Duplicate of recorded fingerprint udahv5 — the same single throw in the same execution (execution_id 8dc5jjfq4 · — · fix_disabled
+- `udahv5` · 2026-10-14 · BLOG · api · A burst of Shopify-side TLS socket resets at 17:13:14 hit nine concurrent `api` executions on revision api-001 · — · fix_disabled
+- `16cmdy4` · 2026-10-14 · BLOG · api · Recurrence of recorded fingerprint 1q9n03 (same day, same defect, different caller): shopifyRetryApi's classif · — · fix_disabled
+- `gmmkec` · 2026-10-14 · BLOG · mcp · shopifyRetryGraphQL logs every caught error at severity ERROR (api.js:161) before it decides retryability (api · — · fix_disabled
+- `cpvwbw` · 2026-10-14 · BLOG · api · The 40 000 ms per_chunk deadline that translateWithRetry enforces with Promise.race is smaller than the worst  · — · fix_disabled
 - `16ty774` · 2026-10-14 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `yvh3x3` · 2026-10-14 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `1afa4it` · 2026-10-14 · SEO · apisagen2 · Shop 69HG5FXtAUIuSwgCjOL4 (xprstls.myshopify.com) holds a dead Shopify Admin token — every Admin API call for  · — · fix_disabled
@@ -65,7 +80,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1vbwf7r` · 2026-09-29 · BLOG · api · no verified cause · — · inconclusive
 - `7nba8f` · 2026-09-29 · BLOG · apisa · Duplicate of recorded fingerprint 4mbx6l, now on the standalone service and a third store: the blog→APC leg of · — · fix_disabled
 - `4mbx6l` · 2026-09-29 · BLOG · api · The blog→APC leg of the all-in-one bundle contract is broken in one direction: AI Product Copy answers HTTP 40 · — · fix_disabled
-- `2v8nol` · 2026-09-28 · SEO · apigen2 · no verified cause · — · inconclusive
+- `2v8nol` · 2026-10-14 · SEO · apigen2 · A transient TLS socket reset (ECONNRESET) on the outbound Shopify Admin GraphQL POST to thedetailersemporium.m · — · fix_disabled
 - `1syz298` · 2026-09-28 · BLOG · api · The single staged-upload POST in handleUploadFile to Shopify's staged target (Google Cloud Storage) answered n · — · fix_disabled
 - `1e7h4we` · 2026-09-28 · BLOG · api · The single staged-upload POST from handleUploadFile to Shopify's staged target (Google Cloud Storage) came bac · — · fix_disabled
 - `1tyfxwg` · 2026-09-27 · BLOG · proxy · Duplicate of recorded fingerprint zfa04j (same app, service, shop, window and the same two requests — fingerpr · — · fix_disabled
@@ -292,7 +307,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1m9iegv` · 2026-08-25 · BLOG · api · blogAssist.controller.js calls creditPayload(tokenResult) in getResultAiInline (and getCompletions) but never  · — · fix_disabled
 - `o3dxv8` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs both of its expected "this article does not exist" outcomes  · — · fix_disabled
 - `1dosxzi` · 2026-08-25 · BLOG · mcp · Not a request failure: getShopifyArticleById logs its two expected "article does not exist" outcomes — Invalid · — · fix_disabled
-- `1bhevcs` · 2026-08-25 · BLOG · api · no verified cause · — · inconclusive
+- `1bhevcs` · 2026-10-15 · BLOG · api · Recurrence of recorded fingerprint 1q9n03 (also re-fired as 16cmdy4, sibling-symptom in udahv5) on a third cal · — · fix_disabled
 - `1q9n03` · 2026-10-14 · BLOG · api · shopifyRetryApi's retry classifier only recognises HTTP status codes embedded in the error message, so a socke · — · fix_disabled
 - `16vcpso` · 2026-08-24 · SEO · apisagen2 · POST /apiSa/genFaqBulk returned 500 because a Shopify Admin GraphQL THROTTLED error reached generateBulkContro · — · fix_disabled
 - `4zowc` · 2026-08-23 · SEO · proxygen2 · no verified cause · — · inconclusive
@@ -392,7 +407,7 @@ Format: `<fp> · <date> · <app> · <service> · <root cause> · <MR> · <verdic
 - `1f5odgw` · 2026-09-20 · IMG-OPT · auth · Shop tmbe07-59.myshopify.com fired three /auth OAuth redirects in 49s (19:51:18.557Z state=249303479813608, 19 · — · fix_disabled
 - `1e4p2an` · 2026-08-14 · BLOG · apiv2 · no verified cause · — · inconclusive
 - `ge6iq5` · 2026-08-14 · AEO · proxy · no verified cause · — · inconclusive
-- `1t97xtj` · 2026-08-14 · BLOG · subscribebatcharticlesummary · no verified cause · — · inconclusive
+- `1t97xtj` · 2026-10-14 · BLOG · subscribebatcharticlesummary · subscribeBatchArticleSummary is configured at the minimum tier (memory: '512MiB', cpu: 0.5) but every gen2 con · — · infra
 - `15f66sw` · 2026-08-14 · BLOG · api · no verified cause · — · inconclusive
 - `1szehrm` · 2026-08-14 · SEO · apigen2 · BigQuery rejected two fire-and-forget streaming inserts from falcon-event-tracker at 06:02:49Z and 06:03:07Z w · — · infra
 - `1bfed3n` · 2026-08-14 · SEO · recursivesubscribergen2 · Two distinct causes share this window: (a) the alerted line — one STARTUP TCP probe DEADLINE_EXCEEDED on a rec · — · infra

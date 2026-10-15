@@ -156,11 +156,13 @@ Rules:
 - If no agent fits and the task is small, do it inline. Do not invent an agent type.
 - **Dispatching Codex in-session** (single task, graph fallback): run in the background via Bash,
   log to `<brief-dir>/runs/<task-id>.log`:
-  `codex exec --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' -C <worktree> "<plan>" < /dev/null`.
+  `codex exec --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' -c project_doc_max_bytes=0 -C <worktree> "<plan>" < /dev/null`.
   The first `"thread.started","thread_id"` in the log is the session; a failed round goes back
-  with `codex exec resume --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' <thread_id> "<failure>"`.
+  with `codex exec resume --json -m gpt-6-astra -c 'sandbox_mode="workspace-write"' -c project_doc_max_bytes=0 <thread_id> "<failure>"`.
   Never `--dangerously-bypass-approvals-and-sandbox`, never via the `cc codex` wrapper (breaks on macOS).
-  Codex reads the repo's `CLAUDE.md` via `project_doc_fallback_filenames` in `~/.codex/config.toml`.
+  `project_doc_max_bytes=0` is required: seo's `AGENTS.md` persona makes Codex refuse and exit 0
+  with an empty diff (19/19 empty-diff false-dones, 10-08→10-12). It also turns off the
+  `CLAUDE.md` fallback, so the plan's first line must be "Read `<repo>/CLAUDE.md` first".
 
 ### 5. Create dual tracking
 
@@ -222,7 +224,7 @@ Write a short plan into the task's Log entry in the brief. Six lines, no prose:
 
 ```markdown
 - Goal: one sentence, what "done" means observably
-- Files allowed: explicit list or glob. Anything outside is out of scope
+- Files allowed: explicit list or glob, including the test files the task adds. Anything outside is out of scope. Never list a gitignored path — `git add` refuses it and scope fails
 - Approach: the chosen way, one line — plus what you rejected and why (one line)
 - Test command: the exact command, with the expected result
 - Risk: what breaks if this is wrong — data, other apps, prod path
@@ -250,7 +252,10 @@ For each task:
 
 1. Set status 🔄 `in-progress` in **both** TaskCreate and the brief's Progress section.
 2. Write the per-task plan (§6). No plan → do not dispatch.
-3. Dispatch to the assigned agent/model (or run inline if the routing table says so), passing the plan.
+3. Dispatch to the assigned agent/model (or run inline if the routing table says so), passing the plan
+   **and the contract's `verify` commands verbatim**, with: "run every one of these and paste the
+   output before you say done; do not commit". Suite/lint/jest/docs-gate/base were the top
+   verifier failures after executors said done (learn 10-12).
 4. **Run the task's test command.** Every task needs a concrete pass/fail check before it starts — a test, a build, a lint, a script that reproduces the bug. No check defined → define one before executing.
 5. Loop while tests fail:
    - `round++`

@@ -1,0 +1,52 @@
+{
+  "id": "blogs-dep-prune-1015",
+  "source": "dep-prune-2026-10-15",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+  "base": "master",
+  "branch": "chore/prune-unused-deps",
+  "maxParallel": 1,
+  "nodes": [
+    {
+      "id": "prune",
+      "deps": [],
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      },
+      "wallMinutes": 90,
+      "prompt": "Repo: blogs (yarn 4 workspace). Task: remove npm dependencies that nothing uses, so installs and deploys get lighter. You edit ONLY package.json files and yarn.lock. Never edit source code, configs, or delete source files unless this prompt explicitly says so.\n\nRules for deciding a dependency is unused (be conservative — a wrong removal breaks prod deploy; a missed one costs nothing):\n- grep the whole repo (exclude node_modules, build/lib/dist/coverage output) for the package name as a module specifier: import/require/dynamic import()/require.resolve/CSS @import '~pkg', with subpaths (pkg/x).\n- also check: babel configs (presets/plugins by short name, e.g. @babel/preset-env == \"@babel/env\", babel-plugin-x == \"x\"), webpack/vite/rollup configs, jest config, eslint configs (parser/extends/plugins short names), postcss, package.json scripts (CLI binaries — check node_modules/<pkg>/package.json \"bin\"), .gitlab-ci.yml, Makefile, Dockerfile*, scripts/.\n- a package that is a (non-optional) peerDependency of a package that stays is USED. Read peers from /Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs/node_modules/<pkg>/package.json (the main checkout; your worktree has no node_modules).\n- anything loaded by a computed name (e.g. import(variable), plugin lists in config strings) — trace it; if unsure, KEEP it.\n- @types/x goes only if x goes.\n- If code imports a package that is NOT declared but resolves via hoisting from a dep you remove, ADD the real package to that workspace with the version range already in yarn.lock.\n- If a whole workspace package looks dead, do NOT delete it — list it in your final message.\n\nAfter editing manifests, update the lockfile OFFLINE (no network in your sandbox; yarn's global cache is readable):\n  YARN_ENABLE_NETWORK=0 yarn install --mode=update-lockfile\nNever hand-edit yarn.lock. If that command fails, restore the removal that needs a fetch and say so.\n\nFinal message: table of removed deps (workspace | name | dep/dev | evidence of 0 refs), table of deps you considered but KEPT and why, and any dead workspace you noticed. Terse.",
+      "contract": {
+        "goal": "Remove unused npm dependencies from blogs manifests with a consistent yarn.lock",
+        "allow": [
+          "package.json",
+          "yarn.lock",
+          "packages/assets/package.json",
+          "packages/avadaseo/package.json",
+          "packages/editor/delimiter/package.json",
+          "packages/editor/hiddenBlock/package.json",
+          "packages/editor/paragraph/package.json",
+          "packages/functions/package.json"
+        ],
+        "verify": [
+          {
+            "name": "removed-unreferenced",
+            "cmd": [
+              "node",
+              "/Users/nguyentuan/Documents/second-brain/jobs/graphs/dep-prune/check-removed.mjs",
+              "origin/master"
+            ]
+          },
+          {
+            "name": "lockfile-consistent",
+            "cmd": [
+              "bash",
+              "/Users/nguyentuan/Documents/second-brain/jobs/graphs/dep-prune/check-lockfile.sh"
+            ],
+            "timeoutMs": 600000
+          }
+        ]
+      }
+    }
+  ]
+}

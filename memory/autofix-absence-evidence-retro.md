@@ -20,3 +20,5 @@ Vá `src/agent/verify.ts`: `matched: 0` được kiểm như bằng chứng vắ
 Đo 10-08 (n=22): round 2 14%, matched nothing 4,5/100, loại nhầm absence 0 → `jobs/retro/2026-10-08-autofix.md`. Mẫu nhỏ; đo lại 10-15.
 
 Vòng 2 (10-08, 31eb13e, Codex code): "schema 18" thật ra là 6 lần bị loại; 4/6 là JSON hợp lệ bị `extractJson` parse hỏng (brace trong string, fragment thắng fenced) → vá string-aware scan. Daemon restart 2026-10-08T04:02Z. Đo 10-15 cả 2 bản vá; nền schema 6/109. Liên quan [[agent-harness-graph-learn]].
+
+Đo 10-15 (n=54, cả 2 bản vá): round 2 16% → 4%, matched nothing 15,6 → 3,7/100, schema 5,5 → 1,9/100 → `jobs/retro/2026-10-15-autofix.md`. Ca 7c thứ 2 (tuần 42). Đo tiếp 10-22.

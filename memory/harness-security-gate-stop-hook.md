@@ -14,6 +14,6 @@ Nguyên nhân: `blogs/.claude/hooks/check-docs.sh` là Stop hook, block mọi se
 **How to apply:**
 - Graph trên `blogs` thì cho `docs/features/<feature>.md` vào allow + diff. Repo cũng đòi điều này.
 - Gặp `review_unavailable` thì xem `numTurns` trước khi nghi code.
-- Fix gốc chưa làm: spawn reviewer không load hook của project.
+- Fix gốc: commit `46f404f` (main, 2026-10-15) — reviewer chạy `--settings {"disableAllHooks":true}`. Chưa đo thật numTurns trên blogs.
 
 Liên quan [[agent-harness-graph-learn]].

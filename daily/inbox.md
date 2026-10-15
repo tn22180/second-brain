@@ -355,3 +355,8 @@ Lines below keep the ORIGINAL candidate wording so re-emits dedup against them (
 - [ ] (×1) Granted features dev-zone ở blogs giờ cover mọi tính năng Pro + Advanced, gồm MCP — CS unlock không cần nâng plan
 - [ ] (×1) Playwright API key lưu ở `second-brain/.env` — check file này trước khi bảo thiếu key test browser
 - [ ] (×1) Security scan hằng ngày (report Telegram) có fix theo graph harness theo app (`jobs/graphs/*-sec-*.json`)
+
+### memory candidates 2026-10-15
+- [ ] (×1) seo bulk-operation webhooks (`handleHook`) chạy trên worker fleet từ `4835eea50a`. Chỉ lên prod khi cắt tag; webhook bulk-op chậm/treo thì check fleet trước GCF
+- [ ] (×1) Kênh `falcon-debug-production-logs` không còn chạy autofix (10-15), giờ đi luồng slack-thread-watch như `seo-suite-support`
+- [ ] (×1) Hẹn báo cáo recursive cleanup ~2026-10-29 (`jobs/recursive-action-report-2026-10-29.md`). Session tự mở sau 2 tuần, đo lại cost sau khi dọn minify + tách memory

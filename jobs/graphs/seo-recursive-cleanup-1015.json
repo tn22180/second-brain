@@ -1,0 +1,162 @@
+{
+  "id": "seo-recursive-cleanup-1015",
+  "source": "recursive-audit-2026-10-15",
+  "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+  "base": "master",
+  "branch": "fix/recursive-cost-cleanup",
+  "maxParallel": 3,
+  "linkPaths": [
+    "node_modules",
+    "packages/functions/node_modules",
+    "packages/assets/node_modules"
+  ],
+  "nodes": [
+    {
+      "id": "by-product-stuck",
+      "deps": [],
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      },
+      "wallMinutes": 60,
+      "prompt": "Repo: seo (Shopify app; Firebase Functions in packages/functions, babel, jest 24 run from repo root: `npx jest --ci <path>`). No `await import()` in packages/functions (prod ERR_MODULE_NOT_FOUND) \u2014 use require for lazy loads. Comments only for the why, never narrate. Write the failing test first, then the fix. Do not touch files outside your allow list.\n\nBug (prod, verified 2026-10-15): recursiveSubscriberGen2 throws `TypeError: Cannot read properties of undefined (reading 'map')` exactly 48x/day (every 30 min) since >=2026-09-15, at the RECURSIVE_OPTIMIZE_IMAGES_BY_PRODUCT case of packages/functions/src/handlers/cron/subscribeRecursive.js (`const formattedProducts = products.map(formatProductToOptimize);`, ~line 494).\nRoot cause: packages/functions/src/helpers/graphql/product/getProductsToOptimizeImage.js catch block returns `[]`, so `const [..., {products, pageInfo}] = await Promise.all(...)` gets products undefined. The crash happens BEFORE `updateShop(shopId, {doneLastOptimizePubSub: new Date()})`, so cron reTriggerOptimize (getShopToReTriggerOptimize: doneOptimize==false && doneLastOptimizePubSub <= now-1h) re-dispatches the same shop forever. Real case: shop x7UXMKBZwJt0Tdv5NXER (vi0fmh-j4), history Y5dHmtNV0R2m6TCuaxtC isOptimizeByProduct=true, created 2025-10-15, looping for a year.\nFix:\n1. getProductsToOptimizeImage: on error return a consistent shape `{products: [], pageInfo: null, error: e.message}` (fullResp path unchanged), and log the failure with logger.warn including shop id (logger.debug is silenced in prod, which is why nobody saw the Shopify error). It is only called from subscribeRecursive.js.\n2. In the BY_PRODUCT case: if the fetch returned an error, stop the run instead of crashing \u2014 end it the same way the code already ends a run that cannot continue (look at how reTriggerOptimize.js uses DONE_OPTIMIZE_STOP from const/optimizeImage and updateShopData; and handleDoneOptimize). Pick the one that clears doneOptimize=false so the cron stops re-picking it, and log a warn with shopId + error. Do not retry inside the handler.\n3. Also guard `pageInfo` being null at the hasNextPage checks.\nTests: new packages/functions/src/handlers/cron/__tests__/subscribeRecursive.byProduct.test.js \u2014 mock the repositories/services like the sibling subscribeRecursive.*.test.js files do. Cases: (a) fetch error \u2192 no throw, run stopped (shop write that sets doneOptimize true / DONE_OPTIMIZE_STOP), no re-dispatch; (b) normal page with hasNextPage \u2192 processes products, re-dispatches with lastProduct=endCursor; (c) last page \u2192 handleDoneOptimize called. Plus a unit test for the helper's error shape in packages/functions/src/helpers/graphql/product/__tests__/getProductsToOptimizeImage.test.js.",
+      "contract": {
+        "goal": "optimize_images_by_product never crashes on a failed product fetch; a failing run is stopped so reTriggerOptimize stops re-dispatching it",
+        "allow": [
+          "packages/functions/src/handlers/cron/subscribeRecursive.js",
+          "packages/functions/src/helpers/graphql/product/getProductsToOptimizeImage.js",
+          "packages/functions/src/handlers/cron/__tests__/subscribeRecursive.byProduct.test.js",
+          "packages/functions/src/helpers/graphql/product/__tests__/getProductsToOptimizeImage.test.js"
+        ],
+        "verify": [
+          {
+            "name": "dir-tests",
+            "cmd": [
+              "bash",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\"; git ls-files --others --exclude-standard -- \"*.js\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\\\.timestamp|onPageListQuery\\\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+            ]
+          },
+          {
+            "name": "eslint",
+            "cmd": [
+              "sh",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/handlers/cron/__tests__/subscribeRecursive.byProduct.test.js"
+          ]
+        },
+        "security": {
+          "appName": "seo"
+        }
+      }
+    },
+    {
+      "id": "file-page-shard",
+      "deps": [],
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      },
+      "wallMinutes": 120,
+      "prompt": "Repo: seo (Shopify app; Firebase Functions in packages/functions, babel, jest 24 run from repo root: `npx jest --ci <path>`). No `await import()` in packages/functions (prod ERR_MODULE_NOT_FOUND) \u2014 use require for lazy loads. Comments only for the why, never narrate. Write the failing test first, then the fix. Do not touch files outside your allow list.\n\nCost bug (prod, verified 2026-10-15): on 2026-09-29/30 one shop (9YslB2n0NYe08l1jJKkH) running the LEGACY Pub/Sub FILE_PAGE image-optimize chain cost $42 of the function's $84/30d. Each hop processes one batch of ~20 file images, but prepareFileImagesBatch in packages/functions/src/services/optimize/optimizeImageJobLoop.js (no-manifest branch, ~line 80) re-downloads and JSON.parses the WHOLE fileImageJsonl every batch (readTextCached is a no-op on GCF) \u2014 O(N^2) bytes and CPU, and memory scales with the catalog.\nGoal: in the legacy FILE_PAGE path, the JSONL is downloaded and parsed at most ONCE per run; later batches read only their own slice.\nDesign (follow it unless the code makes it impossible \u2014 then explain in the final message):\n- On a call with no v25 manifest, if a legacy shard set does not yet exist for (shopId, historyId, batchSizeCompress), stream/read the JSONL once, write it as shards of exactly `batchSizeCompress` lines plus a small legacy index object, using the GCS primitives in packages/functions/src/services/optimize/workListStore.js (saveText/readText/objectExists/openJsonlReadStream+readLinesFromStream) and path helpers in workListPaths.js.\n- Use a DIFFERENT path prefix/name from the v25 manifest (manifestPath/shardPath) so buildOptimizeWorkList/manifestExists for v25 can never see legacy shards. Include batchSizeCompress in the key so a changed batch size cannot misalign.\n- Then return shard[fileImageBatchIndex] \u2014 identical content and order to today's `chunk(lines, batchSizeCompress)[fileImageBatchIndex]`; return [] past the end, exactly as today.\n- Must stay idempotent under duplicate/ retried dispatches (two hops racing to build shards must not corrupt; writes are whole-object overwrites of identical content, which is fine). A transient read failure must still THROW (see the readText contract comment), never return [].\n- historyId null \u2192 keep today's behavior (full read) since there's no stable key.\n- Best-effort cleanup is not required; GCS lifecycle handles it. Do not change the v25 manifest branch or the job loop.\nTests: new packages/functions/src/services/optimize/__tests__/prepareFileImagesBatch.legacyShard.test.js with workListStore GCS calls mocked in-memory: (a) across batches 0..N-1 of a 105-line file with batchSize 20 the full JSONL is fetched exactly once; (b) each batch equals the old chunk() output; (c) index past end \u2192 []; (d) v25 manifest present \u2192 shard path untouched; (e) batch size change rebuilds rather than misreads; (f) transient read error throws. Keep prepareFileImagesBatch.cache.test.js passing (update it only if its assumptions are invalidated, and say why).",
+      "contract": {
+        "goal": "Legacy FILE_PAGE optimize downloads and parses the file-image JSONL at most once per run instead of once per 20-image batch",
+        "allow": [
+          "packages/functions/src/services/optimize/optimizeImageJobLoop.js",
+          "packages/functions/src/services/optimize/workListStore.js",
+          "packages/functions/src/services/optimize/workListPaths.js",
+          "packages/functions/src/services/optimize/__tests__/prepareFileImagesBatch.legacyShard.test.js",
+          "packages/functions/src/services/optimize/__tests__/prepareFileImagesBatch.cache.test.js"
+        ],
+        "verify": [
+          {
+            "name": "dir-tests",
+            "cmd": [
+              "bash",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\"; git ls-files --others --exclude-standard -- \"*.js\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\\\.timestamp|onPageListQuery\\\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+            ]
+          },
+          {
+            "name": "eslint",
+            "cmd": [
+              "sh",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/services/optimize/__tests__/prepareFileImagesBatch.legacyShard.test.js"
+          ]
+        },
+        "security": {
+          "appName": "seo"
+        }
+      }
+    },
+    {
+      "id": "minify-gen-removal",
+      "deps": [],
+      "meta": {
+        "agent": "codex",
+        "model": "gpt-6-astra",
+        "executor": "codex"
+      },
+      "wallMinutes": 90,
+      "prompt": "Repo: seo (Shopify app; Firebase Functions in packages/functions, babel, jest 24 run from repo root: `npx jest --ci <path>`). No `await import()` in packages/functions (prod ERR_MODULE_NOT_FOUND) \u2014 use require for lazy loads. Comments only for the why, never narrate. Write the failing test first, then the fix. Do not touch files outside your allow list.\n\nMinify was sunset (docs/features/minify-sunset.md, commit b67f7eb5c5): MINIFY_SUNSET=true in packages/functions/src/services/minifyService.js forces enabled:false, so generation never runs; the only live behaviour is the REVERT: rewrite theme liquid refs from `*.aio.min.*` back to the original file, then deleteMinifiedFiles once no reference remains, plus the uninstall path. Prod still has 35,851 installed shops with minify.enabled=true, so the revert path MUST keep working exactly as today.\nTask: delete the dead generation code in minifyService.js, keep revert:\n- Remove: the MINIFY_SUNSET flag (behave as if always true), createMinifiedFiles and anything only it uses, minifyCode/esbuild/UglifyJS/CleanCSS requires and imports, the enabled=true branch(es) of updateLayoutValue (refs to min files are only ever reverted now), getIncludeFiles if it becomes unused, and the getDataMinifyPublicUrl import if unused here. `failedToCreateFiles` becomes an empty skip list \u2014 simplify processMinify accordingly but keep the hasMinRefsRemaining guard and its comment (deleting a still-referenced min file blanks the storefront).\n- Keep every exported function signature used elsewhere (grep packages/functions/src for imports of minifyService: handleGetMinify, handleFinishMinify, handleSetMinify, handleAssets, and any others) and their return shapes ({success, failedToCreateFiles} \u2192 failedToCreateFiles: []), since subscribeRecursive.js (RECURSIVE_MINIFY case, lazy_load<->minify chain) and subscribeOptimizeStore.js call them. Do NOT edit those callers.\n- Do NOT edit package.json / yarn.lock (dependency removal is done separately so the lockfile is regenerated with network).\n- Update docs/features/minify-sunset.md \"Backend today\" section: line refs and the fact that generation code is gone, flag removed.\nTests: new packages/functions/src/services/__tests__/minifyService.revertOnly.test.js, shopify/graphql mocked: (a) a layout referencing `assets/theme.aio.min.css` is rewritten to `assets/theme.css` (both handleSetMinify and handleAssets paths) even when the stored minify.enabled is true; (b) no shopify asset create/upsert of any `.aio.min.` key ever happens; (c) when a ref remains after processing, deleteMinifiedFiles is skipped; when none remain, min files are deleted; (d) uninstall path still reverts + deletes + removes MINIFIER_SNIPPET; (e) source-level assertion that minifyService.js no longer requires uglify-js/clean-css/esbuild. Existing minifyRetired.test.js must still pass.",
+      "contract": {
+        "goal": "minifyService keeps only the revert path; all minify generation code and its library imports are gone",
+        "allow": [
+          "packages/functions/src/services/minifyService.js",
+          "packages/functions/src/services/__tests__/minifyService.revertOnly.test.js",
+          "docs/features/minify-sunset.md"
+        ],
+        "verify": [
+          {
+            "name": "dir-tests",
+            "cmd": [
+              "bash",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- \"*.js\"; git ls-files --others --exclude-standard -- \"*.js\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\\\.timestamp|onPageListQuery\\\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures\""
+            ]
+          },
+          {
+            "name": "eslint",
+            "cmd": [
+              "sh",
+              "-c",
+              "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js'; git ls-files --others --exclude-standard -- '*.js'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+            ]
+          }
+        ],
+        "reproduce": {
+          "testCmd": [
+            "npx",
+            "jest",
+            "--ci",
+            "packages/functions/src/services/__tests__/minifyService.revertOnly.test.js"
+          ]
+        },
+        "security": {
+          "appName": "seo"
+        }
+      }
+    }
+  ]
+}

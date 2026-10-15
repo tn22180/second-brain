@@ -1,0 +1,140 @@
+{
+ "id": "blog-sec-audit-1014",
+ "source": "security-audit-2026-10-14",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/blogs",
+ "base": "master",
+ "branch": "fix/sec-audit-1014",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules",
+  "packages/avadaseo/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "blog-shop-entitlement",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: blogs (Avada Blog app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read the repo CLAUDE.md first (no .claude/skills exist for this repo). MCP tools are free by design (commit 0215e3a95) \u2014 do not add MCP charges. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master d5ac13f13). Route: routes/api.js mounted at /api (also /apiV2, /apiSa, /apiSaV2, /internal-api) behind verifyEmbedRequest/swagger token, handlers/api.js:89-101.\n1. POST /api/shop/field-number (shopController.js:168-172) increments a client-named field: {field:'isUseGPT5'} or {field:'plan'} unlocks paid features. Allow-list: only 'isYoutubeSlotActive' (sole FE caller SettingGenAiYouTube.jsx:183 \u2014 confirm by grep); 400 otherwise.\n2. config/pickFields.js:87-94 blockFields misses the legacy entitlement flags hasFeature() reads (config/subscription/grantedFeatures.js:31-34): isUseGPT5, isUnLockLimitAI, unLimitToolYoutube, isUnlimitedAnalytics. Derive them from GRANTABLE_FEATURES legacyFlag so new flags can't drift, and add them to blockFields. Check DevZone still sets them through its own path.\n3. helpers/helpers.js:21-28 prepareShop returns googleAnalytics.serviceAccountKey (full SA JSON incl. private_key) via GET /api/shop, bootstrap payload, POST /shop response, subscriptionController.js:50. FE only needs client_email (Analytics/index.jsx:54-57,220-224). Return {projectId, propertyId, clientEmail, isConfigured} without serviceAccountKey; update the FE to read clientEmail / isConfigured.\n4. repositories/shopRepository.js:116 console.logs JSON.stringify(postData) on every update: log shopID + Object.keys(postData) only, via the repo logger.\nTests: field-number rejects isUseGPT5/plan, accepts isYoutubeSlotActive; POST /shop drops the 4 legacy flags; prepareShop output has no private_key; FE Analytics shows client email from clientEmail.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.",
+   "contract": {
+    "goal": "merchant cannot self-grant features via shop endpoints; GA private key never sent to browser",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "related-tests",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || npx jest --ci --passWithNoTests --findRelatedTests $F"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  },
+  {
+   "id": "blog-cross-tenant",
+   "deps": [
+    "blog-shop-entitlement"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: blogs (Avada Blog app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read the repo CLAUDE.md first (no .claude/skills exist for this repo). MCP tools are free by design (commit 0215e3a95) \u2014 do not add MCP charges. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master d5ac13f13). Route: routes/api.js mounted at /api (also /apiV2, /apiSa, /apiSaV2, /internal-api) behind verifyEmbedRequest/swagger token, handlers/api.js:89-101.\n1. GET /api/settings (controllers/settingsController.js:35-36) prefers ?domain over getCurrentShop: on /api always use getCurrentShop(ctx) and ignore domain (admin FE never sends it).\n2. /proxy/settings and /proxy/ai-summary/vote/:id (routes/proxy.js:41,45-50; middleware/validatePlan.js:14-16) take the shop from unsigned ?domain with no signature; the legit caller is templates/sidebar-ads-script.js (storefront, calls the firebase /proxy url directly). Make the proxy settings response a PUBLIC subset: only what sidebar-ads-script.js and other storefront scripts actually read (grep them), and stop the Shopify Admin calls on that path (getShopifyArticles, getSettingDataConfig, getAuthor) unless the storefront script needs their output \u2014 if it does, say so and keep only the needed fields. Do not change the storefront script URL.\n3. POST /api/get-article-customer (shopController.js:323-331) reads any shop's article from body shopId; it is a DevZone tool. Add the same server-side canAccessDevZone guard devZoneController uses (devZoneController.js:113-124 / devZoneAccess.js); 403 otherwise.\n4. blogAssist (controllers/blogAssist.controller.js:76-81, services/blogAssist.service.js:13-51, repositories/blogAssist.repository.js:41-48) finds docs by blogId with no shop filter, and docs store no shopId. Store shopId on save/update; in finders query by blogId then keep only docs where doc.shopId === current shop OR doc.shopId is missing (legacy \u2014 note this residual gap in a comment and the final message); upsert must never update a doc owned by another shop.\nTests: /api/settings?domain=other returns own shop; proxy settings response has no Admin-fetched data beyond the public subset; get-article-customer 403 for non-DevZone; blogAssist of another shop not returned / not updated.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.",
+   "contract": {
+    "goal": "no endpoint takes the shop from client input; proxy settings return a public subset",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "related-tests",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || npx jest --ci --passWithNoTests --findRelatedTests $F"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  },
+  {
+   "id": "blog-idor-ai-devzone",
+   "deps": [
+    "blog-cross-tenant"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: blogs (Avada Blog app; Firebase Functions in packages/functions/src, React/Polaris in packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read the repo CLAUDE.md first (no .claude/skills exist for this repo). MCP tools are free by design (commit 0215e3a95) \u2014 do not add MCP charges. These are VERIFIED findings from the 2026-10-14 security audit (verified read-only on origin/master d5ac13f13). Route: routes/api.js mounted at /api (also /apiV2, /apiSa, /apiSaV2, /internal-api) behind verifyEmbedRequest/swagger token, handlers/api.js:89-101.\n1. DELETE /api/sidebarAds and PUT /api/sidebarAds/:id (controllers/sidebarAdsController.js:111-113,143-146; base.repository.js:160-179) act on any doc id; PUT spreads the raw body (can rewrite shopId). Load each doc, require doc.shopId === getCurrentShop(ctx) (403/skip otherwise), and strip shopId/createdAt/id from update bodies.\n2. PUT /api/components (controllers/componentsController.js:59-61 \u2192 componentsRepository.js:91) updates a client-supplied doc id unscoped. Pass the current shop, reject if doc.shopId !== shopId, drop shopId from the body.\n3. POST /api/generate-summary and /generate-summary/all (api.js:120-121 \u2192 articleController.js:1187; helpers/processLocaleSummary.js:44,125; aiSummaryHelper.js:6-15) have no server-side plan gate, and isFirstTimeGenerate is true whenever the metafield is empty, so isSave:false calls are free forever. Add the same plan gate other summary paths use (validatePlan.js:24 / hasFeature(shop,'aiSummary'); see articleController.js:658) and apply the free first generation only when isSave is true; isSave:false previews are charged like regenerations. Check the FE EditSummaryModal.js:75,91 flow still works for paid shops.\n4. dev_zone redis-get/redis-set/redis-del (controllers/devZoneController.js ~785, 930-975) read/write any key fleet-wide (incl. cached shop docs with accessToken). Allow them only when !isProduction (appConfig.isProduction); in prod return 403.\n5. FE: packages/assets/src/contexts/saveTopBarContext.js:70 and components/AIAssistantModal/AIAssistantModal.jsx:61 console.log the raw axios error (includes Authorization header). Log e?.message only.\nTests: sidebarAds/components of another shop untouched; generate-summary on Free without aiSummary \u2192 plan error; isSave:false charges; dev_zone redis-* 403 in prod.\nRules: TDD \u2014 failing test first, watch it fail. Comments say WHY only (a constraint, a Shopify limit, a unit), never narrate WHAT; no step numbering, no banners. Backend logging via @functions/helpers/logger (or the repo's existing logger), never add console.*. No secrets in code, no new dependencies, do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE for packages/functions: never `await import(...)` a local module \u2014 .babelrc keeps import() native and prod throws ERR_MODULE_NOT_FOUND (jest hides it); lazy-load with require(). Keep each fix minimal and do not refactor beyond it. If a fix would break a legit caller you find, keep the caller working and say so. Update the matching docs/features/*.md if it describes changed behaviour. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change, and anything you could not do and why.",
+   "contract": {
+    "goal": "per-shop docs ownership-checked; generate-summary gated+charged; dev_zone redis-* off in prod",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/"
+    ],
+    "verify": [
+     {
+      "name": "related-tests",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || npx jest --ci --passWithNoTests --findRelatedTests $F"
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "sh",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/master -- '*.js' '*.jsx'; git ls-files --others --exclude-standard -- '*.js' '*.jsx'; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "blogs"
+    }
+   }
+  }
+ ]
+}

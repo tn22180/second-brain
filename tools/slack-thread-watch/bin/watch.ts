@@ -12,6 +12,7 @@ import {
   emptyState,
   isNewThread,
   messageText,
+  parseProdAlert,
   permalink,
   resolveApp,
   worktreeName,
@@ -41,7 +42,13 @@ const CHANNELS: Record<string, string | null> = process.env.SLACK_WATCH_ONLY_CHA
       G01N5G8D562: null, // seo-suite-support carries every app; the CS post's "App:" line decides
       C08928RK00H: 'blogs', // blog-support
       C0BGRTWUE8Y: null, // system-alert
+      C0BEHGV1ST1: null, // falcon-debug-production-logs; app comes from the alert's [TAG]
     };
+// Replaced tools/prod-error-autofix 2026-10-15. Alerts carry no customer, so no Jira and a
+// tighter brief; repeats are fingerprinted and spawns capped — the channel posts ~150/day.
+const PROD_ALERT_CHANNELS = new Set(['C0BEHGV1ST1']);
+const ALERT_TTL_MS = 7 * 24 * 3600_000;
+const MAX_PROD_SPAWNS_PER_HOUR = 3;
 // Unattended run: no dev is there to answer the skill's questions, so the brief settles them
 // up front. Shell-quoted inside "…" below — keep it free of `"`, `$` and backticks.
 const SESSION_BRIEF = [
@@ -51,6 +58,14 @@ const SESSION_BRIEF = [
   'Xong thì kiểm cả thread: CS đã tạo task Jira (có mã FAL-xxx hoặc link atlassian) thì KHÔNG tạo mới, dùng luôn task đó — comment nguyên nhân, cách fix, link MR vào task đó bằng skill falcon:jira.',
   'Chưa có task thì tạo 1 task Jira FAL bằng skill falcon:jira (nguyên nhân, cách fix, link MR, link thread) — KHÔNG link tới issue nào khác, không hỏi link.',
   'Cuối cùng reply vào thread: nguyên nhân, link MR, mã task Jira, chưa deploy.',
+].join(' ');
+const PROD_BRIEF = [
+  'Chạy không người trông, đừng dừng lại hỏi.',
+  'Thread là 1 alert lỗi prod tự động, không có khách. Tìm nguyên nhân ở code + log/data prod (chỉ đọc, skill prod-logs), sửa trên branch riêng, chạy test, mở MR. Cấm merge, push master, tag, deploy.',
+  'Trước khi sửa, kiểm MR đang mở trên repo cho cùng lỗi (glab mr list) — có rồi thì không mở MR mới, chỉ reply link MR đó.',
+  'Lỗi hạ tầng, timeout, quota hoặc không phải bug code thì ghi rõ lý do, không sửa gì.',
+  'Không tạo task Jira, không tag tester.',
+  'Cuối cùng reply vào thread: nguyên nhân, link MR, chưa deploy.',
 ].join(' ');
 const ACK_TEXT = 'Đã nhận, đang phân tích và xử lý. Có kết quả sẽ reply trong thread này.';
 const MAX_ATTEMPTS = 3;
@@ -119,17 +134,30 @@ async function newTopLevel(token: string, channel: string, oldest: string): Prom
 // classifier still stops risky actions that bypass would let through.
 // The prompt is built only from a channel id and a numeric ts — nothing user-written reaches
 // the shell command.
-async function spawn(app: string, channel: string, ts: string): Promise<string> {
+async function spawn(app: string, channel: string, ts: string, brief: string): Promise<string> {
   const name = worktreeName(app, ts);
-  const prompt = `/falcon:support-handoff ${permalink(WORKSPACE, channel, ts)} ${SESSION_BRIEF}`;
+  const prompt = `/falcon:support-handoff ${permalink(WORKSPACE, channel, ts)} ${brief}`;
   const {stdout} = await run(ORCA, ['worktree', 'create', '--repo', `name:${app}`, '--name', name, '--json'], {
     timeout: 120_000,
   });
   const path = JSON.parse(stdout)?.result?.worktree?.path;
   if (!path) throw new Error(`worktree create returned no path: ${stdout.slice(0, 200)}`);
+  // `worktree create` always opens a plain shell tab and its JSON does not return the handle,
+  // so find it by path now and close it once the Claude tab exists — one tab per thread.
+  const {stdout: listed} = await run(ORCA, ['terminal', 'list', '--json'], {timeout: 30_000});
+  const startup: string[] = (JSON.parse(listed)?.result?.terminals ?? [])
+    .filter((t: {worktreePath?: string}) => t.worktreePath === path)
+    .map((t: {handle: string}) => t.handle);
   await run(ORCA, ['terminal', 'create', '--worktree', `path:${path}`, '--title', 'support-handoff', '--command', `set -a; . '${SESSION_ENV}'; set +a; exec claude --permission-mode auto "${prompt}"`, '--json'], {
     timeout: 60_000,
   });
+  for (const handle of startup) {
+    try {
+      await run(ORCA, ['terminal', 'close', '--terminal', handle, '--tab', '--json'], {timeout: 30_000});
+    } catch (e) {
+      log(`close startup tab ${handle} failed: ${(e as Error).message.slice(0, 200)}`);
+    }
+  }
   return name;
 }
 
@@ -139,6 +167,9 @@ async function main() {
   const auth = await slack(token, 'auth.test', {});
   const ownIds = new Set<string>([auth.user_id, auth.bot_id].filter(Boolean));
   const now = new Date();
+  for (const [fp, at] of Object.entries(state.alerts)) {
+    if (now.getTime() - Date.parse(at) > ALERT_TTL_MS) delete state.alerts[fp];
+  }
 
   for (const [channel, channelDefault] of Object.entries(CHANNELS)) {
     // First sight of a channel: start from now. Joining a week of backlog is not what was asked.
@@ -150,18 +181,45 @@ async function main() {
     const msgs = await newTopLevel(token, channel, state.watermark[channel]);
     for (const m of msgs) {
       if (Number(m.ts) > Number(state.watermark[channel])) state.watermark[channel] = m.ts;
-      if (!isNewThread(m, ownIds) || state.spawned[m.ts]) continue;
-      if (!state.pending.some(p => p.ts === m.ts)) state.pending.push({channel, ts: m.ts, attempts: 0});
+      // The alerts are posted by this same bot, so the own-post filter would drop all of them;
+      // our acks there are thread replies, which isNewThread drops anyway.
+      const own = PROD_ALERT_CHANNELS.has(channel) ? new Set<string>() : ownIds;
+      if (!isNewThread(m, own) || state.spawned[m.ts]) continue;
+      if (state.pending.some(p => p.ts === m.ts)) continue;
+      if (PROD_ALERT_CHANNELS.has(channel)) {
+        const alert = parseProdAlert(m);
+        if (!alert || !alert.app || alert.infra) {
+          log(`skip ${m.ts}: ${!alert ? 'not an alert' : alert.infra ? 'infra' : 'unknown app tag'}`);
+          continue;
+        }
+        if (state.alerts[alert.fingerprint] || state.pending.some(p => p.fingerprint === alert.fingerprint)) {
+          log(`skip ${m.ts}: repeat ${alert.fingerprint.slice(0, 80)}`);
+          continue;
+        }
+        state.pending.push({channel, ts: m.ts, attempts: 0, app: alert.app, fingerprint: alert.fingerprint});
+        continue;
+      }
+      state.pending.push({channel, ts: m.ts, attempts: 0});
     }
   }
 
   const keep: State['pending'] = [];
   for (const p of state.pending) {
     if (state.spawned[p.ts]) continue;
+    const prod = Boolean(p.fingerprint);
+    if (prod) {
+      const lastHour = Object.values(state.spawned).filter(
+        x => x.channel && PROD_ALERT_CHANNELS.has(x.channel) && now.getTime() - Date.parse(x.at) < 3600_000
+      ).length;
+      if (lastHour >= MAX_PROD_SPAWNS_PER_HOUR) {
+        keep.push(p);
+        continue;
+      }
+    }
     const r = await slack(token, 'conversations.history', {channel: p.channel, latest: p.ts, inclusive: 'true', limit: '1'});
     const msg = (r.messages as SlackMessage[])[0];
     const text = msg ? messageText(msg) : '';
-    const app = resolveApp(text, CHANNELS[p.channel] ?? null);
+    const app = p.app ?? resolveApp(text, CHANNELS[p.channel] ?? null);
     const link = permalink(WORKSPACE, p.channel, p.ts);
     const summary = esc(text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160));
     if (!app) {
@@ -177,8 +235,9 @@ async function main() {
       continue;
     }
     try {
-      const name = await spawn(app, p.channel, p.ts);
-      state.spawned[p.ts] = {app, worktree: name, at: now.toISOString()};
+      const name = await spawn(app, p.channel, p.ts, prod ? PROD_BRIEF : SESSION_BRIEF);
+      state.spawned[p.ts] = {app, worktree: name, at: now.toISOString(), channel: p.channel};
+      if (p.fingerprint) state.alerts[p.fingerprint] = now.toISOString();
       log(`spawned ${name} for ${link}`);
       try {
         await postAck(token, p.channel, p.ts);

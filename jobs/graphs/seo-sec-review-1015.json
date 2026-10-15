@@ -1,0 +1,141 @@
+{
+ "id": "seo-sec-review-1015",
+ "source": "security-review-2026-10-15",
+ "repoPath": "/Users/nguyentuan/Documents/second-brain/projects/Falcon/seo",
+ "base": "fix/sec-audit-1014-seo",
+ "branch": "fix/sec-audit-1014-seo-review",
+ "maxParallel": 1,
+ "linkPaths": [
+  "node_modules",
+  "packages/functions/node_modules",
+  "packages/assets/node_modules"
+ ],
+ "nodes": [
+  {
+   "id": "seo-credit-review",
+   "deps": [],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 150,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions packages/functions/src, React/Polaris packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md. You are on branch fix/sec-audit-1014-seo (MR !2417, security fixes). A review found bugs in it; fix exactly these. Pre-existing failing suites on master (excluded): workListStore, getLimit.timestamp, onPageListQuery.helpers, shopify2026Client, overviewCardScore, themeExtensionSchemaGuards, subscribeSaveAltVersion.covers.\n1. HIGH: AUTO-mode AI alt in collectionService.js handle() (~:207) and articleService.js handle() (~:175) calls optimizeAltImageByAI with no charge (the bulk paths at ~:669 / ~:596 do charge). Apply the same pattern the branch added in productService.js handle() (~:326-345): pre-check isAiUsageAvailable, generate, then incrementImageOptimizeAIUsage(shop.id,1) + upsertCreditUsage(shop.id,{imageAltText:1}). In all three (product/collection/article): if the charge fails with reason indicating insufficient credits \u2192 SKIP as now; if it fails for any other reason (e.g. 'Transaction failed' contention) \u2192 keep the generated alt (LLM already paid) and logger.warn with shopId \u2014 do not throw.\n2. HIGH: seoController.js startOptimizeImages (~:1239-1253): the AI-credit gate runs only when settings.alt_mode === AUTO, but the worker uses `mode` from the request body (subscribeHandleOptimizeImage.js:26). Gate whenever the effective mode the worker will use is AUTO (check body mode, and settings if body absent). Count needed credits as the number of alt images: dataLog.filter(d => d.type === TYPE_ALT).reduce((n,d)=>n+(d.logs?.length||0),0) \u2014 read uniqueArray.js mergeLogId to confirm shape. Guard `(types || '').split(',')`.\n3. MEDIUM: fixAuditIssue (auditAgentController.js) now charges server-side but the FE never refreshes the balance. Return {AIUsage, AICreditQuota} (re-read shop after charge) in ctx.body on success; on MSG_META_LIMIT return a stable errorCode the FE can detect. In FE (pages/AuditDetail/AuditDetail.js handleApiFix ~:811, Result/Components/AIFixButton/AIFixButton.js, Result/Result.js, components/OptimizeUrl/OptimizeUrl.js ~:105, EditKeywordModal/EditUrlHandleModal if they call fix-issue): dispatch setActiveShop with the returned AIUsage/AICreditQuota instead of local decrements, and call showAiCreditsModal() (useUpgradePlanModal) on the out-of-credit errorCode. Make sure no flow both decrements locally AND applies server values (double decrement in UI).\n4. MEDIUM: V1 fix-all fires ~17 parallel fix-issue requests \u2192 transaction contention on the shop doc after generation. Limit FE concurrency to 3 for that fan-out (find the Promise.all in AuditDetail / Result).\n5. LOW: services/auditAgent/fixMainContentAsync.js (~:216-222): move the PENDING\u2192PROCESSING status flip before the credit check/charge (transactional if the repo has a helper) so a redelivered Pub/Sub message cannot charge 14 twice.\n6. LOW: packages/assets/src/.../UserChargeInfo.jsx:56 POSTs planDiscountCode to /shop (now stripped; server already saved it in subscriptionController.js:241-245). Remove that redundant FE call.\nTests: collection/article AUTO alt charge + skip on insufficient + keep alt on contention; gate uses body mode and image count; fix-issue returns balances; FE applies them; main-content no double charge.\nRules: TDD \u2014 failing test first. Comments say WHY only, never narrate WHAT. Use the repo logger, never add console.*. No secrets, no new deps; do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE packages/functions: never `await import(...)` a local module; lazy-load with require(). DO NOT modify, rewrite or delete any test or file unrelated to the items below, even if it fails \u2014 pre-existing failures are listed and excluded. Your sandbox cannot open sockets: never rewrite a test to avoid sockets; if a test you must run needs a socket, say so in the final message. Update docs/features/*.md (and the matching .claude/skills doc if it cites changed lines) for behaviour you change. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change + anything not done and why.",
+   "contract": {
+    "goal": "all AUTO alt paths charged; gate trusts no client mode/count; FE balance in sync",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/features/",
+     ".claude/skills/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures|themeExtensionSchemaGuards|subscribeSaveAltVersion\\.covers\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint  $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "seo-settings-shop-review",
+   "deps": [
+    "seo-credit-review"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 120,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions packages/functions/src, React/Polaris packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md. You are on branch fix/sec-audit-1014-seo (MR !2417, security fixes). A review found bugs in it; fix exactly these. Pre-existing failing suites on master (excluded): workListStore, getLimit.timestamp, onPageListQuery.helpers, shopify2026Client, overviewCardScore, themeExtensionSchemaGuards, subscribeSaveAltVersion.covers.\n1. HIGH: helpers/settings/stripDevZoneFlags.js deletes isDevZoneEnabled from the body, but saveSettings does doc.ref.update(postData) (seoRepository.js:~235) replacing each top-level map whole, and merchant screens (Redirect404.js:84,91, the XML sitemap settings screen) send the whole map back \u2014 so a merchant save WIPES the flag CS set in DevZone (crons then skip the shop silently: publicHandleDailyBrokenLinks.js:31, redirect404.js:43, sitemapService.js:63). Change it: for non-DevZone callers, overwrite every isDevZoneEnabled in the body (any depth, incl. dotted keys like 'sitemap.xml.isDevZoneEnabled') with the currently STORED value for that path (read current settings once), dropping it only when nothing is stored. DevZone callers keep their value.\n2. HIGH: POST /api/settings/speedUp (seoController.js setSpeedUp ~:479) and POST /api/settings/customCss (setCustomCSS ~:1721) pass ctx.req.body straight to saveSettings. Allow-list them: speedUp accepts only the keys its UI sends (read the handler's fieldsToCheck and the FE callers), customCss accepts only `customCss`. Drop everything else.\n3. MEDIUM: add 'affiliateLeadId', 'affiliateCode', 'shopifyPlanName' to merchantBlockedShopFields (config/pickFields.js). Also check whether shopifyDomain, accessToken, accessTokenHash, crispSessionToken, email are writable by a merchant via POST /shop or the proxy shop update after all strips (blockFields + privilegedFields + credit + merchantBlocked); if any is, add it to merchantBlockedShopFields (shopifyDomain lets a merchant hijack another shop's storefront lookups). Grep FE to make sure no merchant screen sends them.\nTests: merchant save of permanentlyRedirect / sitemap.xml keeps stored isDevZoneEnabled true; DevZone can still change it; speedUp/customCss ignore isDevZoneEnabled and unknown keys; POST /shop drops affiliate*/shopifyPlanName/shopifyDomain.\nRules: TDD \u2014 failing test first. Comments say WHY only, never narrate WHAT. Use the repo logger, never add console.*. No secrets, no new deps; do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE packages/functions: never `await import(...)` a local module; lazy-load with require(). DO NOT modify, rewrite or delete any test or file unrelated to the items below, even if it fails \u2014 pre-existing failures are listed and excluded. Your sandbox cannot open sockets: never rewrite a test to avoid sockets; if a test you must run needs a socket, say so in the final message. Update docs/features/*.md (and the matching .claude/skills doc if it cites changed lines) for behaviour you change. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change + anything not done and why.",
+   "contract": {
+    "goal": "DevZone flags preserved on merchant saves, settings sub-endpoints allow-listed, more shop fields blocked",
+    "allow": [
+     "packages/functions/src/",
+     "packages/assets/src/",
+     "docs/features/",
+     ".claude/skills/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures|themeExtensionSchemaGuards|subscribeSaveAltVersion\\.covers\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint  $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  },
+  {
+   "id": "seo-lighthouse-misc-review",
+   "deps": [
+    "seo-settings-shop-review"
+   ],
+   "meta": {
+    "agent": "codex",
+    "model": "gpt-6-astra",
+    "executor": "codex"
+   },
+   "wallMinutes": 90,
+   "prompt": "Repo: seo (Avada SEO Suite; Firebase Functions packages/functions/src, React/Polaris packages/assets/src; jest 24 from repo root; eslint needs DISABLE_V8_COMPILE_CACHE=1). Read packages/functions/CLAUDE.md. You are on branch fix/sec-audit-1014-seo (MR !2417, security fixes). A review found bugs in it; fix exactly these. Pre-existing failing suites on master (excluded): workListStore, getLimit.timestamp, onPageListQuery.helpers, shopify2026Client, overviewCardScore, themeExtensionSchemaGuards, subscribeSaveAltVersion.covers.\n1. HIGH: handlers/exports/httpFunctions.js lighthouseauditrunnerGen2 has maxInstances: 10 with concurrency 1, but subscribeWeeklyScanSpeedUp.js:27 already runs 10 shops \u00d7 desktop+mobile = 20 concurrent audits, plus user scans and fleet fallbacks. Set maxInstances: 100 (the previous Gen2 default) \u2014 the point is to bound, not throttle. Update the test that asserts 10.\n2. HIGH: services/lightHouseService.js fetchLightHouse (~:74-77) never checks resp.ok; a 401/429 becomes score 0 \u2192 isScoresDecrease \u2192 false 'score decreased' merchant emails. Throw on !resp.ok with the status (no URL/query in the message \u2014 it can carry storefront passwords). Then find where score 0 from a failed audit feeds isScoresDecrease / sendScoresDecreaseEventToAEM (weekly job) and make a failed audit skip the decrease check instead of comparing 0.\n3. middleware/requireLighthouseToken.js: warn only once per process while the token is unset (module-level flag).\n4. docs/features/performance.md: rollout is NOT 'any order'. Correct it: set LIGHTHOUSE_RUNNER_TOKEN on all callers first (PRODUCTION_ENV_FILE + full functions deploy, and by hand in the fleet boxes' env files \u2014 box1, box2, central; deploy-to-worker.sh excludes .env), runner last.\n5. LOW: helpers/security/getTrustedClientIp.js: empty XFF ('') must fall back to ctx.ip: `const first = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : ''; const ip = first || ctx.ip;`.\n6. LOW: helpers/google.js:~171,~211 logger.debug(e, \u2026) logs raw errors carrying API keys in the query (pagespeedApiKey, gsApiKey): log e.message and e.response?.status only.\n7. LOW: helpers/redisCache.js logCacheFailure now logs only a generic message for non-timeout errors; add e.code and e.name (never argument values or e.message).\nTests for each.\nRules: TDD \u2014 failing test first. Comments say WHY only, never narrate WHAT. Use the repo logger, never add console.*. No secrets, no new deps; do not touch .env*, lockfiles, .gitlab-ci.yml, AGENTS.md, .npmrc, .yarnrc.yml. HARD RULE packages/functions: never `await import(...)` a local module; lazy-load with require(). DO NOT modify, rewrite or delete any test or file unrelated to the items below, even if it fails \u2014 pre-existing failures are listed and excluded. Your sandbox cannot open sockets: never rewrite a test to avoid sockets; if a test you must run needs a socket, say so in the final message. Update docs/features/*.md (and the matching .claude/skills doc if it cites changed lines) for behaviour you change. Run every verify command yourself; format with `DISABLE_V8_COMPILE_CACHE=1 npx eslint --fix <changed files>`. Final message: file:line per change + anything not done and why.",
+   "contract": {
+    "goal": "lighthouse runner not throttled, failed audits never become score 0 emails, small logging/IP fixes",
+    "allow": [
+     "packages/functions/src/",
+     "docs/features/",
+     ".claude/skills/"
+    ],
+    "verify": [
+     {
+      "name": "dir-tests",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] && exit 0; D=$(for f in $F; do d=$(dirname \"$f\"); echo \"${d%/__tests__}\"; done | sort -u); npx jest --ci --passWithNoTests $D --testPathIgnorePatterns=\"workListStore|getLimit\\.timestamp|onPageListQuery\\.helpers|/lib/|shopify2026Client|overviewCardScore|quotaAlert|truncatedCompletion|fixtures|themeExtensionSchemaGuards|subscribeSaveAltVersion\\.covers\""
+      ]
+     },
+     {
+      "name": "eslint",
+      "cmd": [
+       "bash",
+       "-c",
+       "F=$( { git diff --name-only --diff-filter=AM origin/fix/sec-audit-1014-seo -- \"*.js\" \"*.jsx\"; git ls-files --others --exclude-standard -- \"*.js\" \"*.jsx\"; } | sort -u); [ -z \"$F\" ] || DISABLE_V8_COMPILE_CACHE=1 npx eslint  $F"
+      ]
+     }
+    ],
+    "security": {
+     "appName": "seo"
+    }
+   }
+  }
+ ]
+}
