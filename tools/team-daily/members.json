@@ -1,8 +1,116 @@
 [
-  {"name":"tuannv","jira":"tuannv","gitlab":"tuannv","email":"tuannv@avadagroup.com"},
-  {"name":"tunglv","jira":"tunglv","gitlab":"tunglv","email":"tunglv@avadagroup.com"},
-  {"name":"truongnn","jira":"truongnn","gitlab":"truongnn","email":"truongnn@avadagroup.com"},
-  {"name":"minhpt","jira":"minhpt","gitlab":"minhpt","email":"minhpt@avadagroup.com"},
-  {"name":"dungtt","jira":"dungtt","gitlab":"dungtt","email":"dungtt@avadagroup.com"},
-  {"name":"tranggt","jira":"tranggt","gitlab":"tranggt","email":"tranggt@avadagroup.com"}
+  {
+    "name": "tuannv",
+    "jira": "tuannv",
+    "gitlab": "tuannv",
+    "email": "tuannv@avadagroup.com"
+  },
+  {
+    "name": "tunglv",
+    "jira": "tunglv",
+    "gitlab": "tunglv",
+    "email": "tunglv@avadagroup.com"
+  },
+  {
+    "name": "truongnn",
+    "jira": "truongnn",
+    "gitlab": "truongnn",
+    "email": "truongnn@avadagroup.com"
+  },
+  {
+    "name": "minhpt",
+    "jira": "minhpt",
+    "gitlab": "minhpt",
+    "email": "minhpt@avadagroup.com"
+  },
+  {
+    "name": "dungtt",
+    "jira": "dungtt",
+    "gitlab": "dungtt",
+    "email": "dungtt@avadagroup.com"
+  },
+  {
+    "name": "anhnt3",
+    "jira": "anhnt3",
+    "gitlab": "anhnt3",
+    "email": "anhnt3@avadagroup.com"
+  },
+  {
+    "name": "damhv",
+    "jira": "damhv",
+    "gitlab": "damhv",
+    "email": "damhv@avadagroup.com"
+  },
+  {
+    "name": "dantt",
+    "jira": "dantt",
+    "gitlab": "dantt",
+    "email": "dantt@avadagroup.com"
+  },
+  {
+    "name": "ducnm01",
+    "jira": "ducnm01",
+    "gitlab": "ducnm01",
+    "email": "ducnm01@avadagroup.com"
+  },
+  {
+    "name": "haibm",
+    "jira": "haibm",
+    "gitlab": "haibm",
+    "email": "haibm@avadagroup.com"
+  },
+  {
+    "name": "hailt",
+    "jira": "hailt",
+    "gitlab": "hailt",
+    "email": "hailt@avadagroup.com"
+  },
+  {
+    "name": "hungvm",
+    "jira": "hungvm",
+    "gitlab": "hungvm",
+    "email": "hungvm@avadagroup.com"
+  },
+  {
+    "name": "lamln",
+    "jira": "lamln",
+    "gitlab": "lamln",
+    "email": "lamln@avadagroup.com"
+  },
+  {
+    "name": "nghiavt",
+    "jira": "nghiavt",
+    "gitlab": "nghiavt",
+    "email": "nghiavt@avada.email"
+  },
+  {
+    "name": "ngocnt",
+    "jira": "ngocnt",
+    "gitlab": "ngocnt",
+    "email": "ngocnt@avadagroup.com"
+  },
+  {
+    "name": "taing",
+    "jira": "taing",
+    "gitlab": "taing",
+    "email": "taing@avadagroup.com"
+  },
+  {
+    "name": "trungnq",
+    "jira": "trungnq",
+    "gitlab": "trungnq",
+    "email": "trungnq@avadagroup.com"
+  },
+  {
+    "name": "trungph",
+    "jira": "trungph",
+    "gitlab": "trungph",
+    "email": "trungph@avadagroup.com"
+  },
+  {
+    "name": "truongnd1",
+    "jira": "truongnd1",
+    "gitlab": "truongnd1",
+    "email": "truongnd1@avadagroup.com"
+  }
 ]

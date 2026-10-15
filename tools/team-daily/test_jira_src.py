@@ -45,12 +45,13 @@ class CollectTests(unittest.TestCase):
             self.assertEqual(query['maxResults'], ['100'])
             self.assertEqual(query['startAt'], ['0'])
             if 'expand' in query:
-                self.assertEqual(query['jql'], ['project = FAL AND status changed '
+                self.assertEqual(query['jql'], ['project in (FAL, SB) AND status changed '
                     'DURING ("2026-10-14 00:00","2026-10-14 23:59")'])
                 self.assertEqual(query['fields'], ['summary,status,customfield_10700'])
                 rows = [issue('FAL-1', ['tunglv', 'tranggt'], histories=histories)]
             else:
                 self.assertIn('cf[10700] in (', query['jql'][0])
+                self.assertTrue(query['jql'][0].startswith('project in (FAL, SB) AND '))
                 self.assertIn('"QA/ QC"', query['jql'][0])
                 self.assertNotIn('"Done"', query['jql'][0])
                 self.assertNotIn('assignee', query['jql'][0])
