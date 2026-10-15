@@ -40,23 +40,23 @@ class DailyTests(unittest.TestCase):
     def test_full_render(self):
         report = self.collect()
         main, replies = daily.render(report)
-        for text in ['*SEOOn — báo cáo ngày 14/10*', 'Level *4.5*', '428M token',
-                     '12 commit (+3 merge)', 'kéo 1 task', 'To Do 3 · Doing 2',
-                     '00:10 14/10 → 00:10 15/10', 'prompt bị cắt ở 200/người: tuannv']:
+        for text in ['*Falcon — báo cáo 14/10*', 'tuannv    4.5   428M     12    1/5',
+                     '• *tuannv*: Lặp 2 lần', 'token 24h tới 00:10 15/10',
+                     'prompt cắt ở 200: tuannv']:
             self.assertIn(text, main)
-        self.assertIn('Lặp 2 lần', main)
         self.assertNotIn('Thiếu ngữ cảnh', main)
-        self.assertNotIn(':git:', main)
-        self.assertNotIn(':jira:', main)
-        for text in ['vừa', '4a: kiểm chứng', 'Thiếu ngữ cảnh', 'Ghi tiêu chí.',
-                     'FAL-1 To Do→Doing', ':memo: Commit (12, +3 merge):']:
+        for text in ['Level *4.5* (tin cậy vừa)', '4a: kiểm chứng', ':warning: Thiếu ngữ cảnh',
+                     ':bulb: Ghi tiêu chí.', 'Kéo: FAL-1 To Do→Doing | Đang mở: To Do 3 · Doing 2',
+                     ':memo: Commit 12 (+3 merge)']:
             self.assertIn(text, replies[0])
         self.assertEqual(report['collected_at'], NOW.isoformat())
         self.assertTrue((self.cache / '2026-10-14.json').exists())
 
     def test_missing_audit(self):
         report = self.collect(audit_prompts=lambda *a: None)
-        self.assertIn('Level —  (ngoài scope prompt-audit)', daily.render(report)[0])
+        main, replies = daily.render(report)
+        self.assertIn('ngoài scope prompt-audit: tuannv', main)
+        self.assertIn('Level — (ngoài scope prompt-audit)', replies[0])
 
     def test_isolation_and_safe_error(self):
         def fail(*args):
@@ -65,22 +65,25 @@ class DailyTests(unittest.TestCase):
             with self.subTest(failing=failing):
                 report = self.collect(**{failing: fail})
                 main, replies = daily.render(report)
-                self.assertIn(':x:', main)
+                self.assertIn(':x:', main + replies[0])
                 text = json.dumps(report, ensure_ascii=False) + main + str(replies)
                 self.assertNotIn('pau_abc123', text)
                 self.assertNotIn('xoxb-1-2-secret', text)
                 self.assertIn('RuntimeError: 401 for', text)
+                row = next(line for line in main.splitlines() if line.startswith('tuannv'))
                 if failing != 'gitlab_collect':
-                    self.assertIn('12 commit', main)
+                    self.assertIn(' 12 ', row)
                 if failing != 'jira_collect':
-                    self.assertIn('kéo 1 task', main)
+                    self.assertIn('1/5', row)
 
     def test_redacted_prompts_not_graded(self):
         called = []
         report = self.collect(audit_prompts=lambda *a: [{'text': '<REDACTED>'}] * 3,
                               grader=lambda *a: called.append(a) or copy.deepcopy(GRADE))
         self.assertEqual(called, [])
-        self.assertIn('Level — (prompt-audit ẩn nội dung prompt)', daily.render(report)[0])
+        main, replies = daily.render(report)
+        self.assertIn('tuannv     ẩn', main)
+        self.assertIn('Level — (prompt-audit ẩn nội dung prompt)', replies[0])
 
     def test_task_notifications_not_graded(self):
         seen = []
@@ -88,9 +91,17 @@ class DailyTests(unittest.TestCase):
                      grader=lambda name, prompts, tokens: seen.append(prompts) or copy.deepcopy(GRADE))
         self.assertEqual(seen[0], [{'text': 'fix bug'}])
 
+    def test_warning_labels_localized(self):
+        grade = dict(GRADE, warnings=['WASTEFUL: lặp', 'OFF-PURPOSE: game'])
+        report = self.collect(grader=lambda *a: copy.deepcopy(grade))
+        main, replies = daily.render(report)
+        self.assertIn('Lãng phí: lặp', main)
+        self.assertIn('Sai mục đích: game', replies[0])
+
     def test_tokens(self):
         for value, expected in [(1200000000, '1.2B'), (428000000, '428M'),
-                                (950000, '950K'), (0, '0'), (12, '12'), (None, '—')]:
+                                (950000, '950K'), (0, '0'), (12, '12'), (None, '—'),
+                                (369400000, '369M'), (12540000, '12.5M')]:
             self.assertEqual(daily.format_tokens(value), expected)
 
     def test_yesterday(self):
@@ -127,7 +138,7 @@ class DailyTests(unittest.TestCase):
         output = io.StringIO()
         daily.post(DAY, cache_dir=self.cache, dry_run=True, send=forbidden,
                    read_token=forbidden, output=output)
-        self.assertIn('SEOOn', output.getvalue())
+        self.assertIn('Falcon — báo cáo', output.getvalue())
         self.assertNotIn('posted', daily.load(DAY, self.cache))
 
     def test_late_collection(self):
@@ -188,19 +199,18 @@ class DailyTests(unittest.TestCase):
         report = self.collect(gitlab_collect=lambda *a: {'tuannv': {
             'commits': 22, 'merges': 1, 'by_repo': {'avada/seo': 23}, 'items': items}})
         reply = daily.render(report)[1][0]
-        self.assertIn(':memo: Commit (22, +1 merge):', reply)
-        self.assertIn('_avada/seo_', reply)
-        self.assertIn('• `00000000` fix 0 &lt;b&gt;', reply)
-        self.assertEqual(reply.count('• `'), 20)
-        self.assertIn('+2 commit nữa', reply)
+        self.assertIn(':memo: Commit 22 (+1 merge):', reply)
+        self.assertIn('• _seo_ fix 0 &lt;b&gt;', reply)
+        self.assertEqual(reply.count('• _seo_'), 10)
+        self.assertIn('+12 commit nữa', reply)
         self.assertNotIn('Merge branch', reply)
 
     def test_transition_limit(self):
         report = self.collect()
         report['jira']['tuannv']['moved'] *= 17
         reply = daily.render(report)[1][0]
-        self.assertEqual(reply.count('FAL-1 To Do→Doing'), 15)
-        self.assertIn('+2', reply)
+        self.assertEqual(reply.count('FAL-1 To Do→Doing'), 8)
+        self.assertIn('+9', reply)
 
 
 if __name__ == '__main__':

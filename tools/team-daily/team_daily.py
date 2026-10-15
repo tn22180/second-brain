@@ -122,7 +122,9 @@ def format_tokens(value):
         return '—'
     for unit, size in [('B', 10**9), ('M', 10**6), ('K', 10**3)]:
         if value >= size:
-            return f'{value / size:.1f}'.rstrip('0').rstrip('.') + unit
+            scaled = value / size
+            # Three significant digits keep the table columns narrow: 369M, 1.2B, 12.5M.
+            return (f'{scaled:.0f}' if scaled >= 100 else f'{scaled:.1f}'.rstrip('0').rstrip('.')) + unit
     return str(value)
 
 
@@ -139,108 +141,131 @@ def member_source(report, source, identity):
     return value if failed(value) else value[identity]
 
 
+MAX_COMMIT_TITLES = 10
+MAX_MOVES = 8
+MAX_ITEMS = 3
+
+
+LABELS = {'OFF-PURPOSE': 'Sai mục đích', 'WASTEFUL': 'Lãng phí'}
+
+
+def clip(text, limit):
+    text = ' '.join(str(text).split())
+    for raw, label in LABELS.items():
+        text = text.replace(raw, label)
+    return text if len(text) <= limit else text[:limit - 1] + '…'
+
+
+def level_cell(report, name):
+    prompts, result = report['prompts'][name], report['grades'][name]
+    if prompts is None:
+        return '—'
+    if failed(result):
+        return 'lỗi'
+    if result.get('redacted'):
+        return 'ẩn'
+    value = result.get('level')
+    return '—' if value is None else f'{value:g}'
+
+
+def table(report):
+    """Fixed-width rows in a code block: the only layout that stays aligned on a phone."""
+    usage = report['usage']
+    rows = []
+    for member in report['members']:
+        name = member['name']
+        jira = member_source(report, 'jira', member['jira'])
+        gitlab = member_source(report, 'gitlab', member['gitlab'])
+        token = '!' if failed(usage) else format_tokens(usage.get(member['email']))
+        commits = '!' if failed(gitlab) else str(gitlab['commits'])
+        moved = '!' if failed(jira) else f"{len({m['key'] for m in jira['moved']})}/{sum(jira['board'].values())}"
+        rows.append((level_cell(report, name), name, token, commits, moved))
+    # Highest level first; unscored members sink to the bottom.
+    rows.sort(key=lambda r: -float(r[0]) if r[0].replace('.', '').isdigit() else 1)
+    lines = [f"{'Người':<9} {'Lv':>3} {'Token':>6} {'Commit':>6} {'Jira':>6}"]
+    lines += [f'{n:<9} {lv:>3} {t:>6} {c:>6} {j:>6}' for lv, n, t, c, j in rows]
+    return '```\n' + '\n'.join(lines) + '\n```'
+
+
 def render_member(report, member):
     name = member['name']
     prompts, result = report['prompts'][name], report['grades'][name]
     jira = member_source(report, 'jira', member['jira'])
     gitlab = member_source(report, 'gitlab', member['gitlab'])
+    cell = level_cell(report, name)
     if prompts is None:
-        level = 'Level —  (ngoài scope prompt-audit)'
-    elif failed(result):
-        level = error_line('prompt-audit' if failed(prompts) else 'grade', result)
-    elif result.get('redacted'):
-        level = 'Level — (prompt-audit ẩn nội dung prompt)'
+        head = 'Level — (ngoài scope prompt-audit)'
+    elif cell == 'lỗi':
+        head = error_line('prompt-audit' if failed(prompts) else 'chấm điểm', result)
+    elif cell == 'ẩn':
+        head = 'Level — (prompt-audit ẩn nội dung prompt)'
+    elif cell == '—':
+        head = 'Level — (không có prompt)'
     else:
-        value = result.get('level')
-        level = f'Level *{value:g}*' if value is not None else 'Level — (chưa có prompt)'
-    usage = report['usage']
-    token_text = (error_line('prompt-audit usage', usage) if failed(usage) else
-                  f":zap: {format_tokens(usage.get(member['email']))} token")
-    git_text = (error_line('GitLab', gitlab) if failed(gitlab) else
-                f":memo: {gitlab['commits']} commit (+{gitlab['merges']} merge)")
-    jira_text = (error_line('Jira', jira) if failed(jira) else
-                 f":ticket: kéo {len({move['key'] for move in jira['moved']})} task")
-    summary = [f'*{escape(name)}* · {level} · {token_text} · {git_text} · {jira_text}']
-    detail = [f'*{escape(name)}* · {level}']
-    if not failed(jira):
-        board = ' · '.join(f'{escape(status)} {count}' for status, count in jira['board'].items())
-        summary.append('  ↳ board: ' + (board or '0'))
-    if not failed(result):
-        warnings = result.get('warnings', [])
-        if warnings:
-            summary.append('  :warning: ' + escape(warnings[0]))
-        detail.append('Độ tin cậy: ' + escape(result.get('confidence') or '—'))
-        detail.extend('• ' + escape(item) for item in result.get('evidence', []))
-        detail.extend(':warning: ' + escape(item) for item in warnings)
+        head = f"Level *{cell}* (tin cậy {escape(result.get('confidence') or '—')})"
+    lines = [f'*{escape(name)}* — {head}']
+    if not failed(result) and result:
+        lines += [':warning: ' + escape(clip(w, 140)) for w in result.get('warnings', [])[:MAX_ITEMS]]
         if result.get('advice'):
-            detail.append('Gợi ý: ' + escape(result['advice']))
+            lines.append(':bulb: ' + escape(clip(result['advice'], 160)))
+        evidence = result.get('evidence', [])[:MAX_ITEMS]
+        if evidence:
+            lines.append(':white_check_mark: ' + escape('; '.join(clip(e, 60) for e in evidence)))
     if failed(jira):
-        detail.append(error_line('Jira', jira))
+        lines.append(error_line('Jira', jira))
     else:
-        detail.append(':ticket: Chuyển trạng thái:')
         moves = jira['moved']
-        detail.extend(f"{escape(m['key'])} {escape(m['from'])}→{escape(m['to'])}" for m in moves[:15])
-        if len(moves) > 15:
-            detail.append(f'+{len(moves) - 15}')
-        if not moves:
-            detail.append('0')
+        moved = ', '.join(f"{m['key']} {m['from']}→{m['to']}" for m in moves[:MAX_MOVES])
+        if len(moves) > MAX_MOVES:
+            moved += f' +{len(moves) - MAX_MOVES}'
+        board = ' · '.join(f'{status} {count}' for status, count in jira['board'].items()) or '0'
+        lines.append(f":ticket: Kéo: {escape(moved) if moves else '0'} | Đang mở: {escape(board)}")
     if failed(gitlab):
-        detail.append(error_line('GitLab', gitlab))
+        lines.append(error_line('GitLab', gitlab))
     else:
-        detail.extend(commit_lines(gitlab))
-    return '\n'.join(summary), '\n'.join(detail)
-
-
-MAX_COMMIT_TITLES = 20
+        lines.extend(commit_lines(gitlab))
+    return '\n'.join(lines)
 
 
 def commit_lines(gitlab):
     # Merge titles are all "Merge branch ...": count them, list only real commits.
     commits = [c for c in gitlab.get('items', []) if not c['merge']]
-    lines = [f":memo: Commit ({gitlab['commits']}, +{gitlab['merges']} merge):"]
-    if not commits:
-        return lines + ['0']
-    by_repo = {}
-    for c in commits:
-        by_repo.setdefault(c['repo'], []).append(c)
-    shown = 0
-    for repo, items in by_repo.items():
-        lines.append(f'_{escape(repo)}_')
-        for c in items:
-            if shown == MAX_COMMIT_TITLES:
-                break
-            lines.append(f"• `{c['sha']}` {escape(c['title'][:90])}")
-            shown += 1
-    if len(commits) > shown:
-        lines.append(f'+{len(commits) - shown} commit nữa')
+    merges = f" (+{gitlab['merges']} merge)" if gitlab['merges'] else ''
+    lines = [f":memo: Commit {gitlab['commits']}{merges}" + (':' if commits else '')]
+    for c in commits[:MAX_COMMIT_TITLES]:
+        repo = c['repo'].rsplit('/', 1)[-1]
+        lines.append(f"• _{escape(repo)}_ {escape(clip(c['title'], 80))}")
+    if len(commits) > MAX_COMMIT_TITLES:
+        lines.append(f'+{len(commits) - MAX_COMMIT_TITLES} commit nữa')
     return lines
 
 
 def render(report):
     day = dt.date.fromisoformat(report['date'])
-    blocks = [f':bar_chart: *SEOOn — báo cáo ngày {day:%d/%m}*']
-    replies, outside, capped = [], [], []
+    blocks = [f':bar_chart: *Falcon — báo cáo {day:%d/%m}*', table(report)]
+    attention, notes = [], []
+    for source, label in (('jira', 'Jira'), ('gitlab', 'GitLab'), ('usage', 'prompt-audit')):
+        if failed(report[source]):
+            attention.append(error_line(label, report[source]))
     for member in report['members']:
-        summary, detail = render_member(report, member)
-        blocks.append(summary)
-        replies.append(detail)
-        prompts = report['prompts'][member['name']]
-        if prompts is None:
-            outside.append(member['name'])
-        elif not failed(prompts) and prompts['capped']:
-            capped.append(member['name'])
-    start, end = [dt.datetime.fromisoformat(report[key]).astimezone(ZONE)
-                  for key in ('window_start', 'window_end')]
-    footer = [f'prompt-audit 24h: {start:%H:%M %d/%m} → {end:%H:%M %d/%m} (+07)',
-              'Nguồn: Jira FAL · GitLab avada · prompt-audit · Claude chấm điểm',
-              report['window_note'], 'board Jira tại lúc thu thập; điểm chỉ dựa trên prompt']
-    if report.get('late'):
-        footer.append('thu thập muộn')
+        result = report['grades'][member['name']]
+        if result and not failed(result) and result.get('warnings'):
+            attention.append(f"• *{escape(member['name'])}*: {escape(clip(result['warnings'][0], 110))}")
+    if attention:
+        blocks.append(':warning: *Cần chú ý*\n' + '\n'.join(attention))
+    outside = [m['name'] for m in report['members'] if report['prompts'][m['name']] is None]
+    capped = [m['name'] for m in report['members']
+              if isinstance(report['prompts'][m['name']], dict) and report['prompts'][m['name']].get('capped')]
+    end = dt.datetime.fromisoformat(report['window_end']).astimezone(ZONE)
+    notes.append(f'Jira = kéo hôm qua/đang mở · token 24h tới {end:%H:%M %d/%m} · level chấm từ prompt')
     if outside:
-        footer.append(', '.join(outside) + ' ngoài scope prompt-audit')
+        notes.append('ngoài scope prompt-audit: ' + ', '.join(outside))
     if capped:
-        footer.append('prompt bị cắt ở 200/người: ' + ', '.join(capped))
-    blocks.append(' · '.join(footer))
+        notes.append('prompt cắt ở 200: ' + ', '.join(capped))
+    if report.get('late'):
+        notes.append('thu thập muộn')
+    blocks.append('_' + ' · '.join(notes) + ' · chi tiết trong thread_')
+    replies = [render_member(report, m) for m in report['members']]
     return '\n\n'.join(blocks), replies
 
 
