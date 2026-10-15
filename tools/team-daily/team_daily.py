@@ -232,7 +232,7 @@ def render(report):
     start, end = [dt.datetime.fromisoformat(report[key]).astimezone(ZONE)
                   for key in ('window_start', 'window_end')]
     footer = [f'prompt-audit 24h: {start:%H:%M %d/%m} → {end:%H:%M %d/%m} (+07)',
-              'Nguồn: Jira FAL+SB · GitLab git.avada.net (commit ở host khác không đếm) · prompt-audit · Claude chấm điểm',
+              'Nguồn: Jira FAL · GitLab avada · prompt-audit · Claude chấm điểm',
               report['window_note'], 'board Jira tại lúc thu thập; điểm chỉ dựa trên prompt']
     if report.get('late'):
         footer.append('thu thập muộn')

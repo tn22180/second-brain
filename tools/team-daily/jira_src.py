@@ -65,17 +65,13 @@ def _quote(value):
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 
-# Falcon's devs split across two boards with the same workflow: FAL and SB.
-PROJECTS = 'FAL, SB'
-
-
 def collect(day: datetime.date, members: list[str], fetch=None) -> dict[str, dict]:
     if fetch is None:
         fetch = globals()['fetch']
     result = {member: {'moved': [], 'owned_moved': [], 'board': {}} for member in members}
     if not result:
         return result
-    jql = (f'project in ({PROJECTS}) AND status changed DURING '
+    jql = (f'project = FAL AND status changed DURING '
            f'("{day.isoformat()} 00:00","{day.isoformat()} 23:59")')
     for issue in _issues(fetch, jql, 'summary,status,customfield_10700', 'changelog'):
         owners = _owners(issue) & result.keys()
@@ -98,7 +94,7 @@ def collect(day: datetime.date, members: list[str], fetch=None) -> dict[str, dic
                     result[author]['moved'].append(move.copy())
                 for owner in owners:
                     result[owner]['owned_moved'].append({**move, 'by': author})
-    jql = (f'project in ({PROJECTS}) AND cf[10700] in (' + ','.join(map(_quote, result))
+    jql = ('project = FAL AND cf[10700] in (' + ','.join(map(_quote, result))
            + ') AND status in (' + ','.join(map(_quote, STATUS_ORDER[:-1])) + ')')
     for issue in _issues(fetch, jql, 'status,customfield_10700'):
         status = issue['fields']['status']['name']
