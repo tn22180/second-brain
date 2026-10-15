@@ -337,6 +337,8 @@ export async function securityGate(
     appendSystemPrompt: undefined,
     cwd: input.repoPath,
     allowedTools: REVIEW_TOOLS,
+    // REVIEW_TOOLS is read-only, so disabling hooks loses no write guard.
+    disableHooks: true,
     addDirs: [],
     permissionMode: undefined,
     timeoutMs: input.timeoutMs

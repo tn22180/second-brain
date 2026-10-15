@@ -23,6 +23,8 @@ export interface ClaudeInvocation {
   allowedTools: string[];
   addDirs: string[];
   permissionMode: string | undefined;
+  /** Worktree/user hooks can fire inside the headless reviewer and consume its JSON turn. */
+  disableHooks?: boolean;
   timeoutMs: number;
 }
 
@@ -63,6 +65,7 @@ export function buildArgs(inv: ClaudeInvocation, bin: string): string[] {
   const args = [bin, '-p', inv.prompt, '--output-format', 'json', '--model', inv.model, '--strict-mcp-config'];
   if (inv.appendSystemPrompt) args.push('--append-system-prompt', inv.appendSystemPrompt);
   if (inv.permissionMode) args.push('--permission-mode', inv.permissionMode);
+  if (inv.disableHooks) args.push('--settings', '{"disableAllHooks":true}');
   if (inv.addDirs.length) args.push('--add-dir', ...inv.addDirs);
   if (inv.allowedTools.length) args.push('--allowedTools', ...inv.allowedTools);
   return args;

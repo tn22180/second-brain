@@ -292,6 +292,27 @@ describe('claude CLI plumbing', () => {
     expect(args[args.length - 1]).toBe('Grep');
     // No --max-turns: this CLI build does not have it, the caller bounds rounds.
     expect(args).not.toContain('--max-turns');
+    expect(args).not.toContain('--settings');
+  });
+
+  test('disables all hooks only when requested, before the variadic flags', () => {
+    const inv: ClaudeInvocation = {
+      prompt: 'p',
+      model: 'm',
+      appendSystemPrompt: undefined,
+      cwd: '/repo',
+      allowedTools: ['Read', 'Grep'],
+      addDirs: ['/a'],
+      permissionMode: undefined,
+      disableHooks: true,
+      timeoutMs: 1000
+    };
+    const args = buildArgs(inv, 'claude');
+    const settingsIndex = args.indexOf('--settings');
+    expect(settingsIndex).toBeGreaterThan(-1);
+    expect(args[settingsIndex + 1]).toBe('{"disableAllHooks":true}');
+    expect(settingsIndex + 1).toBeLessThan(args.indexOf('--add-dir'));
+    expect(settingsIndex + 1).toBeLessThan(args.indexOf('--allowedTools'));
   });
 
   test('every spawn runs with no MCP server, and none is asked for', () => {

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test';
-import type {ClaudeResult} from '../src/agent/claudeCli';
+import type {ClaudeInvocation, ClaudeResult} from '../src/agent/claudeCli';
 import {
   buildReviewPrompt,
   describeSecurity,
@@ -270,15 +270,16 @@ describe('securityGate', () => {
     expect(out.costUsd).toBe(0.12);
   });
 
-  test('the review runs read-only in the worktree', async () => {
-    let seen: {allowedTools: string[]; cwd: string} | undefined;
+  test('the review runs read-only in the worktree with all hooks disabled', async () => {
+    let seen: ClaudeInvocation | undefined;
     await securityGate(input, {
       claude: async inv => {
-        seen = {allowedTools: inv.allowedTools, cwd: inv.cwd};
+        seen = inv;
         return (await claudeReturning({})()) as ClaudeResult;
       }
     });
     expect(seen!.cwd).toBe('/tmp/wt');
+    expect(seen!.disableHooks).toBe(true);
     expect(seen!.allowedTools).not.toContain('Edit');
     expect(seen!.allowedTools).not.toContain('Write');
     expect(seen!.allowedTools.some(t => t.startsWith('Bash(git push'))).toBe(false);
